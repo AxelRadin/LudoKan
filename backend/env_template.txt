@@ -1,0 +1,50 @@
+# ===========================================
+# CONFIGURATION LUDOKAN - FICHIER EXEMPLE
+# ===========================================
+# Copiez ce fichier vers .env à la racine du projet et modifiez les valeurs
+
+# ===========================================
+# BASE DE DONNÉES
+# ===========================================
+POSTGRES_DB=tesp_db
+POSTGRES_USER=tesp_user
+POSTGRES_PASSWORD=tesp_password
+DATABASE_URL=postgresql://tesp_user:tesp_password@db:5432/tesp_db
+
+# ===========================================
+# DJANGO
+# ===========================================
+SECRET_KEY=your-secret-key-here-change-this-in-production
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+# ===========================================
+# EMAIL (pour les tâches Celery)
+# ===========================================
+DEFAULT_FROM_EMAIL=noreply@ludokan.com
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+# ===========================================
+# REDIS
+# ===========================================
+REDIS_URL=redis://redis:6379/0
+
+# ===========================================
+# CELERY
+# ===========================================
+CELERY_BROKER_URL=redis://redis:6379/0
+CELERY_RESULT_BACKEND=redis://redis:6379/1
+
+# ===========================================
+# CORS (Cross-Origin Resource Sharing)
+# ===========================================
+CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ALLOW_CREDENTIALS=True
+
+# ===========================================
+# STATIC FILES
+# ===========================================
+STATIC_URL=/static/
+STATIC_ROOT=/app/static
+MEDIA_URL=/media/
+MEDIA_ROOT=/app/media

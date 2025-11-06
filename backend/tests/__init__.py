@@ -1,0 +1,1 @@
+# Tests globaux pour LudoKan

@@ -1,0 +1,47 @@
+[
+  {
+    "model": "games.game",
+    "pk": 1,
+    "fields": {
+      "title": "Settlers of Catan",
+      "description": "A classic strategy game of trading and building",
+      "genre": "Strategy",
+      "min_players": 3,
+      "max_players": 4,
+      "play_time": 90,
+      "complexity": "Medium",
+      "created_at": "2024-01-01T10:00:00Z",
+      "updated_at": "2024-01-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "games.game",
+    "pk": 2,
+    "fields": {
+      "title": "Ticket to Ride",
+      "description": "Build train routes across North America",
+      "genre": "Strategy",
+      "min_players": 2,
+      "max_players": 5,
+      "play_time": 60,
+      "complexity": "Low",
+      "created_at": "2024-01-01T10:00:00Z",
+      "updated_at": "2024-01-01T10:00:00Z"
+    }
+  },
+  {
+    "model": "games.game",
+    "pk": 3,
+    "fields": {
+      "title": "Pandemic",
+      "description": "Cooperative game to save the world from diseases",
+      "genre": "Cooperative",
+      "min_players": 2,
+      "max_players": 4,
+      "play_time": 75,
+      "complexity": "Medium",
+      "created_at": "2024-01-01T10:00:00Z",
+      "updated_at": "2024-01-01T10:00:00Z"
+    }
+  }
+]
