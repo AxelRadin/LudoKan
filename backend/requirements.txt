@@ -17,7 +17,7 @@ python-decouple==3.8
 dj-database-url==2.1.0  # pratique pour DATABASE_URL
 
 # Images
-Pillow==10.0.1
+Pillow==11.0.0
 
 # Celery & Redis
 celery==5.3.4
