@@ -14,6 +14,9 @@ from pathlib import Path
 import os
 from decouple import config
 import dj_database_url
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -203,3 +206,13 @@ CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=boo
 
 # CSRF Configuration (configurable via environment variable)
 CSRF_TRUSTED_ORIGINS = [o for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o]
+
+
+# Sentry configuration
+sentry_sdk.init(
+    dsn=config('SENTRY_DSN', default=None),
+    integrations=[DjangoIntegration()],
+    traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=1.0, cast=float),
+    environment=config('SENTRY_ENVIRONMENT', default=None),
+    send_default_pii=True,
+)
