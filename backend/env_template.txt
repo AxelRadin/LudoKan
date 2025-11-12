@@ -48,3 +48,11 @@ STATIC_URL=/static/
 STATIC_ROOT=/app/static
 MEDIA_URL=/media/
 MEDIA_ROOT=/app/media
+
+# ===========================================
+# SENTRY
+# ===========================================
+# Laisser vide en local si vous ne souhaitez pas envoyer d'événements
+SENTRY_DSN=
+SENTRY_ENVIRONMENT=development
+SENTRY_TRACES_SAMPLE_RATE=1.0
