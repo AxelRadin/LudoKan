@@ -209,10 +209,14 @@ CSRF_TRUSTED_ORIGINS = [o for o in config('CSRF_TRUSTED_ORIGINS', default='').sp
 
 
 # Sentry configuration
-sentry_sdk.init(
-    dsn=config('SENTRY_DSN', default=None),
-    integrations=[DjangoIntegration()],
-    traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=1.0, cast=float),
-    environment=config('SENTRY_ENVIRONMENT', default=None),
-    send_default_pii=True,
-)
+SENTRY_DSN = config('SENTRY_DSN', default='').strip()
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=1.0, cast=float),
+        environment=config('SENTRY_ENVIRONMENT', default=None),
+        send_default_pii=True,
+    )
+else:
+    print("SENTRY_DSN is not set")
