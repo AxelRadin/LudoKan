@@ -33,6 +33,7 @@ urlpatterns = [
     # path('api/', include('api.urls')),  
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
+    path('api/auth/', include('dj_rest_auth.urls')),
 
 
 ]
