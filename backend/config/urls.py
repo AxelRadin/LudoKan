@@ -20,6 +20,7 @@ from django.urls import path, include
 from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from api.views import ItemViewSet
+from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView)
 
 router = DefaultRouter()
 router.register(r"items", ItemViewSet, basename="item")
@@ -34,6 +35,9 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
     path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
+    path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
 
 
 ]
