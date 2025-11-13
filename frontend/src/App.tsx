@@ -3,6 +3,7 @@ import './App.css';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import BackendConnector from './components/BackendConnector';
+import * as Sentry from "@sentry/react";
 
 function App() {
   const [count, setCount] = useState(0);
