@@ -35,9 +35,10 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
     path('api/auth/', include('dj_rest_auth.urls')),
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
-    path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
+    path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
+   # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+   # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
+   # path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
 
 
 ]
