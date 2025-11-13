@@ -33,3 +33,6 @@ gunicorn==23.0.0
 
 # Logging
 sentry-sdk[django]==2.20.0
+
+# Runtime tooling (provides pkg_resources used by some libs)
+setuptools>=75.0.0
