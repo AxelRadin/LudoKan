@@ -14,6 +14,30 @@ from pathlib import Path
 import os
 from decouple import config
 import dj_database_url
+from datetime import timedelta
+
+#REST_USE_JWT = True
+#TOKEN_MODEL = None
+
+# JWT via cookies
+#JWT_AUTH_COOKIE = 'access_token'          # cookie pour l'access token
+#JWT_AUTH_REFRESH_COOKIE = 'refresh_token' # cookie pour le refresh token
+#JWT_AUTH_COOKIE_USE_CSRF = True           # protéger contre les CSRF si nécessaire
+
+REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+}
+
+# Sécurité des cookies
+SESSION_COOKIE_SECURE = True   # obligatoire si HTTPS
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+#JWT_AUTH_SAMESITE = 'Lax'      # ou 'Strict', selon front
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://mon-domaine.com',
+]
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -44,6 +68,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
+    "dj_rest_auth.registration",
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    "allauth",
+    "allauth.account",
     'corsheaders',
     'apps.users',
     'apps.games', 
@@ -64,29 +95,70 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ]
-}
+
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+#REST_FRAMEWORK = {
+  #  "DEFAULT_AUTHENTICATION_CLASSES": [
+        #'rest_framework_simplejwt.authentication.JWTAuthentication',  # simple pour démarrer
+  #      "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+   # ],
+   # "DEFAULT_PERMISSION_CLASSES": [
+   #     'rest_framework.permissions.IsAuthenticated',  # à durcir ensuite
+   # ],
+   # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+   # "PAGE_SIZE": 10,
+#}
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",  # simple pour démarrer
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",  # à durcir ensuite
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
 }
 
+REST_USE_JWT = True
+#TOKEN_MODEL = None
+REST_AUTH = {
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": "access_token",
+    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
+}
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": False,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+JWT_AUTH_COOKIE = "access_token"
+JWT_AUTH_REFRESH_COOKIE = "refresh_token"
+JWT_AUTH_COOKIE_USE_CSRF = True
+JWT_AUTH_SAMESITE = "Lax"
+
+#SIMPLE_JWT = {
+ #   'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+  #  'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+   # 'ROTATE_REFRESH_TOKENS': False,
+    #'BLACKLIST_AFTER_ROTATION': True,
+    #'AUTH_HEADER_TYPES': ('Bearer',),
+#}
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
