@@ -16,23 +16,22 @@ from decouple import config
 import dj_database_url
 from datetime import timedelta
 
-#REST_USE_JWT = True
-#TOKEN_MODEL = None
+AUTH_USER_MODEL = 'users.CustomUser'
 
-# JWT via cookies
-#JWT_AUTH_COOKIE = 'access_token'          # cookie pour l'access token
-#JWT_AUTH_REFRESH_COOKIE = 'refresh_token' # cookie pour le refresh token
-#JWT_AUTH_COOKIE_USE_CSRF = True           # protéger contre les CSRF si nécessaire
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Pas de username
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+
 
 REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
 }
 
 # Sécurité des cookies
-SESSION_COOKIE_SECURE = True   # obligatoire si HTTPS
+SESSION_COOKIE_SECURE = True   #  HTTPS
 CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
-#JWT_AUTH_SAMESITE = 'Lax'      # ou 'Strict', selon front
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
