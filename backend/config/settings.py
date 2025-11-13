@@ -36,7 +36,7 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
-    'https://mon-domaine.com',
+    config('FRONTEND_URL', default='http://localhost:3000'),
 ]
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
