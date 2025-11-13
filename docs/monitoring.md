@@ -96,3 +96,81 @@ Ouvrez l’app, cliquez sur “Test Sentry” puis vérifiez que l’événement
 - Erreur de test visible sur le dashboard Sentry.
 - Intégration React Router v6 fonctionnelle.
 
+
+## Monitoring de disponibilité avec UptimeRobot
+
+### Objectif
+Surveiller la disponibilité (Up/Down) de l’API Django et du frontend React déployés sur Render, avec vérification automatique toutes les 5 minutes et alertes par email en cas d’incident.
+
+### Prérequis
+- Compte gratuit UptimeRobot.
+- Adresse email de notification (équipe/ops).
+
+### Services à monitorer
+- API Django → endpoint santé: `https://VOTRE_API_RENDER/health/`
+  - L’endpoint `/health/` est exposé par l’API (GET 200 JSON `{"status": "ok"}`).
+- Frontend React → page d’accueil: `https://VOTRE_FRONTEND_RENDER/`
+
+Remplacez les URLs par vos URLs Render réelles (ex: `https://ludotheque-api.onrender.com/health/` et `https://ludotheque-frontend.onrender.com/` si c’est votre naming).
+
+### Procédure d’installation
+1) Création du compte
+- Créez un compte gratuit sur UptimeRobot et vérifiez l’adresse email.
+- Dans Settings > Alert Contacts, ajoutez l’email de notification de l’équipe.
+
+2) Ajout des monitors HTTP(s)
+- Cliquez sur “Add New Monitor”.
+- Monitor Type: HTTP(s).
+- Friendly Name: `API Django (production)`.
+- URL: `https://VOTRE_API_RENDER/health/`.
+- Monitoring Interval: 5 minutes (minimum du plan gratuit).
+- Alert Contacts: sélectionnez votre email d’équipe.
+- Enregistrez.
+- Répétez pour `Frontend React (production)` avec l’URL `https://VOTRE_FRONTEND_RENDER/`.
+
+3) Configuration des intervalles et localisations
+- Intervalle: 5 minutes (gratuit).
+- Localisations multiples: activez si disponible sur votre plan (optionnelle mais recommandée).
+
+### Test de downtime simulé
+1) Sur Render, stoppez temporairement un service (par ex. l’API Django).
+2) Attendez la détection (peut prendre jusqu’à 5–10 minutes selon l’intervalle et la latence du provider).
+3) Vérifiez que vous recevez une alerte email “Down”.
+4) Relancez le service sur Render.
+5) Vérifiez la notification “Up” de retour à la normale.
+
+### Vérification du dashboard UptimeRobot
+- Accédez au dashboard: les deux monitors doivent apparaître avec leur statut (Up/Down) et leur temps de réponse.
+- Ouvrez les logs d’historique: vous devez voir les checks réussis et l’incident simulé (Down → Up).
+
+### Procédure pour ajouter un nouveau monitor
+1) Identifiez une URL “health” ou une page publique fiable pour le service.
+2) Ajoutez un monitor HTTP(s) avec:
+   - Friendly Name clair (service + environnement).
+   - URL complète.
+   - Intervalle 5 minutes.
+   - Contacts d’alerte.
+3) Simulez un downtime contrôlé si possible pour valider l’alerte.
+4) Documentez le nouveau monitor dans cette section (service, URL, responsable).
+
+### Exemples de vérification manuelle
+```bash
+# API
+curl -sS https://VOTRE_API_RENDER/health/ | jq .
+
+# Frontend
+curl -I https://VOTRE_FRONTEND_RENDER/
+```
+
+### Captures d’écran (à insérer)
+- Dashboard global montrant API + Frontend (status Up).
+- Détail d’un monitor (graph de réponse + logs).
+- Exemple d’email “Down” et “Up”.
+
+### Critères d’acceptation (UptimeRobot)
+- Compte UptimeRobot créé et email de notification configuré.
+- Monitor HTTP créé pour l’API Django (`/health/`).
+- Monitor HTTP créé pour le frontend React (`/`).
+- Vérification automatique toutes les 5 minutes.
+- Test de downtime simulé et alerte reçue.
+- Dashboard vérifié (statuts + logs) et documenté ici.
