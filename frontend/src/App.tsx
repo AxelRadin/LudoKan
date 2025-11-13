@@ -3,7 +3,6 @@ import './App.css';
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import BackendConnector from './components/BackendConnector';
-import * as Sentry from "@sentry/react";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -30,15 +29,6 @@ function App() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
-      <div style={{ margin: '1rem' }}>
-        <button
-          onClick={() => {
-            throw new Error('Test Sentry Frontend');
-          }}
-        >
-          Test Sentry
-        </button>
-      </div>
       <BackendConnector />
     </>
   );
