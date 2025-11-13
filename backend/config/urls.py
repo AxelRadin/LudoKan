@@ -21,6 +21,8 @@ from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from api.views import ItemViewSet
 from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView)
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.permissions import AllowAny
 
 router = DefaultRouter()
 router.register(r"items", ItemViewSet, basename="item")
@@ -40,6 +42,8 @@ urlpatterns = [
     # path('api/', include('api.urls')),  
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
+    path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
+    path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path('api/auth/', include('dj_rest_auth.urls')),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
    # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

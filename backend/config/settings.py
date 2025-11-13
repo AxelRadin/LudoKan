@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_spectacular',
     'rest_framework.authtoken',
     'dj_rest_auth',
     "dj_rest_auth.registration",
@@ -82,7 +83,6 @@ INSTALLED_APPS = [
     'apps.library',
     'apps.recommendations',
     'api',
-
 ]
 
 MIDDLEWARE = [
@@ -124,6 +124,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 REST_USE_JWT = True
@@ -160,6 +161,12 @@ JWT_AUTH_SAMESITE = "Lax"
 #}
 ROOT_URLCONF = 'config.urls'
 
+SPECTACULAR_SETTINGS = {
+    "TITLE": "LudoKan API",
+    "DESCRIPTION": "API documentation",
+    "VERSION": "1.0.0",
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+}
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
