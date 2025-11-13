@@ -7,13 +7,12 @@ import { Sentry, initSentry } from './monitoring/sentry';
 import ErrorFallback from './components/ErrorFallback';
 import TestSentry from './pages/TestSentry.tsx';
 
-const createBrowserRouterWithSentry = Sentry.withSentryReactRouterV6Routing(createBrowserRouter);
-const router = createBrowserRouterWithSentry([
+const router = createBrowserRouter([
   { path: '/', element: <App /> },
   { path: '/test', element: <TestSentry /> },
 ]);
 
-initSentry(router);
+initSentry();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
