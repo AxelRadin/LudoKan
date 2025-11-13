@@ -6,8 +6,14 @@ export function initSentry() {
   const dsn = import.meta.env.VITE_SENTRY_DSN?.trim();
   if (!dsn) return;
 
+  // Temporary debug logs to verify Sentry initialization in production
+  // Remove once verified on Render
+  // eslint-disable-next-line no-console
+  console.log('SENTRY', import.meta.env.PROD, import.meta.env.VITE_SENTRY_DSN);
+
   Sentry.init({
     dsn,
+    debug: true,
     integrations: [
       Sentry.reactRouterV6BrowserTracingIntegration({
         useEffect,
