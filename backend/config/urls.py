@@ -29,6 +29,12 @@ def health(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 
+def sentry_debug(request):
+    # Erreur volontaire pour tester l'intégration Sentry
+    1 / 0
+
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     # path('api/', include('api.urls')),  
@@ -39,6 +45,7 @@ urlpatterns = [
    # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
    # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
    # path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
+    path("sentry-debug/", sentry_debug, name="sentry-debug"),
 
 
 ]
