@@ -23,6 +23,7 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 
+SITE_ID = 1
 
 REST_AUTH_SERIALIZERS = {
     'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
@@ -103,17 +104,6 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-#REST_FRAMEWORK = {
-  #  "DEFAULT_AUTHENTICATION_CLASSES": [
-        #'rest_framework_simplejwt.authentication.JWTAuthentication',  # simple pour démarrer
-  #      "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
-   # ],
-   # "DEFAULT_PERMISSION_CLASSES": [
-   #     'rest_framework.permissions.IsAuthenticated',  # à durcir ensuite
-   # ],
-   # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-   # "PAGE_SIZE": 10,
-#}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -128,12 +118,12 @@ REST_FRAMEWORK = {
 }
 
 REST_USE_JWT = True
-#TOKEN_MODEL = None
-REST_AUTH = {
-    "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "access_token",
-    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
-}
+
+#REST_AUTH = {
+#    "USE_JWT": True,
+#    "JWT_AUTH_COOKIE": "access_token",
+#    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
+#}
 
 
 SIMPLE_JWT = {
@@ -149,16 +139,14 @@ SIMPLE_JWT = {
 
 JWT_AUTH_COOKIE = "access_token"
 JWT_AUTH_REFRESH_COOKIE = "refresh_token"
-JWT_AUTH_COOKIE_USE_CSRF = True
+#JWT_AUTH_COOKIE_USE_CSRF = True
+#JWT_AUTH_SECURE = True
+#JWT_AUTH_HTTPONLY = True
 JWT_AUTH_SAMESITE = "Lax"
+#JWT_ACCESS_TOKEN_LIFETIME = 900     # 15 min
+#JWT_REFRESH_TOKEN_LIFETIME = 604800 # 7 jours
 
-#SIMPLE_JWT = {
- #   'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-  #  'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-   # 'ROTATE_REFRESH_TOKENS': False,
-    #'BLACKLIST_AFTER_ROTATION': True,
-    #'AUTH_HEADER_TYPES': ('Bearer',),
-#}
+
 ROOT_URLCONF = 'config.urls'
 
 SPECTACULAR_SETTINGS = {
