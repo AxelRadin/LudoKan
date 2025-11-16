@@ -8,17 +8,17 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
 
+
 # ---------------------------------------------------------
 #  Mixin pour gérer les cookies JWT
 # ---------------------------------------------------------
 class CookieMixin:
     def set_jwt_cookies(self, response, access_token, refresh_token):
-
         response.set_cookie(
             key=settings.JWT_AUTH_COOKIE,
             value=str(access_token),
             httponly=True,
-            secure=not settings.DEBUG,     # True en production
+            secure=not settings.DEBUG,
             samesite=settings.JWT_AUTH_SAMESITE,
             max_age=settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds(),
             path="/",
@@ -47,30 +47,43 @@ class CookieMixin:
 # ---------------------------------------------------------
 class RegisterView(CookieMixin, generics.CreateAPIView):
     serializer_class = RegisterSerializer
-    permission_classes = [AllowAny]  # important pour POST sans auth
+    permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
+        # allauth met is_active=False si email verification = mandatory
+        if not user.is_active:
+            return Response(
+                {
+                    "detail": "Please confirm your email before logging in.",
+                    "user": UserSerializer(user).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+
+        # Si jamais tu veux auto-login après inscription (optionnel)
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
-        response = Response(
-            {"user": UserSerializer(user).data},
-            status=status.HTTP_201_CREATED
-        )
+        response = Response({"user": UserSerializer(user).data}, status=201)
         self.set_jwt_cookies(response, access, refresh)
         return response
+
 
 # ---------------------------------------------------------
 #  LOGIN
 # ---------------------------------------------------------
 class LoginView(CookieMixin, APIView):
-    permission_classes = [AllowAny]  # important pour POST sans auth
+    permission_classes = [AllowAny]
 
     def post(self, request):
+        # Ignorer cookies potentiellement corrompus
+        request.COOKIES.pop("refresh_token", None)
+        request.COOKIES.pop("access_token", None)
+
         email = request.data.get("email")
         password = request.data.get("password")
 
@@ -78,21 +91,24 @@ class LoginView(CookieMixin, APIView):
         if not user:
             return Response({"detail": "Invalid credentials"}, status=400)
 
+        if not user.is_active:
+            return Response(
+                {"detail": "Email not verified"}, status=403
+            )
+
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
-        response = Response(
-            {"user": UserSerializer(user).data},
-            status=200
-        )
+        response = Response({"user": UserSerializer(user).data}, status=200)
         self.set_jwt_cookies(response, access, refresh)
         return response
+
 
 # ---------------------------------------------------------
 #  REFRESH
 # ---------------------------------------------------------
 class RefreshView(CookieMixin, APIView):
-    permission_classes = [AllowAny]  # ou custom JWT auth si tu veux
+    permission_classes = [AllowAny]
 
     def post(self, request):
         refresh_token = request.COOKIES.get("refresh_token")
@@ -106,8 +122,17 @@ class RefreshView(CookieMixin, APIView):
             return Response({"detail": "Invalid refresh token"}, status=401)
 
         response = Response({"status": "refreshed"}, status=200)
-        self.set_jwt_cookies(response, access, refresh)
+        response.set_cookie(
+            key=settings.JWT_AUTH_COOKIE,
+            value=str(access),
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite=settings.JWT_AUTH_SAMESITE,
+            max_age=settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds(),
+            path="/",
+        )
         return response
+
 
 # ---------------------------------------------------------
 #  LOGOUT
