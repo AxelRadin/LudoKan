@@ -1,176 +1,174 @@
-## Monitoring Frontend avec Sentry
+## Monitoring & Alertes
 
-### Objectif
-Centraliser et monitorer les erreurs JavaScript et la navigation côté frontend React.
+### 1. Monitoring Frontend — Sentry
 
-### 1) Projet Sentry
-- Créez un projet Sentry nommé `ludotheque-frontend` (type: React).
-- Récupérez le DSN du projet.
+#### Objectif
+Centraliser et surveiller les erreurs JavaScript et la navigation sur le frontend React.
 
-### 2) Installation des dépendances
-Déjà présent dans le projet:
-- **@sentry/react** (SDK Sentry pour React)
+#### 1.1 Création du projet
+- Créer un projet Sentry nommé `ludotheque-frontend` (type : React).
+- Récupérer le DSN du projet.
 
-Ajouté par cette intégration:
-- **react-router-dom** (router v6 pour tracer la navigation)
-
-Installez les dépendances si besoin:
+#### 1.2 Dépendances
+- Déjà présentes:
+  - `@sentry/react` (SDK officiel React)
+- Ajoutées:
+  - `react-router-dom` (v6) pour tracer la navigation
+- Installation (si besoin):
 
 ```bash
 cd frontend
 npm install
 ```
 
-### 3) Configuration Sentry dans React (Vite + TypeScript)
-- Initialisation effectuée dans `frontend/src/main.tsx`.
-- Utilise l’intégration officielle React Router v6.
-- Variables d’environnement Vite (préfixe `VITE_`).
+#### 1.3 Configuration Sentry
+- Configuration effectuée dans `frontend/src/main.tsx`.
+- Initialisation avec intégration React Router v6.
+- Variables d’environnement préfixées `VITE_`.
 
-Extrait clé (déjà en place):
+#### 1.4 Variables d’environnement
+- Fichier `frontend/env.example`:
 
-```12:34:frontend/src/main.tsx
-import * as Sentry from '@sentry/react';
-import { withSentryReactRouterV6Routing, reactRouterV6BrowserTracingIntegration } from '@sentry/react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-
-const createBrowserRouterWithSentry = withSentryReactRouterV6Routing(createBrowserRouter);
-const router = createBrowserRouterWithSentry([{ path: '/', element: <App /> }]);
-
-const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN as string | undefined;
-if (SENTRY_DSN && SENTRY_DSN.trim() !== '') {
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    integrations: [reactRouterV6BrowserTracingIntegration({ router })],
-    tracesSampleRate: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ?? 1.0),
-    environment: (import.meta.env.VITE_SENTRY_ENVIRONMENT as string | undefined) ?? undefined,
-  });
-}
-```
-
-### 4) Variables d’environnement
-Vite nécessite le préfixe `VITE_` pour exposer les variables au client.
-
-- Exemple fourni: `frontend/env.example`
-```
+```env
 VITE_SENTRY_DSN=
 VITE_SENTRY_ENVIRONMENT=development
 VITE_SENTRY_TRACES_SAMPLE_RATE=1.0
 ```
 
-Créez votre fichier `.env` à partir de cet exemple:
+- Création du fichier `.env` à partir de l’exemple:
 
 ```bash
 cd frontend
 cp env.example .env
-# Renseignez VITE_SENTRY_DSN avec le DSN Sentry de ludotheque-frontend
+# Renseigner VITE_SENTRY_DSN avec le DSN du projet Sentry
 ```
 
-### 5) Intégration React Router v6
-- La navigation est tracée via `withSentryReactRouterV6Routing` et `reactRouterV6BrowserTracingIntegration`.
+#### 1.5 Test d’erreur
+- Exemple de bouton de test:
 
-### 6) Test d’erreur
-Un bouton de test a été ajouté dans `frontend/src/App.tsx`:
-
-```21:31:frontend/src/App.tsx
-<button
-  onClick={() => {
-    throw new Error('Test Sentry Frontend');
-  }}
->
+```tsx
+<button onClick={() => { throw new Error('Test Sentry Frontend'); }}>
   Test Sentry
 </button>
 ```
 
-Ouvrez l’app, cliquez sur “Test Sentry” puis vérifiez que l’événement apparaît dans le projet Sentry `ludotheque-frontend`.
+- Ou utiliser la page dédiée `frontend/src/pages/TestSentry.tsx` (route `/test`).
+- Cliquer sur “Test Sentry” et vérifier l’événement dans le projet `ludotheque-frontend`.
 
-### 7) Bonnes pratiques
-- Ne logguez jamais d’informations sensibles (PII) côté frontend.
-- Réduisez `VITE_SENTRY_TRACES_SAMPLE_RATE` en production (ex: `0.1`).
-- Utilisez `VITE_SENTRY_ENVIRONMENT` (`development`, `staging`, `production`) pour filtrer les événements.
+#### 1.6 Bonnes pratiques
+- Ne jamais logguer de données sensibles (PII).
+- Réduire `VITE_SENTRY_TRACES_SAMPLE_RATE` en production (ex. `0.1`).
+- Utiliser `VITE_SENTRY_ENVIRONMENT` (`development`, `staging`, `production`) pour filtrer les événements.
 
-### 8) Critères d’acceptation
-- Projet `ludotheque-frontend` créé sur Sentry.
-- `@sentry/react` installé (déjà présent).
-- Configuration ajoutée et opérationnelle dans l’app (main.tsx).
-- Variable `VITE_SENTRY_DSN` définie et utilisée.
-- Erreur de test visible sur le dashboard Sentry.
-- Intégration React Router v6 fonctionnelle.
+#### Critères de validation
+- Projet `ludotheque-frontend` créé.
+- Sentry initialisé et opérationnel.
+- Erreur de test visible dans Sentry.
+- Variables d’environnement configurées.
+- Tracing de navigation via React Router fonctionnel.
 
+---
 
-## Monitoring de disponibilité avec UptimeRobot
+### 2. Alertes & Notifications — Discord
 
-### Objectif
-Surveiller la disponibilité (Up/Down) de l’API Django et du frontend React déployés sur Render, avec vérification automatique toutes les 5 minutes et alertes par email en cas d’incident.
+#### Objectif
+Centraliser toutes les alertes de production dans un canal Discord `#alert-prod`:
+- Erreurs critiques Sentry (backend & frontend)
+- Downtime / rétablissement UptimeRobot
+- Builds & déploiements Render
+- Alertes e-mail diverses (via Gmail + Zapier)
 
-### Prérequis
-- Compte gratuit UptimeRobot.
-- Adresse email de notification (équipe/ops).
+Cette approche remplace la liste de diffusion e-mail initialement prévue.
 
-### Services à monitorer
-- API Django → endpoint santé: `https://VOTRE_API_RENDER/health/`
-  - L’endpoint `/health/` est exposé par l’API (GET 200 JSON `{"status": "ok"}`).
-- Frontend React → page d’accueil: `https://VOTRE_FRONTEND_RENDER/`
+#### 2.1 Architecture
+- Sentry → Discord (intégration ou webhook)
+- UptimeRobot → Discord (alert contact)
+- Render (emails) → Gmail → Zapier → Discord
+- Autres alertes → Gmail → Zapier → Discord
 
-Remplacez les URLs par vos URLs Render réelles (ex: `https://ludotheque-api.onrender.com/health/` et `https://ludotheque-frontend.onrender.com/` si c’est votre naming).
+#### 2.2 Prérequis
+- Canal Discord `#alert-prod` créé.
+- Webhook Discord configuré: Server Settings → Integrations → Webhooks → New Webhook → Channel: `#alert-prod`.
+- Accès aux comptes:
+  - Sentry (`ludotheque-backend`, `ludotheque-frontend`)
+  - UptimeRobot (moniteurs API / frontend)
+  - Gmail (adresse projet) + Zapier (workspace)
 
-### Procédure d’installation
-1) Création du compte
-- Créez un compte gratuit sur UptimeRobot et vérifiez l’adresse email.
-- Dans Settings > Alert Contacts, ajoutez l’email de notification de l’équipe.
+#### 2.3 Sentry → Discord
+1) Sentry → Settings → Integrations → Discord → autoriser le serveur.
+2) Project → Alerts → Create Alert → Issue Alert.
+3) Conditions:
+   - If: level = Error ou Fatal
+   - And: > 5 occurrences en 10 minutes
+   - Filter: environment = production
+4) Action:
+   - Envoyer une notification vers Discord `#alert-prod`
+   - Fréquence: au plus une fois toutes les 5 minutes
 
-2) Ajout des monitors HTTP(s)
-- Cliquez sur “Add New Monitor”.
-- Monitor Type: HTTP(s).
-- Friendly Name: `API Django (production)`.
-- URL: `https://VOTRE_API_RENDER/health/`.
-- Monitoring Interval: 5 minutes (minimum du plan gratuit).
-- Alert Contacts: sélectionnez votre email d’équipe.
-- Enregistrez.
-- Répétez pour `Frontend React (production)` avec l’URL `https://VOTRE_FRONTEND_RENDER/`.
+Tests:
+- Frontend: utiliser le bouton de test ou la page `/test`.
+- Backend (Django shell):
 
-3) Configuration des intervalles et localisations
-- Intervalle: 5 minutes (gratuit).
-- Localisations multiples: activez si disponible sur votre plan (optionnelle mais recommandée).
-
-### Test de downtime simulé
-1) Sur Render, stoppez temporairement un service (par ex. l’API Django).
-2) Attendez la détection (peut prendre jusqu’à 5–10 minutes selon l’intervalle et la latence du provider).
-3) Vérifiez que vous recevez une alerte email “Down”.
-4) Relancez le service sur Render.
-5) Vérifiez la notification “Up” de retour à la normale.
-
-### Vérification du dashboard UptimeRobot
-- Accédez au dashboard: les deux monitors doivent apparaître avec leur statut (Up/Down) et leur temps de réponse.
-- Ouvrez les logs d’historique: vous devez voir les checks réussis et l’incident simulé (Down → Up).
-
-### Procédure pour ajouter un nouveau monitor
-1) Identifiez une URL “health” ou une page publique fiable pour le service.
-2) Ajoutez un monitor HTTP(s) avec:
-   - Friendly Name clair (service + environnement).
-   - URL complète.
-   - Intervalle 5 minutes.
-   - Contacts d’alerte.
-3) Simulez un downtime contrôlé si possible pour valider l’alerte.
-4) Documentez le nouveau monitor dans cette section (service, URL, responsable).
-
-### Exemples de vérification manuelle
 ```bash
-# API
-curl -sS https://VOTRE_API_RENDER/health/ | jq .
-
-# Frontend
-curl -I https://VOTRE_FRONTEND_RENDER/
+cd backend
+python manage.py shell
 ```
 
-### Captures d’écran (à insérer)
-- Dashboard global montrant API + Frontend (status Up).
-- Détail d’un monitor (graph de réponse + logs).
-- Exemple d’email “Down” et “Up”.
+```python
+import sentry_sdk
+sentry_sdk.capture_exception(Exception("Test Sentry Backend"))
+```
 
-### Critères d’acceptation (UptimeRobot)
-- Compte UptimeRobot créé et email de notification configuré.
-- Monitor HTTP créé pour l’API Django (`/health/`).
-- Monitor HTTP créé pour le frontend React (`/`).
-- Vérification automatique toutes les 5 minutes.
-- Test de downtime simulé et alerte reçue.
-- Dashboard vérifié (statuts + logs) et documenté ici.
+#### 2.4 UptimeRobot → Discord
+1) My Settings → Alert Contacts → Add New → Type: Discord
+2) Coller le Webhook Discord et nommer (ex. `Discord alert-prod`).
+3) Dans Monitors → Edit:
+   - Attacher `Discord alert-prod`
+   - Notifier sur Down et Up
+   - Seuil: downtime ≥ 1 minute (ou selon la fréquence de check)
+4) Tester via “Send test notification” et/ou provoquer un court downtime (> 1 min).
+
+Bonnes pratiques:
+- 1 moniteur par composant critique (API, frontend, health endpoint).
+
+#### 2.5 Render → Gmail → Zapier → Discord
+- Render: activer les notifications e-mail vers l’adresse Gmail du projet.
+- Gmail: créer un filtre (ex.: `from:notify@render.com OR from:noreply@render.com subject:(build OR deploy OR failed)`) et appliquer le label `render-notif`.
+- (Optionnel) Rediriger les alertes reçues sur l’adresse perso vers la boîte projet.
+- Zapier:
+  - Zap 1 — Render:
+    - Trigger: Gmail — New Email Matching Search (ex. `label:render-notif newer_than:1d`)
+    - Action: Discord — Send Channel Message (ou Webhook POST)
+    - Message: inclure `From`, `Subject`, snippet/lien
+  - Zap 2 — Alertes génériques (optionnel):
+    - Trigger: Gmail — `label:alerts`
+    - Action: Discord — Send Channel Message
+
+Tests:
+- Envoyer un e-mail test ou déclencher un déploiement Render.
+- Vérifier la notification dans Discord.
+
+#### 2.6 Seuils recommandés
+
+| Service     | Type           | Seuil                          |
+|-------------|----------------|--------------------------------|
+| Sentry      | Fatal/Critical | 1 événement → alerte immédiate |
+| Sentry      | Error          | > 5 événements / 10 min        |
+| UptimeRobot | Downtime       | ≥ 1 minute                     |
+| UptimeRobot | Intervalle     | 1–5 min selon criticité        |
+
+#### 2.7 Maintenance
+- Accès: gérer les membres via les permissions du canal Discord.
+- Rotation de secrets: régénérer les webhooks si fuite/rotation, mettre à jour dans Sentry / UptimeRobot / Zapier.
+- Nouveaux services: privilégier une intégration Webhook directe ; sinon passer par Gmail → Zapier → Discord.
+
+#### Validation
+- Alertes Sentry: test d’erreur → message reçu.
+- Alertes UptimeRobot: test de downtime → “Down/Up” reçus.
+- Alertes Render: notification build/déploiement → message reçu.
+
+#### Critères d’acceptation
+- Intégrations Sentry, UptimeRobot et Render vers Discord opérationnelles.
+- Seuils d’alerte configurés.
+- Tests effectués et validés (réception sur `#alert-prod`).
+- Redirection e-mail fonctionnelle si utilisée.
