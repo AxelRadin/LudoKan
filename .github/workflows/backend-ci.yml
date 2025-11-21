@@ -14,7 +14,8 @@ on:
 
 jobs:
   backend-tests:
-    runs-on: ubuntu-latest 🐧
+    name: Backend tests and linting 🐧
+    runs-on: ubuntu-latest
 
     services:
       postgres:
