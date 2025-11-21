@@ -23,6 +23,7 @@ from api.views import ItemViewSet
 from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView)
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
+from apps.users.views import RegisterView, LoginView, LogoutView
 
 router = DefaultRouter()
 router.register(r"items", ItemViewSet, basename="item")
@@ -44,11 +45,12 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    #path("api/auth/", include("apps.users.urls")),
     path('api/auth/', include('dj_rest_auth.urls')),
+    path('api/auth/register/', RegisterView.as_view(), name='custom_register'),
+    path('api/auth/login/', LoginView.as_view(), name='custom_login'),
+    path('api/auth/logout/', LogoutView.as_view(), name='custom_logout'),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
-   # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-   # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
-   # path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
 
 
