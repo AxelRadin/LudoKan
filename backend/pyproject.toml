@@ -1,0 +1,21 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+exclude = ["migrations", ".venv"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+skip = ["migrations", ".venv"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = [
+    "E203",  # compat avec black
+    "W503",
+]
+exclude = [
+    ".venv",
+    "migrations",
+]
