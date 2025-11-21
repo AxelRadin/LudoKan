@@ -41,18 +41,27 @@ def run_command(command, description):
     """Exécute une commande et affiche le résultat"""
     print(f"\n{'='*60}")
     print(f"🧪 {description}")
-    print(f"{'='*60}")
+    print(f"{'='*60}\n")
     
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    # Exécute la commande en capturant la sortie tout en l'affichant
+    process = subprocess.Popen(
+        command, 
+        shell=True, 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1
+    )
     
-    output = result.stdout + result.stderr
+    output_lines = []
+    for line in process.stdout:
+        print(line, end='')
+        output_lines.append(line)
     
-    if result.stdout:
-        print(result.stdout)
-    if result.stderr:
-        print(result.stderr)
+    process.wait()
+    output = ''.join(output_lines)
     
-    return result.returncode == 0, output
+    return process.returncode == 0, output
 
 
 def main():
@@ -112,25 +121,36 @@ def main():
     print("\n" + "="*60)
     print("📊 RÉSUMÉ DES TESTS")
     print("="*60)
-    print(f"✅ Tests réussis : {stats['passed']}")
-    print(f"❌ Tests échoués : {stats['failed']}")
-    print(f"⚠️  Tests skipped : {stats['skipped']}")
+    print(f"✅ Tests réussis (PASSED) : {stats['passed']}")
+    if stats['failed'] > 0:
+        print(f"❌ Tests échoués (FAILED) : {stats['failed']} - Assertions non satisfaites")
+    else:
+        print(f"❌ Tests échoués (FAILED) : {stats['failed']}")
+    
     if stats['errors'] > 0:
-        print(f"💥 Erreurs : {stats['errors']}")
+        print(f"💥 Erreurs (ERROR)        : {stats['errors']} - Erreurs d'exécution/setup")
+    
+    print(f"⚠️  Tests skippés (SKIPPED) : {stats['skipped']}")
     print(f"📈 Total : {stats['total']} tests")
     print("="*60)
     
     if stats['skipped'] > 0:
-        print(f"\n💡 {stats['skipped']} test(s) ont été skip (modèles non encore implémentés)")
-        print("   Consultez TESTS_STATUS.md pour plus de détails")
+        print(f"\n💡 {stats['skipped']} test(s) ont été skippés")
+        print("   (Fonctionnalités non encore implémentées ou tests Celery désactivés)")
     
-    if success and stats['failed'] == 0:
+    if success and stats['failed'] == 0 and stats['errors'] == 0:
         print(f"\n✅ Tous les tests actifs passent!")
         if args.coverage:
             print("📊 Rapport de couverture généré dans htmlcov/index.html")
         sys.exit(0)
     else:
-        print(f"\n❌ {stats['failed']} test(s) ont échoué!")
+        total_issues = stats['failed'] + stats['errors']
+        print(f"\n❌ {total_issues} problème(s) détecté(s):")
+        if stats['failed'] > 0:
+            print(f"   • {stats['failed']} test(s) FAILED (assertions échouées)")
+        if stats['errors'] > 0:
+            print(f"   • {stats['errors']} ERROR(s) (problèmes d'exécution/setup)")
+        print("\n   📋 Consultez la sortie ci-dessus pour plus de détails")
         sys.exit(1)
 
 
