@@ -45,12 +45,12 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("api/auth/", include("apps.users.urls")),
-    #path('api/auth/', include('dj_rest_auth.urls')),
+    #path("api/auth/", include("apps.users.urls")),
+    path('api/auth/', include('dj_rest_auth.urls')),
     path('api/auth/register/', RegisterView.as_view(), name='custom_register'),
     path('api/auth/login/', LoginView.as_view(), name='custom_login'),
     path('api/auth/logout/', LogoutView.as_view(), name='custom_logout'),
-    #path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
+    path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
 
 

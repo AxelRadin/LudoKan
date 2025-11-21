@@ -23,6 +23,10 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 
+ACCOUNT_EMAIL_VERIFICATION = config('ACCOUNT_EMAIL_VERIFICATION', default='mandatory')
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+
 SITE_ID = 1
 
 REST_AUTH_SERIALIZERS = {
@@ -30,8 +34,8 @@ REST_AUTH_SERIALIZERS = {
 }
 
 # Sécurité des cookies
-SESSION_COOKIE_SECURE = True   #  HTTPS
-CSRF_COOKIE_SECURE = True
+#SESSION_COOKIE_SECURE = True   #  HTTPS
+#CSRF_COOKIE_SECURE = True
 CSRF_COOKIE_HTTPONLY = True
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:3000',
@@ -67,13 +71,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
     'drf_spectacular',
     'rest_framework.authtoken',
-    'dj_rest_auth',
-    "dj_rest_auth.registration",
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'dj_rest_auth',
+    "dj_rest_auth.registration",
     "allauth",
     "allauth.account",
     'corsheaders',
@@ -103,8 +108,11 @@ MIDDLEWARE = [
 
 
 
-CORS_ALLOW_ALL_ORIGINS = True
-
+#CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='...').split(',')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -119,18 +127,27 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
-REST_USE_JWT = False
+REST_USE_JWT = True
 
-#REST_AUTH = {
-#    "USE_JWT": True,
-#    "JWT_AUTH_COOKIE": "access_token",
-#    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
-#}
+REST_AUTH = {
+    "USE_JWT": True,
+    "JWT_AUTH_COOKIE": "access_token",
+    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
+    'JWT_AUTH_HTTPONLY': True,
+    'JWT_AUTH_SECURE': not DEBUG,
+    'JWT_AUTH_SAMESITE': 'Lax',
+}
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    #"ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    #"REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=15, cast=int)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        minutes=config('JWT_REFRESH_TOKEN_LIFETIME', default=10080, cast=int)
+    ),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
