@@ -51,26 +51,37 @@ class RegisterView(CookieMixin, generics.CreateAPIView):
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+
+        if not serializer.is_valid():
+            return Response(
+                {"success": False, "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         user = serializer.save()
 
-        # allauth met is_active=False si email verification = mandatory
+        # Cas : email non encore vérifié (allauth)
         if not user.is_active:
             return Response(
                 {
-                    "detail": "Please confirm your email before logging in.",
+                    "success": True,
+                    "pending_verification": True,
                     "user": UserSerializer(user).data,
                 },
                 status=status.HTTP_201_CREATED,
             )
 
-        # Si jamais tu veux auto-login après inscription (optionnel)
+        # Auto-login après inscription
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
-        response = Response({"user": UserSerializer(user).data}, status=201)
+        response = Response(
+            {"success": True, "user": UserSerializer(user).data},
+            status=status.HTTP_201_CREATED,
+        )
         self.set_jwt_cookies(response, access, refresh)
         return response
+
 
 
 # ---------------------------------------------------------
