@@ -1,0 +1,6 @@
+[flake8]
+extend-ignore = E203,W503,I202
+exclude = .venv,migrations
+max-line-length = 150
+import-order-style = pep8
+# application-import-names = api,apps,config

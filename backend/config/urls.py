@@ -15,17 +15,17 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from django.contrib import admin
-from django.urls import path, include
-from django.http import JsonResponse
-from rest_framework.routers import DefaultRouter
 from api.views import ItemViewSet
-from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView)
+from django.contrib import admin
+from django.http import JsonResponse
+from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
+from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r"items", ItemViewSet, basename="item")
+
 
 def health(request):
     return JsonResponse({"status": "ok"}, status=200)
@@ -36,20 +36,21 @@ def sentry_debug(request):
     1 / 0
 
 
-
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    # path('api/', include('api.urls')),  
+    path("admin/", admin.site.urls),
+    # path('api/', include('api.urls')),
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
-    path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
+    path(
+        "api/schema/",
+        SpectacularAPIView.as_view(permission_classes=[AllowAny]),
+        name="schema",
+    ),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path('api/auth/', include('dj_rest_auth.urls')),
+    path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
-   # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-   # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
-   # path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
+    # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
+    # path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
-
-
 ]
