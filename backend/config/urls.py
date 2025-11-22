@@ -15,13 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-from api.views import ItemViewSet
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
+
+from api.views import ItemViewSet
 
 router = DefaultRouter()
 router.register(r"items", ItemViewSet, basename="item")
