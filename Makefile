@@ -1,100 +1,139 @@
-.PHONY: help setup-precommit precommit precommit-all format lint test clean
+.PHONY: help \
+	backend-format backend-lint \
+	frontend-format frontend-lint \
+	format lint format-all lint-all \
+	test test-coverage \
+	backend-install backend-migrate backend-makemigrations backend-run \
+	frontend-install frontend-run \
+	clean \
+	docker-build docker-up docker-down docker-logs \
+	install migrate migrations
 
 # Couleurs pour l'affichage
 BLUE := \033[0;34m
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
+PURPLE := \033[0;35m
 NC := \033[0m # No Color
 
 # Détection de docker compose / docker-compose
 DC := $(shell if docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v docker-compose >/dev/null 2>&1; then echo "docker-compose"; else echo "docker-compose"; fi)
 
 help: ## Affiche cette aide
-	@echo "$(BLUE)LudoKan - Commandes disponibles:$(NC)"
 	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-20s$(NC) %s\n", $$1, $$2}'
+	@echo "$(PURPLE)╔════════════════════════════════════════════╗$(NC)"
+	@echo "$(PURPLE)║      LudoKan - Commandes Makefile         ║$(NC)"
+	@echo "$(PURPLE)╚════════════════════════════════════════════╝$(NC)"
 	@echo ""
 
-# ============================================
-# Pre-commit hooks
-# ============================================
+	@echo "$(YELLOW)📦 Backend (Python)$(NC)"
+	@grep -E '^backend-[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(NC) %s\n", $$1, $$2}'
+	@echo ""
 
-setup-precommit: ## Installe les pre-commit hooks (Docker)
-	@echo "$(BLUE)📦 Installation de pre-commit...$(NC)"
-	@pip install pre-commit==3.5.0
-	@echo "$(BLUE)🪝 Installation des hooks Git...$(NC)"
-	@pre-commit install
-	@echo "$(GREEN)✅ Pre-commit installé avec succès!$(NC)"
-	@echo "$(YELLOW)⚠️  N'oubliez pas de démarrer Docker: make docker-up$(NC)"
+	@echo "$(YELLOW)🖥️  Frontend (React)$(NC)"
+	@grep -E '^frontend-[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(NC) %s\n", $$1, $$2}'
+	@echo ""
 
-precommit: ## Exécute pre-commit sur les fichiers staged (nécessite Docker)
-	@echo "$(BLUE)🔍 Exécution de pre-commit...$(NC)"
-	@if ! $(DC) ps | grep -q "web.*Up"; then \
-		echo "$(YELLOW)⚠️  Le conteneur 'web' n'est pas démarré. Lancement...$(NC)"; \
-		$(DC) up -d; \
-		sleep 5; \
-	fi
-	@pre-commit run
+	@echo "$(YELLOW)🧪 Tests$(NC)"
+	@grep -E '^test(-[a-zA-Z_-]+)?:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(NC) %s\n", $$1, $$2}'
+	@echo ""
 
-precommit-all: ## Exécute pre-commit sur tous les fichiers (nécessite Docker)
-	@echo "$(BLUE)🔍 Exécution de pre-commit sur tous les fichiers...$(NC)"
-	@if ! $(DC) ps | grep -q "web.*Up"; then \
-		echo "$(YELLOW)⚠️  Le conteneur 'web' n'est pas démarré. Lancement...$(NC)"; \
-		$(DC) up -d; \
-		sleep 5; \
-	fi
-	@pre-commit run --all-files
+	@echo "$(YELLOW)✨ Format & Lint (global)$(NC)"
+	@grep -E '^(format|lint)[a-zA-Z_-]*:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(NC) %s\n", $$1, $$2}'
+	@echo ""
 
-precommit-update: ## Met à jour les hooks pre-commit
-	@echo "$(BLUE)🔄 Mise à jour de pre-commit...$(NC)"
-	@pre-commit autoupdate
+	@echo "$(YELLOW)🐳 Docker$(NC)"
+	@grep -E '^docker-[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+
+	@echo "$(YELLOW)🧹 Divers / Utilitaires$(NC)"
+	@grep -E '^(clean|install|migrate|migrations):.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)%-24s$(NC) %s\n", $$1, $$2}'
+	@echo ""
+
 
 # ============================================
-# Formatage et linting
+# Backend - formatage & lint (Python)
 # ============================================
 
-format: ## Formate le code Python (Black + isort) dans Docker
-	@echo "$(BLUE)🎨 Formatage du code dans Docker...$(NC)"
+backend-format: ## Formate le backend (Black + isort + Ruff --fix) dans Docker
+	@echo "$(BLUE)🎨 Formatage du backend (black + isort + ruff)...$(NC)"
 	@$(DC) exec -T web black /app
 	@$(DC) exec -T web isort /app
-	@echo "$(GREEN)✅ Code formaté!$(NC)"
+	@$(DC) exec -T web ruff check /app --fix
+	@echo "$(GREEN)✅ Backend formaté!$(NC)"
 
-lint: ## Vérifie le code (Black, isort, Flake8) dans Docker
-	@echo "$(BLUE)🔍 Vérification du code dans Docker...$(NC)"
+backend-lint: ## Vérifie le backend (Black, isort, Ruff, Flake8) dans Docker
+	@echo "$(BLUE)🔍 Lint backend (black --check, isort --check, ruff, flake8)...$(NC)"
 	@$(DC) exec -T web black /app --check --diff
 	@$(DC) exec -T web isort /app --check-only --diff
+	@$(DC) exec -T web ruff check /app
 	@$(DC) exec -T web flake8 /app
-	@echo "$(GREEN)✅ Code vérifié!$(NC)"
+	@echo "$(GREEN)✅ Backend conforme (lint OK)!$(NC)"
+
+# Alias historiques
+format: backend-format ## Alias: formate le backend Python
+lint: backend-lint ## Alias: lint du backend Python
 
 # ============================================
-# Tests
+# Frontend - formatage & lint (JS/TS)
 # ============================================
 
-test: ## Exécute les tests backend
-	@echo "$(BLUE)🧪 Exécution des tests...$(NC)"
-	@cd backend && python run_tests.py
+frontend-format: ## Formate le frontend (ESLint/Prettier via npm)
+	@echo "$(BLUE)🎨 Formatage du frontend...$(NC)"
+	@cd frontend && npm run lint -- --fix
+	@echo "$(GREEN)✅ Frontend formaté!$(NC)"
 
-test-coverage: ## Exécute les tests avec couverture
-	@echo "$(BLUE)🧪 Exécution des tests avec couverture...$(NC)"
-	@cd backend && python run_tests.py --coverage
+frontend-lint: ## Vérifie le frontend (ESLint)
+	@echo "$(BLUE)🔍 Lint du frontend...$(NC)"
+	@cd frontend && npm run lint
+	@echo "$(GREEN)✅ Frontend conforme (lint OK)!$(NC)"
 
 # ============================================
-# Backend
+# Global - format & lint
 # ============================================
 
-backend-install: ## Installe les dépendances backend
-	@echo "$(BLUE)📦 Installation des dépendances backend...$(NC)"
-	@cd backend && pip install -r requirements.txt
-	@cd backend && pip install -r requirements-dev.txt
-	@echo "$(GREEN)✅ Dépendances installées!$(NC)"
+format-all: backend-format frontend-format ## Formate backend + frontend
+	@echo "$(GREEN)🎉 Formatage global terminé!$(NC)"
 
-backend-migrate: ## Exécute les migrations Django
-	@echo "$(BLUE)🗄️ Exécution des migrations...$(NC)"
-	@cd backend && python manage.py migrate
+lint-all: backend-lint frontend-lint ## Lint backend + frontend
+	@echo "$(GREEN)🎉 Lint global terminé!$(NC)"
 
-backend-run: ## Lance le serveur Django
-	@echo "$(BLUE)🚀 Démarrage du serveur Django...$(NC)"
-	@cd backend && python manage.py runserver
+# ============================================
+# Tests (dans Docker)
+# ============================================
+
+test: ## Exécute les tests backend dans Docker
+	@echo "$(BLUE)🧪 Exécution des tests backend (docker)...$(NC)"
+	@$(DC) exec -T web python run_tests.py
+
+test-coverage: ## Exécute les tests backend avec couverture dans Docker
+	@echo "$(BLUE)🧪 Exécution des tests backend avec couverture (docker)...$(NC)"
+	@$(DC) exec -T web python run_tests.py --coverage
+
+# ============================================
+# Backend (via Docker)
+# ============================================
+
+backend-install: ## Construit l'image backend (install deps via Dockerfile)
+	@echo "$(BLUE)📦 Build de l'image backend (web)...$(NC)"
+	@$(DC) build web
+	@echo "$(GREEN)✅ Image backend (web) à jour!$(NC)"
+
+backend-migrate: ## Exécute les migrations Django dans Docker
+	@echo "$(BLUE)🗄️ Exécution des migrations (docker)...$(NC)"
+	@$(DC) exec -T web python manage.py migrate
+
+backend-makemigrations: ## Crée les migrations Django dans Docker
+	@echo "$(BLUE)🗄️ Création des migrations (docker)...$(NC)"
+	@$(DC) exec -T web python manage.py makemigrations
+
+migrate: backend-migrate ## Alias: make migrate
+migrations: backend-makemigrations ## Alias: make migrations
+
+backend-run: ## Lance les services backend (web + db + redis) via Docker
+	@echo "$(BLUE)🚀 Démarrage des services backend (docker compose up)...$(NC)"
+	@$(DC) up -d
+	@echo "$(GREEN)✅ Services backend démarrés!$(NC)"
 
 # ============================================
 # Frontend
@@ -103,7 +142,7 @@ backend-run: ## Lance le serveur Django
 frontend-install: ## Installe les dépendances frontend
 	@echo "$(BLUE)📦 Installation des dépendances frontend...$(NC)"
 	@cd frontend && npm install
-	@echo "$(GREEN)✅ Dépendances installées!$(NC)"
+	@echo "$(GREEN)✅ Dépendances frontend installées!$(NC)"
 
 frontend-run: ## Lance le serveur de développement frontend
 	@echo "$(BLUE)🚀 Démarrage du serveur frontend...$(NC)"
@@ -126,15 +165,15 @@ clean: ## Nettoie les fichiers temporaires
 # Docker
 # ============================================
 
-docker-build: ## Construit les images Docker
+docker-build: ## Construit toutes les images Docker
 	@echo "$(BLUE)🐳 Construction des images Docker...$(NC)"
 	@$(DC) build
 
-docker-up: ## Lance les services Docker
+docker-up: ## Lance tous les services Docker
 	@echo "$(BLUE)🐳 Démarrage des services Docker...$(NC)"
 	@$(DC) up -d
 
-docker-down: ## Arrête les services Docker
+docker-down: ## Arrête tous les services Docker
 	@echo "$(BLUE)🐳 Arrêt des services Docker...$(NC)"
 	@$(DC) down
 
@@ -145,5 +184,5 @@ docker-logs: ## Affiche les logs Docker
 # Installation complète
 # ============================================
 
-install: backend-install frontend-install setup-precommit ## Installation complète du projet
+install: backend-install frontend-install ## Installation complète du projet
 	@echo "$(GREEN)🎉 Installation complète terminée!$(NC)"
