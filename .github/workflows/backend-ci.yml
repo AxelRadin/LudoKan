@@ -80,6 +80,11 @@ jobs:
         run: |
           isort . --check-only --diff
 
+      - name: Run Ruff (lint) 🐕
+        working-directory: ./backend
+        run: |
+          ruff check .
+
       - name: Run flake8 (lint) 🔍
         working-directory: ./backend
         run: |

@@ -1,4 +1,24 @@
 {
+  "name": "ludokan-root",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "make lint",
+    "format:backend": "make format"
+  },
+  "devDependencies": {
+    "husky": "^9.1.4",
+    "lint-staged": "^15.2.10"
+  },
+  "lint-staged": {
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+      "scripts/husky/frontend-precommit.sh"
+    ],
+    "backend/**/*.py": [
+      "scripts/husky/backend-precommit.sh"
+    ]
+  },
   "dependencies": {
     "@sentry/react": "^10.25.0"
   }

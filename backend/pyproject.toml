@@ -26,7 +26,7 @@ target-version = "py311"
 src = ["api", "apps", "config", "tests"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F"]  # "I" retiré car isort gère déjà le tri des imports
 ignore = ["E203"]   
 fixable = ["ALL"]
 unfixable = []
