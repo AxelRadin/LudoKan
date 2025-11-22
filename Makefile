@@ -78,13 +78,15 @@ lint: backend-lint ## Alias: lint du backend Python
 # Frontend - formatage & lint (JS/TS)
 # ============================================
 
-frontend-format: ## Formate le frontend (ESLint/Prettier via npm)
+frontend-format: ## Formate le frontend (Prettier + ESLint fix)
 	@echo "$(BLUE)🎨 Formatage du frontend...$(NC)"
-	@cd frontend && npm run lint -- --fix
+	@cd frontend && npm run format
+	@cd frontend && npm run lint:fix
 	@echo "$(GREEN)✅ Frontend formaté!$(NC)"
 
-frontend-lint: ## Vérifie le frontend (ESLint)
+frontend-lint: ## Vérifie le frontend (ESLint + format check)
 	@echo "$(BLUE)🔍 Lint du frontend...$(NC)"
+	@cd frontend && npm run format:check
 	@cd frontend && npm run lint
 	@echo "$(GREEN)✅ Frontend conforme (lint OK)!$(NC)"
 
