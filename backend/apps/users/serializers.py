@@ -1,60 +1,47 @@
+from dj_rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from django.core.validators import validate_email
-from django.contrib.auth.password_validation import validate_password
+from .models import CustomUser as User
 
-User = get_user_model()
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-    first_name = serializers.CharField(required=True)
-    last_name = serializers.CharField(required=True)
-    pseudo = serializers.CharField(required=True)
+class CustomRegisterSerializer(RegisterSerializer):
+    pseudo = serializers.CharField(required=False, max_length=150)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
     description_courte = serializers.CharField(required=False, allow_blank=True)
 
-    class Meta:
-        model = User
-        fields = [
-            "first_name",
-            "last_name",
-            "pseudo",
-            "email",
-            "password",
-            "description_courte",
-        ]
-
-    # ---------- VALIDATIONS ----------
-    def validate_email(self, value):
-        validate_email(value)
-
-        if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Cet email est déjà utilisé.")
-
-        return value
-
     def validate_pseudo(self, value):
-        if User.objects.filter(pseudo=value).exists():
+        if value and User.objects.filter(pseudo=value).exists():
             raise serializers.ValidationError("Ce pseudo est déjà utilisé.")
         return value
 
-    def validate_password(self, value):
-        # Utilise la validation Django (taille, chiffres, etc.)
-        validate_password(value)
-        return value
+    def get_cleaned_data(self):
+        data = super().get_cleaned_data()
+        data['pseudo'] = self.validated_data.get('pseudo', '')
+        data['first_name'] = self.validated_data.get('first_name', '')
+        data['last_name'] = self.validated_data.get('last_name', '')
+        data['description_courte'] = self.validated_data.get('description_courte', '')
+        return data
 
-    # ---------- CREATION UTILISATEUR ----------
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-
-        user = User(
-            **validated_data
-        )
-        user.set_password(password)
+    def custom_signup(self, request, user):
+        user.pseudo = self.validated_data.get('pseudo', user.pseudo)
+        user.first_name = self.validated_data.get('first_name', '')
+        user.last_name = self.validated_data.get('last_name', '')
+        user.description_courte = self.validated_data.get('description_courte', '')
         user.save()
 
-        return user
 
 class UserSerializer(serializers.ModelSerializer):
+    print("WE are in the Serializer of UserSerializer")
     class Meta:
         model = User
-        fields = ["id", "email", "pseudo"]
+        fields = [
+            "id", "email", "pseudo", "first_name", "last_name",
+            "avatar_url", "description_courte", "created_at"
+        ]
+        read_only_fields = ["id", "created_at", "email"]
+
+    def validate_pseudo(self, value):
+        print("WE are in the validate_pseudo of the serializer UserSerializer")
+        user = self.context.get('request').user
+        if User.objects.exclude(pk=user.pk).filter(pseudo=value).exists():
+            raise serializers.ValidationError("Ce pseudo est déjà utilisé.")
+        return value
