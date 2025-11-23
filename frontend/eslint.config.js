@@ -1,43 +1,48 @@
-import css from '@eslint/css';
 import js from '@eslint/js';
-import json from '@eslint/json';
-import markdown from '@eslint/markdown';
 import pluginReact from 'eslint-plugin-react';
-import { defineConfig } from 'eslint/config';
+import pluginReactHooks from 'eslint-plugin-react-hooks';
+import pluginReactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-export default defineConfig([
+export default [
+  // Ignore build and dependency directories
+  {
+    ignores: ['dist/**', 'node_modules/**', 'build/**'],
+  },
+
+  // JavaScript/TypeScript/React files
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     files: ['**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    plugins: { js, react: pluginReact },
-    extends: [
-      'js/recommended',
-      ...tseslint.configs.recommended,
-      ...pluginReact.configs.flat.recommended,
-    ],
-    languageOptions: { globals: globals.browser },
+    plugins: {
+      react: pluginReact,
+      'react-hooks': pluginReactHooks,
+      'react-refresh': pluginReactRefresh,
+    },
+    languageOptions: {
+      globals: globals.browser,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
     rules: {
+      ...pluginReact.configs.recommended.rules,
+      ...pluginReactHooks.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
       'react/jsx-no-target-blank': ['error', { enforceDynamicLinks: 'always' }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
     },
   },
-  {
-    files: ['**/*.json'],
-    plugins: { json },
-    language: 'json/json',
-    extends: ['json/recommended'],
-  },
-  {
-    files: ['**/*.md'],
-    plugins: { markdown },
-    language: 'markdown/commonmark',
-    extends: ['markdown/recommended'],
-  },
-  {
-    files: ['**/*.css'],
-    plugins: { css },
-    language: 'css/css',
-    extends: ['css/recommended'],
-  },
-]);
+];

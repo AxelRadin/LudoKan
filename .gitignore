@@ -2,3 +2,5 @@ documentation_perso/
 
 .env
 .idea/
+node_modules/
+local_directories/

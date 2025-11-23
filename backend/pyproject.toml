@@ -1,0 +1,32 @@
+[tool.black]
+line-length = 150
+target-version = ["py311"]
+extend-exclude = "migrations|\\.venv"
+
+[tool.isort]
+profile = "black"
+line_length = 150
+multi_line_output = 3
+skip = ["migrations", ".venv"]
+
+[tool.flake8]
+max-line-length = 150
+extend-ignore = [
+    "E203",  # compat avec black
+    "W503",  # OK pour flake8, pas pour Ruff
+]
+exclude = [
+    ".venv",
+    "migrations",
+]
+
+[tool.ruff]
+line-length = 150
+target-version = "py311"
+src = ["api", "apps", "config", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F"]  # "I" retiré car isort gère déjà le tri des imports
+ignore = ["E203"]   
+fixable = ["ALL"]
+unfixable = []

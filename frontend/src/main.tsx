@@ -16,7 +16,11 @@ initSentry();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Sentry.ErrorBoundary fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}>
+    <Sentry.ErrorBoundary
+      fallback={({ error, resetError }) => (
+        <ErrorFallback error={error} resetError={resetError} />
+      )}
+    >
       <RouterProvider router={router} />
     </Sentry.ErrorBoundary>
   </StrictMode>
