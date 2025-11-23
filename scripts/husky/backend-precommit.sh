@@ -85,7 +85,8 @@ BLACK_COUNT=$(git diff --name-only -- $BACKEND_REL_FILES | wc -l | tr -d ' ')
 if [ "$BLACK_COUNT" -gt 0 ]; then
   echo "✨ Black a formaté $BLACK_COUNT fichier(s) backend."
   # Re-stager les fichiers modifiés par black
-  git add $BACKEND_REL_FILES
+  git add -- $BACKEND_REL_FILES
+
 else
   echo "✨ Aucun changement par black (déjà clean)."
 fi
@@ -98,7 +99,8 @@ ISORT_COUNT=$(git diff --name-only -- $BACKEND_REL_FILES | wc -l | tr -d ' ')
 if [ "$ISORT_COUNT" -gt 0 ]; then
   echo "✨ Isort a trié les imports de $ISORT_COUNT fichier(s) backend."
   # Re-stager les fichiers modifiés par isort
-  git add $BACKEND_REL_FILES
+  git add -- $BACKEND_REL_FILES
+
 else
   echo "✨ Aucun changement par isort (déjà clean)."
 fi
@@ -112,7 +114,8 @@ RUFF_COUNT=$(git diff --name-only -- $BACKEND_REL_FILES | wc -l | tr -d ' ')
 if [ "$RUFF_COUNT" -gt 0 ]; then
   echo "✨ Ruff a corrigé automatiquement $RUFF_COUNT fichier(s) backend."
   # Re-stager les fichiers modifiés par ruff
-  git add $BACKEND_REL_FILES
+  git add -- $BACKEND_REL_FILES
+
 else
   echo "✨ Aucun changement par ruff (déjà clean)."
 fi

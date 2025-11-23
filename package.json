@@ -12,7 +12,7 @@
     "lint-staged": "^15.2.10"
   },
   "lint-staged": {
-    "frontend/**/*.{js,jsx,ts,tsx}": [
+    "frontend/**/*.{js,jsx,ts,tsx,json,css,md}": [
       "scripts/husky/frontend-precommit.sh"
     ],
     "backend/**/*.py": [
