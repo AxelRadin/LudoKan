@@ -86,8 +86,13 @@ frontend-format: ## Formate le frontend (Prettier + ESLint fix)
 
 frontend-lint: ## Vérifie le frontend (ESLint + format check)
 	@echo "$(BLUE)🔍 Lint du frontend...$(NC)"
-	@cd frontend && npm run format:check
-	@cd frontend && npm run lint
+	@cd frontend && \
+		npm run format:check; STATUS1=$$?; \
+		npm run lint; STATUS2=$$?; \
+		if [ $$STATUS1 -ne 0 ] || [ $$STATUS2 -ne 0 ]; then \
+			echo "$(YELLOW)⚠️  Problèmes détectés par format:check ou lint (voir les logs ci-dessus).$(NC)"; \
+			exit 1; \
+		fi
 	@echo "$(GREEN)✅ Frontend conforme (lint OK)!$(NC)"
 
 # ============================================
