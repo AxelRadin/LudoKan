@@ -8,8 +8,9 @@ User = get_user_model()
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    first_name = serializers.CharField(required=True)
-    last_name = serializers.CharField(required=True)
+    # first_name / last_name sont optionnels dans le modèle, on les rend donc optionnels ici
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
     pseudo = serializers.CharField(required=True)
     description_courte = serializers.CharField(required=False, allow_blank=True)
 

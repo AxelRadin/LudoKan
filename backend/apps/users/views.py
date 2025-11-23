@@ -97,7 +97,9 @@ class LoginView(CookieMixin, APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
-        user = authenticate(email=email, password=password)
+        # Avec un CustomUser dont USERNAME_FIELD = "email",
+        # l'auth backend Django attend l'argument "username"
+        user = authenticate(request, username=email, password=password)
         if not user:
             return Response({"detail": "Invalid credentials"}, status=400)
 

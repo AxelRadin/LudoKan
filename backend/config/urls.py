@@ -23,7 +23,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
 
 from api.views import ItemViewSet
-from apps.users.views import LoginView, LogoutView, RegisterView
+from apps.users.views import LoginView, LogoutView, RefreshView, RegisterView
 
 router = DefaultRouter()
 router.register(r"items", ItemViewSet, basename="item")
@@ -50,11 +50,13 @@ urlpatterns = [
     ),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/register/", RegisterView.as_view(), name="register"),
-    # path("api/auth/", include("apps.users.urls")),
+    # Endpoints d'auth custom (utilisés par les tests)
+    path("api/auth/login/", LoginView.as_view(), name="login"),
+    path("api/auth/logout/", LogoutView.as_view(), name="logout"),
+    path("api/auth/refresh/", RefreshView.as_view(), name="refresh"),
+    # Endpoints dj-rest-auth (conservés pour compat)
     path("api/auth/", include("dj_rest_auth.urls")),
     path("api/auth/register/", RegisterView.as_view(), name="custom_register"),
-    path("api/auth/login/", LoginView.as_view(), name="custom_login"),
-    path("api/auth/logout/", LogoutView.as_view(), name="custom_logout"),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
     # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
