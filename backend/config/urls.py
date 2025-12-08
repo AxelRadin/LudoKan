@@ -19,14 +19,12 @@ from django.contrib import admin
 from django.urls import path, include
 from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
-from api.views import ItemViewSet
-from rest_framework_simplejwt.views import (TokenObtainPairView,TokenRefreshView)
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
-from apps.users.views import RegisterView, LoginView, LogoutView
+
+
 
 router = DefaultRouter()
-router.register(r"items", ItemViewSet, basename="item")
 
 def health(request):
     return JsonResponse({"status": "ok"}, status=200)
@@ -40,18 +38,17 @@ def sentry_debug(request):
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/', include('api.urls')),  
+
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
+
+
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path('api/register/', RegisterView.as_view(), name='register'),
-    #path("api/auth/", include("apps.users.urls")),
+
     path('api/auth/', include('dj_rest_auth.urls')),
-    path('api/auth/register/', RegisterView.as_view(), name='custom_register'),
-    path('api/auth/login/', LoginView.as_view(), name='custom_login'),
-    path('api/auth/logout/', LogoutView.as_view(), name='custom_logout'),
     path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
+
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
 
 

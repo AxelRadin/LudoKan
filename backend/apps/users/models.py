@@ -1,22 +1,34 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
+from django.utils.text import slugify
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self, email, pseudo, password=None, **extra_fields):
+    def create_user(self, email, pseudo=None, password=None, **extra_fields):
         if not email:
             raise ValueError("L'email doit être fourni")
         email = self.normalize_email(email)
+
+        if not pseudo:
+            # Générer un pseudo basé sur l'email
+            base_pseudo = slugify(email.split('@')[0])
+            pseudo_candidate = base_pseudo
+            counter = 1
+            while self.model.objects.filter(pseudo=pseudo_candidate).exists():
+                pseudo_candidate = f"{base_pseudo}{counter}"
+                counter += 1
+            pseudo = pseudo_candidate
+
         user = self.model(email=email, pseudo=pseudo, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, pseudo, password=None, **extra_fields):
+
+    def create_superuser(self, email, pseudo=None, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, pseudo, password, **extra_fields)
-
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
