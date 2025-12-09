@@ -39,7 +39,7 @@ DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = config(
     "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1",
+    default="localhost,127.0.0.1,testserver",
 ).split(",")
 
 
@@ -188,6 +188,8 @@ SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True
 
+
+
 # CORS : localhost (React/Vite) par défaut
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
@@ -315,6 +317,15 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 # -------------------------------------------------------------------
+# Media files (upload)
+# -------------------------------------------------------------------
+
+if DEBUG:
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# -------------------------------------------------------------------
 # Default primary key
 # -------------------------------------------------------------------
 
@@ -381,3 +392,5 @@ if SENTRY_DSN:
     )
 else:
     print("SENTRY_DSN is not set")
+
+
