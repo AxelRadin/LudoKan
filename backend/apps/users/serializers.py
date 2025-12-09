@@ -21,12 +21,27 @@ class CustomRegisterSerializer(RegisterSerializer):
         data['description_courte'] = self.validated_data.get('description_courte', '')
         return data
 
-    def custom_signup(self, request, user):
-        user.pseudo = self.validated_data.get('pseudo', user.pseudo)
-        user.first_name = self.validated_data.get('first_name', '')
-        user.last_name = self.validated_data.get('last_name', '')
-        user.description_courte = self.validated_data.get('description_courte', '')
-        user.save()
+    def validate_password1(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Le mot de passe doit contenir au moins 8 caractères.")
+
+        password2 = self.initial_data.get('password2') if hasattr(self, 'initial_data') else None
+        if password2 is not None and value != password2:
+            raise serializers.ValidationError("Les mots de passe ne correspondent pas.")
+
+        return value
+    
+    def save(self, request):
+        """Override save to use the custom user manager"""
+        user = User.objects.create_user(
+            email=self.validated_data.get('email'),
+            password=self.validated_data.get('password1'),
+            pseudo=self.validated_data.get('pseudo', None),  # None pour déclencher la génération auto
+            first_name=self.validated_data.get('first_name', ''),
+            last_name=self.validated_data.get('last_name', ''),
+            description_courte=self.validated_data.get('description_courte', '')
+        )
+        return user
 
 
 class UserSerializer(serializers.ModelSerializer):

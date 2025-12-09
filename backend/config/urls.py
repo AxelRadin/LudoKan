@@ -12,15 +12,16 @@ Class-based views
     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
 Including another URLconf
     1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
+from allauth.account.views import ConfirmEmailView
+
 
 
 
@@ -42,14 +43,13 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
 
-
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-
-    path('api/auth/', include('dj_rest_auth.urls')),
-    path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
-
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
+
+    # Auth
+    path("api/auth/", include("apps.users.urls_auth")),
+
 
 
 ]
