@@ -46,6 +46,9 @@ class CustomRegisterSerializer(RegisterSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     print("WE are in the Serializer of UserSerializer")
+    avatar = serializers.ImageField(required=False, allow_null=True)
+    avatar_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
         fields = [
@@ -53,6 +56,36 @@ class UserSerializer(serializers.ModelSerializer):
             "avatar", "avatar_url", "description_courte", "created_at"
         ]
         read_only_fields = ["id", "created_at", "email"]
+
+    def get_avatar_url(self, obj):
+        """Retourne l'URL absolue de l'avatar si présent"""
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+        return None
+
+    def validate_avatar(self, value):
+        """Valide le fichier avatar uploadé"""
+        if value:
+            # Taille max: 2 Mo
+            if value.size > 2 * 1024 * 1024:
+                raise serializers.ValidationError("Taille max 2 Mo.")
+            
+            # Formats supportés
+            valid_extensions = ['jpg', 'jpeg', 'png', 'webp']
+            ext = value.name.split('.')[-1].lower()
+            if ext not in valid_extensions:
+                raise serializers.ValidationError("Format non supporté.")
+        return value
+
+    def update(self, instance, validated_data):
+        """Supprime l'ancien avatar lors du remplacement"""
+        avatar = validated_data.get('avatar', None)
+        if avatar and instance.avatar and instance.avatar != avatar:
+            # Supprimer l'ancien fichier du disque
+            instance.avatar.delete(save=False)
+        return super().update(instance, validated_data)
 
     def validate_pseudo(self, value):
         print("WE are in the validate_pseudo of the serializer UserSerializer")
