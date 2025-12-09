@@ -16,27 +16,29 @@ from decouple import config
 import dj_database_url
 from datetime import timedelta
 
-AUTH_USER_MODEL = 'users.CustomUser'
+
+REST_USE_JWT = True
+TOKEN_MODEL = None
+REST_AUTH_TOKEN_MODEL = None
+
+
 
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Pas de username
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 
+ACCOUNT_EMAIL_VERIFICATION = config('ACCOUNT_EMAIL_VERIFICATION', default='mandatory')
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
-REST_AUTH_SERIALIZERS = {
-    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
-}
+SITE_ID = 1
+
 
 # Sécurité des cookies
-SESSION_COOKIE_SECURE = True   #  HTTPS
-CSRF_COOKIE_SECURE = True
+
 CSRF_COOKIE_HTTPONLY = True
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    config('FRONTEND_URL', default='http://localhost:3000'),
-]
+
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -58,7 +60,6 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(','
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -66,18 +67,19 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
     'drf_spectacular',
-    'rest_framework.authtoken',
-    'dj_rest_auth',
-    "dj_rest_auth.registration",
+#    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'dj_rest_auth',
+    "dj_rest_auth.registration",
     "allauth",
     "allauth.account",
     'corsheaders',
     'apps.users',
-    'apps.games', 
+    'apps.games',
     'apps.core',
     'apps.social',
     'apps.library',
@@ -88,6 +90,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    "apps.users.middleware.IgnoreInvalidJWTMiddleware",
 
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -99,25 +102,17 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTH_USER_MODEL = 'users.CustomUser'
 
 
-CORS_ALLOW_ALL_ORIGINS = True
-
-#REST_FRAMEWORK = {
-  #  "DEFAULT_AUTHENTICATION_CLASSES": [
-        #'rest_framework_simplejwt.authentication.JWTAuthentication',  # simple pour démarrer
-  #      "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
-   # ],
-   # "DEFAULT_PERMISSION_CLASSES": [
-   #     'rest_framework.permissions.IsAuthenticated',  # à durcir ensuite
-   # ],
-   # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-   # "PAGE_SIZE": 10,
-#}
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173').split(',')
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",  # 🔴à ajouter
+        "rest_framework.authentication.SessionAuthentication",  # (optionnel mais pratique pour l'admin / browsable API)
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
@@ -127,18 +122,56 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
-REST_USE_JWT = True
-#TOKEN_MODEL = None
+
 REST_AUTH = {
     "USE_JWT": True,
+    "TOKEN_MODEL": None,
+
     "JWT_AUTH_COOKIE": "access_token",
     "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_SECURE": not DEBUG,
+    "JWT_AUTH_SAMESITE": "None" if not DEBUG else "Lax",
+
+    "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
+    "USER_DETAILS_SERIALIZER": "apps.users.serializers.UserSerializer",
+}
+
+#REST_AUTH = {
+#    "USE_JWT": True,
+#    "JWT_AUTH_COOKIE": "access_token",
+#    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
+#    'JWT_AUTH_HTTPONLY': True,
+#    'JWT_AUTH_SECURE': not DEBUG,
+#    'JWT_AUTH_SAMESITE': "None" if not DEBUG else "Lax",
+#    'REGISTER_SERIALIZER': 'apps.users.serializers.CustomRegisterSerializer',
+#    'USER_DETAILS_SERIALIZER': 'apps.users.serializers.UserSerializer',
+#}
+
+# Cookies JWT
+JWT_AUTH_COOKIE = "access_token"
+JWT_AUTH_REFRESH_COOKIE = "refresh_token"
+JWT_AUTH_HTTPONLY = True
+JWT_AUTH_SECURE = not DEBUG
+JWT_AUTH_SAMESITE = "None" if not DEBUG else "Lax"
+
+# Custom serializers
+REGISTER_SERIALIZER = "apps.users.serializers.CustomRegisterSerializer"
+USER_DETAILS_SERIALIZER = "apps.users.serializers.UserSerializer"
+
+REST_AUTH_SERIALIZERS = {
+    'JWT_TOKEN_CLAIMS_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
 }
 
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+
+    "ACCESS_TOKEN_LIFETIME": timedelta(
+        minutes=config('JWT_ACCESS_TOKEN_LIFETIME', default=15, cast=int)
+    ),
+    "REFRESH_TOKEN_LIFETIME": timedelta(
+        minutes=config('JWT_REFRESH_TOKEN_LIFETIME', default=10080, cast=int)
+    ),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -149,16 +182,11 @@ SIMPLE_JWT = {
 
 JWT_AUTH_COOKIE = "access_token"
 JWT_AUTH_REFRESH_COOKIE = "refresh_token"
-JWT_AUTH_COOKIE_USE_CSRF = True
+
 JWT_AUTH_SAMESITE = "Lax"
 
-#SIMPLE_JWT = {
- #   'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-  #  'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-   # 'ROTATE_REFRESH_TOKENS': False,
-    #'BLACKLIST_AFTER_ROTATION': True,
-    #'AUTH_HEADER_TYPES': ('Bearer',),
-#}
+
+
 ROOT_URLCONF = 'config.urls'
 
 SPECTACULAR_SETTINGS = {
@@ -283,7 +311,13 @@ CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:
 CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=bool)
 
 # CSRF Configuration (configurable via environment variable)
-CSRF_TRUSTED_ORIGINS = [o for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o]
+CSRF_TRUSTED_ORIGINS = [
+    o for o in config(
+        'CSRF_TRUSTED_ORIGINS',
+        default='http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173'
+    ).split(',')
+    if o
+]
 
 
 # Sentry configuration
