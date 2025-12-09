@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 from django.utils.text import slugify
+from .validators import validate_avatar
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, pseudo=None, password=None, **extra_fields):
@@ -35,6 +36,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     pseudo = models.CharField(max_length=150, unique=True)
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, validators=[validate_avatar])
     avatar_url = models.URLField(blank=True, null=True)
     description_courte = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
