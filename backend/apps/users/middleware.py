@@ -20,17 +20,14 @@ class IgnoreInvalidJWTMiddleware(MiddlewareMixin):
         access_token = request.COOKIES.get("access_token")
         refresh_token = request.COOKIES.get("refresh_token")
 
-        # 1. Si les cookies sont vides / "null" / "undefined" → on les ignore
         empty_values = ("", "null", "undefined", None)
         if access_token in empty_values and refresh_token in empty_values:
             self._clear_jwt_cookies(request)
             return None
 
-        # 2. Si pas d'access_token → on ne tente rien
         if not access_token:
             return None
 
-        # 3. Si access_token présent mais invalide → on nettoie
         try:
             JWTAuthentication().get_validated_token(access_token)
         except (InvalidToken, TokenError):
