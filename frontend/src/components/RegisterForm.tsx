@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
 import Alert from '@mui/material/Alert';
+import { apiPost } from "../services/api";
 
 type RegisterFormProps = {
   onSwitchToLogin: () => void;
@@ -35,29 +36,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     try {
       setLoading(true);
-      // 🔐 À ADAPTER selon ton backend
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: pseudo, email, password }),
-      });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || "Échec de l'inscription.");
+      await apiPost("/api/auth/registration/", {
+      pseudo: pseudo,
+      email: email,
+      password1: password,
+      password2: password2,
+    });
+
+     onSwitchToLogin();
+      } catch (err: any) {
+        setError(err.message || "Une erreur est survenue.");
+      } finally {
+        setLoading(false);
       }
-
-      // const data = await res.json();
-      // console.log('User inscrit', data);
-
-      // Tu peux décider ici de basculer automatiquement sur la connexion :
-      // onSwitchToLogin();
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue.');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   return (
     <Box
