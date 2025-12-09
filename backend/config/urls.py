@@ -21,6 +21,8 @@ from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
 from allauth.account.views import ConfirmEmailView
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 
@@ -53,3 +55,7 @@ urlpatterns = [
 
 
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
