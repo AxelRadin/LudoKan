@@ -7,13 +7,15 @@ import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
 import Alert from '@mui/material/Alert';
 
-type LoginFormProps = {
-  onSwitchToRegister: () => void;
+type RegisterFormProps = {
+  onSwitchToLogin: () => void;
 };
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [pseudo, setPseudo] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,30 +23,35 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     e.preventDefault();
     setError(null);
 
-    if (!pseudo || !password) {
+    if (!pseudo || !email || !password || !password2) {
       setError('Veuillez remplir tous les champs.');
+      return;
+    }
+
+    if (password !== password2) {
+      setError('Les mots de passe ne correspondent pas.');
       return;
     }
 
     try {
       setLoading(true);
       // 🔐 À ADAPTER selon ton backend
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: pseudo, password }),
+        body: JSON.stringify({ username: pseudo, email, password }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Échec de la connexion.');
+        throw new Error(data.message || "Échec de l'inscription.");
       }
 
-      // Exemple : récupérer le token
       // const data = await res.json();
-      // console.log('User connecté', data);
+      // console.log('User inscrit', data);
 
-      // TODO: stocker le token, rediriger, etc.
+      // Tu peux décider ici de basculer automatiquement sur la connexion :
+      // onSwitchToLogin();
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {
@@ -79,13 +86,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           cursor: 'pointer',
           fontWeight: 'bold',
         }}
-        onClick={onSwitchToRegister}
+        onClick={onSwitchToLogin}
       >
-        S’inscrire
+        Se connecter
       </Typography>
 
       <Typography variant="h4" fontWeight="bold" mb={3} mt={4}>
-        Connexion
+        Inscription
       </Typography>
 
       <Stack spacing={2} width={300}>
@@ -96,11 +103,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           onChange={e => setPseudo(e.target.value)}
         />
         <TextField
+          label="Email"
+          variant="outlined"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+        <TextField
           label="Mot de passe"
           type="password"
           variant="outlined"
           value={password}
           onChange={e => setPassword(e.target.value)}
+        />
+        <TextField
+          label="Confirmez votre mot de passe"
+          type="password"
+          variant="outlined"
+          value={password2}
+          onChange={e => setPassword2(e.target.value)}
         />
       </Stack>
 
@@ -111,7 +131,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       )}
 
       <Typography variant="body1" mt={4}>
-        Se connecter avec
+        S’inscrire avec
       </Typography>
 
       <Stack direction="row" spacing={3} mt={1}>
@@ -126,10 +146,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         type="submit"
         disabled={loading}
       >
-        {loading ? 'Connexion...' : 'Se connecter'}
+        {loading ? 'Inscription...' : 'S’inscrire'}
       </PrimaryButton>
     </Box>
   );
 };
 
-export default LoginForm;
+export default RegisterForm;
