@@ -6,13 +6,14 @@ import React, { useState } from 'react';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
 import Alert from '@mui/material/Alert';
+import { apiPost } from "../services/api";
 
 type LoginFormProps = {
   onSwitchToRegister: () => void;
 };
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
-  const [pseudo, setPseudo] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,36 +22,31 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     e.preventDefault();
     setError(null);
 
-    if (!pseudo || !password) {
+    if (!email || !password) {
       setError('Veuillez remplir tous les champs.');
       return;
     }
 
     try {
-      setLoading(true);
-      // 🔐 À ADAPTER selon ton backend
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: pseudo, password }),
-      });
+    setLoading(true);
+    const data = await apiPost("/api/auth/login/", {
+      email: email,
+      password: password
+    });
+// ajouter une redirection à la connexion
+    // data contient le token, ex:
+    // { "key": "abc123" }
+    console.log("User connecté", data);
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.message || 'Échec de la connexion.');
-      }
+    // Stocker le token localement pour authentifier les prochaines requêtes
+    localStorage.setItem("token", data.key || data.access);
 
-      // Exemple : récupérer le token
-      // const data = await res.json();
-      // console.log('User connecté', data);
-
-      // TODO: stocker le token, rediriger, etc.
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err: any) {
+    setError(err.message || 'Une erreur est survenue.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Box
@@ -90,10 +86,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
 
       <Stack spacing={2} width={300}>
         <TextField
-          label="Pseudo"
+          label="Email"
           variant="outlined"
-          value={pseudo}
-          onChange={e => setPseudo(e.target.value)}
+          value={email}
+          onChange={e => setEmail(e.target.value)}
         />
         <TextField
           label="Mot de passe"
