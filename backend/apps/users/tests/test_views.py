@@ -7,6 +7,10 @@ from django.urls import reverse
 from rest_framework import status
 from apps.users.models import CustomUser
 from rest_framework_simplejwt.tokens import RefreshToken
+from PIL import Image
+import io
+import os
+from django.conf import settings
 
 
 @pytest.mark.django_db
@@ -368,6 +372,243 @@ class TestPasswordResetView:
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert 'email' in response.data
+
+
+@pytest.mark.django_db
+class TestAvatarUpload:
+    """Tests pour l'upload, modification et suppression d'avatar"""
+    
+    @classmethod
+    def teardown_class(cls):
+        """Nettoyer tous les fichiers d'avatar de test après les tests"""
+        avatars_dir = os.path.join(settings.MEDIA_ROOT, 'avatars')
+        if os.path.exists(avatars_dir):
+            for filename in os.listdir(avatars_dir):
+                file_path = os.path.join(avatars_dir, filename)
+                if os.path.isfile(file_path) and filename.startswith('test_avatar'):
+                    try:
+                        os.remove(file_path)
+                        print(f"Fichier supprimé: {filename}")
+                    except Exception as e:
+                        print(f"Erreur lors de la suppression de {filename}: {e}")
+    
+    @staticmethod
+    def create_test_image(width=100, height=100, color='red', format='JPEG'):
+        """Crée une image de test en mémoire"""
+        img = Image.new('RGB', (width, height), color=color)
+        img_io = io.BytesIO()
+        img.save(img_io, format=format)
+        img_io.seek(0)
+        
+        # Définir l'extension appropriée
+        ext = 'jpg' if format == 'JPEG' else format.lower()
+        img_io.name = f'test_avatar.{ext}'
+        return img_io
+    
+    def test_upload_avatar_success_jpg(self, auth_client_with_tokens, user):
+        """Test upload d'avatar au format JPG"""
+        url = "/api/auth/user/"
+        test_image = self.create_test_image(format='JPEG')
+        
+        response = auth_client_with_tokens.patch(
+            url,
+            {'avatar': test_image},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert 'avatar' in response.data
+        assert response.data['avatar'] is not None
+        assert 'avatars/' in response.data['avatar']
+        
+        # Vérifier que le fichier a été créé
+        user.refresh_from_db()
+        assert user.avatar
+        assert user.avatar.name.startswith('avatars/')
+    
+    def test_upload_avatar_success_png(self, auth_client_with_tokens, user):
+        """Test upload d'avatar au format PNG"""
+        url = "/api/auth/user/"
+        test_image = self.create_test_image(format='PNG')
+        
+        response = auth_client_with_tokens.patch(
+            url,
+            {'avatar': test_image},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert 'avatar' in response.data
+        assert response.data['avatar'] is not None
+    
+    def test_upload_avatar_success_webp(self, auth_client_with_tokens, user):
+        """Test upload d'avatar au format WebP"""
+        url = "/api/auth/user/"
+        test_image = self.create_test_image(format='WEBP')
+        
+        response = auth_client_with_tokens.patch(
+            url,
+            {'avatar': test_image},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert 'avatar' in response.data
+        assert response.data['avatar'] is not None
+    
+    def test_update_avatar(self, auth_client_with_tokens, user):
+        """Test modification d'un avatar existant"""
+        url = "/api/auth/user/"
+        
+        # Upload initial
+        first_image = self.create_test_image(color='red')
+        response1 = auth_client_with_tokens.patch(
+            url,
+            {'avatar': first_image},
+            format='multipart'
+        )
+        assert response1.status_code == status.HTTP_200_OK
+        first_avatar_url = response1.data['avatar']
+        
+        # Upload de remplacement
+        second_image = self.create_test_image(color='blue')
+        response2 = auth_client_with_tokens.patch(
+            url,
+            {'avatar': second_image},
+            format='multipart'
+        )
+        
+        assert response2.status_code == status.HTTP_200_OK
+        assert response2.data['avatar'] != first_avatar_url
+        
+        # Vérifier que l'avatar a été mis à jour
+        user.refresh_from_db()
+        assert user.avatar
+    
+    def test_delete_avatar(self, auth_client_with_tokens, user):
+        """Test suppression d'un avatar"""
+        url = "/api/auth/user/"
+        
+        # Upload initial
+        test_image = self.create_test_image()
+        response1 = auth_client_with_tokens.patch(
+            url,
+            {'avatar': test_image},
+            format='multipart'
+        )
+        assert response1.status_code == status.HTTP_200_OK
+        assert response1.data['avatar'] is not None
+        
+        # Suppression (en envoyant null)
+        response2 = auth_client_with_tokens.patch(
+            url,
+            {'avatar': None},
+            format='json'
+        )
+        
+        assert response2.status_code == status.HTTP_200_OK
+        
+        # Vérifier que l'avatar a été supprimé
+        user.refresh_from_db()
+        assert not user.avatar
+    
+    def test_upload_avatar_too_large(self, auth_client_with_tokens):
+        """Test upload d'un fichier trop gros (> 2MB)"""
+        url = "/api/auth/user/"
+        
+        # Créer une très grande image non compressée (> 2MB)
+        # PNG avec compression minimale pour atteindre > 2MB
+        img = Image.new('RGB', (2000, 2000), color='red')
+        img_io = io.BytesIO()
+        # Sauvegarder avec compression 0 pour maximiser la taille
+        img.save(img_io, format='PNG', compress_level=0)
+        img_io.seek(0)
+        img_io.name = 'large_avatar.png'
+        
+        # Vérifier que le fichier fait bien plus de 2MB
+        file_size = len(img_io.getvalue())
+        assert file_size > 2 * 1024 * 1024, f"Le fichier de test fait seulement {file_size} bytes"
+        
+        response = auth_client_with_tokens.patch(
+            url,
+            {'avatar': img_io},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'avatar' in response.data
+        assert any('2 Mo' in str(error) or '2MB' in str(error) or 'taille' in str(error).lower() 
+                   for error in response.data['avatar'])
+    
+    def test_upload_avatar_invalid_format(self, auth_client_with_tokens):
+        """Test upload d'un fichier avec format invalide"""
+        url = "/api/auth/user/"
+        
+        # Créer un fichier texte au lieu d'une image
+        fake_file = io.BytesIO(b"This is not an image")
+        fake_file.name = 'fake_avatar.txt'
+        
+        response = auth_client_with_tokens.patch(
+            url,
+            {'avatar': fake_file},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'avatar' in response.data
+    
+    def test_upload_avatar_invalid_extension(self, auth_client_with_tokens):
+        """Test upload d'une image avec extension non supportée"""
+        url = "/api/auth/user/"
+        
+        # Créer une image avec une extension non supportée
+        img = Image.new('RGB', (100, 100), color='green')
+        img_io = io.BytesIO()
+        img.save(img_io, format='BMP')
+        img_io.seek(0)
+        img_io.name = 'test_avatar.bmp'
+        
+        response = auth_client_with_tokens.patch(
+            url,
+            {'avatar': img_io},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert 'avatar' in response.data
+    
+    def test_upload_avatar_unauthenticated(self, api_client):
+        """Test upload d'avatar sans authentification"""
+        url = "/api/auth/user/"
+        test_image = self.create_test_image()
+        
+        response = api_client.patch(
+            url,
+            {'avatar': test_image},
+            format='multipart'
+        )
+        
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    
+    def test_get_user_with_avatar(self, auth_client_with_tokens, user):
+        """Test récupération des infos utilisateur avec avatar"""
+        url = "/api/auth/user/"
+        
+        # Upload d'un avatar
+        test_image = self.create_test_image()
+        auth_client_with_tokens.patch(
+            url,
+            {'avatar': test_image},
+            format='multipart'
+        )
+        
+        # Récupérer les infos
+        response = auth_client_with_tokens.get(url)
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert 'avatar' in response.data
+        assert response.data['avatar'] is not None
+        assert 'http' in response.data['avatar']  # URL complète
 
 
 @pytest.mark.django_db
