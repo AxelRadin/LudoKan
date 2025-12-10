@@ -45,7 +45,6 @@ class CustomRegisterSerializer(RegisterSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    print("WE are in the Serializer of UserSerializer")
     avatar = serializers.ImageField(required=False, allow_null=True)
     avatar_url = serializers.SerializerMethodField()
     
