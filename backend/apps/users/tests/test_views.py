@@ -13,6 +13,19 @@ import os
 from django.conf import settings
 
 
+def get_errors_payload(response):
+    """
+    Helper pour récupérer le payload d'erreurs en tenant compte
+    du handler custom qui wrappe la réponse dans:
+    {
+        "success": False,
+        "errors": { ... }
+    }
+    """
+    data = getattr(response, "data", {}) or {}
+    return data.get("errors", data)
+
+
 @pytest.mark.django_db
 class TestRegistrationView:
     """Tests pour l'endpoint d'inscription"""
@@ -83,7 +96,8 @@ class TestRegistrationView:
         response = api_client.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'pseudo' in response.data
+        errors = get_errors_payload(response)
+        assert 'pseudo' in errors
     
     def test_register_password_mismatch(self, api_client):
         """Test inscription avec mots de passe différents"""
@@ -97,8 +111,13 @@ class TestRegistrationView:
         response = api_client.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+        errors = get_errors_payload(response)
         # L'erreur peut être dans password1, password2 ou non_field_errors
-        assert 'password1' in response.data or 'password2' in response.data or 'non_field_errors' in response.data
+        assert (
+            'password1' in errors
+            or 'password2' in errors
+            or 'non_field_errors' in errors
+        )
 
 
 @pytest.mark.django_db
@@ -129,7 +148,8 @@ class TestLoginView:
         response = api_client.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'non_field_errors' in response.data or 'detail' in response.data
+        errors = get_errors_payload(response)
+        assert 'non_field_errors' in errors or 'detail' in errors
     
     def test_login_nonexistent_user(self, api_client):
         """Test login avec email inexistant"""
@@ -148,7 +168,8 @@ class TestLoginView:
         response = api_client.post(url, {"email": "test@example.com"}, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'password' in response.data
+        errors = get_errors_payload(response)
+        assert 'password' in errors
 
 
 @pytest.mark.django_db
@@ -262,7 +283,8 @@ class TestPasswordChangeView:
         response = auth_client_with_tokens.post(url, data, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'old_password' in response.data
+        errors = get_errors_payload(response)
+        assert 'old_password' in errors
     
     def test_password_change_mismatch(self, auth_client_with_tokens):
         """Test changement avec nouveaux mots de passe différents"""
@@ -339,7 +361,8 @@ class TestTokenVerifyView:
         response = api_client.post(url, {}, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'token' in response.data
+        errors = get_errors_payload(response)
+        assert 'token' in errors
 
 
 @pytest.mark.django_db
@@ -371,7 +394,8 @@ class TestPasswordResetView:
         response = api_client.post(url, {}, format='json')
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'email' in response.data
+        errors = get_errors_payload(response)
+        assert 'email' in errors
 
 
 @pytest.mark.django_db
@@ -536,9 +560,10 @@ class TestAvatarUpload:
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'avatar' in response.data
+        errors = get_errors_payload(response)
+        assert 'avatar' in errors
         assert any('2 Mo' in str(error) or '2MB' in str(error) or 'taille' in str(error).lower() 
-                   for error in response.data['avatar'])
+                   for error in errors['avatar'])
     
     def test_upload_avatar_invalid_format(self, auth_client_with_tokens):
         """Test upload d'un fichier avec format invalide"""
@@ -555,7 +580,8 @@ class TestAvatarUpload:
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'avatar' in response.data
+        errors = get_errors_payload(response)
+        assert 'avatar' in errors
     
     def test_upload_avatar_invalid_extension(self, auth_client_with_tokens):
         """Test upload d'une image avec extension non supportée"""
@@ -575,7 +601,8 @@ class TestAvatarUpload:
         )
         
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'avatar' in response.data
+        errors = get_errors_payload(response)
+        assert 'avatar' in errors
     
     def test_upload_avatar_unauthenticated(self, api_client):
         """Test upload d'avatar sans authentification"""
