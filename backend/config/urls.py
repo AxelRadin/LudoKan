@@ -53,6 +53,9 @@ urlpatterns = [
     path("api/auth/", include("apps.users.urls_auth")),
     path("api/", include("apps.users.urls")),
 
+    #lib
+    path("api/", include("apps.library.urls")),
+
 
 
 ]
