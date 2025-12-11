@@ -5,7 +5,7 @@ Tests pour les vues de l'app games
 import pytest
 from rest_framework import status
 
-from apps.games.models import Game, Publisher, Genre, Platform
+from apps.games.models import Game, Publisher, Genre, Platform, Rating
 
 
 # ---------------------------------------------------------------------------
@@ -306,4 +306,306 @@ class TestPlatformCRUD:
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not Platform.objects.filter(id=platform.id).exists()
+
+
+@pytest.mark.django_db
+class TestGameRatings:
+    """Tests for creating/updating ratings on games."""
+
+    def test_create_rating_requires_authentication(self, api_client, game):
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "etoiles",
+            "value": 4.5,
+        }
+
+        response = api_client.post(url, payload, format="json")
+
+        assert response.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        ]
+
+    def test_create_rating_authenticated(self, authenticated_api_client, user, game):
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "etoiles",
+            "value": 4.5,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        rating = Rating.objects.get(user=user, game=game)
+        assert rating.rating_type == "etoiles"
+        assert float(rating.value) == 4.5
+
+    def test_update_existing_rating_authenticated(self, authenticated_api_client, user, game):
+        rating = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="etoiles",
+            value=3,
+        )
+
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "etoiles",
+            "value": 4.5,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        rating.refresh_from_db()
+        assert float(rating.value) == 4.5
+
+    def test_invalid_rating_type_returns_400(self, authenticated_api_client, game):
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "invalid_type",
+            "value": 5,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_create_decimal_rating_with_one_decimal(self, authenticated_api_client, user, game):
+        """A decimal rating with exactly one decimal place should be accepted."""
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "decimal",
+            "value": 7.5,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        rating = Rating.objects.get(user=user, game=game)
+        assert rating.rating_type == "decimal"
+        assert float(rating.value) == 7.5
+
+    def test_create_decimal_rating_with_two_decimals(self, authenticated_api_client, user, game):
+        """A decimal rating with exactly two decimal places should be accepted."""
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "decimal",
+            "value": 7.25,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        rating = Rating.objects.get(user=user, game=game)
+        assert rating.rating_type == "decimal"
+        assert float(rating.value) == 7.25
+
+    def test_create_decimal_rating_without_decimal_is_accepted(self, authenticated_api_client, user, game):
+        """A decimal rating without decimal part should be accepted (e.g. 7)."""
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "decimal",
+            "value": 7,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        rating = Rating.objects.get(user=user, game=game)
+        assert rating.rating_type == "decimal"
+        assert float(rating.value) == 7.0
+
+    def test_create_decimal_rating_with_three_decimals_is_rejected(self, authenticated_api_client, game):
+        """A decimal rating with more than two decimals should be rejected (e.g. 7.123)."""
+        url = f"/api/games/{game.id}/ratings/"
+        payload = {
+            "rating_type": "decimal",
+            "value": 7.123,
+        }
+
+        response = authenticated_api_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestRatingDetail:
+    """Tests for GET/PATCH/DELETE on individual ratings."""
+
+    def test_get_own_rating(self, authenticated_api_client, user, game):
+        rating = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="etoiles",
+            value=4,
+        )
+        url = f"/api/ratings/{rating.id}/"
+
+        response = authenticated_api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == rating.id
+        assert response.data["game"] == game.id
+        assert response.data["user"] == user.id
+
+    def test_patch_own_rating(self, authenticated_api_client, user, game):
+        rating = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="sur_10",
+            value=5,
+        )
+        url = f"/api/ratings/{rating.id}/"
+        payload = {
+            "rating_type": "sur_10",
+            "value": 8,
+        }
+
+        response = authenticated_api_client.patch(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        rating.refresh_from_db()
+        assert rating.rating_type == "sur_10"
+        assert float(rating.value) == 8.0
+
+    def test_delete_own_rating(self, authenticated_api_client, user, game):
+        rating = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="etoiles",
+            value=4,
+        )
+        url = f"/api/ratings/{rating.id}/"
+
+        response = authenticated_api_client.delete(url)
+
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Rating.objects.filter(id=rating.id).exists()
+
+    def test_get_nonexistent_rating_returns_404(self, authenticated_api_client):
+        url = "/api/ratings/999999/"
+
+        response = authenticated_api_client.get(url)
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_cannot_access_other_user_rating(self, authenticated_api_client, another_user, game):
+        other_rating = Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type="etoiles",
+            value=3,
+        )
+        url = f"/api/ratings/{other_rating.id}/"
+
+        response = authenticated_api_client.get(url)
+
+        # With queryset filtered by user, this will be 404 (not 403)
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestRatingList:
+    """Tests for listing ratings with optional filters."""
+
+    def test_list_ratings_filtered_by_game(self, api_client, user, another_user, game, publisher):
+        other_game = Game.objects.create(
+            igdb_id=5001,
+            name="Other Game",
+            publisher=publisher,
+        )
+
+        Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="sur_10",
+            value=7,
+        )
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type="sur_10",
+            value=8,
+        )
+        Rating.objects.create(
+            user=user,
+            game=other_game,
+            rating_type="sur_10",
+            value=9,
+        )
+
+        url = f"/api/ratings/?game_id={game.id}"
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert len(response.data["results"]) == 2
+
+    def test_list_ratings_filtered_by_user(self, api_client, user, another_user, game, publisher):
+        other_game = Game.objects.create(
+            igdb_id=5002,
+            name="Second Game",
+            publisher=publisher,
+        )
+
+        Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="sur_10",
+            value=6,
+        )
+        Rating.objects.create(
+            user=user,
+            game=other_game,
+            rating_type="sur_10",
+            value=9,
+        )
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type="sur_10",
+            value=8,
+        )
+
+        url = f"/api/ratings/?user_id={user.id}"
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        assert len(response.data["results"]) == 2
+
+    def test_list_ratings_filtered_by_user_and_game(self, api_client, user, another_user, game, publisher):
+        other_game = Game.objects.create(
+            igdb_id=5003,
+            name="Third Game",
+            publisher=publisher,
+        )
+
+        Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type="sur_10",
+            value=6,
+        )
+        Rating.objects.create(
+            user=user,
+            game=other_game,
+            rating_type="sur_10",
+            value=9,
+        )
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type="sur_10",
+            value=8,
+        )
+
+        url = f"/api/ratings/?user_id={user.id}&game_id={game.id}"
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "results" in response.data
+        # Only one rating matches both filters
+        assert len(response.data["results"]) == 1
 
