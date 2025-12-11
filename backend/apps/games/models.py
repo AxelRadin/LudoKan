@@ -1,6 +1,20 @@
 from django.db import models
 
+GAME_STATUS_CHOICES = [
+        ("released", "Released"),
+        ("alpha", "Alpha"),
+        ("beta", "Beta"),
+        ("early_access", "Early Access"),
+        ("offline", "Offline"),
+        ("cancelled", "Cancelled"),
+        ("rumored", "Rumored"),
+        ("delisted", "Delisted"),
+    ]
+
 class Publisher(models.Model):
+    # IGDB ID pour la recherche sur IGDB
+    igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
+
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
     website = models.URLField(blank=True, null=True)
@@ -12,6 +26,9 @@ class Publisher(models.Model):
 
 
 class Platform(models.Model):
+    # IGDB ID pour la recherche sur IGDB
+    igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
+
     nom_plateforme = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
 
@@ -20,6 +37,9 @@ class Platform(models.Model):
 
 
 class Genre(models.Model):
+    # IGDB ID pour la recherche sur IGDB
+    igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
+
     nom_genre = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
 
@@ -27,9 +47,15 @@ class Genre(models.Model):
         return self.nom_genre
 
 class Game(models.Model):
+    # IGDB ID pour la recherche sur IGDB
+    igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
+
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     release_date = models.DateField(blank=True, null=True)
+    cover_url = models.URLField(blank=True, null=True)
+    status = models.CharField(max_length=20,blank=True,null=True,choices=GAME_STATUS_CHOICES,)
+
     min_players = models.IntegerField(blank=True, null=True)
     max_players = models.IntegerField(blank=True, null=True)
     min_age = models.IntegerField(blank=True, null=True)
