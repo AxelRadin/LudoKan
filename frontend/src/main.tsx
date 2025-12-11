@@ -8,6 +8,7 @@ import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
+import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
