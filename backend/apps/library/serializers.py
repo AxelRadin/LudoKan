@@ -46,15 +46,33 @@ class GameNestedSerializer(serializers.ModelSerializer):
 
 class UserGameSerializer(serializers.ModelSerializer):
     game = GameNestedSerializer(read_only=True)
-    game_id = serializers.IntegerField(write_only=True, required=True)
+    game_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = UserGame
         fields = ["id", "game", "game_id", "status", "date_added"]
+        read_only_fields = ["date_added"]
 
+    # --------------------------
+    # Validation du statut
+    # --------------------------
+    def validate_status(self, value):
+        allowed = ["EN_COURS", "TERMINE", "ABANDONNE"]
+        if value not in allowed:
+            raise serializers.ValidationError(
+                f"Le statut doit être l’un de : {', '.join(allowed)}"
+            )
+        return value
+
+    # --------------------------
+    # Création d'un UserGame
+    # --------------------------
     def create(self, validated_data):
         user = self.context["request"].user
-        game_id = validated_data.pop("game_id")
+        game_id = validated_data.pop("game_id", None)
+
+        if not game_id:
+            raise serializers.ValidationError({"game_id": "Ce champ est obligatoire."})
 
         # Vérifie que le jeu existe
         try:
@@ -62,9 +80,17 @@ class UserGameSerializer(serializers.ModelSerializer):
         except Game.DoesNotExist:
             raise serializers.ValidationError({"game_id": "Jeu non trouvé."})
 
-        # Vérifie les doublons
+        # Vérifie que le jeu n'est pas déjà dans la collection
         if UserGame.objects.filter(user=user, game=game).exists():
             raise serializers.ValidationError({"error": "Jeu déjà ajouté."})
 
-        # Crée et retourne l'objet UserGame
         return UserGame.objects.create(user=user, game=game, **validated_data)
+
+    # --------------------------
+    # Mise à jour du statut
+    # --------------------------
+    def update(self, instance, validated_data):
+        # on ne modifie que le statut (game_id ignoré lors de PATCH)
+        instance.status = validated_data.get("status", instance.status)
+        instance.save()
+        return instance
