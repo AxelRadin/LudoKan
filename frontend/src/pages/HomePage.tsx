@@ -14,10 +14,7 @@ function HomePage() {
         backgroundColor: '#ffffff',
       }}
     >
-      {/* Header fixé en haut */}
       <Header />
-
-      {/* Contenu principal */}
       <Box component="main" sx={{ flex: 1, pt: 8 }}>
         <HeroSection />
         <TrendingGames />

@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 
-export const HeroSection: React.FC = () => {
+export const Banner: React.FC = () => {
   return (
     <Box
       sx={{
@@ -12,15 +12,11 @@ export const HeroSection: React.FC = () => {
         textAlign: 'left',
       }}
     >
-      <Typography variant="h5" fontWeight="bold">
-        Ne soyez plus perdus
-        <br />
-        dans votre collection
-        <br />
-        de jeux-vidéo
+      <Typography variant="h5" fontWeight="bold" color="black">
+        Ne soyez plus perdus dans votre collection de jeux-vidéo !
       </Typography>
     </Box>
   );
 };
 
-export default HeroSection;
+export default Banner;
