@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Publisher, Platform, Genre, Game
+from .models import Publisher, Platform, Genre, Game, Rating
 
 @admin.register(Publisher)
 class PublisherAdmin(admin.ModelAdmin):
@@ -22,3 +22,10 @@ class GameAdmin(admin.ModelAdmin):
     list_display = ('name', 'publisher', 'rating_avg', 'popularity_score')
     search_fields = ('name', 'publisher__name')
     list_filter = ('publisher', 'genres', 'platforms')
+
+
+@admin.register(Rating)
+class RatingAdmin(admin.ModelAdmin):
+    list_display = ('user', 'game', 'rating_type', 'value', 'date_created')
+    search_fields = ('user__pseudo', 'game__name')
+    list_filter = ('rating_type',)

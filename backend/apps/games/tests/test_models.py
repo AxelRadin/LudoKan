@@ -5,7 +5,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-from apps.games.models import Game, Publisher, Genre, Platform
+from apps.games.models import Game, Publisher, Genre, Platform, Rating
 
 
 @pytest.mark.django_db
@@ -157,3 +157,120 @@ class TestGameModel:
 
         with pytest.raises(ValidationError):
             game.full_clean()
+
+
+@pytest.mark.django_db
+class TestRatingModel:
+    """Tests for the Rating model."""
+
+    def test_create_rating_sur_100_valid(self, user, game):
+        """A rating of type sur_100 within range should be valid."""
+        rating = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_100,
+            value=85,
+        )
+
+        # Should not raise
+        rating.full_clean()
+        rating.save()
+
+        assert rating.id is not None
+        assert rating.value == 85
+
+    def test_unique_rating_per_user_and_game(self, user, game):
+        """Only one rating per (user, game) pair should be allowed."""
+        Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_10,
+            value=8,
+        )
+
+        with pytest.raises(IntegrityError):
+            Rating.objects.create(
+                user=user,
+                game=game,
+                rating_type=Rating.RATING_TYPE_SUR_10,
+                value=9,
+            )
+
+    def test_sur_100_out_of_range_raises_validation_error(self, user, game):
+        """sur_100 ratings must be between 0 and 100."""
+        rating = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_100,
+            value=150,
+        )
+
+        with pytest.raises(ValidationError):
+            rating.full_clean()
+
+    def test_sur_10_out_of_range_raises_validation_error(self, user, game):
+        """sur_10 ratings must be between 0 and 10."""
+        rating = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_10,
+            value=11,
+        )
+
+        with pytest.raises(ValidationError):
+            rating.full_clean()
+
+    def test_decimal_out_of_range_raises_validation_error(self, user, game):
+        """decimal ratings must be between 0 and 10."""
+        rating = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_DECIMAL,
+            value=9.5,
+        )
+
+        # First ensure it's valid inside range
+        rating.full_clean()
+
+        rating_too_high = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_DECIMAL,
+            value=11,
+        )
+
+        with pytest.raises(ValidationError):
+            rating_too_high.full_clean()
+
+    def test_decimal_more_than_one_decimal_place_invalid(self, user, game):
+        """decimal ratings must not have more than one decimal place."""
+        rating = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_DECIMAL,
+            value=7.25,
+        )
+
+        with pytest.raises(ValidationError):
+            rating.full_clean()
+
+    def test_etoiles_out_of_range_raises_validation_error(self, user, game):
+        """etoiles ratings must be between 1 and 5."""
+        rating_low = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=0,
+        )
+        rating_high = Rating(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=6,
+        )
+
+        with pytest.raises(ValidationError):
+            rating_low.full_clean()
+
+        with pytest.raises(ValidationError):
+            rating_high.full_clean()
