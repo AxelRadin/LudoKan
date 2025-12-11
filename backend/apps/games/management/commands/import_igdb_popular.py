@@ -255,9 +255,10 @@ class Command(BaseCommand):
                 if first_release_ts:
                     release_date = datetime.date.fromtimestamp(first_release_ts)
 
-                rating_avg = g.get("rating") or 0.0
-                total_rating = g.get("total_rating") or rating_avg
-                popularity = total_rating
+                # On n'utilise plus la note IGDB pour remplir rating_avg.
+                # rating_avg est désormais géré directement sur le site.
+                # total_rating = g.get("total_rating") or 0.0
+                # popularity = total_rating
 
                 # status (enum déprécié mais encore utilisable)
                 raw_status = g.get("game_status")
@@ -291,8 +292,7 @@ class Command(BaseCommand):
                         "name": name,
                         "description": summary,
                         "release_date": release_date,
-                        "rating_avg": rating_avg,
-                        "popularity_score": popularity,
+                        # "popularity_score": popularity,
                         "status": status_str,
                         "cover_url": cover_url,
                         "min_players": min_players,
