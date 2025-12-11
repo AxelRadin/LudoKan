@@ -5,6 +5,7 @@ from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiExample
 
 from apps.games.models import Game, Publisher, Genre, Platform, Rating
 from apps.games.serializers import (
@@ -56,6 +57,23 @@ class RatingCreateView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Create or update a rating for a game",
+        description=(
+            "Create a new rating for the given game, or update the existing rating "
+            "for the authenticated user if it already exists."
+        ),
+        request=RatingSerializer,
+        responses={201: RatingSerializer, 200: RatingSerializer},
+        examples=[
+            OpenApiExample(
+                "Star rating example",
+                description="Create or update a 4.5 star rating for the game.",
+                value={"rating_type": "etoiles", "value": 4.5},
+                request_only=True,
+            ),
+        ],
+    )
     def post(self, request, game_id):
         game = get_object_or_404(Game, pk=game_id)
 
@@ -80,6 +98,21 @@ class RatingCreateView(APIView):
         return Response(output, status=status_code)
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Retrieve a rating",
+        responses=RatingSerializer,
+    ),
+    patch=extend_schema(
+        summary="Update a rating",
+        request=RatingSerializer,
+        responses=RatingSerializer,
+    ),
+    delete=extend_schema(
+        summary="Delete a rating",
+        responses={204: None},
+    ),
+)
 class RatingDetailView(RetrieveUpdateDestroyAPIView):
     """
     Allow an authenticated user to retrieve, update or delete their own rating.
