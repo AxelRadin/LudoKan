@@ -11,68 +11,73 @@ User = get_user_model()
 
 @pytest.mark.django_db
 class TestUserModel:
-    """Tests pour le modèle User"""
-    
+    """Tests pour le modèle User (CustomUser)"""
+
     def test_create_user(self):
         """Test de création d'un utilisateur normal"""
         user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123'
+            email="test@example.com",
+            pseudo="testuser",
+            password="testpass123",
         )
-        
-        assert user.username == 'testuser'
-        assert user.email == 'test@example.com'
-        assert user.check_password('testpass123')
+
+        assert user.pseudo == "testuser"
+        assert user.email == "test@example.com"
+        assert user.check_password("testpass123")
         assert user.is_active is True
         assert user.is_staff is False
         assert user.is_superuser is False
-    
+
     def test_create_superuser(self):
         """Test de création d'un superutilisateur"""
         user = User.objects.create_superuser(
-            username='admin',
-            email='admin@example.com',
-            password='adminpass123'
+            email="admin@example.com",
+            pseudo="admin",
+            password="adminpass123",
         )
-        
+
         assert user.is_staff is True
         assert user.is_superuser is True
-    
+
     def test_user_str_representation(self):
         """Test de la représentation string de l'utilisateur"""
         user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com'
+            email="test@example.com",
+            pseudo="testuser",
+            password="testpass123",
         )
-        
-        assert str(user) == 'testuser'
-    
-    @pytest.mark.skip(reason="Django User par défaut n'impose pas l'unicité de l'email")
+
+        # __str__ renvoie le pseudo
+        assert str(user) == "testuser"
+
     def test_user_email_unique(self):
         """Test que l'email doit être unique"""
         User.objects.create_user(
-            username='user1',
-            email='test@example.com'
+            email="test@example.com",
+            pseudo="user1",
+            password="testpass123",
         )
-        
+
         with pytest.raises(IntegrityError):
             User.objects.create_user(
-                username='user2',
-                email='test@example.com'
+                email="test@example.com",
+                pseudo="user2",
+                password="testpass123",
             )
-    
-    def test_user_username_unique(self):
-        """Test que le nom d'utilisateur doit être unique"""
+
+    def test_user_pseudo_unique(self):
+        """Test que le pseudo doit être unique"""
         User.objects.create_user(
-            username='testuser',
-            email='test1@example.com'
+            email="test1@example.com",
+            pseudo="testuser",
+            password="testpass123",
         )
-        
+
         with pytest.raises(IntegrityError):
             User.objects.create_user(
-                username='testuser',
-                email='test2@example.com'
+                email="test2@example.com",
+                pseudo="testuser",
+                password="testpass123",
             )
 
 
