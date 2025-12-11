@@ -31,6 +31,16 @@ def user(db):
 
 
 @pytest.fixture
+def another_user(db):
+    """Second test user for ownership checks."""
+    return User.objects.create_user(
+        email="anothergames@example.com",
+        password="AnotherTestPass123!",
+        pseudo="anothergamesuser",
+    )
+
+
+@pytest.fixture
 def authenticated_api_client(user):
     """Client DRF avec authentification forcée"""
     client = APIClient()

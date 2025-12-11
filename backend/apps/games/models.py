@@ -153,13 +153,6 @@ class Rating(models.Model):
                     {"value": "Rating out of range for type 'decimal' (0-10)."}
                 )
 
-            # Allow at most 1 decimal place
-            exponent = self.value.as_tuple().exponent
-            if exponent < -1:
-                raise ValidationError(
-                    {"value": "Decimal rating must have at most 1 decimal place."}
-                )
-
         elif self.rating_type == self.RATING_TYPE_ETOILES:
             if self.value < 1 or self.value > 5:
                 raise ValidationError(
