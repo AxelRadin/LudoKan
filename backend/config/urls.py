@@ -53,8 +53,11 @@ urlpatterns = [
     path("api/auth/", include("apps.users.urls_auth")),
     path("api/", include("apps.users.urls")),
 
-    #lib
+    # Library
     path("api/", include("apps.library.urls")),
+
+    # Games
+    path("api/", include("apps.games.urls")),
 
 
 
