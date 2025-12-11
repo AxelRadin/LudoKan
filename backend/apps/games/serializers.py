@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.games.models import Game, Publisher, Platform, Genre
+from apps.games.models import Game, Publisher, Platform, Genre, Rating
 from apps.library.serializers import (
     PublisherSerializer,
     GenreSerializer,
@@ -113,4 +113,35 @@ class PlatformCRUDSerializer(serializers.ModelSerializer):
             "nom_plateforme",
             "description",
         ]
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Rating
+        fields = [
+            "id",
+            "game",
+            "user",
+            "rating_type",
+            "value",
+        ]
+        read_only_fields = ["id", "game", "user"]
+
+    def validate(self, attrs):
+        """
+        Reuse the model's clean() logic to validate rating_type/value coherence.
+        Works for both create and partial update.
+        """
+        RatingModel = self.Meta.model
+
+        rating_type = attrs.get("rating_type") or getattr(self.instance, "rating_type", None)
+        value = attrs.get("value") or getattr(self.instance, "value", None)
+
+        tmp = RatingModel(
+            rating_type=rating_type,
+            value=value,
+        )
+        tmp.clean()
+
+        return attrs
 
