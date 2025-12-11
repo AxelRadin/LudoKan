@@ -33,9 +33,9 @@ def django_client():
 def user(db):
     """Utilisateur de test"""
     return User.objects.create_user(
-        username='testuser',
-        email='test@example.com',
-        password='testpass123'
+        email="test@example.com",
+        pseudo="testuser",
+        password="testpass123",
     )
 
 
@@ -43,9 +43,9 @@ def user(db):
 def admin_user(db):
     """Utilisateur administrateur de test"""
     return User.objects.create_superuser(
-        username='admin',
-        email='admin@example.com',
-        password='adminpass123'
+        email="admin@example.com",
+        pseudo="admin",
+        password="adminpass123",
     )
 
 
@@ -84,11 +84,11 @@ def sample_game_data():
 def sample_user_data():
     """Données utilisateur de test"""
     return {
-        'username': 'newuser',
-        'email': 'newuser@example.com',
-        'password': 'newpass123',
-        'first_name': 'New',
-        'last_name': 'User'
+        "email": "newuser@example.com",
+        "password": "newpass123",
+        "pseudo": "newuser",
+        "first_name": "New",
+        "last_name": "User",
     }
 
 
