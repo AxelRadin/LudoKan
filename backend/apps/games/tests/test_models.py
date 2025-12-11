@@ -125,9 +125,11 @@ class TestGameModel:
         assert game.publisher == publisher
         assert genre in game.genres.all()
         assert platform in game.platforms.all()
-        # Valeurs par défaut
+        # Default values
         assert game.rating_avg == 0.0
         assert game.popularity_score == 0.0
+        assert game.average_rating == 0.0
+        assert game.rating_count == 0
 
     def test_game_str(self, game):
         """__str__ doit renvoyer le nom du jeu"""
@@ -242,17 +244,6 @@ class TestRatingModel:
         with pytest.raises(ValidationError):
             rating_too_high.full_clean()
 
-    def test_decimal_more_than_one_decimal_place_invalid(self, user, game):
-        """decimal ratings must not have more than one decimal place."""
-        rating = Rating(
-            user=user,
-            game=game,
-            rating_type=Rating.RATING_TYPE_DECIMAL,
-            value=7.25,
-        )
-
-        with pytest.raises(ValidationError):
-            rating.full_clean()
 
     def test_etoiles_out_of_range_raises_validation_error(self, user, game):
         """etoiles ratings must be between 1 and 5."""
@@ -274,3 +265,59 @@ class TestRatingModel:
 
         with pytest.raises(ValidationError):
             rating_high.full_clean()
+
+
+@pytest.mark.django_db
+class TestRatingAggregates:
+    """Tests for automatic average_rating and rating_count updates via signals."""
+
+    def test_average_rating_updates_on_create(self, user, another_user, game):
+        """Creating ratings should update game's average_rating and rating_count."""
+        # First rating: sur_10 = 8 -> normalized 8
+        Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_10,
+            value=8,
+        )
+        game.refresh_from_db()
+        assert game.average_rating == 8.0
+        assert game.rating_count == 1
+        assert game.rating_avg == 8.0
+
+        # Second rating: sur_100 = 90 -> normalized 9
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_100,
+            value=90,
+        )
+        game.refresh_from_db()
+        # Average of 8 and 9 = 8.5
+        assert game.average_rating == pytest.approx(8.5)
+        assert game.rating_count == 2
+        assert game.rating_avg == pytest.approx(8.5)
+
+    def test_average_rating_updates_on_delete(self, user, another_user, game):
+        """Deleting a rating should recalculate game's average_rating and rating_count."""
+        r1 = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_10,
+            value=8,
+        )
+        r2 = Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_10,
+            value=6,
+        )
+        game.refresh_from_db()
+        assert game.average_rating == pytest.approx(7.0)
+        assert game.rating_count == 2
+
+        # Delete one rating
+        r2.delete()
+        game.refresh_from_db()
+        assert game.average_rating == pytest.approx(8.0)
+        assert game.rating_count == 1

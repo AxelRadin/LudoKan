@@ -4,6 +4,7 @@ Tests pour les vues de l'app games
 
 import pytest
 from rest_framework import status
+from rest_framework.test import APIClient
 
 from apps.games.models import Game, Publisher, Genre, Platform, Rating
 
@@ -411,6 +412,7 @@ class TestGameRatings:
 
         response = authenticated_api_client.post(url, payload, format="json")
 
+        print("response.data",response.data)
         assert response.status_code == status.HTTP_201_CREATED
         rating = Rating.objects.get(user=user, game=game)
         assert rating.rating_type == "decimal"
@@ -609,3 +611,120 @@ class TestRatingList:
         # Only one rating matches both filters
         assert len(response.data["results"]) == 1
 
+
+@pytest.mark.django_db
+class TestGameRatingsAverages:
+    """Integration tests for average_rating and rating_count via API."""
+
+    def test_average_rating_and_count_update_with_mixed_rating_types(
+        self,
+        authenticated_api_client,
+        api_client,
+        user,
+        another_user,
+        game,
+    ):
+        # 1) User (client déjà authentifié) note sur_10 = 8  -> normalized 8
+        url = f"/api/games/{game.id}/ratings/"
+        payload1 = {
+            "rating_type": "sur_10",
+            "value": 8,
+        }
+        response1 = authenticated_api_client.post(url, payload1, format="json")
+        assert response1.status_code == status.HTTP_201_CREATED
+
+        game.refresh_from_db()
+        assert game.average_rating == pytest.approx(8.0)
+        assert game.rating_count == 1
+
+        # 2) another_user note sur_100 = 90 -> normalized 9
+        other_client = APIClient()
+        other_client.force_authenticate(user=another_user)
+        payload2 = {
+            "rating_type": "sur_100",
+            "value": 90,
+        }
+        response2 = other_client.post(url, payload2, format="json")
+        assert response2.status_code == status.HTTP_201_CREATED
+
+        game.refresh_from_db()
+        # Moyenne de 8 et 9 => 8.5
+        assert game.average_rating == pytest.approx(8.5)
+        assert game.rating_count == 2
+
+        # 3) Vérifier aussi via GET /api/games/{id}/ pour être sûr que le serializer expose bien les valeurs
+        detail_response = authenticated_api_client.get(f"/api/games/{game.id}/")
+        assert detail_response.status_code == status.HTTP_200_OK
+        assert detail_response.data["average_rating"] == pytest.approx(8.5)
+        assert detail_response.data["rating_count"] == 2
+
+    def test_average_rating_updates_when_user_updates_rating(
+        self,
+        authenticated_api_client,
+        user,
+        another_user,
+        game,
+    ):
+        url = f"/api/games/{game.id}/ratings/"
+
+        # User 1: sur_10 = 8 (normalized 8)
+        payload1 = {"rating_type": "sur_10", "value": 8}
+        r1 = authenticated_api_client.post(url, payload1, format="json")
+        assert r1.status_code == status.HTTP_201_CREATED
+
+        # User 2: etoiles = 5 (normalized 10)
+        from rest_framework.test import APIClient
+        other_client = APIClient()
+        other_client.force_authenticate(user=another_user)
+        payload2 = {"rating_type": "etoiles", "value": 5}
+        r2 = other_client.post(url, payload2, format="json")
+        assert r2.status_code == status.HTTP_201_CREATED
+
+        game.refresh_from_db()
+        # Moyenne de 8 et 10 => 9
+        assert game.average_rating == pytest.approx(9.0)
+        assert game.rating_count == 2
+
+        # User 1 met à jour sa note: sur_10 = 6 (normalized 6)
+        payload_update = {"rating_type": "sur_10", "value": 6}
+        r3 = authenticated_api_client.post(url, payload_update, format="json")
+        assert r3.status_code == status.HTTP_200_OK
+
+        game.refresh_from_db()
+        # On a maintenant 6 et 10 => moyenne 8, toujours 2 ratings
+        assert game.average_rating == pytest.approx(8.0)
+        assert game.rating_count == 2
+
+    def test_average_rating_updates_on_delete_via_api(
+        self,
+        authenticated_api_client,
+        user,
+        another_user,
+        game,
+    ):
+        url = f"/api/games/{game.id}/ratings/"
+
+        # Créer deux ratings
+        authenticated_api_client.post(url, {"rating_type": "sur_10", "value": 8}, format="json")
+
+        from rest_framework.test import APIClient
+        other_client = APIClient()
+        other_client.force_authenticate(user=another_user)
+        other_client.post(url, {"rating_type": "sur_10", "value": 6}, format="json")
+
+        game.refresh_from_db()
+        assert game.average_rating == pytest.approx(7.0)
+        assert game.rating_count == 2
+
+        # Récupérer l'id du rating de another_user
+        from apps.games.models import Rating
+        other_rating = Rating.objects.get(user=another_user, game=game)
+
+        # DELETE /api/ratings/{rating_id}/
+        delete_url = f"/api/ratings/{other_rating.id}/"
+        response = other_client.delete(delete_url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+
+        game.refresh_from_db()
+        assert game.average_rating == pytest.approx(8.0)
+        assert game.rating_count == 1
