@@ -1,12 +1,12 @@
-import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
+import { apiPost } from '../services/api';
+import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
-import Alert from '@mui/material/Alert';
-import { apiPost } from "../services/api";
 
 type RegisterFormProps = {
   onSwitchToLogin: () => void;
@@ -37,58 +37,27 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     try {
       setLoading(true);
 
-      await apiPost("/api/auth/registration/", {
-      pseudo: pseudo,
-      email: email,
-      password1: password,
-      password2: password2,
-    });
+      await apiPost('/api/auth/registration/', {
+        pseudo: pseudo,
+        email: email,
+        password1: password,
+        password2: password2,
+      });
 
-     onSwitchToLogin();
-      } catch (err: any) {
-        setError(err.message || "Une erreur est survenue.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+      onSwitchToLogin();
+    } catch (err: any) {
+      setError(err.message || 'Une erreur est survenue.');
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      sx={{
-        backgroundColor: 'white',
-        py: 4,
-        position: 'relative',
-      }}
+    <AuthFormContainer
+      title="Inscription"
+      switchLabel="Se connecter"
+      onSwitch={onSwitchToLogin}
     >
-      <Box position="absolute" top={20} left={40}>
-        <img src="/logo.png" alt="Ludokan Logo" style={{ height: 50 }} />
-      </Box>
-
-      <Typography
-        variant="body2"
-        sx={{
-          position: 'absolute',
-          top: 30,
-          right: 40,
-          cursor: 'pointer',
-          fontWeight: 'bold',
-        }}
-        onClick={onSwitchToLogin}
-      >
-        Se connecter
-      </Typography>
-
-      <Typography variant="h4" fontWeight="bold" mb={3} mt={4}>
-        Inscription
-      </Typography>
-
-      <Stack spacing={2} width={300}>
+      <Stack spacing={2.5} width={320}>
         <TextField
           label="Pseudo"
           variant="outlined"
@@ -118,16 +87,16 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       </Stack>
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2, width: 300 }}>
+        <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
           {error}
         </Alert>
       )}
 
-      <Typography variant="body1" mt={4}>
+      <Typography variant="body1" mt={5}>
         S’inscrire avec
       </Typography>
 
-      <Stack direction="row" spacing={3} mt={1}>
+      <Stack direction="row" spacing={3} mt={1.5}>
         <SocialLoginButton icon="google" />
         <SocialLoginButton icon="apple" />
         <SocialLoginButton icon="x" />
@@ -135,13 +104,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       </Stack>
 
       <PrimaryButton
-        sx={{ mt: 4 }}
+        sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
         type="submit"
         disabled={loading}
       >
         {loading ? 'Inscription...' : 'S’inscrire'}
       </PrimaryButton>
-    </Box>
+    </AuthFormContainer>
   );
 };
 

@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import GenreGrid from '../components/GenreGrid';
 import Header from '../components/Header';
-import HeroSection from '../components/HeroSection';
+import HeroSection from '../components/Banner';
 import TrendingGames from '../components/TrendingGames';
 
 function HomePage() {

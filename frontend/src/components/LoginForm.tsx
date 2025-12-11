@@ -1,12 +1,12 @@
-import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
+import { apiPost } from '../services/api';
+import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
-import Alert from '@mui/material/Alert';
-import { apiPost } from "../services/api";
 
 type LoginFormProps = {
   onSwitchToRegister: () => void;
@@ -28,63 +28,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
     }
 
     try {
-    setLoading(true);
-    const data = await apiPost("/api/auth/login/", {
-      email: email,
-      password: password
-    });
-// ajouter une redirection à la connexion
-    // data contient le token, ex:
-    // { "key": "abc123" }
-    console.log("User connecté", data);
+      setLoading(true);
+      const data = await apiPost('/api/auth/login/', {
+        email: email,
+        password: password,
+      });
+      // ajouter une redirection à la connexion
+      // data contient le token, ex:
+      // { "key": "abc123" }
+      console.log('User connecté', data);
 
-    // Stocker le token localement pour authentifier les prochaines requêtes
-    localStorage.setItem("token", data.key || data.access);
-
-  } catch (err: any) {
-    setError(err.message || 'Une erreur est survenue.');
-  } finally {
-    setLoading(false);
-  }
-};
+      // Stocker le token localement pour authentifier les prochaines requêtes
+      localStorage.setItem('token', data.key || data.access);
+    } catch (err: any) {
+      setError(err.message || 'Une erreur est survenue.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      justifyContent="center"
-      sx={{
-        backgroundColor: 'white',
-        py: 4,
-        position: 'relative',
-      }}
+    <AuthFormContainer
+      title="Connexion"
+      switchLabel="S’inscrire"
+      onSwitch={onSwitchToRegister}
     >
-      <Box position="absolute" top={20} left={40}>
-        <img src="/logo.png" alt="Ludokan Logo" style={{ height: 50 }} />
-      </Box>
-
-      <Typography
-        variant="body2"
-        sx={{
-          position: 'absolute',
-          top: 30,
-          right: 40,
-          cursor: 'pointer',
-          fontWeight: 'bold',
-        }}
-        onClick={onSwitchToRegister}
-      >
-        S’inscrire
-      </Typography>
-
-      <Typography variant="h4" fontWeight="bold" mb={3} mt={4}>
-        Connexion
-      </Typography>
-
-      <Stack spacing={2} width={300}>
+      <Stack spacing={2.5} width={320}>
         <TextField
           label="Email"
           variant="outlined"
@@ -101,16 +70,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       </Stack>
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2, width: 300 }}>
+        <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
           {error}
         </Alert>
       )}
 
-      <Typography variant="body1" mt={4}>
+      <Typography variant="body1" mt={5}>
         Se connecter avec
       </Typography>
 
-      <Stack direction="row" spacing={3} mt={1}>
+      <Stack direction="row" spacing={3} mt={1.5}>
         <SocialLoginButton icon="google" />
         <SocialLoginButton icon="apple" />
         <SocialLoginButton icon="x" />
@@ -118,13 +87,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       </Stack>
 
       <PrimaryButton
-        sx={{ mt: 4 }}
+        sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
         type="submit"
         disabled={loading}
       >
         {loading ? 'Connexion...' : 'Se connecter'}
       </PrimaryButton>
-    </Box>
+    </AuthFormContainer>
   );
 };
 
