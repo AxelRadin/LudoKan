@@ -1,24 +1,43 @@
 import Box from '@mui/material/Box';
+import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
 import Header from '../components/Header';
-import HeroSection from '../components/Banner';
 import TrendingGames from '../components/TrendingGames';
 
 function HomePage() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',          
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#ffffff',
       }}
     >
       <Header />
-      <Box component="main" sx={{ flex: 1, pt: 8 }}>
-        <HeroSection />
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          pt: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
+        <Banner />
         <TrendingGames />
-        <GenreGrid />
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            marginTop: 5,
+          }}
+        >
+          <GenreGrid />
+        </Box>
       </Box>
     </Box>
   );
