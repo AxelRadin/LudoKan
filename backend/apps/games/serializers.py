@@ -1,3 +1,4 @@
+from django.db.models.base import ValidationError
 from rest_framework import serializers
 
 from apps.games.models import Game, Publisher, Platform, Genre, Rating
@@ -27,6 +28,8 @@ class GameReadSerializer(serializers.ModelSerializer):
             "max_players",
             "min_age",
             "rating_avg",
+            "average_rating",
+            "rating_count",
             "popularity_score",
             "publisher",
             "genres",
@@ -62,6 +65,8 @@ class GameWriteSerializer(serializers.ModelSerializer):
             "max_players",
             "min_age",
             "rating_avg",
+            "average_rating",
+            "rating_count",
             "popularity_score",
             "publisher",
             "genres",
@@ -74,6 +79,8 @@ class GameWriteSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
             "rating_avg",
+            "average_rating",
+            "rating_count",
             "popularity_score",
         ]
 
@@ -128,15 +135,17 @@ class RatingSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "game", "user"]
 
     def validate(self, attrs):
-        """
-        Reuse the model's clean() logic to validate rating_type/value coherence.
-        Works for both create and partial update.
+        """Reuse the model's clean() logic for range/type validation.
+
+        We no longer enforce decimal place count here so that both integers
+        and decimals in [0, 10] are accepted for the `decimal` rating type.
         """
         RatingModel = self.Meta.model
 
         rating_type = attrs.get("rating_type") or getattr(self.instance, "rating_type", None)
         value = attrs.get("value") or getattr(self.instance, "value", None)
 
+        # Let the model handle value/range validation
         tmp = RatingModel(
             rating_type=rating_type,
             value=value,
@@ -144,4 +153,3 @@ class RatingSerializer(serializers.ModelSerializer):
         tmp.clean()
 
         return attrs
-
