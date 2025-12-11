@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './App.css';
 import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
 import BackendConnector from './components/BackendConnector';
-import { useNavigate } from 'react-router-dom';
+import viteLogo from '/vite.svg';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -21,10 +21,15 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <div className="card">
-        <button onClick={() => setCount(count => count + 1)}>
-          count is {count}
+        <button onClick={() => navigate('/home')} style={{ color: 'white' }}>
+          Aller à Home
         </button>
-        <button onClick={() => navigate('/home')}>Aller à Home</button>
+        <button onClick={() => navigate('/Game')} style={{ color: 'white' }}>
+          Accéder à GamePage
+        </button>
+        <button onClick={() => navigate('/profile')} style={{ color: 'white' }}>
+          Accéder à ProfilePage
+        </button>
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>

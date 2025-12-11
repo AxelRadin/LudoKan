@@ -6,7 +6,9 @@ import App from './App.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import './index.css';
 import { initSentry, Sentry } from './monitoring/sentry';
+import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
 import theme from './theme.ts';
 
@@ -14,6 +16,8 @@ const router = createBrowserRouter([
   { path: '/', element: <App /> },
   { path: '/home', element: <HomePage /> },
   { path: '/test', element: <TestSentry /> },
+  { path: '/profile', element: <ProfilePage /> },
+  { path: '/Game', element: <GamePage /> },
 ]);
 
 initSentry();
