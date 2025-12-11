@@ -45,8 +45,26 @@ class GameNestedSerializer(serializers.ModelSerializer):
 
 
 class UserGameSerializer(serializers.ModelSerializer):
-    game = GameNestedSerializer()
+    game = GameNestedSerializer(read_only=True)
+    game_id = serializers.IntegerField(write_only=True, required=True)
 
     class Meta:
         model = UserGame
-        fields = ["id", "game", "status", "date_added"]
+        fields = ["id", "game", "game_id", "status", "date_added"]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        game_id = validated_data.pop("game_id")
+
+        # Vérifie que le jeu existe
+        try:
+            game = Game.objects.get(id=game_id)
+        except Game.DoesNotExist:
+            raise serializers.ValidationError({"game_id": "Jeu non trouvé."})
+
+        # Vérifie les doublons
+        if UserGame.objects.filter(user=user, game=game).exists():
+            raise serializers.ValidationError({"error": "Jeu déjà ajouté."})
+
+        # Crée et retourne l'objet UserGame
+        return UserGame.objects.create(user=user, game=game, **validated_data)
