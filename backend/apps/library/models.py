@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-# On importe le modèle Game dans l'autre app
 from apps.games.models import Game
 
 
