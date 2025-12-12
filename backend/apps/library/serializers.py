@@ -53,9 +53,7 @@ class UserGameSerializer(serializers.ModelSerializer):
         fields = ["id", "game", "game_id", "status", "date_added"]
         read_only_fields = ["date_added"]
 
-    # --------------------------
-    # Validation du statut
-    # --------------------------
+
     def validate_status(self, value):
         allowed = ["EN_COURS", "TERMINE", "ABANDONNE"]
         if value not in allowed:
@@ -64,9 +62,7 @@ class UserGameSerializer(serializers.ModelSerializer):
             )
         return value
 
-    # --------------------------
-    # Création d'un UserGame
-    # --------------------------
+
     def create(self, validated_data):
         user = self.context["request"].user
         game_id = validated_data.pop("game_id", None)
@@ -86,11 +82,8 @@ class UserGameSerializer(serializers.ModelSerializer):
 
         return UserGame.objects.create(user=user, game=game, **validated_data)
 
-    # --------------------------
-    # Mise à jour du statut
-    # --------------------------
+
     def update(self, instance, validated_data):
-        # on ne modifie que le statut (game_id ignoré lors de PATCH)
         instance.status = validated_data.get("status", instance.status)
         instance.save()
         return instance

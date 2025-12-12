@@ -49,12 +49,9 @@ class UserGameViewSet(viewsets.ModelViewSet):
             .order_by("-date_added")
         )
 
-    #def perform_create(self, serializer):
-     #   serializer.save(user=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
         game_id = kwargs.get("game_id")
-        # On récupère la ligne UserGame correspondant à l'utilisateur
         user_game = get_object_or_404(UserGame, user=request.user, game_id=game_id)
         user_game.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

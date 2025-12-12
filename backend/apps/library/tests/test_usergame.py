@@ -56,7 +56,7 @@ class TestUserGameAPI:
 
 
     def test_list_usergames(self, authenticated_api_client, user, game):
-        # Création d'un UserGame
+
         user_game = UserGame.objects.create(user=user, game=game)
 
         response = authenticated_api_client.get("/api/me/games/")
