@@ -59,7 +59,8 @@ urlpatterns = [
     # Games
     path("api/", include("apps.games.urls")),
 
-
+    # Reviews
+    path("api/", include("apps.reviews.urls")),
 
 ]
 

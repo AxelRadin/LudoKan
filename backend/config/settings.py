@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "apps.social",
     "apps.library",
     "apps.recommendations",
+    "apps.reviews",
     "api",
 ]
 
