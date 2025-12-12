@@ -13,15 +13,26 @@ from apps.library.models import UserGame
 from apps.library.serializers import UserGameSerializer
 
 
-class UserGameViewSet(viewsets.ModelViewSet):
 
 @extend_schema_view(
     list=extend_schema(
-        summary="List games in the authenticated user's library",
-        description="Return the list of games that belong to the current authenticated user.",
+        summary="Lister les jeux de la bibliothèque de l'utilisateur",
+        description="Retourne la liste complète des jeux appartenant à l'utilisateur authentifié.",
         responses=UserGameSerializer(many=True),
-    )
+    ),
+    destroy=extend_schema(
+        summary="Supprimer un jeu de la bibliothèque de l'utilisateur",
+        description=(
+            "Supprime un jeu de la collection personnelle de l'utilisateur. "
+            "Le `game_id` doit correspondre à un jeu présent dans sa bibliothèque."
+        ),
+        responses={
+            204: None,
+            404: {"description": "Le jeu n'existe pas dans la bibliothèque de l'utilisateur."},
+        },
+    ),
 )
+class UserGameViewSet(viewsets.ModelViewSet):
 
     serializer_class = UserGameSerializer
     permission_classes = [IsAuthenticated]
