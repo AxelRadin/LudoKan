@@ -32,13 +32,21 @@ def django_client():
 @pytest.fixture
 def user():
     """Utilisateur de test"""
-    return User.objects.create_user(email="test@example.com", pseudo="testuser", password="testpass123")
+    return User.objects.create_user(
+        email="test@example.com",
+        pseudo="testuser",
+        password="testpass123",
+    )
 
 
 @pytest.fixture
 def admin_user():
     """Utilisateur administrateur de test"""
-    return User.objects.create_superuser(email="admin@example.com", pseudo="admin", password="adminpass123")
+    return User.objects.create_superuser(
+        email="admin@example.com",
+        pseudo="admin",
+        password="adminpass123",
+    )
 
 
 @pytest.fixture
@@ -77,8 +85,8 @@ def sample_user_data():
     """Données utilisateur de test"""
     return {
         "email": "newuser@example.com",
-        "pseudo": "newuser",
         "password": "newpass123",
+        "pseudo": "newuser",
         "first_name": "New",
         "last_name": "User",
     }

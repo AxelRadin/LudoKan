@@ -12,9 +12,10 @@ Class-based views
     2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
 Including another URLconf
     1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
@@ -22,11 +23,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
 
-from api.views import ItemViewSet
-from apps.users.views import LoginView, LogoutView, RefreshView, RegisterView
-
 router = DefaultRouter()
-router.register(r"items", ItemViewSet, basename="item")
 
 
 def health(request):
@@ -40,26 +37,22 @@ def sentry_debug(request):
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # path('api/', include('api.urls')),
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
-    path(
-        "api/schema/",
-        SpectacularAPIView.as_view(permission_classes=[AllowAny]),
-        name="schema",
-    ),
+    path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("api/register/", RegisterView.as_view(), name="register"),
-    # Endpoints d'auth custom (utilisés par les tests)
-    path("api/auth/login/", LoginView.as_view(), name="login"),
-    path("api/auth/logout/", LogoutView.as_view(), name="logout"),
-    path("api/auth/refresh/", RefreshView.as_view(), name="refresh"),
-    # Endpoints dj-rest-auth (conservés pour compat)
-    path("api/auth/", include("dj_rest_auth.urls")),
-    path("api/auth/register/", RegisterView.as_view(), name="custom_register"),
-    path("api/auth/registration/", include("dj_rest_auth.registration.urls")),
-    # path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # path('api/auth/jwt/create/', TokenObtainPairView.as_view(), name='jwt_create'),
-    # path('api/auth/jwt/refresh/', TokenRefreshView.as_view(), name='jwt_refresh'),
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
+    # Auth
+    path("api/auth/", include("apps.users.urls_auth")),
+    path("api/", include("apps.users.urls")),
+    # Library
+    path("api/", include("apps.library.urls")),
+    # Games
+    path("api/", include("apps.games.urls")),
+    # Reviews
+    path("api/", include("apps.reviews.urls")),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

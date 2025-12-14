@@ -12,8 +12,9 @@ skip = ["migrations", ".venv"]
 [tool.flake8]
 max-line-length = 150
 extend-ignore = [
-    "E203",  # compat avec black
-    "W503",  # OK pour flake8, pas pour Ruff
+    "E203",  
+    "W503", 
+    "E303",  
 ]
 exclude = [
     ".venv",

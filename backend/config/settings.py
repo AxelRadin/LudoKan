@@ -18,53 +18,33 @@ import sentry_sdk
 from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
 
-AUTH_USER_MODEL = "users.CustomUser"
+# -------------------------------------------------------------------
+# Base directory
+# -------------------------------------------------------------------
 
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Pas de username
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = "email"
-
-ACCOUNT_EMAIL_VERIFICATION = config("ACCOUNT_EMAIL_VERIFICATION", default="mandatory")
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_CONFIRM_EMAIL_ON_GET = True
-
-SITE_ID = 1
-
-REST_AUTH_SERIALIZERS = {
-    "LOGIN_SERIALIZER": "dj_rest_auth.serializers.LoginSerializer",
-}
-
-# Sécurité des cookies
-# SESSION_COOKIE_SECURE = True   #  HTTPS
-# CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_HTTPONLY = True
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    config("FRONTEND_URL", default="http://localhost:3000"),
-]
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
+# -------------------------------------------------------------------
+# Core env / security
+# -------------------------------------------------------------------
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config(
     "SECRET_KEY",
     default="django-insecure-=o*2&qoz81)g=k*gpcsn11dsw8o35pvo(s&e4+lc-*1ypl%h=7",
 )
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", default=True, cast=bool)
 
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS",
+    default="localhost,127.0.0.1,testserver",
+).split(",")
 
 
-# Application definition
+# -------------------------------------------------------------------
+# Applications
+# -------------------------------------------------------------------
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -73,9 +53,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",
     "rest_framework",
     "drf_spectacular",
-    "rest_framework.authtoken",
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "rest_framework_simplejwt",
@@ -89,8 +69,14 @@ INSTALLED_APPS = [
     "apps.social",
     "apps.library",
     "apps.recommendations",
+    "apps.reviews",
     "api",
 ]
+
+
+# -------------------------------------------------------------------
+# Middleware
+# -------------------------------------------------------------------
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -107,40 +93,75 @@ MIDDLEWARE = [
 ]
 
 
-# CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="...").split(",")
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# -------------------------------------------------------------------
+# Auth / Users / Allauth / REST / JWT
+# -------------------------------------------------------------------
+
+AUTH_USER_MODEL = "users.CustomUser"
+
+REST_USE_JWT = True
+TOKEN_MODEL = None
+REST_AUTH_TOKEN_MODEL = None
+
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Pas de username
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+
+ACCOUNT_EMAIL_VERIFICATION = config("ACCOUNT_EMAIL_VERIFICATION", default="mandatory")
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+
+SITE_ID = 1
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        # "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+        # JWT via cookies (dj-rest-auth)
+        "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+        # JWT via header Authorization: Bearer <token>
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # Pratique pour l'admin / browsable API
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "apps.users.exceptions.custom_exception_handler",
 }
 
-REST_USE_JWT = True
+# Cookies JWT / Samesite
+JWT_AUTH_COOKIE = "access_token"
+JWT_AUTH_REFRESH_COOKIE = "refresh_token"
+JWT_AUTH_HTTPONLY = True
+JWT_AUTH_SECURE = not DEBUG
+JWT_AUTH_SAMESITE = "None" if not DEBUG else "Lax"
 
 REST_AUTH = {
     "USE_JWT": True,
-    "JWT_AUTH_COOKIE": "access_token",
-    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
-    "JWT_AUTH_HTTPONLY": True,
-    "JWT_AUTH_SECURE": not DEBUG,
-    "JWT_AUTH_SAMESITE": "Lax",
+    "TOKEN_MODEL": None,
+    "JWT_AUTH_COOKIE": JWT_AUTH_COOKIE,
+    "JWT_AUTH_REFRESH_COOKIE": JWT_AUTH_REFRESH_COOKIE,
+    "JWT_AUTH_HTTPONLY": JWT_AUTH_HTTPONLY,
+    "JWT_AUTH_SECURE": JWT_AUTH_SECURE,
+    "JWT_AUTH_SAMESITE": JWT_AUTH_SAMESITE,
+    "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
+    "USER_DETAILS_SERIALIZER": "apps.users.serializers.UserSerializer",
+    "OLD_PASSWORD_FIELD_ENABLED": True,
 }
 
+REST_AUTH_SERIALIZERS = {
+    "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
+}
 
 SIMPLE_JWT = {
-    # "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    # "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME", default=15, cast=int)),
     "REFRESH_TOKEN_LIFETIME": timedelta(minutes=config("JWT_REFRESH_TOKEN_LIFETIME", default=10080, cast=int)),
     "ROTATE_REFRESH_TOKENS": False,
@@ -151,15 +172,38 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-JWT_AUTH_COOKIE = "access_token"
-JWT_AUTH_REFRESH_COOKIE = "refresh_token"
-# JWT_AUTH_COOKIE_USE_CSRF = True
-# JWT_AUTH_SECURE = True
-# JWT_AUTH_HTTPONLY = True
-JWT_AUTH_SAMESITE = "Lax"
-# JWT_ACCESS_TOKEN_LIFETIME = 900     # 15 min
-# JWT_REFRESH_TOKEN_LIFETIME = 604800 # 7 jours
 
+# -------------------------------------------------------------------
+# Security / CORS / CSRF / Cookies
+# -------------------------------------------------------------------
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = True
+
+
+# CORS : localhost (React/Vite) par défaut
+CORS_ALLOWED_ORIGINS = config(
+    "CORS_ALLOWED_ORIGINS",
+    default=("http://localhost:3000," "http://127.0.0.1:3000," "http://localhost:5173," "http://127.0.0.1:5173"),
+).split(",")
+
+CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
+
+# CSRF trusted origins
+CSRF_TRUSTED_ORIGINS = [
+    o
+    for o in config(
+        "CSRF_TRUSTED_ORIGINS",
+        default=("http://localhost:3000," "http://127.0.0.1:3000," "http://localhost:5173," "http://127.0.0.1:5173"),
+    ).split(",")
+    if o
+]
+
+
+# -------------------------------------------------------------------
+# URLs / WSGI / API docs
+# -------------------------------------------------------------------
 
 ROOT_URLCONF = "config.urls"
 
@@ -169,6 +213,7 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
 }
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -188,11 +233,9 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 
+# -------------------------------------------------------------------
 # Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+# -------------------------------------------------------------------
 
 DATABASES = {
     "default": dj_database_url.config(
@@ -212,8 +255,9 @@ DATABASES = {
 }
 
 
+# -------------------------------------------------------------------
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
+# -------------------------------------------------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -231,8 +275,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# -------------------------------------------------------------------
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
+# -------------------------------------------------------------------
 
 LANGUAGE_CODE = "en-us"
 
@@ -243,34 +288,50 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
+# -------------------------------------------------------------------
+# Static files
+# -------------------------------------------------------------------
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
-# Optionnel mais fortement recommandé avec WhiteNoise
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
+# -------------------------------------------------------------------
+# Media files (upload)
+# -------------------------------------------------------------------
+
+if DEBUG:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
+
+
+# -------------------------------------------------------------------
+# Default primary key
+# -------------------------------------------------------------------
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Celery Configuration
+
+# -------------------------------------------------------------------
+# Celery
+# -------------------------------------------------------------------
+
 CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/1")
 CELERY_CACHE_BACKEND = config("CELERY_CACHE_BACKEND", default="redis://redis:6379/2")
 
-# Configuration des tâches
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
 
-# Configuration Redis pour le cache Django
+
+# -------------------------------------------------------------------
+# Cache (Redis)
+# -------------------------------------------------------------------
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -281,25 +342,33 @@ CACHES = {
     }
 }
 
-# Email Configuration
+
+# -------------------------------------------------------------------
+# Email
+# -------------------------------------------------------------------
+
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@ludokan.com")
-EMAIL_BACKEND = config("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
-
-# CORS Configuration
-CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000,http://127.0.0.1:3000").split(",")
-CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
-
-# CSRF Configuration (configurable via environment variable)
-CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
+EMAIL_BACKEND = config(
+    "EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
+)
 
 
-# Sentry configuration
+# -------------------------------------------------------------------
+# Sentry
+# -------------------------------------------------------------------
+
 SENTRY_DSN = config("SENTRY_DSN", default="").strip()
+
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        traces_sample_rate=config("SENTRY_TRACES_SAMPLE_RATE", default=1.0, cast=float),
+        traces_sample_rate=config(
+            "SENTRY_TRACES_SAMPLE_RATE",
+            default=1.0,
+            cast=float,
+        ),
         environment=config("SENTRY_ENVIRONMENT", default=None),
         send_default_pii=True,
     )

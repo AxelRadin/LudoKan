@@ -3,4 +3,9 @@ documentation_perso/
 .env
 .idea/
 node_modules/
+
+# Local directories ( DON'T DELETE THIS PLEASE )
 local_directories/
+
+# Media files (uploads)
+media/

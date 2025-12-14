@@ -43,6 +43,7 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ];

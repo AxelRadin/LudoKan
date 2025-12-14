@@ -10,11 +10,15 @@ User = get_user_model()
 
 @pytest.mark.django_db
 class TestUserModel:
-    """Tests pour le modèle User"""
+    """Tests pour le modèle User (CustomUser)"""
 
     def test_create_user(self):
         """Test de création d'un utilisateur normal"""
-        user = User.objects.create_user(email="test@example.com", pseudo="testuser", password="testpass123")
+        user = User.objects.create_user(
+            email="test@example.com",
+            pseudo="testuser",
+            password="testpass123",
+        )
 
         assert user.pseudo == "testuser"
         assert user.email == "test@example.com"
@@ -25,30 +29,55 @@ class TestUserModel:
 
     def test_create_superuser(self):
         """Test de création d'un superutilisateur"""
-        user = User.objects.create_superuser(email="admin@example.com", pseudo="admin", password="adminpass123")
+        user = User.objects.create_superuser(
+            email="admin@example.com",
+            pseudo="admin",
+            password="adminpass123",
+        )
 
         assert user.is_staff is True
         assert user.is_superuser is True
 
     def test_user_str_representation(self):
         """Test de la représentation string de l'utilisateur"""
-        user = User.objects.create_user(email="test@example.com", pseudo="testuser")
+        user = User.objects.create_user(
+            email="test@example.com",
+            pseudo="testuser",
+            password="testpass123",
+        )
 
+        # __str__ renvoie le pseudo
         assert str(user) == "testuser"
 
     def test_user_email_unique(self):
         """Test que l'email doit être unique"""
-        User.objects.create_user(email="test@example.com", pseudo="user1")
+        User.objects.create_user(
+            email="test@example.com",
+            pseudo="user1",
+            password="testpass123",
+        )
 
         with pytest.raises(IntegrityError):
-            User.objects.create_user(email="test@example.com", pseudo="user2")
+            User.objects.create_user(
+                email="test@example.com",
+                pseudo="user2",
+                password="testpass123",
+            )
 
     def test_user_pseudo_unique(self):
         """Test que le pseudo doit être unique"""
-        User.objects.create_user(email="test1@example.com", pseudo="testuser")
+        User.objects.create_user(
+            email="test1@example.com",
+            pseudo="testuser",
+            password="testpass123",
+        )
 
         with pytest.raises(IntegrityError):
-            User.objects.create_user(email="test2@example.com", pseudo="testuser")
+            User.objects.create_user(
+                email="test2@example.com",
+                pseudo="testuser",
+                password="testpass123",
+            )
 
 
 @pytest.mark.django_db
