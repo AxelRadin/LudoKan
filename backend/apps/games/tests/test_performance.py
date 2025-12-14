@@ -5,6 +5,7 @@ from apps.games.models import Game, Rating
 
 
 @pytest.mark.django_db
+@pytest.mark.performance
 def test_game_list_uses_efficient_queries(django_assert_max_num_queries, api_client, publisher, genre, platform):
     """Ensure listing games with related data does not trigger N+1 queries."""
 
@@ -31,6 +32,7 @@ def test_game_list_uses_efficient_queries(django_assert_max_num_queries, api_cli
 
 
 @pytest.mark.django_db
+@pytest.mark.performance
 def test_ratings_list_scales_with_many_ratings(django_assert_max_num_queries, api_client, game, user):
     """Ensure listing many ratings for a single game does not cause N+1 queries."""
     User = get_user_model()
@@ -57,6 +59,7 @@ def test_ratings_list_scales_with_many_ratings(django_assert_max_num_queries, ap
 
 
 @pytest.mark.django_db
+@pytest.mark.performance
 def test_game_detail_with_many_ratings_is_efficient(django_assert_max_num_queries, api_client, game, user):
     """Ensure game detail with many ratings remains efficient.
 
