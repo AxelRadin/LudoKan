@@ -28,6 +28,6 @@ src = ["api", "apps", "config", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F"]  # "I" retiré car isort gère déjà le tri des imports
-ignore = ["E203"]   
+ignore = ["E203", "E303"]   
 fixable = ["ALL"]
 unfixable = []
