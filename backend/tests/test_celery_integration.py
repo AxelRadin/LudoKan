@@ -7,7 +7,6 @@ from unittest.mock import patch
 import pytest
 
 
-
 @pytest.mark.celery
 @pytest.mark.integration
 @pytest.mark.skip(reason="Tests Celery désactivés temporairement - Worker Celery non démarré")
