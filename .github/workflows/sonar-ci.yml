@@ -142,6 +142,7 @@ jobs:
     name: SonarCloud Scan 🔎
     runs-on: ubuntu-latest
     needs: [backend, frontend]
+    environment: general 
 
     steps:
       - name: Checkout (full history) 📦
