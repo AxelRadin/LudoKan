@@ -153,7 +153,7 @@ class GameStatsView(APIView):
 
     @extend_schema(
         summary="Statistiques de possession d’un jeu",
-        description=("Retourne le nombre d'utilisateurs possédant le jeu " "et la répartition par statut (en cours, terminé, abandonné)."),
+        description=("Retourne le nombre d'utilisateurs possédant le jeu et la répartition par statut (en cours, terminé, abandonné)."),
         responses={
             200: {
                 "type": "object",
