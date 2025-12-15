@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import './App.css';
 import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
 import BackendConnector from './components/BackendConnector';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,7 +12,7 @@ function App() {
     <>
       <div>
         <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
+          <img src="/vite.svg" className="logo" alt="Vite logo" />
         </a>
         <a href="https://react.dev" target="_blank" rel="noreferrer">
           <img src={reactLogo} className="logo react" alt="React logo" />

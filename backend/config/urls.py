@@ -32,7 +32,7 @@ def health(request):
 
 def sentry_debug(request):
     # Erreur volontaire pour tester l'intégration Sentry
-    1 / 0
+    raise ZeroDivisionError("Sentry debug endpoint triggered")
 
 
 urlpatterns = [
