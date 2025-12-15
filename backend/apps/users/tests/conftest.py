@@ -8,6 +8,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
+TEST_USER_PASSWORD = "SuperPass123!"
+
 
 @pytest.fixture
 def api_client():
@@ -20,8 +22,8 @@ def sample_user_data():
     """Données utilisateur valides pour l'inscription"""
     return {
         "email": "testuser@example.com",
-        "password1": "SuperPass123!",
-        "password2": "SuperPass123!",
+        "password1": TEST_USER_PASSWORD,
+        "password2": TEST_USER_PASSWORD,
         "pseudo": "testuser",
         "first_name": "Test",
         "last_name": "User",
@@ -34,7 +36,11 @@ def user(db):
     from allauth.account.models import EmailAddress
 
     user = User.objects.create_user(
-        email="existing@example.com", password="SuperPass123!", pseudo="existinguser", first_name="Existing", last_name="User"
+        email="existing@example.com",
+        password=TEST_USER_PASSWORD,
+        pseudo="existinguser",
+        first_name="Existing",
+        last_name="User",
     )
 
     # Marquer l'email comme vérifié
@@ -71,7 +77,11 @@ def auth_client_with_tokens(api_client, user):
     Permet de tester refresh/logout avec cookies JWT réels.
     """
     login_url = "/api/auth/login/"
-    response = api_client.post(login_url, {"email": user.email, "password": "SuperPass123!"}, format="json")
+    response = api_client.post(
+        login_url,
+        {"email": user.email, "password": TEST_USER_PASSWORD},
+        format="json",
+    )
 
     # Vérifier que le login a réussi
     assert response.status_code == 200, f"Login failed: {response.data}"

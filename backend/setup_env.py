@@ -9,7 +9,7 @@ from pathlib import Path
 
 def generate_secret_key():
     """Génère une clé secrète Django sécurisée"""
-    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)") for i in range(50))
+    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)") for _ in range(50))
 
 
 def create_env_file():
