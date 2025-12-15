@@ -1,31 +1,36 @@
 from django.contrib import admin
-from .models import Publisher, Platform, Genre, Game, Rating
+
+from .models import Game, Genre, Platform, Publisher, Rating
+
 
 @admin.register(Publisher)
 class PublisherAdmin(admin.ModelAdmin):
-    list_display = ('name', 'website')
-    search_fields = ('name',)
+    list_display = ("name", "website")
+    search_fields = ("name",)
     list_filter = ()
+
 
 @admin.register(Platform)
 class PlatformAdmin(admin.ModelAdmin):
-    list_display = ('nom_plateforme',)
-    search_fields = ('nom_plateforme',)
+    list_display = ("nom_plateforme",)
+    search_fields = ("nom_plateforme",)
+
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ('nom_genre',)
-    search_fields = ('nom_genre',)
+    list_display = ("nom_genre",)
+    search_fields = ("nom_genre",)
+
 
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
-    list_display = ('name', 'publisher', 'rating_avg', 'popularity_score')
-    search_fields = ('name', 'publisher__name')
-    list_filter = ('publisher', 'genres', 'platforms')
+    list_display = ("name", "publisher", "rating_avg", "popularity_score")
+    search_fields = ("name", "publisher__name")
+    list_filter = ("publisher", "genres", "platforms")
 
 
 @admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
-    list_display = ('user', 'game', 'rating_type', 'value', 'date_created')
-    search_fields = ('user__pseudo', 'game__name')
-    list_filter = ('rating_type',)
+    list_display = ("user", "game", "rating_type", "value", "date_created")
+    search_fields = ("user__pseudo", "game__name")
+    list_filter = ("rating_type",)

@@ -1,4 +1,5 @@
-from rest_framework import viewsets, permissions
+from rest_framework import permissions, viewsets
+
 from apps.reviews.models import Review
 from apps.reviews.serializers import ReviewReadSerializer, ReviewWriteSerializer
 
@@ -20,14 +21,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
     - ?user=<id>  : Filtrer par utilisateur
     """
 
-    queryset = Review.objects.select_related('user', 'game', 'rating').all()
+    queryset = Review.objects.select_related("user", "game", "rating").all()
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
         """
         Utilise ReadSerializer pour GET, WriteSerializer pour POST/PUT/PATCH.
         """
-        if self.action in ['list', 'retrieve']:
+        if self.action in ["list", "retrieve"]:
             return ReviewReadSerializer
         return ReviewWriteSerializer
 
@@ -41,12 +42,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
 
         # Filtre par jeu
-        game_id = self.request.query_params.get('game')
+        game_id = self.request.query_params.get("game")
         if game_id:
             queryset = queryset.filter(game_id=game_id)
 
         # Filtre par utilisateur
-        user_id = self.request.query_params.get('user')
+        user_id = self.request.query_params.get("user")
         if user_id:
             queryset = queryset.filter(user_id=user_id)
 
@@ -65,7 +66,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         - Creation (POST) : Utilisateurs authentifies
         - Modification/Suppression (PUT/PATCH/DELETE) : Proprietaire uniquement
         """
-        if self.action in ['update', 'partial_update', 'destroy']:
+        if self.action in ["update", "partial_update", "destroy"]:
             return [permissions.IsAuthenticated(), IsOwnerOrReadOnly()]
         return super().get_permissions()
 

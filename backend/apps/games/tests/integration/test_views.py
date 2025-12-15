@@ -6,8 +6,7 @@ import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from apps.games.models import Game, Publisher, Genre, Platform, Rating
-
+from apps.games.models import Game, Genre, Platform, Publisher, Rating
 
 # ---------------------------------------------------------------------------
 # Tests CRUD pour Game
@@ -412,7 +411,6 @@ class TestGameRatings:
 
         response = authenticated_api_client.post(url, payload, format="json")
 
-        print("response.data",response.data)
         assert response.status_code == status.HTTP_201_CREATED
         rating = Rating.objects.get(user=user, game=game)
         assert rating.rating_type == "decimal"
@@ -674,6 +672,7 @@ class TestGameRatingsAverages:
 
         # User 2: etoiles = 5 (normalized 10)
         from rest_framework.test import APIClient
+
         other_client = APIClient()
         other_client.force_authenticate(user=another_user)
         payload2 = {"rating_type": "etoiles", "value": 5}
@@ -708,6 +707,7 @@ class TestGameRatingsAverages:
         authenticated_api_client.post(url, {"rating_type": "sur_10", "value": 8}, format="json")
 
         from rest_framework.test import APIClient
+
         other_client = APIClient()
         other_client.force_authenticate(user=another_user)
         other_client.post(url, {"rating_type": "sur_10", "value": 6}, format="json")
@@ -717,8 +717,9 @@ class TestGameRatingsAverages:
         assert game.rating_count == 2
 
         # Récupérer l'id du rating de another_user
-        from apps.games.models import Rating
-        other_rating = Rating.objects.get(user=another_user, game=game)
+        from apps.games.models import Rating as RatingModel
+
+        other_rating = RatingModel.objects.get(user=another_user, game=game)
 
         # DELETE /api/ratings/{rating_id}/
         delete_url = f"/api/ratings/{other_rating.id}/"

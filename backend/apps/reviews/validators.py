@@ -15,6 +15,4 @@ def validate_review_content_length(value):
         ValidationError: Si le contenu ne respecte pas la longueur requise
     """
     if not (4 <= len(value) <= 500):
-        raise ValidationError(
-            "Le contenu doit faire entre 4 et 500 caracteres."
-        )
+        raise ValidationError("Le contenu doit faire entre 4 et 500 caracteres.")

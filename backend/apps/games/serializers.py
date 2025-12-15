@@ -1,12 +1,7 @@
-from django.db.models.base import ValidationError
 from rest_framework import serializers
 
-from apps.games.models import Game, Publisher, Platform, Genre, Rating
-from apps.library.serializers import (
-    PublisherSerializer,
-    GenreSerializer,
-    PlatformSerializer,
-)
+from apps.games.models import Game, Genre, Platform, Publisher, Rating
+from apps.library.serializers import GenreSerializer, PlatformSerializer, PublisherSerializer
 
 
 class GameReadSerializer(serializers.ModelSerializer):

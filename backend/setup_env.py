@@ -6,17 +6,19 @@ import os
 import secrets
 from pathlib import Path
 
+
 def generate_secret_key():
     """Génère une clé secrète Django sécurisée"""
-    return ''.join(secrets.choice('abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)') for i in range(50))
+    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)") for i in range(50))
+
 
 def create_env_file():
     """Crée le fichier .env à la racine du projet"""
-    
+
     # Chemin vers le fichier .env (à la racine du projet)
     project_root = Path(__file__).parent.parent
-    env_file = project_root / '.env'
-    
+    env_file = project_root / ".env"
+
     # Contenu du fichier .env
     env_content = f"""# ===========================================
 # CONFIGURATION LUDOKAN - ENVIRONNEMENT DE DÉVELOPPEMENT
@@ -72,10 +74,10 @@ STATIC_ROOT=/app/static
 MEDIA_URL=/media/
 MEDIA_ROOT=/app/media
 """
-    
+
     # Écrire le fichier
     try:
-        with open(env_file, 'w') as f:
+        with open(env_file, "w") as f:
             f.write(env_content)
         print(f"✅ Fichier .env créé avec succès : {env_file}")
         print("🔑 Une nouvelle clé secrète Django a été générée")
@@ -85,20 +87,22 @@ MEDIA_ROOT=/app/media
         print(f"❌ Erreur lors de la création du fichier .env : {e}")
         return False
 
+
 def check_env_file():
     """Vérifie si le fichier .env existe déjà"""
     project_root = Path(__file__).parent.parent
-    env_file = project_root / '.env'
-    
+    env_file = project_root / ".env"
+
     if env_file.exists():
-        response = input(f"⚠️  Le fichier .env existe déjà. Voulez-vous le remplacer ? (y/N): ")
-        return response.lower() in ['y', 'yes', 'oui', 'o']
+        response = input("⚠️  Le fichier .env existe déjà. Voulez-vous le remplacer ? (y/N): ")
+        return response.lower() in ["y", "yes", "oui", "o"]
     return True
+
 
 if __name__ == "__main__":
     print("🚀 Configuration de l'environnement LudoKan")
     print("=" * 50)
-    
+
     if check_env_file():
         if create_env_file():
             print("\n📋 Prochaines étapes :")

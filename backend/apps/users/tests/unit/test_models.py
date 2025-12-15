@@ -3,7 +3,6 @@ Tests pour les modèles de l'app users
 """
 import pytest
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 User = get_user_model()
@@ -85,12 +84,12 @@ class TestUserModel:
 @pytest.mark.skip(reason="Modèle UserProfile pas encore implémenté")
 class TestUserProfileModel:
     """Tests pour le modèle UserProfile (quand il sera créé)"""
-    
+
     def test_user_profile_creation(self, user):
         """Test de création d'un profil utilisateur"""
         # Ce test sera implémenté quand le modèle UserProfile sera créé
         pass
-    
+
     def test_user_profile_str_representation(self, user):
         """Test de la représentation string du profil"""
         # Ce test sera implémenté quand le modèle UserProfile sera créé
@@ -101,7 +100,7 @@ class TestUserProfileModel:
 @pytest.mark.skip(reason="Modèle UserPreferences pas encore implémenté")
 class TestUserPreferencesModel:
     """Tests pour le modèle UserPreferences (quand il sera créé)"""
-    
+
     def test_user_preferences_creation(self, user):
         """Test de création des préférences utilisateur"""
         # Ce test sera implémenté quand le modèle UserPreferences sera créé

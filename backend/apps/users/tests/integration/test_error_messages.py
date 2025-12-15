@@ -7,11 +7,10 @@ import io
 
 import pytest
 from django.contrib.auth import get_user_model
-from rest_framework import status
 from PIL import Image
+from rest_framework import status
 
 from apps.users.errors import UserErrors
-
 
 User = get_user_model()
 
@@ -168,8 +167,4 @@ class TestAvatarErrorMessages:
 
         errors = get_errors_payload(response)
         assert "avatar" in errors
-        assert any(
-            UserErrors.AVATAR_INVALID_FORMAT in str(error) for error in errors["avatar"]
-        )
-
-
+        assert any(UserErrors.AVATAR_INVALID_FORMAT in str(error) for error in errors["avatar"])

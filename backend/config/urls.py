@@ -14,20 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
 """
 
-from django.contrib import admin
-from django.urls import path, include, re_path
-from django.http import JsonResponse
-from rest_framework.routers import DefaultRouter
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from rest_framework.permissions import AllowAny
-from allauth.account.views import ConfirmEmailView
 from django.conf import settings
 from django.conf.urls.static import static
-
-
-
+from django.contrib import admin
+from django.http import JsonResponse
+from django.urls import include, path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.permissions import AllowAny
+from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
+
 
 def health(request):
     return JsonResponse({"status": "ok"}, status=200)
@@ -38,30 +35,22 @@ def sentry_debug(request):
     1 / 0
 
 
-
 urlpatterns = [
-    path('admin/', admin.site.urls),
-
+    path("admin/", admin.site.urls),
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
-
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
-
     # Auth
     path("api/auth/", include("apps.users.urls_auth")),
     path("api/", include("apps.users.urls")),
-
     # Library
     path("api/", include("apps.library.urls")),
-
     # Games
     path("api/", include("apps.games.urls")),
-
     # Reviews
     path("api/", include("apps.reviews.urls")),
-
 ]
 
 # Serve media files in development

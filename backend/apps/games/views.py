@@ -1,29 +1,25 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.generics import RetrieveUpdateDestroyAPIView, ListAPIView
-from rest_framework.response import Response
-from rest_framework import status
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiExample
+from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
+from rest_framework import status
+from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
-from apps.games.models import Game, Publisher, Genre, Platform, Rating
+from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.serializers import (
     GameReadSerializer,
     GameWriteSerializer,
-    PublisherCRUDSerializer,
     GenreCRUDSerializer,
     PlatformCRUDSerializer,
+    PublisherCRUDSerializer,
     RatingSerializer,
 )
 
 
 class GameViewSet(ModelViewSet):
-    queryset = (
-        Game.objects.select_related("publisher")
-        .prefetch_related("genres", "platforms")
-        .order_by("-popularity_score")
-    )
+    queryset = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").order_by("-popularity_score")
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_serializer_class(self):
@@ -59,10 +55,7 @@ class RatingCreateView(APIView):
 
     @extend_schema(
         summary="Create or update a rating for a game",
-        description=(
-            "Create a new rating for the given game, or update the existing rating "
-            "for the authenticated user if it already exists."
-        ),
+        description=("Create a new rating for the given game, or update the existing rating " "for the authenticated user if it already exists."),
         request=RatingSerializer,
         responses={201: RatingSerializer, 200: RatingSerializer},
         examples=[

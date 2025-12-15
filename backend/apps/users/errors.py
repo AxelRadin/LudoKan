@@ -16,8 +16,3 @@ class UserErrors:
 
     # Sécurité
     RECAPTCHA_INVALID = "Validation reCAPTCHA échouée."
-
-
-
-
-

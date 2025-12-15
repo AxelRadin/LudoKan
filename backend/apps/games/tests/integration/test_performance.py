@@ -1,13 +1,12 @@
 import pytest
+from django.contrib.auth import get_user_model
 
 from apps.games.models import Game, Rating
-from django.contrib.auth import get_user_model
 
 
 @pytest.mark.django_db
-def test_game_list_uses_efficient_queries(
-    django_assert_max_num_queries, api_client, publisher, genre, platform
-):
+@pytest.mark.performance
+def test_game_list_uses_efficient_queries(django_assert_max_num_queries, api_client, publisher, genre, platform):
     """Ensure listing games with related data does not trigger N+1 queries."""
 
     # Create multiple games with related publisher/genres/platforms
@@ -33,9 +32,8 @@ def test_game_list_uses_efficient_queries(
 
 
 @pytest.mark.django_db
-def test_ratings_list_scales_with_many_ratings(
-    django_assert_max_num_queries, api_client, game, user
-):
+@pytest.mark.performance
+def test_ratings_list_scales_with_many_ratings(django_assert_max_num_queries, api_client, game, user):
     """Ensure listing many ratings for a single game does not cause N+1 queries."""
     User = get_user_model()
 
@@ -61,9 +59,8 @@ def test_ratings_list_scales_with_many_ratings(
 
 
 @pytest.mark.django_db
-def test_game_detail_with_many_ratings_is_efficient(
-    django_assert_max_num_queries, api_client, game, user
-):
+@pytest.mark.performance
+def test_game_detail_with_many_ratings_is_efficient(django_assert_max_num_queries, api_client, game, user):
     """Ensure game detail with many ratings remains efficient.
 
     average_rating and rating_count are precomputed via signals, so retrieving

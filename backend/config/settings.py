@@ -10,14 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
-from decouple import config
 import dj_database_url
 import sentry_sdk
+from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
-
 
 # -------------------------------------------------------------------
 # Base directory
@@ -55,20 +54,16 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
-
     "rest_framework",
     "drf_spectacular",
-    # "rest_framework.authtoken",
-    "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
-
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "allauth",
     "allauth.account",
-
+    "allauth.socialaccount",
     "corsheaders",
-
     "apps.users",
     "apps.games",
     "apps.core",
@@ -88,7 +83,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "apps.users.middleware.IgnoreInvalidJWTMiddleware",
-
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -154,17 +148,14 @@ JWT_AUTH_SAMESITE = "None" if not DEBUG else "Lax"
 REST_AUTH = {
     "USE_JWT": True,
     "TOKEN_MODEL": None,
-
     "JWT_AUTH_COOKIE": JWT_AUTH_COOKIE,
     "JWT_AUTH_REFRESH_COOKIE": JWT_AUTH_REFRESH_COOKIE,
     "JWT_AUTH_HTTPONLY": JWT_AUTH_HTTPONLY,
     "JWT_AUTH_SECURE": JWT_AUTH_SECURE,
     "JWT_AUTH_SAMESITE": JWT_AUTH_SAMESITE,
-
     "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
     "USER_DETAILS_SERIALIZER": "apps.users.serializers.UserSerializer",
-
-    "OLD_PASSWORD_FIELD_ENABLED": True,  
+    "OLD_PASSWORD_FIELD_ENABLED": True,
 }
 
 REST_AUTH_SERIALIZERS = {
@@ -172,12 +163,8 @@ REST_AUTH_SERIALIZERS = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_ACCESS_TOKEN_LIFETIME", default=15, cast=int)
-    ),
-    "REFRESH_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_REFRESH_TOKEN_LIFETIME", default=10080, cast=int)
-    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME", default=15, cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=config("JWT_REFRESH_TOKEN_LIFETIME", default=10080, cast=int)),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -196,16 +183,10 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True
 
 
-
 # CORS : localhost (React/Vite) par défaut
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default=(
-        "http://localhost:3000,"
-        "http://127.0.0.1:3000,"
-        "http://localhost:5173,"
-        "http://127.0.0.1:5173"
-    ),
+    default=("http://localhost:3000," "http://127.0.0.1:3000," "http://localhost:5173," "http://127.0.0.1:5173"),
 ).split(",")
 
 CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
@@ -215,12 +196,7 @@ CSRF_TRUSTED_ORIGINS = [
     o
     for o in config(
         "CSRF_TRUSTED_ORIGINS",
-        default=(
-            "http://localhost:3000,"
-            "http://127.0.0.1:3000,"
-            "http://localhost:5173,"
-            "http://127.0.0.1:5173"
-        ),
+        default=("http://localhost:3000," "http://127.0.0.1:3000," "http://localhost:5173," "http://127.0.0.1:5173"),
     ).split(",")
     if o
 ]
@@ -328,8 +304,8 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # -------------------------------------------------------------------
 
 if DEBUG:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
 
 # -------------------------------------------------------------------
@@ -399,5 +375,3 @@ if SENTRY_DSN:
     )
 else:
     print("SENTRY_DSN is not set")
-
-

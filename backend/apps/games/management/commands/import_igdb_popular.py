@@ -1,9 +1,10 @@
 import datetime
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.games.igdb_client import igdb_request
-from apps.games.models import Game, Publisher, Platform, Genre
+from apps.games.models import Game, Genre, Platform, Publisher
 
 
 class Command(BaseCommand):
@@ -28,9 +29,7 @@ class Command(BaseCommand):
         limit = min(options["limit"], 500)  # IGDB max 500 par requête
         from_year = options["from_year"]
 
-        self.stdout.write(self.style.MIGRATE_HEADING(
-            f"Import IGDB : {limit} jeux populaires depuis {from_year}"
-        ))
+        self.stdout.write(self.style.MIGRATE_HEADING(f"Import IGDB : {limit} jeux populaires depuis {from_year}"))
 
         # 1) Importer / mettre à jour tous les genres + plateformes
         self.import_genres()
@@ -133,10 +132,7 @@ class Command(BaseCommand):
         from_dt = datetime.datetime(from_year, 1, 1, tzinfo=datetime.timezone.utc)
         from_ts = int(from_dt.timestamp())
 
-        self.stdout.write(
-            f"  → Récupération des jeux avec first_release_date >= {from_dt.date()} "
-            f"(timestamp {from_ts})"
-        )
+        self.stdout.write(f"  → Récupération des jeux avec first_release_date >= {from_dt.date()} " f"(timestamp {from_ts})")
 
         # ⚠️ on n'utilise plus category (déprécié), juste date + version_parent
         query = f"""
@@ -225,7 +221,7 @@ class Command(BaseCommand):
         self.stdout.write("  → Récupération des covers depuis IGDB...")
         covers_map = self.fetch_covers(cover_ids)
         self.stdout.write(f"    ✓ {len(covers_map)} covers récupérées.")
-        
+
         # 7) Récupérer les age_ratingsself.stdout.write("  → Récupération des age_ratings depuis IGDB...")
         age_ratings_map = self.fetch_age_ratings(age_rating_ids)
         self.stdout.write(f"    ✓ {len(age_ratings_map)} age_ratings récupérés.")
@@ -235,7 +231,6 @@ class Command(BaseCommand):
         mp_modes_list = self.fetch_multiplayer_modes(mp_modes_ids)
         mp_by_game = self.index_multiplayer_by_game(mp_modes_list)
         self.stdout.write(f"    ✓ {len(mp_modes_list)} multiplayer_modes récupérés.")
-
 
         # 7) Importer / MAJ les jeux + lier publisher / genres / plateformes / cover / status
         self.stdout.write("  → Création / mise à jour des jeux et des relations M2M...")
@@ -279,9 +274,7 @@ class Command(BaseCommand):
                                 cover_url = url
 
                 # publisher principal
-                publisher_obj = self.find_publisher_for_game(
-                    g, involved_map, publishers_map
-                )
+                publisher_obj = self.find_publisher_for_game(g, involved_map, publishers_map)
 
                 min_players, max_players = self.compute_player_counts(g, mp_by_game)
                 min_age = self.compute_min_age(g, age_ratings_map)
@@ -325,20 +318,15 @@ class Command(BaseCommand):
 
             except Exception as e:
                 error_count += 1
-                self.stdout.write(self.style.ERROR(
-                    f"[ERREUR] Jeu IGDB {g.get('id')} - {g.get('name')}: {e}"
-                ))
+                self.stdout.write(self.style.ERROR(f"[ERREUR] Jeu IGDB {g.get('id')} - {g.get('name')}: {e}"))
 
             # Log de progression tous les 25 jeux, ou sur le dernier
             if idx % 25 == 0 or idx == total_games:
                 self.stdout.write(
-                    f"    → Progression: {idx}/{total_games} jeux traités "
-                    f"({created} créés, {updated} mis à jour, {error_count} erreurs)"
+                    f"    → Progression: {idx}/{total_games} jeux traités " f"({created} créés, {updated} mis à jour, {error_count} erreurs)"
                 )
 
-        self.stdout.write(self.style.SUCCESS(
-            f"✓ Jeux importés : {created} créés, {updated} mis à jour, {error_count} erreurs."
-        ))
+        self.stdout.write(self.style.SUCCESS(f"✓ Jeux importés : {created} créés, {updated} mis à jour, {error_count} erreurs."))
 
     # ------------------------------------------------------------------
     # Helpers: involved_companies / companies / publishers / covers / status
@@ -350,7 +338,7 @@ class Command(BaseCommand):
 
         result = {}
         unique_ids = list(set(ids))
-        chunks = [unique_ids[i:i + 500] for i in range(0, len(unique_ids), 500)]
+        chunks = [unique_ids[i : i + 500] for i in range(0, len(unique_ids), 500)]
 
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch involved_companies {idx}/{len(chunks)} (taille={len(chunk)})")
@@ -373,7 +361,7 @@ class Command(BaseCommand):
 
         result = {}
         unique_ids = list(set(ids))
-        chunks = [unique_ids[i:i + 500] for i in range(0, len(unique_ids), 500)]
+        chunks = [unique_ids[i : i + 500] for i in range(0, len(unique_ids), 500)]
 
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch companies {idx}/{len(chunks)} (taille={len(chunk)})")
@@ -399,7 +387,7 @@ class Command(BaseCommand):
 
         result = {}
         unique_ids = list(set(ids))
-        chunks = [unique_ids[i:i + 500] for i in range(0, len(unique_ids), 500)]
+        chunks = [unique_ids[i : i + 500] for i in range(0, len(unique_ids), 500)]
 
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch covers {idx}/{len(chunks)} (taille={len(chunk)})")
@@ -439,9 +427,7 @@ class Command(BaseCommand):
             else:
                 count_updated += 1
 
-        self.stdout.write(
-            f"    ✓ Publishers Django: {count_created} créés, {count_updated} mis à jour."
-        )
+        self.stdout.write(f"    ✓ Publishers Django: {count_created} créés, {count_updated} mis à jour.")
         return mapping
 
     def find_publisher_for_game(self, game_data, involved_map, publishers_map):
@@ -491,7 +477,7 @@ class Command(BaseCommand):
 
         result = {}
         unique_ids = list(set(ids))
-        chunks = [unique_ids[i:i + 500] for i in range(0, len(unique_ids), 500)]
+        chunks = [unique_ids[i : i + 500] for i in range(0, len(unique_ids), 500)]
 
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch age_ratings {idx}/{len(chunks)} (taille={len(chunk)})")
@@ -507,7 +493,6 @@ class Command(BaseCommand):
 
         return result
 
-
     def fetch_multiplayer_modes(self, ids):
         """
         Retourne une liste de multiplayer_modes bruts
@@ -518,7 +503,7 @@ class Command(BaseCommand):
 
         result = []
         unique_ids = list(set(ids))
-        chunks = [unique_ids[i:i + 500] for i in range(0, len(unique_ids), 500)]
+        chunks = [unique_ids[i : i + 500] for i in range(0, len(unique_ids), 500)]
 
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch multiplayer_modes {idx}/{len(chunks)} (taille={len(chunk)})")
@@ -541,7 +526,6 @@ class Command(BaseCommand):
             result.extend(data)
 
         return result
-
 
     def index_multiplayer_by_game(self, mp_list):
         """
@@ -571,15 +555,15 @@ class Command(BaseCommand):
         # (les valeurs de 'rating' sont documentées dans l'API IGDB)
         pegi_map = {
             # exemples: à ajuster au besoin selon la doc exacte
-            1: 3,   # PEGI 3
-            2: 7,   # PEGI 7
+            1: 3,  # PEGI 3
+            2: 7,  # PEGI 7
             3: 12,  # PEGI 12
             4: 16,  # PEGI 16
             5: 18,  # PEGI 18
         }
         esrb_map = {
             # exemples: à ajuster, mais en gros :
-            2: 6,   # E (Everyone)
+            2: 6,  # E (Everyone)
             3: 10,  # E10+
             4: 13,  # T
             5: 17,  # M
@@ -605,7 +589,6 @@ class Command(BaseCommand):
         if not ages:
             return None
         return min(ages)
-
 
     def compute_player_counts(self, game_data, mp_by_game):
         """
@@ -639,5 +622,3 @@ class Command(BaseCommand):
                 break
 
         return min_players, max_players
-
-

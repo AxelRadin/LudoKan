@@ -1,4 +1,5 @@
 import os
+
 import requests
 from django.core.exceptions import ImproperlyConfigured
 
@@ -34,8 +35,6 @@ def igdb_request(endpoint: str, query: str):
         except Exception:
             detail = resp.text
 
-        raise RuntimeError(
-            f"IGDB error {resp.status_code} on {endpoint}: {detail}"
-        )
+        raise RuntimeError(f"IGDB error {resp.status_code} on {endpoint}: {detail}")
 
     return resp.json()

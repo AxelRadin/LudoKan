@@ -1,6 +1,7 @@
 import pytest
-from apps.games.models import Game, Publisher, Genre, Platform
 from django.contrib.auth import get_user_model
+
+from apps.games.models import Game, Genre, Platform, Publisher
 
 User = get_user_model()
 

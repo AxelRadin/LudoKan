@@ -5,7 +5,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-from apps.games.models import Game, Publisher, Genre, Platform, Rating
+from apps.games.models import Game, Genre, Platform, Publisher, Rating
 
 
 @pytest.mark.django_db
@@ -244,7 +244,6 @@ class TestRatingModel:
         with pytest.raises(ValidationError):
             rating_too_high.full_clean()
 
-
     def test_etoiles_out_of_range_raises_validation_error(self, user, game):
         """etoiles ratings must be between 1 and 5."""
         rating_low = Rating(
@@ -300,7 +299,7 @@ class TestRatingAggregates:
 
     def test_average_rating_updates_on_delete(self, user, another_user, game):
         """Deleting a rating should recalculate game's average_rating and rating_count."""
-        r1 = Rating.objects.create(
+        Rating.objects.create(
             user=user,
             game=game,
             rating_type=Rating.RATING_TYPE_SUR_10,

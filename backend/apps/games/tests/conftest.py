@@ -8,8 +8,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from apps.games.models import Publisher, Genre, Platform, Game
-
+from apps.games.models import Game, Genre, Platform, Publisher
 
 User = get_user_model()
 
@@ -91,4 +90,3 @@ def game(db, publisher, genre, platform):
     game.genres.add(genre)
     game.platforms.add(platform)
     return game
-

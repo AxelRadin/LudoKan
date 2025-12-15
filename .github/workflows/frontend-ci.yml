@@ -1,0 +1,51 @@
+name: Frontend CI 🚀
+
+on:
+  # push:
+  #   branches: [ "main","test-ci" ]
+  #   paths:
+  #     - "frontend/**"
+  #     - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    branches: [ "main","test-ci" ]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+
+jobs:
+  frontend-build-and-lint:
+    runs-on: ubuntu-latest
+    name: Frontend build and lint 🐧
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout repository 📦
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 📦
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "./frontend/package-lock.json"
+
+      - name: Install dependencies 📦
+        run: npm ci
+
+      - name: ESLint (lint) 🔍
+        run: npm run lint
+
+
+      - name: Prettier (format check) 🎨
+        run: npm run format:check
+
+      - name: TypeScript check 🧠
+        run: npm run type-check
+        
+
+
+      - name: Build ⚙️
+        run: npm run build

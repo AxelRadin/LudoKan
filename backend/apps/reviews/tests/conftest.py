@@ -5,8 +5,7 @@ Fixtures spécifiques aux tests de l'app reviews.
 import pytest
 from django.contrib.auth import get_user_model
 
-from apps.games.models import Publisher, Genre, Platform, Game, Rating
-
+from apps.games.models import Game, Genre, Platform, Publisher, Rating
 
 User = get_user_model()
 

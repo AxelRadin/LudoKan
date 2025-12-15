@@ -1,8 +1,9 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
 
-from .models import CustomUser as User
 from .errors import UserErrors
+from .models import CustomUser as User
+
 
 class CustomRegisterSerializer(RegisterSerializer):
     pseudo = serializers.CharField(required=False, max_length=150)

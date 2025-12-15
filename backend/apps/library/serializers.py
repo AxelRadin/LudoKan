@@ -1,6 +1,7 @@
 from rest_framework import serializers
+
+from apps.games.models import Game, Genre, Platform, Publisher
 from apps.library.models import UserGame
-from apps.games.models import Game, Publisher, Platform, Genre
 
 
 class PublisherSerializer(serializers.ModelSerializer):
@@ -53,15 +54,11 @@ class UserGameSerializer(serializers.ModelSerializer):
         fields = ["id", "game", "game_id", "status", "date_added"]
         read_only_fields = ["date_added"]
 
-
     def validate_status(self, value):
         allowed = ["EN_COURS", "TERMINE", "ABANDONNE"]
         if value not in allowed:
-            raise serializers.ValidationError(
-                f"Le statut doit être l’un de : {', '.join(allowed)}"
-            )
+            raise serializers.ValidationError(f"Le statut doit être l’un de : {', '.join(allowed)}")
         return value
-
 
     def create(self, validated_data):
         user = self.context["request"].user
@@ -81,7 +78,6 @@ class UserGameSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"error": "Jeu déjà ajouté."})
 
         return UserGame.objects.create(user=user, game=game, **validated_data)
-
 
     def update(self, instance, validated_data):
         instance.status = validated_data.get("status", instance.status)

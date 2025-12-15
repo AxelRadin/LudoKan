@@ -1,15 +1,6 @@
 from django.urls import path
 
-from .views import (
-    GameViewSet,
-    PublisherViewSet,
-    GenreViewSet,
-    PlatformViewSet,
-    RatingCreateView,
-    RatingDetailView,
-    RatingListView,
-)
-
+from .views import GameViewSet, GenreViewSet, PlatformViewSet, PublisherViewSet, RatingCreateView, RatingDetailView, RatingListView
 
 app_name = "games"
 

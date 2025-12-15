@@ -1,20 +1,21 @@
-from django.db import models
-from django.conf import settings
-from django.db.models import Avg
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
 from decimal import Decimal
 
+from django.conf import settings
+from django.db import models
+from django.db.models import Avg
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
+
 GAME_STATUS_CHOICES = [
-        ("released", "Released"),
-        ("alpha", "Alpha"),
-        ("beta", "Beta"),
-        ("early_access", "Early Access"),
-        ("offline", "Offline"),
-        ("cancelled", "Cancelled"),
-        ("rumored", "Rumored"),
-        ("delisted", "Delisted"),
-    ]
+    ("released", "Released"),
+    ("alpha", "Alpha"),
+    ("beta", "Beta"),
+    ("early_access", "Early Access"),
+    ("offline", "Offline"),
+    ("cancelled", "Cancelled"),
+    ("rumored", "Rumored"),
+    ("delisted", "Delisted"),
+]
 
 
 class Publisher(models.Model):
@@ -146,27 +147,19 @@ class Rating(models.Model):
 
         if self.rating_type == self.RATING_TYPE_SUR_100:
             if self.value < 0 or self.value > 100:
-                raise ValidationError(
-                    {"value": "Rating out of range for type 'sur_100' (0-100)."}
-                )
+                raise ValidationError({"value": "Rating out of range for type 'sur_100' (0-100)."})
 
         elif self.rating_type == self.RATING_TYPE_SUR_10:
             if self.value < 0 or self.value > 10:
-                raise ValidationError(
-                    {"value": "Rating out of range for type 'sur_10' (0-10)."}
-                )
+                raise ValidationError({"value": "Rating out of range for type 'sur_10' (0-10)."})
 
         elif self.rating_type == self.RATING_TYPE_DECIMAL:
             if self.value < 0 or self.value > 10:
-                raise ValidationError(
-                    {"value": "Rating out of range for type 'decimal' (0-10)."}
-                )
+                raise ValidationError({"value": "Rating out of range for type 'decimal' (0-10)."})
 
         elif self.rating_type == self.RATING_TYPE_ETOILES:
             if self.value < 1 or self.value > 5:
-                raise ValidationError(
-                    {"value": "Rating out of range for type 'etoiles' (1-5)."}
-                )
+                raise ValidationError({"value": "Rating out of range for type 'etoiles' (1-5)."})
 
         else:
             raise ValidationError({"rating_type": "Unknown rating type."})
@@ -224,9 +217,7 @@ def _update_game_rating_stats(game):
 
     Also keeps legacy rating_avg in sync for backward compatibility.
     """
-    agg = Rating.objects.filter(game=game).aggregate(
-        avg_normalized=Avg("normalized_value")
-    )
+    agg = Rating.objects.filter(game=game).aggregate(avg_normalized=Avg("normalized_value"))
     avg = agg["avg_normalized"] or 0.0
     count = Rating.objects.filter(game=game).count()
 
