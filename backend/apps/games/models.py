@@ -23,7 +23,7 @@ class Publisher(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
     website = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -37,7 +37,7 @@ class Platform(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     nom_plateforme = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
 
     def __str__(self):
         return self.nom_plateforme
@@ -48,7 +48,7 @@ class Genre(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     nom_genre = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
 
     def __str__(self):
         return self.nom_genre
@@ -59,7 +59,7 @@ class Game(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
     release_date = models.DateField(blank=True, null=True)
     cover_url = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=20, blank=True, null=True, choices=GAME_STATUS_CHOICES)
