@@ -23,6 +23,9 @@ class UserGame(models.Model):
         verbose_name = "Jeu de la ludothèque"
         verbose_name_plural = "Ludothèque utilisateurs"
         ordering = ["-date_added"]
+        indexes = [
+            models.Index(fields=["game", "status"]),
+        ]
 
     def __str__(self):
         return f"UserGame: {self.user} - {self.game} ({self.status})"
