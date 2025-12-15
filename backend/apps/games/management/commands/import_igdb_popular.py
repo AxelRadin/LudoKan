@@ -169,7 +169,7 @@ class Command(BaseCommand):
         """Retourne (datetime, timestamp) du 1er janvier de l'année donnée."""
         from_dt = datetime.datetime(from_year, 1, 1, tzinfo=datetime.timezone.utc)
         from_ts = int(from_dt.timestamp())
-        self.stdout.write(f"  → Récupération des jeux avec first_release_date >= {from_dt.date()} " f"(timestamp {from_ts})")
+        self.stdout.write(f"  → Récupération des jeux avec first_release_date >= {from_dt.date()} (timestamp {from_ts})")
         return from_dt, from_ts
 
     def _build_games_query(self, limit: int, from_ts: int) -> str:
@@ -314,7 +314,7 @@ class Command(BaseCommand):
             # Log de progression tous les 25 jeux, ou sur le dernier
             if idx % 25 == 0 or idx == total_games:
                 self.stdout.write(
-                    "    → Progression: " f"{idx}/{total_games} jeux traités " f"({created} créés, {updated} mis à jour, {error_count} erreurs)"
+                    f"    → Progression: {idx}/{total_games} jeux traités " f"({created} créés, {updated} mis à jour, {error_count} erreurs)"
                 )
 
         self.stdout.write(self.style.SUCCESS(f"✓ Jeux importés : {created} créés, {updated} mis à jour, {error_count} erreurs."))
