@@ -8,13 +8,7 @@ on:
       - "frontend/**"
       - "sonar-project.properties"
       - ".github/workflows/ci-sonar.yml"
-  push:
-    branches: ["main"]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "sonar-project.properties"
-      - ".github/workflows/ci-sonar.yml"
+  
 
 jobs:
   backend:
@@ -172,5 +166,8 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORG: ${{ secrets.SONAR_ORG }}
-          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.host.url=https://sonarcloud.io
