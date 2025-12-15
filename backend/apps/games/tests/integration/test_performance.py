@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 
 from apps.games.models import Game, Rating
 
+from apps.library.models import UserGame
+
 
 @pytest.mark.django_db
 @pytest.mark.performance
@@ -86,3 +88,18 @@ def test_game_detail_with_many_ratings_is_efficient(django_assert_max_num_querie
         response = api_client.get(f"/api/games/{game.id}/")
         assert response.status_code == 200
         assert response.data["rating_count"] == 150
+
+
+@pytest.mark.django_db
+@pytest.mark.performance
+def test_game_stats_query_count_is_bounded(
+    django_assert_max_num_queries,
+    api_client,
+    game,
+    user,
+):
+    UserGame.objects.create(user=user, game=game)
+
+    with django_assert_max_num_queries(3):
+        response = api_client.get(f"/api/games/{game.id}/stats/")
+        assert response.status_code == 200

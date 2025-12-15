@@ -17,6 +17,10 @@ from apps.games.serializers import (
     RatingSerializer,
 )
 
+from django.db.models import Count
+from apps.library.models import UserGame
+from rest_framework.permissions import AllowAny
+
 
 class GameViewSet(ModelViewSet):
     queryset = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").order_by("-popularity_score")
@@ -138,3 +142,87 @@ class RatingListView(ListAPIView):
             queryset = queryset.filter(game_id=game_id)
 
         return queryset
+
+
+class GameStatsView(APIView):
+    """
+    Retourne les statistiques de possession d'un jeu :
+    - nombre total d'utilisateurs
+    - répartition par statut
+    """
+    permission_classes = [AllowAny]
+    @extend_schema(
+        summary="Statistiques de possession d’un jeu",
+        description=(
+            "Retourne le nombre d'utilisateurs possédant le jeu "
+            "et la répartition par statut (en cours, terminé, abandonné)."
+        ),
+        responses={
+            200: {
+                "type": "object",
+                "example": {
+                    "game_id": 123,
+                    "owners_count": 42,
+                    "owners_by_status": {
+                        "en_cours": 10,
+                        "termine": 25,
+                        "abandonne": 7,
+                    },
+                },
+            },
+            404: {"description": "Jeu introuvable"},
+        },
+        examples=[
+            OpenApiExample(
+                "Exemple de réponse",
+                value={
+                    "game_id": 123,
+                    "owners_count": 42,
+                    "owners_by_status": {
+                        "en_cours": 10,
+                        "termine": 25,
+                        "abandonne": 7,
+                    },
+                },
+            )
+        ],
+    )
+
+    def get(self, request, game_id):
+        game = get_object_or_404(Game, id=game_id)
+
+        queryset = (
+            UserGame.objects
+            .filter(game=game)
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+
+        owners_count = sum(item["count"] for item in queryset)
+
+        # Initialisation à 0 pour stabilité de l’API
+        owners_by_status = {
+            "en_cours": 0,
+            "termine": 0,
+            "abandonne": 0,
+        }
+
+        status_mapping = {
+            UserGame.GameStatus.EN_COURS: "en_cours",
+            UserGame.GameStatus.TERMINE: "termine",
+            UserGame.GameStatus.ABANDONNE: "abandonne",
+        }
+
+        for item in queryset:
+            api_key = status_mapping.get(item["status"])
+            if api_key:
+                owners_by_status[api_key] = item["count"]
+
+        return Response(
+            {
+                "game_id": game.id,
+                "owners_count": owners_count,
+                "owners_by_status": owners_by_status,
+            },
+            status=status.HTTP_200_OK,
+        )
