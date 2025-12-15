@@ -2,7 +2,6 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from apps.games.models import Game, Rating
-
 from apps.library.models import UserGame
 
 

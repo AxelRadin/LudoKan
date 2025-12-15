@@ -1,8 +1,9 @@
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -16,10 +17,7 @@ from apps.games.serializers import (
     PublisherCRUDSerializer,
     RatingSerializer,
 )
-
-from django.db.models import Count
 from apps.library.models import UserGame
-from rest_framework.permissions import AllowAny
 
 
 class GameViewSet(ModelViewSet):
@@ -150,13 +148,12 @@ class GameStatsView(APIView):
     - nombre total d'utilisateurs
     - répartition par statut
     """
+
     permission_classes = [AllowAny]
+
     @extend_schema(
         summary="Statistiques de possession d’un jeu",
-        description=(
-            "Retourne le nombre d'utilisateurs possédant le jeu "
-            "et la répartition par statut (en cours, terminé, abandonné)."
-        ),
+        description=("Retourne le nombre d'utilisateurs possédant le jeu " "et la répartition par statut (en cours, terminé, abandonné)."),
         responses={
             200: {
                 "type": "object",
@@ -187,16 +184,10 @@ class GameStatsView(APIView):
             )
         ],
     )
-
     def get(self, request, game_id):
         game = get_object_or_404(Game, id=game_id)
 
-        queryset = (
-            UserGame.objects
-            .filter(game=game)
-            .values("status")
-            .annotate(count=Count("id"))
-        )
+        queryset = UserGame.objects.filter(game=game).values("status").annotate(count=Count("id"))
 
         owners_count = sum(item["count"] for item in queryset)
 

@@ -1,8 +1,8 @@
 import pytest
 from rest_framework import status
 
-from apps.library.models import UserGame
 from apps.games.models import Game
+from apps.library.models import UserGame
 
 
 @pytest.mark.django_db
