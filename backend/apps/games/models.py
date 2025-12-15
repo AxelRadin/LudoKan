@@ -145,24 +145,20 @@ class Rating(models.Model):
         if not isinstance(self.value, Decimal):
             self.value = Decimal(str(self.value))
 
-        if self.rating_type == self.RATING_TYPE_SUR_100:
-            if self.value < 0 or self.value > 100:
-                raise ValidationError({"value": "Rating out of range for type 'sur_100' (0-100)."})
+        # Map rating types to (min_value, max_value, error_message)
+        ranges = {
+            self.RATING_TYPE_SUR_100: (0, 100, "Rating out of range for type 'sur_100' (0-100)."),
+            self.RATING_TYPE_SUR_10: (0, 10, "Rating out of range for type 'sur_10' (0-10)."),
+            self.RATING_TYPE_DECIMAL: (0, 10, "Rating out of range for type 'decimal' (0-10)."),
+            self.RATING_TYPE_ETOILES: (1, 5, "Rating out of range for type 'etoiles' (1-5)."),
+        }
 
-        elif self.rating_type == self.RATING_TYPE_SUR_10:
-            if self.value < 0 or self.value > 10:
-                raise ValidationError({"value": "Rating out of range for type 'sur_10' (0-10)."})
-
-        elif self.rating_type == self.RATING_TYPE_DECIMAL:
-            if self.value < 0 or self.value > 10:
-                raise ValidationError({"value": "Rating out of range for type 'decimal' (0-10)."})
-
-        elif self.rating_type == self.RATING_TYPE_ETOILES:
-            if self.value < 1 or self.value > 5:
-                raise ValidationError({"value": "Rating out of range for type 'etoiles' (1-5)."})
-
-        else:
+        if self.rating_type not in ranges:
             raise ValidationError({"rating_type": "Unknown rating type."})
+
+        min_value, max_value, message = ranges[self.rating_type]
+        if not (min_value <= self.value <= max_value):
+            raise ValidationError({"value": message})
 
     def save(self, *args, **kwargs):
         """Override save to keep normalized_value in sync.
