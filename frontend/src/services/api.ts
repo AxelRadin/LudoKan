@@ -6,7 +6,7 @@ async function request(path: string, options: RequestInit = {}) {
   const contentType = response.headers.get('content-type');
   let data: any = null;
 
-  if (contentType && contentType.includes('application/json')) {
+  if (contentType?.includes('application/json')) {
     data = await response.json();
   }
 

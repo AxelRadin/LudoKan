@@ -67,11 +67,15 @@ export default function BackendConnector() {
 
   const url = useMemo(() => {
     const b = baseUrl.trim().replace(/\/$/, '');
-    const e = endpoint.trim().length
-      ? endpoint.startsWith('/')
-        ? endpoint
-        : `/${endpoint}`
-      : '';
+    const trimmedEndpoint = endpoint.trim();
+
+    let e = '';
+    if (trimmedEndpoint.length > 0) {
+      e = trimmedEndpoint.startsWith('/')
+        ? trimmedEndpoint
+        : `/${trimmedEndpoint}`;
+    }
+
     return `${b}${e}`;
   }, [baseUrl, endpoint]);
 
@@ -95,7 +99,10 @@ export default function BackendConnector() {
 
   const curl = useMemo(() => {
     const headerFlags = Object.entries(parsedHeaders)
-      .map(([k, v]) => `-H ${JSON.stringify(`${k}: ${v}`)}`)
+      .map(([k, v]) => {
+        const header = `${k}: ${v}`;
+        return `-H ${JSON.stringify(header)}`;
+      })
       .join(' ');
     const bodyFlag =
       method === 'GET' || method === 'DELETE'

@@ -27,7 +27,7 @@ export function initSentry() {
     ],
     tracesSampleRate: Number(
       import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE ??
-        (import.meta.env.PROD ? 0.1 : 1.0)
+        (import.meta.env.PROD ? 0.1 : 1)
     ),
     environment: import.meta.env.VITE_SENTRY_ENVIRONMENT,
     release: import.meta.env.VITE_SENTRY_RELEASE,
@@ -50,5 +50,3 @@ export const reportMessage = (
 
 export const setUser = (user?: { id?: string; username?: string }) =>
   Sentry.setUser(user ?? null);
-
-export { Sentry };
