@@ -9,14 +9,15 @@ WORKDIR /app
 
 # Déps système (psycopg, build)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq-dev gcc curl && \
+    curl gcc libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # Installer deps avant de copier tout le code -> meilleur cache
 COPY requirements.txt .
 COPY requirements-dev.txt .
-RUN python -m pip install --upgrade pip && pip install -r requirements.txt
-RUN pip install -r requirements-dev.txt
+RUN python -m pip install --upgrade pip \
+    && pip install -r requirements.txt \
+    && pip install -r requirements-dev.txt
 
 # Copier le code
 COPY . .

@@ -128,14 +128,54 @@ class Command(BaseCommand):
     def import_games_and_publishers(self, limit: int, from_year: int):
         self.stdout.write("\n=== Étape 3/3 : Import des jeux populaires récents ===")
 
-        # timestamp UNIX du 1er janvier de l’année demandée
+        from_dt, from_ts = self._compute_from_timestamp(from_year)
+
+        query = self._build_games_query(limit, from_ts)
+
+        self.stdout.write("  → Appel à l'API IGDB /games...")
+        games_data = igdb_request("games", query)
+        total_games = len(games_data)
+        self.stdout.write(f"    ✓ {total_games} jeux reçus depuis IGDB.")
+
+        if not games_data:
+            self.stdout.write(self.style.WARNING("Aucun jeu reçu, arrêt de l'étape 3."))
+            return
+
+        involved_ids, cover_ids, age_rating_ids, mp_modes_ids = self._collect_related_ids(games_data)
+
+        (
+            involved_map,
+            publishers_map,
+            covers_map,
+            age_ratings_map,
+            mp_by_game,
+        ) = self._build_related_maps(
+            involved_ids,
+            cover_ids,
+            age_rating_ids,
+            mp_modes_ids,
+        )
+
+        self._sync_games(
+            games_data,
+            involved_map,
+            publishers_map,
+            covers_map,
+            age_ratings_map,
+            mp_by_game,
+        )
+
+    def _compute_from_timestamp(self, from_year: int):
+        """Retourne (datetime, timestamp) du 1er janvier de l'année donnée."""
         from_dt = datetime.datetime(from_year, 1, 1, tzinfo=datetime.timezone.utc)
         from_ts = int(from_dt.timestamp())
-
         self.stdout.write(f"  → Récupération des jeux avec first_release_date >= {from_dt.date()} " f"(timestamp {from_ts})")
+        return from_dt, from_ts
 
+    def _build_games_query(self, limit: int, from_ts: int) -> str:
+        """Construit la requête IGDB pour récupérer les jeux."""
         # ⚠️ on n'utilise plus category (déprécié), juste date + version_parent
-        query = f"""
+        return f"""
             fields
               id,
               name,
@@ -159,17 +199,9 @@ class Command(BaseCommand):
             limit {limit};
         """
 
-        self.stdout.write("  → Appel à l'API IGDB /games...")
-        games_data = igdb_request("games", query)
-        total_games = len(games_data)
-        self.stdout.write(f"    ✓ {total_games} jeux reçus depuis IGDB.")
-
-        if not games_data:
-            self.stdout.write(self.style.WARNING("Aucun jeu reçu, arrêt de l'étape 3."))
-            return
-
-        # 1) IDs de involved_companies
-        self.stdout.write("  → Collecte des IDs de involved_companies...")
+    def _collect_related_ids(self, games_data):
+        """Collecte et déduplique les IDs liés aux jeux (companies, covers, ratings, modes)."""
+        self.stdout.write("  → Collecte des IDs de involved_companies, covers, age_ratings, multiplayer_modes...")
         involved_ids = []
         cover_ids = []
         age_rating_ids = []
@@ -194,6 +226,19 @@ class Command(BaseCommand):
         self.stdout.write(f"    ✓ {len(age_rating_ids)} IDs d'age_ratings uniques trouvés.")
         self.stdout.write(f"    ✓ {len(mp_modes_ids)} IDs de multiplayer_modes uniques trouvés.")
 
+        return involved_ids, cover_ids, age_rating_ids, mp_modes_ids
+
+    def _build_related_maps(
+        self,
+        involved_ids,
+        cover_ids,
+        age_rating_ids,
+        mp_modes_ids,
+    ):
+        """
+        Récupère toutes les entités liées (involved_companies, companies, publishers,
+        covers, age_ratings, multiplayer_modes) et retourne les mappings utiles.
+        """
         # 2) Récupérer involved_companies
         self.stdout.write("  → Récupération des involved_companies...")
         involved_map = self.fetch_involved_companies(involved_ids)
@@ -201,10 +246,7 @@ class Command(BaseCommand):
 
         # 3) IDs de companies (publishers uniquement)
         self.stdout.write("  → Extraction des IDs de companies (publishers)...")
-        company_ids = set()
-        for ic in involved_map.values():
-            if ic.get("publisher"):
-                company_ids.add(ic["company"])
+        company_ids = {ic["company"] for ic in involved_map.values() if ic.get("publisher")}
         self.stdout.write(f"    ✓ {len(company_ids)} companies marquées comme publishers.")
 
         # 4) Récupérer les companies IGDB
@@ -222,7 +264,8 @@ class Command(BaseCommand):
         covers_map = self.fetch_covers(cover_ids)
         self.stdout.write(f"    ✓ {len(covers_map)} covers récupérées.")
 
-        # 7) Récupérer les age_ratingsself.stdout.write("  → Récupération des age_ratings depuis IGDB...")
+        # 7) Récupérer les age_ratings
+        self.stdout.write("  → Récupération des age_ratings depuis IGDB...")
         age_ratings_map = self.fetch_age_ratings(age_rating_ids)
         self.stdout.write(f"    ✓ {len(age_ratings_map)} age_ratings récupérés.")
 
@@ -232,90 +275,38 @@ class Command(BaseCommand):
         mp_by_game = self.index_multiplayer_by_game(mp_modes_list)
         self.stdout.write(f"    ✓ {len(mp_modes_list)} multiplayer_modes récupérés.")
 
-        # 7) Importer / MAJ les jeux + lier publisher / genres / plateformes / cover / status
+        return involved_map, publishers_map, covers_map, age_ratings_map, mp_by_game
+
+    def _sync_games(
+        self,
+        games_data,
+        involved_map,
+        publishers_map,
+        covers_map,
+        age_ratings_map,
+        mp_by_game,
+    ):
+        """Crée / met à jour les jeux ainsi que leurs relations M2M."""
         self.stdout.write("  → Création / mise à jour des jeux et des relations M2M...")
         created = 0
         updated = 0
         error_count = 0
+        total_games = len(games_data)
 
         for idx, g in enumerate(games_data, start=1):
             try:
-                igdb_id = g["id"]
-                name = g.get("name") or f"Game {igdb_id}"
-                summary = g.get("summary") or ""
-
-                # date de sortie
-                first_release_ts = g.get("first_release_date")
-                release_date = None
-                if first_release_ts:
-                    release_date = datetime.date.fromtimestamp(first_release_ts)
-
-                # On n'utilise plus la note IGDB pour remplir rating_avg.
-                # rating_avg est désormais géré directement sur le site.
-                # total_rating = g.get("total_rating") or 0.0
-                # popularity = total_rating
-
-                # status (enum déprécié mais encore utilisable)
-                raw_status = g.get("game_status")
-                status_str = self.map_status(raw_status)
-
-                # cover URL
-                cover_url = None
-                cover_id = g.get("cover")
-                if cover_id:
-                    cover_data = covers_map.get(cover_id)
-                    if cover_data:
-                        url = cover_data.get("url")
-                        if url:
-                            # l'API renvoie souvent une URL sans protocole, ex: //images.igdb.com/...
-                            if url.startswith("//"):
-                                cover_url = "https:" + url
-                            else:
-                                cover_url = url
-
-                # publisher principal
-                publisher_obj = self.find_publisher_for_game(g, involved_map, publishers_map)
-
-                min_players, max_players = self.compute_player_counts(g, mp_by_game)
-                min_age = self.compute_min_age(g, age_ratings_map)
-
-                game_obj, is_created = Game.objects.update_or_create(
-                    igdb_id=igdb_id,
-                    defaults={
-                        "name": name,
-                        "description": summary,
-                        "release_date": release_date,
-                        # "popularity_score": popularity,
-                        "status": status_str,
-                        "cover_url": cover_url,
-                        "min_players": min_players,
-                        "max_players": max_players,
-                        "min_age": min_age,
-                        "publisher": publisher_obj,
-                    },
+                is_created = self._upsert_single_game(
+                    g,
+                    involved_map,
+                    publishers_map,
+                    covers_map,
+                    age_ratings_map,
+                    mp_by_game,
                 )
-
-                # lier plateformes
-                platform_ids = g.get("platforms") or []
-                if platform_ids:
-                    platforms = Platform.objects.filter(igdb_id__in=platform_ids)
-                    game_obj.platforms.set(platforms)
-                else:
-                    game_obj.platforms.clear()
-
-                # lier genres
-                genre_ids = g.get("genres") or []
-                if genre_ids:
-                    genres = Genre.objects.filter(igdb_id__in=genre_ids)
-                    game_obj.genres.set(genres)
-                else:
-                    game_obj.genres.clear()
-
                 if is_created:
                     created += 1
                 else:
                     updated += 1
-
             except Exception as e:
                 error_count += 1
                 self.stdout.write(self.style.ERROR(f"[ERREUR] Jeu IGDB {g.get('id')} - {g.get('name')}: {e}"))
@@ -323,10 +314,93 @@ class Command(BaseCommand):
             # Log de progression tous les 25 jeux, ou sur le dernier
             if idx % 25 == 0 or idx == total_games:
                 self.stdout.write(
-                    f"    → Progression: {idx}/{total_games} jeux traités " f"({created} créés, {updated} mis à jour, {error_count} erreurs)"
+                    "    → Progression: " f"{idx}/{total_games} jeux traités " f"({created} créés, {updated} mis à jour, {error_count} erreurs)"
                 )
 
         self.stdout.write(self.style.SUCCESS(f"✓ Jeux importés : {created} créés, {updated} mis à jour, {error_count} erreurs."))
+
+    def _upsert_single_game(
+        self,
+        game_data,
+        involved_map,
+        publishers_map,
+        covers_map,
+        age_ratings_map,
+        mp_by_game,
+    ) -> bool:
+        """Crée ou met à jour un jeu unique, retourne True si créé."""
+        igdb_id = game_data["id"]
+        name = game_data.get("name") or f"Game {igdb_id}"
+        summary = game_data.get("summary") or ""
+
+        # date de sortie
+        first_release_ts = game_data.get("first_release_date")
+        release_date = datetime.date.fromtimestamp(first_release_ts) if first_release_ts else None
+
+        # status (enum déprécié mais encore utilisable)
+        raw_status = game_data.get("game_status")
+        status_str = self.map_status(raw_status)
+
+        cover_url = self._compute_cover_url(game_data, covers_map)
+        publisher_obj = self.find_publisher_for_game(game_data, involved_map, publishers_map)
+        min_players, max_players = self.compute_player_counts(game_data, mp_by_game)
+        min_age = self.compute_min_age(game_data, age_ratings_map)
+
+        game_obj, is_created = Game.objects.update_or_create(
+            igdb_id=igdb_id,
+            defaults={
+                "name": name,
+                "description": summary,
+                "release_date": release_date,
+                # "popularity_score": popularity,
+                "status": status_str,
+                "cover_url": cover_url,
+                "min_players": min_players,
+                "max_players": max_players,
+                "min_age": min_age,
+                "publisher": publisher_obj,
+            },
+        )
+
+        self._sync_game_relations(game_data, game_obj)
+        return is_created
+
+    def _compute_cover_url(self, game_data, covers_map):
+        """Calcule l'URL de cover à partir des données IGDB."""
+        cover_id = game_data.get("cover")
+        if not cover_id:
+            return None
+
+        cover_data = covers_map.get(cover_id)
+        if not cover_data:
+            return None
+
+        url = cover_data.get("url")
+        if not url:
+            return None
+
+        # l'API renvoie souvent une URL sans protocole, ex: //images.igdb.com/...
+        if url.startswith("//"):
+            return "https:" + url
+        return url
+
+    def _sync_game_relations(self, game_data, game_obj):
+        """Met à jour les relations M2M (plateformes, genres) pour un jeu."""
+        # lier plateformes
+        platform_ids = game_data.get("platforms") or []
+        if platform_ids:
+            platforms = Platform.objects.filter(igdb_id__in=platform_ids)
+            game_obj.platforms.set(platforms)
+        else:
+            game_obj.platforms.clear()
+
+        # lier genres
+        genre_ids = game_data.get("genres") or []
+        if genre_ids:
+            genres = Genre.objects.filter(igdb_id__in=genre_ids)
+            game_obj.genres.set(genres)
+        else:
+            game_obj.genres.clear()
 
     # ------------------------------------------------------------------
     # Helpers: involved_companies / companies / publishers / covers / status
