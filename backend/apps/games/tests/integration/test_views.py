@@ -411,7 +411,6 @@ class TestGameRatings:
 
         response = authenticated_api_client.post(url, payload, format="json")
 
-        print("response.data", response.data)
         assert response.status_code == status.HTTP_201_CREATED
         rating = Rating.objects.get(user=user, game=game)
         assert rating.rating_type == "decimal"
@@ -718,9 +717,9 @@ class TestGameRatingsAverages:
         assert game.rating_count == 2
 
         # Récupérer l'id du rating de another_user
-        from apps.games.models import Rating
+        from apps.games.models import Rating as RatingModel
 
-        other_rating = Rating.objects.get(user=another_user, game=game)
+        other_rating = RatingModel.objects.get(user=another_user, game=game)
 
         # DELETE /api/ratings/{rating_id}/
         delete_url = f"/api/ratings/{other_rating.id}/"

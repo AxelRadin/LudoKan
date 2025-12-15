@@ -68,10 +68,7 @@ class TestCleanupOldSessionsTask:
         """Test de nettoyage des sessions réussi"""
         with patch("apps.core.tasks.Session") as mock_session:
             mock_session.objects.filter.return_value.count.return_value = 5
-            mock_session.objects.filter.return_value.delete.return_value = (
-                5,
-                {"sessions.Session": 5},
-            )
+            mock_session.objects.filter.return_value.delete.return_value = (5, {"sessions.Session": 5})
 
             result = cleanup_old_sessions.delay()
 

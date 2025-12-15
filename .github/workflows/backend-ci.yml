@@ -93,4 +93,4 @@ jobs:
       - name: Run backend tests 🧪✔️
         working-directory: ./backend
         run: |
-          python run_tests.py --coverage
+          python -m pytest
