@@ -1,3 +1,5 @@
+# Pour réactivé la github action changer la terminaison en .yml
+
 name: Frontend CI 🚀
 
 on:

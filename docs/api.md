@@ -201,3 +201,4 @@ Content-Type: application/json
 
 This file is a high-level guide; for full schema details, refer to the Swagger UI
 exposed at the root URL (served by drf-spectacular).
+
