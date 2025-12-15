@@ -155,6 +155,23 @@ jobs:
           name: backend-coverage
           path: backend
 
+      - name: Verify Sonar secrets are set
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "❌ SONAR_TOKEN is empty or not available"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SONAR_ORG }}" ]; then
+            echo "❌ SONAR_ORG is empty or not available"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SONAR_PROJECT_KEY }}" ]; then
+            echo "❌ SONAR_PROJECT_KEY is empty or not available"
+            exit 1
+          fi
+          echo "✅ Sonar secrets are present"
+
       # ✅ Si tu actives la couverture frontend, décommente ces 2 blocs :
       # - name: Download frontend coverage
       #   uses: actions/download-artifact@v4
