@@ -8,6 +8,14 @@ on:
       - "frontend/**"
       - "sonar-project.properties"
       - ".github/workflows/ci-sonar.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "sonar-project.properties"
+      - ".github/workflows/ci-sonar.yml"
+
   
 
 jobs:
