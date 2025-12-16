@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
-TEST_USER_PASSWORD = "SuperPass123!"
+TEST_USER_PASSWORD = "TestUser123!"
 
 
 @pytest.fixture
