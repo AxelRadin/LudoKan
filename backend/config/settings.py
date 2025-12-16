@@ -29,10 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Core env / security
 # -------------------------------------------------------------------
 
-SECRET_KEY = config(
-    "SECRET_KEY",
-    default="django-insecure-=o*2&qoz81)g=k*gpcsn11dsw8o35pvo(s&e4+lc-*1ypl%h=7",
-)
+SECRET_KEY = config("SECRET_KEY")
 
 DEBUG = config("DEBUG", default=True, cast=bool)
 
@@ -183,23 +180,12 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True
 
 
-# CORS : localhost (React/Vite) par défaut
-CORS_ALLOWED_ORIGINS = config(
-    "CORS_ALLOWED_ORIGINS",
-    default=("http://localhost:3000," "http://127.0.0.1:3000," "http://localhost:5173," "http://127.0.0.1:5173"),
-).split(",")
+CORS_ALLOWED_ORIGINS = [o for o in config("CORS_ALLOWED_ORIGINS", default="").split(",") if o]
 
 CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
 
-# CSRF trusted origins
-CSRF_TRUSTED_ORIGINS = [
-    o
-    for o in config(
-        "CSRF_TRUSTED_ORIGINS",
-        default=("http://localhost:3000," "http://127.0.0.1:3000," "http://localhost:5173," "http://127.0.0.1:5173"),
-    ).split(",")
-    if o
-]
+#
+CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 
 
 # -------------------------------------------------------------------
@@ -251,10 +237,10 @@ DATABASES = {
             ),
         ),
         conn_max_age=600,
-        # ssl_require=True  # à activer si Render nécessite SSL obligatoire
     )
 }
 
+# Mettre ssl_require=True  dans la configuration si Render nécessite SSL obligatoire
 
 # -------------------------------------------------------------------
 # Password validation

@@ -3,8 +3,8 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color: rgba(255, 255, 255, 0.87);
-  background: linear-gradient(90deg, #ffd3d3 20%, #ff6464 80%);
+  color: #111111;
+  background: linear-gradient(90deg, #ffe5e5 20%, #ffb3b3 80%);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

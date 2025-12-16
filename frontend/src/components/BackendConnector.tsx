@@ -67,11 +67,15 @@ export default function BackendConnector() {
 
   const url = useMemo(() => {
     const b = baseUrl.trim().replace(/\/$/, '');
-    const e = endpoint.trim().length
-      ? endpoint.startsWith('/')
-        ? endpoint
-        : `/${endpoint}`
-      : '';
+    const trimmedEndpoint = endpoint.trim();
+
+    let e = '';
+    if (trimmedEndpoint.length > 0) {
+      e = trimmedEndpoint.startsWith('/')
+        ? trimmedEndpoint
+        : `/${trimmedEndpoint}`;
+    }
+
     return `${b}${e}`;
   }, [baseUrl, endpoint]);
 
@@ -95,7 +99,10 @@ export default function BackendConnector() {
 
   const curl = useMemo(() => {
     const headerFlags = Object.entries(parsedHeaders)
-      .map(([k, v]) => `-H ${JSON.stringify(`${k}: ${v}`)}`)
+      .map(([k, v]) => {
+        const header = `${k}: ${v}`;
+        return `-H ${JSON.stringify(header)}`;
+      })
       .join(' ');
     const bodyFlag =
       method === 'GET' || method === 'DELETE'
@@ -103,7 +110,7 @@ export default function BackendConnector() {
         : `--data ${JSON.stringify(bodyText)}`;
     const m = method === 'GET' ? '' : `-X ${method}`;
     return `curl ${m} ${headerFlags} ${bodyFlag} ${JSON.stringify(url)}`
-      .replace(/\s+/g, ' ')
+      .replaceAll(/\s+/g, ' ')
       .trim();
   }, [parsedHeaders, bodyText, method, url]);
 
@@ -224,16 +231,23 @@ export default function BackendConnector() {
           <h1 style={{ fontSize: 22, fontWeight: 600 }}>
             🔗 Frontend ↔ Backend Connector (React Vite)
           </h1>
-          <a
-            href="#"
-            onClick={e => {
-              e.preventDefault();
+          <button
+            type="button"
+            onClick={() => {
               navigator.clipboard.writeText(curl);
             }}
-            style={{ fontSize: 12, color: '#666' }}
+            style={{
+              fontSize: 12,
+              color: '#666',
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
           >
             Copier le cURL
-          </a>
+          </button>
         </header>
 
         <div
@@ -245,8 +259,11 @@ export default function BackendConnector() {
           }}
         >
           <div style={{ ...box }}>
-            <label style={{ fontSize: 13, fontWeight: 600 }}>Base URL</label>
+            <label htmlFor="base-url" style={{ fontSize: 13, fontWeight: 600 }}>
+              Base URL
+            </label>
             <input
+              id="base-url"
               style={{ ...input, marginTop: 6 }}
               placeholder="https://api.exemple.com"
               value={baseUrl}
@@ -262,8 +279,14 @@ export default function BackendConnector() {
               }}
             >
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600 }}>Méthode</label>
+                <label
+                  htmlFor="http-method"
+                  style={{ fontSize: 13, fontWeight: 600 }}
+                >
+                  Méthode
+                </label>
                 <select
+                  id="http-method"
                   style={{ ...input, marginTop: 6 }}
                   value={method}
                   onChange={e => setMethod(e.target.value as HttpMethod)}
@@ -278,10 +301,14 @@ export default function BackendConnector() {
                 </select>
               </div>
               <div>
-                <label style={{ fontSize: 13, fontWeight: 600 }}>
+                <label
+                  htmlFor="endpoint"
+                  style={{ fontSize: 13, fontWeight: 600 }}
+                >
                   Endpoint
                 </label>
                 <input
+                  id="endpoint"
                   style={{ ...input, marginTop: 6 }}
                   placeholder="/health"
                   value={endpoint}
@@ -292,10 +319,11 @@ export default function BackendConnector() {
 
             {method !== 'GET' && method !== 'DELETE' && (
               <div style={{ marginTop: 12 }}>
-                <label style={{ fontSize: 13, fontWeight: 600 }}>
+                <label htmlFor="body" style={{ fontSize: 13, fontWeight: 600 }}>
                   Body (texte/JSON)
                 </label>
                 <textarea
+                  id="body"
                   style={{ ...textarea, marginTop: 6 }}
                   value={bodyText}
                   onChange={e => setBodyText(e.target.value)}
@@ -308,20 +336,28 @@ export default function BackendConnector() {
             style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}
           >
             <div style={{ ...box }}>
-              <label style={{ fontSize: 13, fontWeight: 600 }}>
+              <label
+                htmlFor="bearer-token"
+                style={{ fontSize: 13, fontWeight: 600 }}
+              >
                 Bearer token (facultatif)
               </label>
               <input
+                id="bearer-token"
                 style={{ ...input, marginTop: 6 }}
                 placeholder="eyJhbGciOi..."
                 value={bearer}
                 onChange={e => setBearer(e.target.value)}
               />
               <div style={{ marginTop: 12 }}>
-                <label style={{ fontSize: 13, fontWeight: 600 }}>
+                <label
+                  htmlFor="extra-headers"
+                  style={{ fontSize: 13, fontWeight: 600 }}
+                >
                   En-têtes additionnels (une ligne = key: value)
                 </label>
                 <textarea
+                  id="extra-headers"
                   style={{ ...textarea, height: 120, marginTop: 6 }}
                   placeholder={'Content-Type: application/json\nX-API-Key: xxx'}
                   value={headersText}

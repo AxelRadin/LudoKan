@@ -57,30 +57,8 @@ def run_command(command, description):
     return process.returncode == 0, output
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Exécuter les tests LudoKan")
-    parser.add_argument("--unit", action="store_true", help="Exécuter seulement les tests unitaires")
-    parser.add_argument(
-        "--integration",
-        action="store_true",
-        help="Exécuter seulement les tests d'intégration",
-    )
-    parser.add_argument("--celery", action="store_true", help="Exécuter seulement les tests Celery")
-    parser.add_argument("--coverage", action="store_true", help="Générer un rapport de couverture")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Mode verbeux")
-    parser.add_argument("--parallel", "-n", type=int, help="Exécuter les tests en parallèle")
-    parser.add_argument("--app", help="Exécuter les tests d'une app spécifique")
-
-    args = parser.parse_args()
-
-    # Message d'introduction
-    print("\n" + "=" * 60)
-    print("🧪 LUDOKAN - SUITE DE TESTS")
-    print("=" * 60)
-    print("\n⚠️  Note: Les tests des modèles non implémentés seront skipped")
-    print("📋 Vérifiez le résumé à la fin pour voir le nombre de tests skip\n")
-
-    # Configuration de base
+def build_base_command(args):
+    """Construit la commande pytest de base en fonction des options."""
     base_command = "python -m pytest"
 
     if args.verbose:
@@ -108,13 +86,20 @@ def main():
     if test_filters:
         base_command += " " + " ".join(test_filters)
 
-    # Exécution des tests
-    success, output = run_command(base_command, "Exécution des tests")
+    return base_command
 
-    # Parser les résultats
-    stats = parse_pytest_output(output)
 
-    # Affichage du résumé final
+def print_intro():
+    """Affiche l'en-tête de la suite de tests."""
+    print("\n" + "=" * 60)
+    print("🧪 LUDOKAN - SUITE DE TESTS")
+    print("=" * 60)
+    print("\n⚠️  Note: Les tests des modèles non implémentés seront skipped")
+    print("📋 Vérifiez le résumé à la fin pour voir le nombre de tests skip\n")
+
+
+def print_summary(stats):
+    """Affiche le résumé des résultats de tests."""
     print("\n" + "=" * 60)
     print("📊 RÉSUMÉ DES TESTS")
     print("=" * 60)
@@ -135,12 +120,15 @@ def main():
         print(f"\n💡 {stats['skipped']} test(s) ont été skippés")
         print("   (Fonctionnalités non encore implémentées ou tests Celery désactivés)")
 
+
+def handle_exit(success, stats, coverage_enabled):
+    """Gère la logique de sortie (code retour + messages complémentaires)."""
     if success and stats["failed"] == 0 and stats["errors"] == 0:
         print("\n✅ Tous les tests actifs passent!")
-        if args.coverage:
+        if coverage_enabled:
             print("📊 Rapport de couverture généré dans htmlcov/index.html")
         sys.exit(0)
-    else:
+
         total_issues = stats["failed"] + stats["errors"]
         print(f"\n❌ {total_issues} problème(s) détecté(s):")
         if stats["failed"] > 0:
@@ -149,6 +137,38 @@ def main():
             print(f"   • {stats['errors']} ERROR(s) (problèmes d'exécution/setup)")
         print("\n   📋 Consultez la sortie ci-dessus pour plus de détails")
         sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Exécuter les tests LudoKan")
+    parser.add_argument("--unit", action="store_true", help="Exécuter seulement les tests unitaires")
+    parser.add_argument(
+        "--integration",
+        action="store_true",
+        help="Exécuter seulement les tests d'intégration",
+    )
+    parser.add_argument("--celery", action="store_true", help="Exécuter seulement les tests Celery")
+    parser.add_argument("--coverage", action="store_true", help="Générer un rapport de couverture")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Mode verbeux")
+    parser.add_argument("--parallel", "-n", type=int, help="Exécuter les tests en parallèle")
+    parser.add_argument("--app", help="Exécuter les tests d'une app spécifique")
+
+    args = parser.parse_args()
+
+    print_intro()
+    base_command = build_base_command(args)
+
+    # Exécution des tests
+    success, output = run_command(base_command, "Exécution des tests")
+
+    # Parser les résultats
+    stats = parse_pytest_output(output)
+
+    # Affichage du résumé final
+    print_summary(stats)
+
+    # Gérer le code de retour et les messages finaux
+    handle_exit(success, stats, args.coverage)
 
 
 if __name__ == "__main__":

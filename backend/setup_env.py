@@ -9,7 +9,7 @@ from pathlib import Path
 
 def generate_secret_key():
     """Génère une clé secrète Django sécurisée"""
-    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)") for i in range(50))
+    return "".join(secrets.choice("abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)") for _ in range(50))
 
 
 def create_env_file():
@@ -18,6 +18,18 @@ def create_env_file():
     # Chemin vers le fichier .env (à la racine du projet)
     project_root = Path(__file__).parent.parent
     env_file = project_root / ".env"
+
+    # Valeurs de base de données (avec possibilité de les surcharger via l'env)
+    db_name = os.getenv("POSTGRES_DB", "tesp_db")
+    db_user = os.getenv("POSTGRES_USER", "tesp_user")
+    # On ne met pas de mot de passe en dur : soit on lit une variable d'env, soit on génère un mot de passe aléatoire.
+    db_password = os.getenv("POSTGRES_PASSWORD") or secrets.token_urlsafe(16)
+    db_host = os.getenv("DB_HOST", "db")
+    db_port = os.getenv("DB_PORT", "5432")
+    database_url = os.getenv(
+        "DATABASE_URL",
+        f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}",
+    )
 
     # Contenu du fichier .env
     env_content = f"""# ===========================================
@@ -28,12 +40,12 @@ def create_env_file():
 # ===========================================
 # BASE DE DONNÉES
 # ===========================================
-POSTGRES_DB=tesp_db
-POSTGRES_USER=tesp_user
-POSTGRES_PASSWORD=tesp_password
-DATABASE_URL=postgresql://tesp_user:tesp_password@db:5432/tesp_db
-DB_HOST=db
-DB_PORT=5432
+POSTGRES_DB={db_name}
+POSTGRES_USER={db_user}
+POSTGRES_PASSWORD={db_password}
+DATABASE_URL={database_url}
+DB_HOST={db_host}
+DB_PORT={db_port}
 
 # ===========================================
 # DJANGO

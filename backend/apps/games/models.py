@@ -23,7 +23,7 @@ class Publisher(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
     website = models.URLField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -37,7 +37,7 @@ class Platform(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     nom_plateforme = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
 
     def __str__(self):
         return self.nom_plateforme
@@ -48,7 +48,7 @@ class Genre(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     nom_genre = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
 
     def __str__(self):
         return self.nom_genre
@@ -59,7 +59,7 @@ class Game(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, default="")
     release_date = models.DateField(blank=True, null=True)
     cover_url = models.URLField(blank=True, null=True)
     status = models.CharField(max_length=20, blank=True, null=True, choices=GAME_STATUS_CHOICES)
@@ -145,24 +145,20 @@ class Rating(models.Model):
         if not isinstance(self.value, Decimal):
             self.value = Decimal(str(self.value))
 
-        if self.rating_type == self.RATING_TYPE_SUR_100:
-            if self.value < 0 or self.value > 100:
-                raise ValidationError({"value": "Rating out of range for type 'sur_100' (0-100)."})
+        # Map rating types to (min_value, max_value, error_message)
+        ranges = {
+            self.RATING_TYPE_SUR_100: (0, 100, "Rating out of range for type 'sur_100' (0-100)."),
+            self.RATING_TYPE_SUR_10: (0, 10, "Rating out of range for type 'sur_10' (0-10)."),
+            self.RATING_TYPE_DECIMAL: (0, 10, "Rating out of range for type 'decimal' (0-10)."),
+            self.RATING_TYPE_ETOILES: (1, 5, "Rating out of range for type 'etoiles' (1-5)."),
+        }
 
-        elif self.rating_type == self.RATING_TYPE_SUR_10:
-            if self.value < 0 or self.value > 10:
-                raise ValidationError({"value": "Rating out of range for type 'sur_10' (0-10)."})
-
-        elif self.rating_type == self.RATING_TYPE_DECIMAL:
-            if self.value < 0 or self.value > 10:
-                raise ValidationError({"value": "Rating out of range for type 'decimal' (0-10)."})
-
-        elif self.rating_type == self.RATING_TYPE_ETOILES:
-            if self.value < 1 or self.value > 5:
-                raise ValidationError({"value": "Rating out of range for type 'etoiles' (1-5)."})
-
-        else:
+        if self.rating_type not in ranges:
             raise ValidationError({"rating_type": "Unknown rating type."})
+
+        min_value, max_value, message = ranges[self.rating_type]
+        if not (min_value <= self.value <= max_value):
+            raise ValidationError({"value": message})
 
     def save(self, *args, **kwargs):
         """Override save to keep normalized_value in sync.
