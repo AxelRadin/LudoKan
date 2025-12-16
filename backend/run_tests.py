@@ -129,14 +129,14 @@ def handle_exit(success, stats, coverage_enabled):
             print("📊 Rapport de couverture généré dans htmlcov/index.html")
         sys.exit(0)
 
-    total_issues = stats["failed"] + stats["errors"]
-    print(f"\n❌ {total_issues} problème(s) détecté(s):")
-    if stats["failed"] > 0:
-        print(f"   • {stats['failed']} test(s) FAILED (assertions échouées)")
-    if stats["errors"] > 0:
-        print(f"   • {stats['errors']} ERROR(s) (problèmes d'exécution/setup)")
-    print("\n   📋 Consultez la sortie ci-dessus pour plus de détails")
-    sys.exit(1)
+        total_issues = stats["failed"] + stats["errors"]
+        print(f"\n❌ {total_issues} problème(s) détecté(s):")
+        if stats["failed"] > 0:
+            print(f"   • {stats['failed']} test(s) FAILED (assertions échouées)")
+        if stats["errors"] > 0:
+            print(f"   • {stats['errors']} ERROR(s) (problèmes d'exécution/setup)")
+        print("\n   📋 Consultez la sortie ci-dessus pour plus de détails")
+        sys.exit(1)
 
 
 def main():
