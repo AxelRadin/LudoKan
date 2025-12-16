@@ -12,7 +12,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser
-from apps.users.tests.constants import TEST_USER_PASSWORD
+from apps.users.tests.constants import TEST_USER_CREDENTIAL
 
 
 def get_errors_payload(response):
@@ -110,7 +110,7 @@ class TestLoginView:
     def test_login_success(self, api_client, user):
         """Test login réussi avec credentials valides"""
         url = "/api/auth/login/"
-        data = {"email": user.email, "password": TEST_USER_PASSWORD}
+        data = {"email": user.email, "password": TEST_USER_CREDENTIAL}
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
@@ -230,7 +230,7 @@ class TestPasswordChangeView:
         """Test changement de mot de passe réussi"""
         url = "/api/auth/password/change/"
         data = {
-            "old_password": TEST_USER_PASSWORD,
+            "old_password": TEST_USER_CREDENTIAL,
             "new_password1": "NewSuperPass123!",
             "new_password2": "NewSuperPass123!",
         }
@@ -257,7 +257,7 @@ class TestPasswordChangeView:
         """Test changement avec nouveaux mots de passe différents"""
         url = "/api/auth/password/change/"
         data = {
-            "old_password": TEST_USER_PASSWORD,
+            "old_password": TEST_USER_CREDENTIAL,
             "new_password1": "NewSuperPass123!",
             "new_password2": "DifferentPass123!",
         }

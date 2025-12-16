@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .constants import TEST_USER_PASSWORD
+from .constants import TEST_USER_CREDENTIAL
 
 User = get_user_model()
 
@@ -22,8 +22,8 @@ def sample_user_data():
     """Données utilisateur valides pour l'inscription"""
     return {
         "email": "testuser@example.com",
-        "password1": TEST_USER_PASSWORD,
-        "password2": TEST_USER_PASSWORD,
+        "password1": TEST_USER_CREDENTIAL,
+        "password2": TEST_USER_CREDENTIAL,
         "pseudo": "testuser",
         "first_name": "Test",
         "last_name": "User",
@@ -37,7 +37,7 @@ def user(db):
 
     user = User.objects.create_user(
         email="existing@example.com",
-        password=TEST_USER_PASSWORD,
+        password=TEST_USER_CREDENTIAL,
         pseudo="existinguser",
         first_name="Existing",
         last_name="User",
@@ -79,7 +79,7 @@ def auth_client_with_tokens(api_client, user):
     login_url = "/api/auth/login/"
     response = api_client.post(
         login_url,
-        {"email": user.email, "password": TEST_USER_PASSWORD},
+        {"email": user.email, "password": TEST_USER_CREDENTIAL},
         format="json",
     )
 
