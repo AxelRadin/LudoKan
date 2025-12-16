@@ -12,6 +12,7 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser
+from apps.users.tests.constants import TEST_USER_PASSWORD
 
 
 def get_errors_payload(response):
@@ -109,7 +110,7 @@ class TestLoginView:
     def test_login_success(self, api_client, user):
         """Test login réussi avec credentials valides"""
         url = "/api/auth/login/"
-        data = {"email": user.email, "password": "SuperPass123!"}
+        data = {"email": user.email, "password": TEST_USER_PASSWORD}
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
@@ -228,7 +229,11 @@ class TestPasswordChangeView:
     def test_password_change_success(self, auth_client_with_tokens, user):
         """Test changement de mot de passe réussi"""
         url = "/api/auth/password/change/"
-        data = {"old_password": "SuperPass123!", "new_password1": "NewSuperPass123!", "new_password2": "NewSuperPass123!"}
+        data = {
+            "old_password": TEST_USER_PASSWORD,
+            "new_password1": "NewSuperPass123!",
+            "new_password2": "NewSuperPass123!",
+        }
         response = auth_client_with_tokens.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
@@ -251,7 +256,11 @@ class TestPasswordChangeView:
     def test_password_change_mismatch(self, auth_client_with_tokens):
         """Test changement avec nouveaux mots de passe différents"""
         url = "/api/auth/password/change/"
-        data = {"old_password": "SuperPass123!", "new_password1": "NewSuperPass123!", "new_password2": "DifferentPass123!"}
+        data = {
+            "old_password": TEST_USER_PASSWORD,
+            "new_password1": "NewSuperPass123!",
+            "new_password2": "DifferentPass123!",
+        }
         response = auth_client_with_tokens.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
