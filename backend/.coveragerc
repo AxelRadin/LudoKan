@@ -3,6 +3,8 @@ omit =
     # Fichiers de gestion / entrypoints
     manage.py
     test_celery.py
+    run_tests.py
+    setup_env.py
 
     # Config / infrastructure Django
     config/*
