@@ -1,0 +1,36 @@
+[run]
+omit =
+    # Fichiers de gestion / entrypoints
+    manage.py
+    test_celery.py
+
+    # Config / infrastructure Django
+    config/*
+    config/**/*
+
+    # Migrations (toutes apps)
+    */migrations/*
+    */migrations/**/*
+
+    # Fichiers de tests
+    */tests.py
+    */tests/*
+    */tests/**/*
+    tests/*
+    tests/**/*
+
+    # Fichiers auto-générés / peu intéressants pour la couverture
+    */admin.py
+    */apps.py
+    */wsgi.py
+    */asgi.py
+    */celery.py
+    */settings.py
+    */urls.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+
+
