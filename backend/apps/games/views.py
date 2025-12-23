@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
@@ -145,26 +146,63 @@ class RatingListView(ListAPIView):
 
 class GameStatsView(APIView):
     """
-    Retourne les statistiques de possession d'un jeu :
-    - nombre total d'utilisateurs
-    - répartition par statut
+    Statistiques complètes d’un jeu :
+    - possession (owners)
+    - notes (ratings)
+    - avis (reviews)
     """
 
     permission_classes = [AllowAny]
 
     @extend_schema(
-        summary="Statistiques de possession d’un jeu",
-        description=("Retourne le nombre d'utilisateurs possédant le jeu et la répartition par statut (en cours, terminé, abandonné)."),
+        summary="Statistiques complètes d’un jeu",
+        description=(
+            "Retourne les statistiques de possession, de notation et d’avis pour un jeu donné.\n\n"
+            "- **Possession** : nombre total d’utilisateurs et répartition par statut\n"
+            "- **Notes** : moyenne, nombre de votes et distribution (1 à 5 étoiles)\n"
+            "- **Avis** : nombre total et date du dernier avis"
+        ),
         responses={
             200: {
                 "type": "object",
-                "example": {
-                    "game_id": 123,
-                    "owners_count": 42,
+                "properties": {
+                    "game_id": {"type": "integer", "example": 123},
+                    "owners_count": {"type": "integer", "example": 42},
                     "owners_by_status": {
-                        "en_cours": 10,
-                        "termine": 25,
-                        "abandonne": 7,
+                        "type": "object",
+                        "properties": {
+                            "en_cours": {"type": "integer", "example": 10},
+                            "termine": {"type": "integer", "example": 25},
+                            "abandonne": {"type": "integer", "example": 7},
+                        },
+                    },
+                    "ratings": {
+                        "type": "object",
+                        "properties": {
+                            "average": {"type": "number", "format": "float", "example": 8.2},
+                            "count": {"type": "integer", "example": 134},
+                            "distribution": {
+                                "type": "object",
+                                "properties": {
+                                    "1": {"type": "integer", "example": 2},
+                                    "2": {"type": "integer", "example": 5},
+                                    "3": {"type": "integer", "example": 20},
+                                    "4": {"type": "integer", "example": 60},
+                                    "5": {"type": "integer", "example": 47},
+                                },
+                            },
+                        },
+                    },
+                    "reviews": {
+                        "type": "object",
+                        "properties": {
+                            "count": {"type": "integer", "example": 56},
+                            "last_created_at": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2025-09-12T10:15:00Z",
+                            },
+                        },
                     },
                 },
             },
@@ -172,7 +210,7 @@ class GameStatsView(APIView):
         },
         examples=[
             OpenApiExample(
-                "Exemple de réponse",
+                "Réponse complète",
                 value={
                     "game_id": 123,
                     "owners_count": 42,
@@ -181,18 +219,37 @@ class GameStatsView(APIView):
                         "termine": 25,
                         "abandonne": 7,
                     },
+                    "ratings": {
+                        "average": 8.2,
+                        "count": 134,
+                        "distribution": {
+                            "1": 2,
+                            "2": 5,
+                            "3": 20,
+                            "4": 60,
+                            "5": 47,
+                        },
+                    },
+                    "reviews": {
+                        "count": 56,
+                        "last_created_at": "2025-09-12T10:15:00Z",
+                    },
                 },
             )
         ],
     )
     def get(self, request, game_id):
+        cache_key = f"game:stats:{game_id}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+
         game = get_object_or_404(Game, id=game_id)
 
-        queryset = UserGame.objects.filter(game=game).values("status").annotate(count=Count("id"))
+        # ---------- OWNERS ----------
+        owners_qs = UserGame.objects.filter(game=game).values("status").annotate(count=Count("id"))
 
-        owners_count = sum(item["count"] for item in queryset)
-
-        # Initialisation à 0 pour stabilité de l’API
         owners_by_status = {
             "en_cours": 0,
             "termine": 0,
@@ -205,39 +262,46 @@ class GameStatsView(APIView):
             UserGame.GameStatus.ABANDONNE: "abandonne",
         }
 
-        for item in queryset:
-            api_key = status_mapping.get(item["status"])
+        owners_count = 0
+        for row in owners_qs:
+            owners_count += row["count"]
+            api_key = status_mapping.get(row["status"])
             if api_key:
-                owners_by_status[api_key] = item["count"]
+                owners_by_status[api_key] = row["count"]
+
+        # ---------- RATINGS ----------
+        ratings_distribution = {str(i): 0 for i in range(1, 6)}
+
+        stars_qs = Rating.objects.filter(game=game, rating_type=Rating.RATING_TYPE_ETOILES).values("value").annotate(count=Count("id"))
+
+        for row in stars_qs:
+            ratings_distribution[str(int(row["value"]))] = row["count"]
 
         ratings_data = {
             "average": game.average_rating,
             "count": game.rating_count,
+            "distribution": ratings_distribution,
         }
 
-        distribution = {str(i): 0 for i in range(1, 6)}
-
-        stars_qs = Rating.objects.filter(game=game, rating_type=Rating.RATING_TYPE_ETOILES).values("value").annotate(count=Count("id"))
-
-        for item in stars_qs:
-            distribution[str(int(item["value"]))] = item["count"]
-
-        ratings_data["distribution"] = distribution
-
-        reviews_qs = Review.objects.filter(game=game)
+        # ---------- REVIEWS ----------
+        reviews_agg = Review.objects.filter(game=game).aggregate(
+            count=Count("id"),
+            last_created_at=Max("date_created"),
+        )
 
         reviews_data = {
-            "count": reviews_qs.count(),
-            "last_created_at": reviews_qs.aggregate(last_created_at=Max("date_created"))["last_created_at"],
+            "count": reviews_agg["count"],
+            "last_created_at": reviews_agg["last_created_at"],
         }
 
-        return Response(
-            {
-                "game_id": game.id,
-                "owners_count": owners_count,
-                "owners_by_status": owners_by_status,
-                "ratings": ratings_data,
-                "reviews": reviews_data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        response_data = {
+            "game_id": game.id,
+            "owners_count": owners_count,
+            "owners_by_status": owners_by_status,
+            "ratings": ratings_data,
+            "reviews": reviews_data,
+        }
+
+        cache.set(cache_key, response_data, timeout=300)
+
+        return Response(response_data, status=status.HTTP_200_OK)
