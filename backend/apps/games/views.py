@@ -1,4 +1,4 @@
-from django.db.models import Count
+from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import status
@@ -18,6 +18,7 @@ from apps.games.serializers import (
     RatingSerializer,
 )
 from apps.library.models import UserGame
+from apps.reviews.models import Review
 
 
 class GameViewSet(ModelViewSet):
@@ -209,11 +210,34 @@ class GameStatsView(APIView):
             if api_key:
                 owners_by_status[api_key] = item["count"]
 
+        ratings_data = {
+            "average": game.average_rating,
+            "count": game.rating_count,
+        }
+
+        distribution = {str(i): 0 for i in range(1, 6)}
+
+        stars_qs = Rating.objects.filter(game=game, rating_type=Rating.RATING_TYPE_ETOILES).values("value").annotate(count=Count("id"))
+
+        for item in stars_qs:
+            distribution[str(int(item["value"]))] = item["count"]
+
+        ratings_data["distribution"] = distribution
+
+        reviews_qs = Review.objects.filter(game=game)
+
+        reviews_data = {
+            "count": reviews_qs.count(),
+            "last_created_at": reviews_qs.aggregate(last_created_at=Max("date_created"))["last_created_at"],
+        }
+
         return Response(
             {
                 "game_id": game.id,
                 "owners_count": owners_count,
                 "owners_by_status": owners_by_status,
+                "ratings": ratings_data,
+                "reviews": reviews_data,
             },
             status=status.HTTP_200_OK,
         )
