@@ -200,11 +200,18 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.host.url=https://sonarcloud.io
 
+      - name: Debug report-task
+        run: |
+          ls -la .scannerwork || true
+          cat .scannerwork/report-task.txt || true
+
       - name: SonarCloud Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@master
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
         timeout-minutes: 5
+
 
   deploy_staging:
     name: Deploy Backend (staging) 🚚
