@@ -7,14 +7,14 @@ on:
       - "backend/**"
       - "frontend/**"
       - "sonar-project.properties"
-      - ".github/workflows/ci-sonar.yml"
+      - ".github/workflows/ci-cd.yml"
   push:
     branches: ["main", "staging"]
     paths:
       - "backend/**"
       - "frontend/**"
       - "sonar-project.properties"
-      - ".github/workflows/ci-sonar.yml"
+      - ".github/workflows/ci-cd.yml"
 
   
 
