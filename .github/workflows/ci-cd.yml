@@ -2,19 +2,19 @@ name: CI + Sonar 🚀
 
 on:
   pull_request:
-    branches: ["main", "test-ci"]
+    branches: ["main", "staging"]
     paths:
       - "backend/**"
       - "frontend/**"
       - "sonar-project.properties"
-      - ".github/workflows/ci-sonar.yml"
+      - ".github/workflows/ci-cd.yml"
   push:
-    branches: ["main"]
+    branches: ["main", "staging"]
     paths:
       - "backend/**"
       - "frontend/**"
       - "sonar-project.properties"
-      - ".github/workflows/ci-sonar.yml"
+      - ".github/workflows/ci-cd.yml"
 
   
 
@@ -200,8 +200,101 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.host.url=https://sonarcloud.io
 
+      - name: Debug report-task
+        run: |
+          ls -la .scannerwork || true
+          cat .scannerwork/report-task.txt || true
+
       - name: SonarCloud Quality Gate
-        uses: sonarsource/sonarqube-quality-gate-action@master
+        if: github.event_name == 'pull_request'
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
         timeout-minutes: 5
+
+
+  deploy_staging:
+    name: Deploy Backend (staging) 🚚
+    runs-on: ubuntu-latest
+    needs: [sonar]
+    environment: deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS (staging) via SSH
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              -p "${{ secrets.VPS_SSH_PORT }}" \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+            set -euo pipefail
+
+            echo "📦 Update code (staging)"
+            cd /srv/ludokan/repo-staging
+            git fetch --all
+            git reset --hard origin/staging
+
+            echo "✅ Deployed commit: $(git rev-parse --short HEAD)"
+            git log -1 --oneline
+
+            echo "🐳 Rebuild + restart containers (staging)"
+            cd /srv/ludokan/staging
+            docker compose up -d --build
+
+            echo "📋 Containers status"
+            docker compose ps
+
+            echo "🧹 Cleanup"
+            docker image prune -f
+          EOF
+
+  deploy_prod:
+    name: Deploy Backend (prod) 🚀
+    runs-on: ubuntu-latest
+    needs: [sonar]
+    environment: deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS (prod) via SSH
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              -p "${{ secrets.VPS_SSH_PORT }}" \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+            set -euo pipefail
+
+            echo "📦 Update code (prod)"
+            cd /srv/ludokan/repo-prod
+            git fetch --all
+            git reset --hard origin/main
+            echo "✅ Deployed commit: $(git rev-parse --short HEAD)"
+            git log -1 --oneline
+
+            echo "🐳 Rebuild + restart containers (prod)"
+            cd /srv/ludokan/prod
+            docker compose up -d --build
+
+            echo "📋 Containers status"
+            docker compose ps
+
+            echo "🧹 Cleanup"
+            docker image prune -f
+          EOF
