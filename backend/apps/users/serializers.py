@@ -98,10 +98,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Supprime l'ancien avatar lors du remplacement"""
-        avatar = validated_data.get("avatar", None)
-        if avatar and instance.avatar and instance.avatar != avatar:
-            # Supprimer l'ancien fichier du disque
-            instance.avatar.delete(save=False)
+        new_avatar = validated_data.get("avatar", serializers.empty)
+        if new_avatar is not serializers.empty:
+            if instance.avatar:
+                if new_avatar is None or instance.avatar != new_avatar:
+                    instance.avatar.delete(save=False)
         return super().update(instance, validated_data)
 
     def validate_pseudo(self, value):
