@@ -35,7 +35,7 @@ def user(db):
     return User.objects.create_user(
         email="test@example.com",
         pseudo="testuser",
-        password="testpass123",
+        password="testpass123",  # NOSONAR - mot de passe de test uniquement
     )
 
 
@@ -45,7 +45,7 @@ def admin_user(db):
     return User.objects.create_superuser(
         email="admin@example.com",
         pseudo="admin",
-        password="adminpass123",
+        password="adminpass123",  # NOSONAR - mot de passe de test uniquement
     )
 
 
@@ -85,7 +85,7 @@ def sample_user_data():
     """Données utilisateur de test"""
     return {
         "email": "newuser@example.com",
-        "password": "newpass123",
+        "password": "newpass123",  # NOSONAR - mot de passe de test uniquement
         "pseudo": "newuser",
         "first_name": "New",
         "last_name": "User",

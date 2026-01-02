@@ -19,6 +19,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.views.decorators.http import require_GET
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
 from rest_framework.routers import DefaultRouter
@@ -26,10 +27,12 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 
 
+@require_GET
 def health(request):
     return JsonResponse({"status": "ok"}, status=200)
 
 
+@require_GET
 def sentry_debug(request):
     # Erreur volontaire pour tester l'intégration Sentry
     raise ZeroDivisionError("Sentry debug endpoint triggered")
@@ -41,7 +44,6 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("sentry-debug/", sentry_debug, name="sentry-debug"),
     # Auth
     path("api/auth/", include("apps.users.urls_auth")),
     path("api/", include("apps.users.urls")),
@@ -53,6 +55,9 @@ urlpatterns = [
     path("api/", include("apps.reviews.urls")),
 ]
 
-# Serve media files in development
 if settings.DEBUG:
+    # Endpoint de debug Sentry uniquement en développement
+    urlpatterns.append(path("sentry-debug/", sentry_debug, name="sentry-debug"))
+
+    # Serve media files in development
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

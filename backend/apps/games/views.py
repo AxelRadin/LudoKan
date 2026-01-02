@@ -57,7 +57,7 @@ class RatingCreateView(APIView):
 
     @extend_schema(
         summary="Create or update a rating for a game",
-        description=("Create a new rating for the given game, or update the existing rating " "for the authenticated user if it already exists."),
+        description="Create a new rating for the given game, or update the existing rating for the authenticated user if it already exists.",
         request=RatingSerializer,
         responses={201: RatingSerializer, 200: RatingSerializer},
         examples=[
