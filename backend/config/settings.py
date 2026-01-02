@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",
+    "django.contrib.gis",
     "rest_framework",
     "drf_spectacular",
     "dj_rest_auth",
@@ -61,6 +62,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "corsheaders",
+    "apps.matchmaking",
     "apps.users",
     "apps.games",
     "apps.core",
@@ -225,19 +227,23 @@ WSGI_APPLICATION = "config.wsgi.application"
 # -------------------------------------------------------------------
 
 DATABASES = {
-    "default": dj_database_url.config(
-        default=config(
-            "DATABASE_URL",
-            default=(
-                f"postgresql://{config('POSTGRES_USER', default='tesp_user')}:"
-                f"{config('POSTGRES_PASSWORD', default='tesp_password')}@"
-                f"{config('POSTGRES_HOST', default='db')}:"
-                f"{config('POSTGRES_PORT', default='5432')}/"
-                f"{config('POSTGRES_DB', default='tesp_db')}"
+    "default": {
+        **dj_database_url.config(
+            default=config(
+                "DATABASE_URL",
+                default=(
+                    f"postgresql://{config('POSTGRES_USER', default='tesp_user')}:"
+                    f"{config('POSTGRES_PASSWORD', default='tesp_password')}@"
+                    f"{config('POSTGRES_HOST', default='db')}:"
+                    f"{config('POSTGRES_PORT', default='5432')}/"
+                    f"{config('POSTGRES_DB', default='tesp_db')}"
+                ),
             ),
+            conn_max_age=600,
         ),
-        conn_max_age=600,
-    )
+        # 🔥 REQUIRED for PostGIS / GeoDjango
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
+    }
 }
 
 # Mettre ssl_require=True  dans la configuration si Render nécessite SSL obligatoire

@@ -9,8 +9,11 @@ WORKDIR /app
 
 # Déps système (psycopg, build)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+    curl gcc libpq-dev \
+    binutils \
+    libproj-dev \
+    gdal-bin \
+    && rm -rf /var/lib/apt/lists/*
 
 # Installer deps avant de copier tout le code -> meilleur cache
 COPY requirements.txt .
