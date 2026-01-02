@@ -263,7 +263,7 @@ jobs:
     needs: [sonar]
     environment: deployment
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Prepare SSH key
         shell: bash
