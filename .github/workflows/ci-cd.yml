@@ -103,6 +103,8 @@ jobs:
 
       - name: Pytest + coverage.xml 🧪
         working-directory: ./backend
+        env:
+          PYTHONPATH: .
         run: pytest --cov=. --cov-report=xml:coverage.xml
 
       - name: Upload backend coverage artifact
