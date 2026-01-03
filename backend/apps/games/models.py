@@ -62,7 +62,12 @@ class Game(models.Model):
     description = models.TextField(blank=True, default="")
     release_date = models.DateField(blank=True, null=True)
     cover_url = models.URLField(blank=True, null=True)
-    status = models.CharField(max_length=20, blank=True, choices=GAME_STATUS_CHOICES)
+    status = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=GAME_STATUS_CHOICES,
+        default="released",
+    )
 
     min_players = models.IntegerField(blank=True, null=True)
     max_players = models.IntegerField(blank=True, null=True)

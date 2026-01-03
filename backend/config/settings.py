@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "apps.library",
     "apps.recommendations",
     "apps.reviews",
+    "apps.matchmaking",
     "api",
 ]
 
