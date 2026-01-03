@@ -113,3 +113,11 @@ def mock_celery_task():
     mock_task.delay.return_value = Mock(id="test-task-id")
     mock_task.apply_async.return_value = Mock(id="test-task-id")
     return mock_task
+
+
+@pytest.fixture(autouse=True)
+def enable_db_access_for_all_tests(db):
+    """
+    Active l'accès à la base de données pour tous les tests
+    """
+    pass
