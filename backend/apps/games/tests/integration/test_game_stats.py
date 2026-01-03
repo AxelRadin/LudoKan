@@ -1,8 +1,9 @@
 import pytest
 from rest_framework import status
 
-from apps.games.models import Game
+from apps.games.models import Game, Rating
 from apps.library.models import UserGame
+from apps.reviews.models import Review
 
 
 @pytest.mark.django_db
@@ -25,7 +26,74 @@ class TestGameStatsView:
                 "termine": 0,
                 "abandonne": 0,
             },
+            "ratings": {
+                "average": 0.0,
+                "count": 0,
+                "distribution": {
+                    "1": 0,
+                    "2": 0,
+                    "3": 0,
+                    "4": 0,
+                    "5": 0,
+                },
+            },
+            "reviews": {
+                "count": 0,
+                "last_created_at": None,
+            },
         }
+
+    def test_game_stats_with_ratings_distribution(
+        self,
+        api_client,
+        user,
+        another_user,
+        game,
+    ):
+        Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=5,
+        )
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=3,
+        )
+
+        response = api_client.get(f"/api/games/{game.id}/stats/")
+
+        assert response.status_code == status.HTTP_200_OK
+
+        ratings = response.data["ratings"]
+        assert ratings["count"] == 2
+        assert ratings["average"] == pytest.approx((5 * 2 + 3 * 2) / 2)
+
+        assert ratings["distribution"] == {
+            "1": 0,
+            "2": 0,
+            "3": 1,
+            "4": 0,
+            "5": 1,
+        }
+
+    def test_game_stats_with_reviews(self, api_client, user, another_user, game):
+        Review.objects.create(user=user, game=game, content="Très bon jeu")
+        review2 = Review.objects.create(
+            user=another_user,
+            game=game,
+            content="Encore meilleur après mise à jour",
+        )
+
+        response = api_client.get(f"/api/games/{game.id}/stats/")
+
+        assert response.status_code == status.HTTP_200_OK
+
+        reviews = response.data["reviews"]
+        assert reviews["count"] == 2
+        assert reviews["last_created_at"].isoformat().replace("+00:00", "Z") == review2.date_created.isoformat().replace("+00:00", "Z")
 
     def test_game_stats_single_owner_default_status(self, api_client, user, game):
         UserGame.objects.create(user=user, game=game)
@@ -89,3 +157,28 @@ class TestGameStatsView:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["owners_count"] == 1
         assert response.data["owners_by_status"]["en_cours"] == 1
+
+    def test_game_stats_ignores_other_game_ratings(
+        self,
+        api_client,
+        user,
+        game,
+        publisher,
+    ):
+        other_game = Game.objects.create(
+            igdb_id=88888,
+            name="Other Game",
+            publisher=publisher,
+        )
+
+        Rating.objects.create(
+            user=user,
+            game=other_game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=5,
+        )
+
+        response = api_client.get(f"/api/games/{game.id}/stats/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["ratings"]["count"] == 0
