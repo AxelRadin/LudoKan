@@ -25,7 +25,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgis/postgis:15-3.4
         env:
           POSTGRES_DB: ludokan
           POSTGRES_USER: ludokan
@@ -70,6 +70,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
+
+      - name: Install system dependencies for GDAL 🌍
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+            binutils libproj-dev gdal-bin libgdal-dev
 
       - name: Run migrations 🗄️
         working-directory: ./backend
