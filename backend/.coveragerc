@@ -21,6 +21,9 @@ omit =
     tests/*
     tests/**/*
 
+    # Fichiers de configuration de tests
+    *conftest.py
+
     # Fichiers auto-générés / peu intéressants pour la couverture
     */admin.py
     */apps.py

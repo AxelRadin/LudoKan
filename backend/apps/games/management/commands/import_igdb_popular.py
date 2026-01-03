@@ -128,7 +128,7 @@ class Command(BaseCommand):
     def import_games_and_publishers(self, limit: int, from_year: int):
         self.stdout.write("\n=== Étape 3/3 : Import des jeux populaires récents ===")
 
-        from_dt, from_ts = self._compute_from_timestamp(from_year)
+        _, from_ts = self._compute_from_timestamp(from_year)
 
         query = self._build_games_query(limit, from_ts)
 
