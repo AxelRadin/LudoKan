@@ -14,6 +14,8 @@ from django.test import Client  # noqa: E402
 from rest_framework.test import APIClient  # noqa: E402
 from rest_framework_simplejwt.tokens import RefreshToken  # noqa: E402
 
+from apps.games.models import Game, Genre, Platform, Publisher  # noqa: E402
+
 User = get_user_model()
 
 
@@ -113,3 +115,48 @@ def mock_celery_task():
     mock_task.delay.return_value = Mock(id="test-task-id")
     mock_task.apply_async.return_value = Mock(id="test-task-id")
     return mock_task
+
+
+@pytest.fixture
+def publisher(db):
+    """Publisher de test générique."""
+    return Publisher.objects.create(
+        igdb_id=1001,
+        name="Test Publisher",
+        description="Publisher de test.",
+        website="https://publisher.example.com",
+    )
+
+
+@pytest.fixture
+def genre(db):
+    """Genre de test générique."""
+    return Genre.objects.create(
+        igdb_id=2001,
+        nom_genre="Test Genre",
+        description="Genre de test.",
+    )
+
+
+@pytest.fixture
+def platform(db):
+    """Plateforme de test générique."""
+    return Platform.objects.create(
+        igdb_id=3001,
+        nom_plateforme="Test Platform",
+        description="Plateforme de test.",
+    )
+
+
+@pytest.fixture
+def game(db, publisher, genre, platform):
+    """Jeu de test avec ses relations, accessible à tous les tests."""
+    game = Game.objects.create(
+        igdb_id=4001,
+        name="Test Game",
+        description="Jeu de test global.",
+        publisher=publisher,
+    )
+    game.genres.add(genre)
+    game.platforms.add(platform)
+    return game
