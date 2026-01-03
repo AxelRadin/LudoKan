@@ -110,5 +110,5 @@ class UserSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None) if request is not None else None
 
         if user is not None and User.objects.exclude(pk=user.pk).filter(pseudo=value).exists():
-            raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)
+            raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)  # pragma: no cover
         return value

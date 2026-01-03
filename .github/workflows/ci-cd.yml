@@ -1,4 +1,7 @@
-name: CI + Sonar 🚀
+name: CI + CD 🚀
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
 
 on:
   pull_request:

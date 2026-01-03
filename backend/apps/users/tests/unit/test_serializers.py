@@ -105,6 +105,29 @@ class TestCustomRegisterSerializer:
         assert user.pseudo is not None
         assert user.pseudo != ""
 
+    def test_get_cleaned_data_includes_extra_fields(self):
+        data = {
+            "email": "clean@example.com",
+            "password1": "StrongPass123!",
+            "password2": "StrongPass123!",
+            "pseudo": "cleanuser",
+            "first_name": "John",
+            "last_name": "Doe",
+            "description_courte": "Short bio",
+        }
+
+        serializer = CustomRegisterSerializer(data=data)
+        assert serializer.is_valid(), serializer.errors
+
+        # Simuler l'étape où cleaned_data est utilisé
+        serializer._validated_data = serializer.validated_data
+        cleaned = serializer.get_cleaned_data()
+
+        assert cleaned["pseudo"] == "cleanuser"
+        assert cleaned["first_name"] == "John"
+        assert cleaned["last_name"] == "Doe"
+        assert cleaned["description_courte"] == "Short bio"
+
 
 @pytest.mark.django_db
 class TestUserSerializer:
@@ -153,3 +176,20 @@ class TestUserSerializer:
 
         serializer = UserSerializer(instance=user, data={"pseudo": user.pseudo}, context={"request": request}, partial=True)
         assert serializer.is_valid(), serializer.errors
+
+    def test_validate_pseudo_without_request_context_is_ok(self, user):
+        """validate_pseudo doit fonctionner même sans request dans le contexte."""
+        serializer = UserSerializer(instance=user, data={"pseudo": "newpseudo"}, partial=True)
+        assert serializer.is_valid(), serializer.errors
+
+    def test_validate_pseudo_method_raises_for_conflict(self, user, another_user, rf):
+        """Appel direct de validate_pseudo doit lever une erreur si un autre user a ce pseudo."""
+        request = rf.get("/api/auth/user/")
+        request.user = user
+
+        serializer = UserSerializer(instance=user, context={"request": request})
+
+        with pytest.raises(Exception) as exc:
+            serializer.validate_pseudo(another_user.pseudo)
+
+        assert UserErrors.PSEUDO_ALREADY_EXISTS in str(exc.value)
