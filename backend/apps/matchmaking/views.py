@@ -51,17 +51,19 @@ class MatchmakingRequestViewSet(ModelViewSet):
     def get_queryset(self):
         qs = MatchmakingRequest.objects.all()
 
-        # Expiration automatique
+        # Expiration automatique globale
         MatchmakingRequest.objects.expire_old()
 
-        qs = qs.filter(
-            status=MatchmakingRequest.STATUS_PENDING,
-            expires_at__gt=timezone.now(),
-        )
+        # ⚠️ Filtrage UNIQUEMENT pour la liste
+        if self.action == "list":
+            qs = qs.filter(
+                status=MatchmakingRequest.STATUS_PENDING,
+                expires_at__gt=timezone.now(),
+            )
 
-        game = self.request.query_params.get("game")
-        if game:
-            qs = qs.filter(game_id=game)
+            game = self.request.query_params.get("game")
+            if game:
+                qs = qs.filter(game_id=game)
 
         return qs.order_by("-created_at")
 

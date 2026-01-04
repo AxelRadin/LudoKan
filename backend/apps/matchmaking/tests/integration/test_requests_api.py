@@ -43,7 +43,7 @@ class TestMatchmakingRequestsAPI:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_list_only_active_requests(self, authenticated_api_client, game, user):
+    def test_list_only_active_requests(self, authenticated_api_client, user, game):
         MatchmakingRequest.objects.create(
             user=user,
             game=game,
@@ -57,13 +57,43 @@ class TestMatchmakingRequestsAPI:
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 1
 
+    def test_list_filtered_by_game(self, authenticated_api_client, user, game, publisher):
+        from apps.games.models import Game
+
+        other_game = Game.objects.create(
+            igdb_id=999,
+            name="Other Game",
+            publisher=publisher,
+        )
+
+        MatchmakingRequest.objects.create(
+            user=user,
+            game=game,
+            latitude=0,
+            longitude=0,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        MatchmakingRequest.objects.create(
+            user=user,
+            game=other_game,
+            latitude=0,
+            longitude=0,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        response = authenticated_api_client.get(f"/api/matchmaking/requests/?game={game.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 1
+
     def test_update_by_other_user_forbidden(
         self,
         authenticated_api_client,
         another_user,
         game,
     ):
-        request = MatchmakingRequest.objects.create(
+        req = MatchmakingRequest.objects.create(
             user=another_user,
             game=game,
             latitude=0,
@@ -72,9 +102,49 @@ class TestMatchmakingRequestsAPI:
         )
 
         response = authenticated_api_client.patch(
-            f"/api/matchmaking/requests/{request.id}/",
+            f"/api/matchmaking/requests/{req.id}/",
             {"radius_km": 20},
             format="json",
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_update_expired_request_fails(self, authenticated_api_client, user, game):
+        req = MatchmakingRequest.objects.create(
+            user=user,
+            game=game,
+            latitude=0,
+            longitude=0,
+            expires_at=timezone.now() - timedelta(minutes=1),
+        )
+
+        response = authenticated_api_client.patch(
+            f"/api/matchmaking/requests/{req.id}/",
+            {"radius_km": 20},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        req.refresh_from_db()
+        assert req.status == MatchmakingRequest.STATUS_EXPIRED
+
+    def test_update_own_request_success(self, authenticated_api_client, user, game):
+        req = MatchmakingRequest.objects.create(
+            user=user,
+            game=game,
+            latitude=0,
+            longitude=0,
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        response = authenticated_api_client.patch(
+            f"/api/matchmaking/requests/{req.id}/",
+            {"radius_km": 25},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        req.refresh_from_db()
+        assert req.radius_km == 25
