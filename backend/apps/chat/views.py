@@ -23,8 +23,7 @@ class ChatMessageListCreateView(generics.ListCreateAPIView):
 
     def _get_room_for_request_user(self) -> ChatRoom:
         """
-        Récupère le salon ciblé, vérifie l'appartenance de l'utilisateur
-        et lève PermissionDenied en cas d'accès non autorisé.
+        Récupere le ChatRoom ciblé et vérifie que l'utilisateur courant en est membre.
         """
         room_id = self.kwargs.get("room_id")
         room = get_object_or_404(ChatRoom, id=room_id)
