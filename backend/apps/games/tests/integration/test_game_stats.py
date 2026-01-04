@@ -1,4 +1,5 @@
 import pytest
+from django.test import override_settings
 from rest_framework import status
 
 from apps.games.models import Game, Rating
@@ -79,6 +80,7 @@ class TestGameStatsView:
             "5": 1,
         }
 
+    @override_settings(DEBUG=True)
     def test_game_stats_with_reviews(self, api_client, user, another_user, game):
         Review.objects.create(user=user, game=game, content="Très bon jeu")
         review2 = Review.objects.create(
