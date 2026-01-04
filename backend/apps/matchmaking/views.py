@@ -13,7 +13,7 @@ from apps.matchmaking.serializers import MatchmakingRequestSerializer
     list=extend_schema(
         summary="Lister les demandes de matchmaking actives",
         description=(
-            "Retourne la liste des demandes de matchmaking encore actives " "(status=pending et non expirées). " "Filtrage possible par jeu."
+            "Retourne la liste des demandes de matchmaking encore actives " + "(status=pending et non expirées). " + "Filtrage possible par jeu."
         ),
         parameters=[
             OpenApiParameter(
@@ -27,7 +27,7 @@ from apps.matchmaking.serializers import MatchmakingRequestSerializer
     ),
     create=extend_schema(
         summary="Créer une demande de matchmaking",
-        description=("Crée une nouvelle demande de matchmaking pour l'utilisateur connecté. " "`expires_at` doit être dans le futur."),
+        description=("Crée une nouvelle demande de matchmaking pour l'utilisateur connecté. " + "`expires_at` doit être dans le futur."),
         responses={201: MatchmakingRequestSerializer},
     ),
     partial_update=extend_schema(
