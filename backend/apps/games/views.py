@@ -251,6 +251,7 @@ class GameStatsView(APIView):
             if cached_data:
                 return Response(cached_data, status=status.HTTP_200_OK)
 
+
         game = get_object_or_404(Game, id=game_id)
 
         # ---------- OWNERS ----------
@@ -311,5 +312,6 @@ class GameStatsView(APIView):
         if use_cache:
             cache_key = f"game:stats:{game_id}"
             cache.set(cache_key, response_data, timeout=300)
+
 
         return Response(response_data, status=status.HTTP_200_OK)
