@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.realtime",
     "apps.matchmaking",
+    "apps.chat",
     "api",
 ]
 
