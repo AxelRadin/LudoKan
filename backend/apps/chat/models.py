@@ -11,9 +11,11 @@ class ChatRoom(models.Model):
     """
 
     TYPE_DIRECT = "direct"
+    TYPE_GROUP = "group"
 
     ROOM_TYPE_CHOICES = [
         (TYPE_DIRECT, "Direct"),
+        (TYPE_GROUP, "Group"),
     ]
 
     type = models.CharField(
@@ -81,8 +83,6 @@ class Message(models.Model):
     Message envoyé dans un salon de chat.
 
     - Chaque message est lié à un user (auteur) et un ChatRoom.
-    - `is_read` indique, dans le contexte d'un chat direct, si le message
-      a été lu par le destinataire.
     """
 
     room = models.ForeignKey(
@@ -97,8 +97,6 @@ class Message(models.Model):
     )
     content = models.TextField()
 
-    is_read = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -112,3 +110,37 @@ class Message(models.Model):
 
     def __str__(self) -> str:
         return f"Message(id={self.id}, room_id={self.room_id}, user_id={self.user_id})"
+
+
+class MessageRead(models.Model):
+    """
+    Statut de lecture d'un message pour un utilisateur donné.
+
+    - Un enregistrement par (message, user) quand ce user a lu ce message.
+    - Permet de gérer proprement les read-receipts, y compris en groupe.
+    """
+
+    message = models.ForeignKey(
+        Message,
+        on_delete=models.CASCADE,
+        related_name="reads",
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="message_reads",
+    )
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Message read"
+        verbose_name_plural = "Message reads"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["message", "user"],
+                name="unique_message_read_per_user",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"MessageRead(message_id={self.message_id}, user_id={self.user_id})"
