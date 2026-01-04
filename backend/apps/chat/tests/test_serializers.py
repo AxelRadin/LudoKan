@@ -11,7 +11,7 @@ User = get_user_model()
 def test_message_serializer_serializes_instance(user, chat_room):
     """
     Vérifie que le serializer expose les mêmes champs que le WebSocket :
-    id, room_id, user_id, content, is_read, created_at.
+    id, room_id, user_id, content, created_at.
     """
     message = Message.objects.create(room=chat_room, user=user, content="Hello serializer")
 
@@ -22,7 +22,6 @@ def test_message_serializer_serializes_instance(user, chat_room):
     assert data["room_id"] == chat_room.id
     assert data["user_id"] == user.id
     assert data["content"] == "Hello serializer"
-    assert data["is_read"] is False
     assert data["created_at"] is not None
 
 
