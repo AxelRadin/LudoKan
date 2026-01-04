@@ -1,4 +1,7 @@
-name: CI + Sonar 🚀
+name: CI + CD 🚀
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
 
 on:
   pull_request:
@@ -263,7 +266,7 @@ jobs:
     needs: [sonar]
     environment: deployment
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Prepare SSH key
         shell: bash

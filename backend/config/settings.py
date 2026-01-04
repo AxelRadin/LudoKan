@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "django.contrib.sites",
     "rest_framework",
     "drf_spectacular",
@@ -68,6 +69,9 @@ INSTALLED_APPS = [
     "apps.library",
     "apps.recommendations",
     "apps.reviews",
+    "apps.realtime",
+    "apps.matchmaking",
+    "apps.chat",
     "api",
 ]
 
@@ -194,6 +198,8 @@ CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").sp
 
 ROOT_URLCONF = "config.urls"
 
+ASGI_APPLICATION = "config.asgi.application"
+
 SPECTACULAR_SETTINGS = {
     "TITLE": "LudoKan API",
     "DESCRIPTION": "API documentation",
@@ -292,6 +298,29 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 if DEBUG:
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
+else:
+    # Utilise Cloudflare R2 (compatible S3) pour le stockage des fichiers
+    INSTALLED_APPS += ["storages"]
+
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    # Endpoint R2 type: https://<account_id>.r2.cloudflarestorage.com
+    AWS_S3_ENDPOINT_URL = config("CLOUDFLARE_R2_ENDPOINT")
+    AWS_ACCESS_KEY_ID = config("CLOUDFLARE_R2_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = config("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = config("CLOUDFLARE_R2_BUCKET_NAME")
+    AWS_S3_REGION_NAME = "auto"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+    # Optionnel : permet d'ajouter un préfixe (ex: "prod" ou "staging")
+    # pour organiser les fichiers dans un même bucket R2.
+    # Exemple: CLOUDFLARE_R2_PREFIX=staging => clés "staging/avatars/..."
+    AWS_LOCATION = config("CLOUDFLARE_R2_PREFIX", default="").strip() or None
+
+    # Optionnel : domaine Cloudflare/Custom pour servir les fichiers
+    # (ex: cdn.ludokan.com). Si non défini, l'URL R2 par défaut est utilisée.
+    AWS_S3_CUSTOM_DOMAIN = config("CLOUDFLARE_R2_CUSTOM_DOMAIN", default=None)
 
 
 # -------------------------------------------------------------------
@@ -325,6 +354,25 @@ CACHES = {
         "LOCATION": config("REDIS_URL", default="redis://redis:6379/2"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+
+# -------------------------------------------------------------------
+# Channels (WebSockets via Redis)
+# -------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            # URL Redis dédiée aux websockets (DB 3 par défaut).
+            # Surchageable via la variable d'env CHANNEL_REDIS_URL,
+            # ex: redis://127.0.0.1:6379/3 en dev hors Docker.
+            "hosts": [
+                config("CHANNEL_REDIS_URL", default="redis://redis:6379/3"),
+            ],
         },
     }
 }

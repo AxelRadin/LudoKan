@@ -265,6 +265,35 @@ class TestRatingModel:
         with pytest.raises(ValidationError):
             rating_high.full_clean()
 
+    def test_rating_str_representation(self, user, game):
+        """__str__ should include user, game and value."""
+        rating = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_SUR_10,
+            value=5,
+        )
+
+        assert str(rating) == f"{user} - {game} ({rating.value})"
+
+    def test_clean_returns_early_when_value_or_type_missing(self, user, game):
+        """clean should return early when value or rating_type is None."""
+        rating = Rating(user=user, game=game, rating_type=None, value=None)
+        # Should not raise
+        rating.clean()
+
+    def test_clean_unknown_rating_type_raises_validation_error(self, user, game):
+        """Unknown rating_type should raise a ValidationError."""
+        rating = Rating(
+            user=user,
+            game=game,
+            rating_type="unknown_type",
+            value=5,
+        )
+
+        with pytest.raises(ValidationError):
+            rating.clean()
+
 
 @pytest.mark.django_db
 class TestRatingAggregates:
@@ -320,3 +349,15 @@ class TestRatingAggregates:
         game.refresh_from_db()
         assert game.average_rating == pytest.approx(8.0)
         assert game.rating_count == 1
+
+
+class TestNormalizeRating:
+    def test_normalize_rating_returns_zero_for_none_value(self):
+        from apps.games.models import normalize_rating
+
+        assert normalize_rating(Rating.RATING_TYPE_SUR_10, None) == 0.0
+
+    def test_normalize_rating_for_unknown_type_returns_value_as_float(self):
+        from apps.games.models import normalize_rating
+
+        assert normalize_rating("unknown", 7) == 7.0

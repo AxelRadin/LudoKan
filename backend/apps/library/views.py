@@ -17,7 +17,8 @@ from apps.library.serializers import UserGameSerializer
     destroy=extend_schema(
         summary="Supprimer un jeu de la bibliothèque de l'utilisateur",
         description=(
-            "Supprime un jeu de la collection personnelle de l'utilisateur. " "Le `game_id` doit correspondre à un jeu présent dans sa bibliothèque."
+            "Supprime un jeu de la collection personnelle de l'utilisateur. "
+            + "Le `game_id` doit correspondre à un jeu présent dans sa bibliothèque."
         ),
         responses={
             204: None,

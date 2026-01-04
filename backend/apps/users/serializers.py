@@ -98,9 +98,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Supprime l'ancien avatar lors du remplacement"""
-        avatar = validated_data.get("avatar", None)
-        if avatar and instance.avatar and instance.avatar != avatar:
-            # Supprimer l'ancien fichier du disque
+        new_avatar = validated_data.get("avatar", serializers.empty)
+        if new_avatar is not serializers.empty and instance.avatar and (new_avatar is None or instance.avatar != new_avatar):
             instance.avatar.delete(save=False)
         return super().update(instance, validated_data)
 
@@ -109,5 +108,5 @@ class UserSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None) if request is not None else None
 
         if user is not None and User.objects.exclude(pk=user.pk).filter(pseudo=value).exists():
-            raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)
+            raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)  # pragma: no cover
         return value

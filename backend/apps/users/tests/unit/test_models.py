@@ -79,6 +79,28 @@ class TestUserModel:
                 password="testpass123",
             )
 
+    def test_create_user_without_email_raises_value_error(self):
+        """L'email est obligatoire pour créer un utilisateur."""
+        with pytest.raises(ValueError):
+            User.objects.create_user(
+                email="",
+                pseudo="noemail",
+                password="testpass123",
+            )
+
+    def test_auto_generated_pseudo_is_unique(self):
+        """Le manager doit générer un pseudo unique basé sur l'email."""
+        user1 = User.objects.create_user(
+            email="auto@example.com",
+            password="testpass123",
+        )
+        user2 = User.objects.create_user(
+            email="auto@another.com",  # même local-part -> slug identique
+            password="testpass123",
+        )
+
+        assert user1.pseudo != user2.pseudo
+
 
 @pytest.mark.django_db
 @pytest.mark.skip(reason="Modèle UserProfile pas encore implémenté")
