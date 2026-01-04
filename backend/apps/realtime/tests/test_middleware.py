@@ -122,6 +122,7 @@ async def test_get_user_from_token_invalid_returns_anonymous():
 
 
 @pytest.mark.anyio
+@pytest.mark.django_db
 async def test_get_user_from_token_valid_returns_user(monkeypatch):
     """
     get_user_from_token doit suivre le chemin de succès (try)
