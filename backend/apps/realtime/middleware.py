@@ -67,14 +67,14 @@ class JwtAuthMiddleware:
         return await self.inner(scope, receive, send)
 
 
-def JwtAuthMiddlewareStack(inner):
+def jwt_auth_middleware_stack(inner):
     """
     Helper pour composer facilement ce middleware dans le routing Channels.
 
     Exemple d'utilisation :
 
         application = ProtocolTypeRouter({
-            "websocket": JwtAuthMiddlewareStack(
+            "websocket": jwt_auth_middleware_stack(
                 URLRouter(websocket_urlpatterns)
             ),
         })

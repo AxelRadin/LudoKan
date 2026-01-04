@@ -2,7 +2,7 @@ import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.test import override_settings
 
-from apps.realtime.middleware import JwtAuthMiddleware, JwtAuthMiddlewareStack, get_user_from_token
+from apps.realtime.middleware import JwtAuthMiddleware, get_user_from_token, jwt_auth_middleware_stack
 
 
 class DummyUser:
@@ -150,14 +150,14 @@ async def test_get_user_from_token_valid_returns_user(monkeypatch):
 @pytest.mark.anyio
 async def test_jwt_auth_middleware_stack_wraps_inner():
     """
-    Vérifie que JwtAuthMiddlewareStack wrappe bien la fonction inner.
+    Vérifie que jwt_auth_middleware_stack wrappe bien la fonction inner.
     """
     called = {}
 
     async def inner(scope, receive, send):
         called["done"] = True
 
-    middleware = JwtAuthMiddlewareStack(inner)
+    middleware = jwt_auth_middleware_stack(inner)
     scope = {"type": "websocket", "query_string": b"", "headers": []}
 
     await middleware(scope, None, None)
