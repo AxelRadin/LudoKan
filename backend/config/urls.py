@@ -53,6 +53,8 @@ urlpatterns = [
     path("api/", include("apps.games.urls")),
     # Reviews
     path("api/", include("apps.reviews.urls")),
+    # match
+    path("api/", include("apps.matchmaking.urls")),
     # Chat
     path("api/", include("apps.chat.urls")),
 ]
