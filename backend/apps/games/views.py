@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
@@ -239,11 +240,16 @@ class GameStatsView(APIView):
         ],
     )
     def get(self, request, game_id):
-        cache_key = f"game:stats:{game_id}"
-        cached_data = cache.get(cache_key)
+        """
+        Retourne les statistiques d'un jeu.
+        """
+        use_cache = not settings.DEBUG
 
-        if cached_data:
-            return Response(cached_data, status=status.HTTP_200_OK)
+        if use_cache:
+            cache_key = f"game:stats:{game_id}"
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                return Response(cached_data, status=status.HTTP_200_OK)
 
         game = get_object_or_404(Game, id=game_id)
 
@@ -302,6 +308,8 @@ class GameStatsView(APIView):
             "reviews": reviews_data,
         }
 
-        cache.set(cache_key, response_data, timeout=300)
+        if use_cache:
+            cache_key = f"game:stats:{game_id}"
+            cache.set(cache_key, response_data, timeout=300)
 
         return Response(response_data, status=status.HTTP_200_OK)
