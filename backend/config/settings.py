@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "django.contrib.sites",
     "rest_framework",
     "drf_spectacular",
@@ -68,6 +69,7 @@ INSTALLED_APPS = [
     "apps.library",
     "apps.recommendations",
     "apps.reviews",
+    "apps.realtime",
     "apps.matchmaking",
     "api",
 ]
@@ -194,6 +196,8 @@ CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").sp
 # -------------------------------------------------------------------
 
 ROOT_URLCONF = "config.urls"
+
+ASGI_APPLICATION = "config.asgi.application"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "LudoKan API",
@@ -349,6 +353,25 @@ CACHES = {
         "LOCATION": config("REDIS_URL", default="redis://redis:6379/2"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+
+# -------------------------------------------------------------------
+# Channels (WebSockets via Redis)
+# -------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            # URL Redis dédiée aux websockets (DB 3 par défaut).
+            # Surchageable via la variable d'env CHANNEL_REDIS_URL,
+            # ex: redis://127.0.0.1:6379/3 en dev hors Docker.
+            "hosts": [
+                config("CHANNEL_REDIS_URL", default="redis://redis:6379/3"),
+            ],
         },
     }
 }

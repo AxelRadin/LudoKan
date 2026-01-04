@@ -31,6 +31,13 @@ celery==5.3.4
 redis==5.0.1
 django-redis==5.4.0  # pour brancher Redis comme cache Django
 
+# WebSockets / Channels
+channels==4.1.0
+channels-redis==4.2.0
+
+# ASGI server (pour servir HTTP + WebSockets)
+daphne==4.1.0
+
 # Dev / utilitaires (optionnel)
 whitenoise==6.5.0  # servir les statiques en prod sans nginx
 drf-spectacular==0.27.2  # docs OpenAPI/Swagger
