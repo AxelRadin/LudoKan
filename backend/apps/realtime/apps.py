@@ -9,3 +9,9 @@ class RealtimeConfig(AppConfig):
 
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.realtime"
+
+    def ready(self) -> None:
+        # Enregistre les signaux (notifications temps réel, etc.)
+        from . import signals  # noqa: F401
+
+        return super().ready()
