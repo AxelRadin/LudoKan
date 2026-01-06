@@ -109,3 +109,35 @@ def nearby_requests(
             results.append(req)
 
     return results
+
+
+def find_matches(request: MatchmakingRequest):
+    """
+    Retourne une liste de tuples (MatchmakingRequest, distance_km),
+    triée par distance croissante.
+    """
+    if request.is_expired():
+        return []
+
+    # 1. Requêtes candidates proches (bounding box + haversine)
+    candidates = nearby_requests(
+        lat=request.latitude,
+        lon=request.longitude,
+        radius_km=request.radius_km,
+        game=request.game,
+        exclude_user=request.user,
+    )
+
+    results = []
+    for candidate in candidates:
+        distance = haversine(
+            request.latitude,
+            request.longitude,
+            candidate.latitude,
+            candidate.longitude,
+        )
+        results.append((candidate, distance))
+
+    # 2. Tri par distance
+    results.sort(key=lambda x: x[1])
+    return results
