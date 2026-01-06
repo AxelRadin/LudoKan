@@ -14,11 +14,17 @@ import TestSentry from './pages/TestSentry.tsx';
 import theme from './theme.ts';
 
 const router = createBrowserRouter([
-  { path: '/', element: <App /> },
-  { path: '/home', element: <HomePage /> },
-  { path: '/profile', element: <ProfilePage /> },
-  { path: '/test', element: <TestSentry /> },
-  { path: '/connector', element: <BackendConnector /> },
+  {
+    path: '/',
+    element: <App />,
+    children: [
+      { path: '', element: <HomePage /> },
+      { path: 'home', element: <HomePage /> },
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'test', element: <TestSentry /> },
+      { path: 'connector', element: <BackendConnector /> },
+    ],
+  },
 ]);
 
 initSentry();

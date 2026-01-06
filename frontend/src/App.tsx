@@ -1,11 +1,13 @@
-import './App.css';
-import HomePage from './pages/HomePage';
+import { Outlet } from 'react-router-dom';
+import Header from './components/Header';
+import useAuth from './hooks/useAuth';
 
-function App() {
-
+const App = () => {
+  const { isAuthenticated } = useAuth();
   return (
     <>
-      <HomePage />
+      <Header isAuthenticated={isAuthenticated} />
+      <Outlet />
     </>
   );
 }

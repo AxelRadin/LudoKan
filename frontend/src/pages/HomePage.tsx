@@ -1,14 +1,9 @@
 import Box from '@mui/material/Box';
 import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
-import Header from '../components/Header';
 import TrendingGames from '../components/TrendingGames';
-import useAuth from '../hooks/useAuth';
-
-
 
 export const HomePage = () => {
-  const { isAuthenticated } = useAuth();
   return (
     <Box
       sx={{
@@ -16,9 +11,10 @@ export const HomePage = () => {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#ffffff',
+        ml: 25,
+        mr: 25,
       }}
     >
-      <Header isAuthenticated={false} />
       <Box
         component="main"
         sx={{

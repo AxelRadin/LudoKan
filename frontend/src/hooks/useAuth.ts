@@ -5,7 +5,15 @@ export default function useAuth() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+    if (!token) {
+      setIsAuthenticated(false);
+      return;
+    }
+    fetch('/api/users/me/', {
+      headers: { Authorization: `Token ${token}` },
+    })
+      .then(res => setIsAuthenticated(res.ok))
+      .catch(() => setIsAuthenticated(false));
   }, []);
 
   return { isAuthenticated };

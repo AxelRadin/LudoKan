@@ -1,6 +1,7 @@
 import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
-import SecondaryButton from '../components/SecondaryButton';
 import Header from '../components/Header';
+import SecondaryButton from '../components/SecondaryButton';
+import useAuth from '../hooks/useAuth';
 
 export default function ProfilePage() {
   return (
@@ -10,9 +11,10 @@ export default function ProfilePage() {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#ffffff',
+        ml: 25,
+        mr: 25,
       }}
     >
-      <Header />
       <Box
         component="main"
         sx={{
