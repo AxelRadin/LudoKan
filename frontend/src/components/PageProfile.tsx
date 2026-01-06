@@ -1,4 +1,5 @@
-import React, { CSSProperties, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import ludokanLogo from '../assets/logo.png';
 
 type User = {
