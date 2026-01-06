@@ -69,8 +69,6 @@ def test_match_result_serializer_includes_distance(user, another_user, game):
         expires_at=timezone.now() + timedelta(hours=1),
     )
     distances = {req.id: 123.456}
-
-
     serializer = MatchResultSerializer(req, context={"distances": distances})
     data = serializer.data
     assert data["distance_km"] == 123.456
