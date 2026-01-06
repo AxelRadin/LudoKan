@@ -1,5 +1,5 @@
-import LanguageIcon from '@mui/icons-material/Language';
 import CloseIcon from '@mui/icons-material/Close';
+import LanguageIcon from '@mui/icons-material/Language';
 import { Button, Dialog } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
@@ -8,13 +8,17 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 
+import theme from '../theme';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
-import theme from '../theme';
 
-export const Header: React.FC = () => {
+type HeaderProps = {
+  isAuthenticated: boolean;
+};
+
+export const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
   const [openAuth, setOpenAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
@@ -61,14 +65,20 @@ export const Header: React.FC = () => {
           <SearchBar />
 
           <Box display="flex" alignItems="center" gap={2}>
-            <Button color="inherit" onClick={handleLoginOpen}>
-              Se connecter
-            </Button>
-
-            <SecondaryButton onClick={handleRegisterOpen}>
-              S’inscrire
-            </SecondaryButton>
-
+            {isAuthenticated ? (
+              <Button color="inherit" href="/profile">
+                Profile
+              </Button>
+            ) : (
+              <>
+                <Button color="inherit" onClick={handleLoginOpen}>
+                  Se connecter
+                </Button>
+                <SecondaryButton onClick={handleRegisterOpen}>
+                  S’inscrire
+                </SecondaryButton>
+              </>
+            )}
             <IconButton color="inherit">
               <LanguageIcon />
             </IconButton>
