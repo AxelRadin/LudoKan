@@ -1,10 +1,9 @@
 import Box from '@mui/material/Box';
 import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
-import Header from '../components/Header';
 import TrendingGames from '../components/TrendingGames';
 
-function HomePage() {
+export const HomePage = () => {
   return (
     <Box
       sx={{
@@ -12,9 +11,10 @@ function HomePage() {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#ffffff',
+        ml: 25,
+        mr: 25,
       }}
     >
-      <Header />
       <Box
         component="main"
         sx={{
@@ -41,6 +41,6 @@ function HomePage() {
       </Box>
     </Box>
   );
-}
+};
 
 export default HomePage;
