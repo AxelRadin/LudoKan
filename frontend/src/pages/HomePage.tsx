@@ -3,8 +3,12 @@ import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
 import Header from '../components/Header';
 import TrendingGames from '../components/TrendingGames';
+import useAuth from '../hooks/useAuth';
 
-function HomePage() {
+
+
+export const HomePage = () => {
+  const { isAuthenticated } = useAuth();
   return (
     <Box
       sx={{
@@ -14,7 +18,7 @@ function HomePage() {
         backgroundColor: '#ffffff',
       }}
     >
-      <Header />
+      <Header isAuthenticated={false} />
       <Box
         component="main"
         sx={{

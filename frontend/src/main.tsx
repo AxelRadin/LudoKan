@@ -4,17 +4,21 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.tsx';
+import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
 import HomePage from './pages/HomePage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
 import theme from './theme.ts';
 
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
   { path: '/home', element: <HomePage /> },
+  { path: '/profile', element: <ProfilePage /> },
   { path: '/test', element: <TestSentry /> },
+  { path: '/connector', element: <BackendConnector /> },
 ]);
 
 initSentry();
