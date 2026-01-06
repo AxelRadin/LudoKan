@@ -2,17 +2,17 @@
 Configuration globale des tests pytest
 """
 import os
+
 import django
 import pytest
 
 # Configuration Django pour les tests
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
-
-from django.test import Client
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model  # noqa: E402
+from django.test import Client  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
+from rest_framework_simplejwt.tokens import RefreshToken  # noqa: E402
 
 User = get_user_model()
 
@@ -62,7 +62,7 @@ def jwt_authenticated_client(user):
     """Client API avec authentification JWT"""
     client = APIClient()
     refresh = RefreshToken.for_user(user)
-    client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
     return client
 
 
@@ -70,13 +70,13 @@ def jwt_authenticated_client(user):
 def sample_game_data():
     """Données de jeu de test"""
     return {
-        'title': 'Test Game',
-        'description': 'A test game for unit testing',
-        'genre': 'Strategy',
-        'min_players': 2,
-        'max_players': 4,
-        'play_time': 60,
-        'complexity': 'Medium'
+        "title": "Test Game",
+        "description": "A test game for unit testing",
+        "genre": "Strategy",
+        "min_players": 2,
+        "max_players": 4,
+        "play_time": 60,
+        "complexity": "Medium",
     }
 
 
@@ -104,6 +104,7 @@ def enable_db_access_for_all_tests(db):
 def mock_redis():
     """Mock Redis pour les tests"""
     from unittest.mock import Mock
+
     mock_redis = Mock()
     mock_redis.get.return_value = None
     mock_redis.set.return_value = True
@@ -115,7 +116,8 @@ def mock_redis():
 def mock_celery_task():
     """Mock pour les tâches Celery"""
     from unittest.mock import Mock
+
     mock_task = Mock()
-    mock_task.delay.return_value = Mock(id='test-task-id')
-    mock_task.apply_async.return_value = Mock(id='test-task-id')
+    mock_task.delay.return_value = Mock(id="test-task-id")
+    mock_task.apply_async.return_value = Mock(id="test-task-id")
     return mock_task

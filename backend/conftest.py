@@ -2,17 +2,19 @@
 Configuration globale des tests pytest
 """
 import os
+
 import django
 import pytest
 
 # Configuration Django pour les tests
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
+from django.contrib.auth import get_user_model  # noqa: E402
+from django.test import Client  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
+from rest_framework_simplejwt.tokens import RefreshToken  # noqa: E402
 
-from django.test import Client
-from django.contrib.auth import get_user_model
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
+from apps.games.models import Game, Genre, Platform, Publisher  # noqa: E402
 
 User = get_user_model()
 
@@ -35,7 +37,7 @@ def user(db):
     return User.objects.create_user(
         email="test@example.com",
         pseudo="testuser",
-        password="testpass123",
+        password="testpass123",  # NOSONAR - mot de passe de test uniquement
     )
 
 
@@ -45,7 +47,7 @@ def admin_user(db):
     return User.objects.create_superuser(
         email="admin@example.com",
         pseudo="admin",
-        password="adminpass123",
+        password="adminpass123",  # NOSONAR - mot de passe de test uniquement
     )
 
 
@@ -62,7 +64,7 @@ def jwt_authenticated_client(user):
     """Client API avec authentification JWT"""
     client = APIClient()
     refresh = RefreshToken.for_user(user)
-    client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {refresh.access_token}")
     return client
 
 
@@ -70,13 +72,13 @@ def jwt_authenticated_client(user):
 def sample_game_data():
     """Données de jeu de test"""
     return {
-        'title': 'Test Game',
-        'description': 'A test game for unit testing',
-        'genre': 'Strategy',
-        'min_players': 2,
-        'max_players': 4,
-        'play_time': 60,
-        'complexity': 'Medium'
+        "title": "Test Game",
+        "description": "A test game for unit testing",
+        "genre": "Strategy",
+        "min_players": 2,
+        "max_players": 4,
+        "play_time": 60,
+        "complexity": "Medium",
     }
 
 
@@ -85,7 +87,7 @@ def sample_user_data():
     """Données utilisateur de test"""
     return {
         "email": "newuser@example.com",
-        "password": "newpass123",
+        "password": "newpass123",  # NOSONAR - mot de passe de test uniquement
         "pseudo": "newuser",
         "first_name": "New",
         "last_name": "User",
@@ -96,6 +98,7 @@ def sample_user_data():
 def mock_redis():
     """Mock Redis pour les tests"""
     from unittest.mock import Mock
+
     mock_redis = Mock()
     mock_redis.get.return_value = None
     mock_redis.set.return_value = True
@@ -107,8 +110,53 @@ def mock_redis():
 def mock_celery_task():
     """Mock pour les tâches Celery"""
     from unittest.mock import Mock
+
     mock_task = Mock()
-    mock_task.delay.return_value = Mock(id='test-task-id')
-    mock_task.apply_async.return_value = Mock(id='test-task-id')
+    mock_task.delay.return_value = Mock(id="test-task-id")
+    mock_task.apply_async.return_value = Mock(id="test-task-id")
     return mock_task
 
+
+@pytest.fixture
+def publisher(db):
+    """Publisher de test générique."""
+    return Publisher.objects.create(
+        igdb_id=1001,
+        name="Test Publisher",
+        description="Publisher de test.",
+        website="https://publisher.example.com",
+    )
+
+
+@pytest.fixture
+def genre(db):
+    """Genre de test générique."""
+    return Genre.objects.create(
+        igdb_id=2001,
+        nom_genre="Test Genre",
+        description="Genre de test.",
+    )
+
+
+@pytest.fixture
+def platform(db):
+    """Plateforme de test générique."""
+    return Platform.objects.create(
+        igdb_id=3001,
+        nom_plateforme="Test Platform",
+        description="Plateforme de test.",
+    )
+
+
+@pytest.fixture
+def game(db, publisher, genre, platform):
+    """Jeu de test avec ses relations, accessible à tous les tests."""
+    game = Game.objects.create(
+        igdb_id=4001,
+        name="Test Game",
+        description="Jeu de test global.",
+        publisher=publisher,
+    )
+    game.genres.add(genre)
+    game.platforms.add(platform)
+    return game

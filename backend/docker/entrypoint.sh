@@ -23,4 +23,7 @@ PY
 
 python manage.py migrate --noinput
 # Optionnel: python manage.py collectstatic --noinput
-python manage.py runserver 0.0.0.0:8000
+
+# Lancer le serveur ASGI (Daphne) pour supporter HTTP + WebSockets.
+# On pointe sur config.asgi:application, qui contient ProtocolTypeRouter.
+watchfiles "daphne -b 0.0.0.0 -p 8000 config.asgi:application" .

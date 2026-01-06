@@ -1,26 +1,18 @@
 import LanguageIcon from '@mui/icons-material/Language';
 import CloseIcon from '@mui/icons-material/Close';
-import { Button, Dialog, Slide, useTheme } from '@mui/material';
+import { Button, Dialog } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-import type { TransitionProps } from '@mui/material/transitions';
 
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
 import theme from '../theme';
-
-const Transition = React.forwardRef(function Transition(
-  props: TransitionProps & { children: React.ReactElement<any, any> },
-  ref: React.Ref<unknown>
-) {
-  return <Slide direction="down" ref={ref} {...props} />;
-});
 
 export const Header: React.FC = () => {
   const [openAuth, setOpenAuth] = useState(false);
@@ -84,11 +76,7 @@ export const Header: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Dialog
-        open={openAuth}
-        onClose={handleAuthClose}
-        keepMounted
-      >
+      <Dialog open={openAuth} onClose={handleAuthClose} keepMounted>
         <Box
           sx={{
             position: 'absolute',

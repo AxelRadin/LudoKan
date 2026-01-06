@@ -10,14 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
-from decouple import config
 import dj_database_url
 import sentry_sdk
+from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
-
 
 # -------------------------------------------------------------------
 # Base directory
@@ -30,10 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Core env / security
 # -------------------------------------------------------------------
 
-SECRET_KEY = config(
-    "SECRET_KEY",
-    default="django-insecure-=o*2&qoz81)g=k*gpcsn11dsw8o35pvo(s&e4+lc-*1ypl%h=7",
-)
+SECRET_KEY = config("SECRET_KEY")
 
 DEBUG = config("DEBUG", default=True, cast=bool)
 
@@ -54,27 +50,28 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "django.contrib.sites",
-
     "rest_framework",
     "drf_spectacular",
-    # "rest_framework.authtoken",
-    "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
-
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "allauth",
     "allauth.account",
-
+    "allauth.socialaccount",
     "corsheaders",
-
     "apps.users",
     "apps.games",
     "apps.core",
     "apps.social",
     "apps.library",
     "apps.recommendations",
+    "apps.reviews",
+    "apps.realtime",
+    "apps.matchmaking",
+    "apps.chat",
     "api",
 ]
 
@@ -87,7 +84,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "apps.users.middleware.IgnoreInvalidJWTMiddleware",
-
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -153,17 +149,14 @@ JWT_AUTH_SAMESITE = "None" if not DEBUG else "Lax"
 REST_AUTH = {
     "USE_JWT": True,
     "TOKEN_MODEL": None,
-
     "JWT_AUTH_COOKIE": JWT_AUTH_COOKIE,
     "JWT_AUTH_REFRESH_COOKIE": JWT_AUTH_REFRESH_COOKIE,
     "JWT_AUTH_HTTPONLY": JWT_AUTH_HTTPONLY,
     "JWT_AUTH_SECURE": JWT_AUTH_SECURE,
     "JWT_AUTH_SAMESITE": JWT_AUTH_SAMESITE,
-
     "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
     "USER_DETAILS_SERIALIZER": "apps.users.serializers.UserSerializer",
-
-    "OLD_PASSWORD_FIELD_ENABLED": True,  
+    "OLD_PASSWORD_FIELD_ENABLED": True,
 }
 
 REST_AUTH_SERIALIZERS = {
@@ -171,12 +164,8 @@ REST_AUTH_SERIALIZERS = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_ACCESS_TOKEN_LIFETIME", default=15, cast=int)
-    ),
-    "REFRESH_TOKEN_LIFETIME": timedelta(
-        minutes=config("JWT_REFRESH_TOKEN_LIFETIME", default=10080, cast=int)
-    ),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME", default=15, cast=int)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=config("JWT_REFRESH_TOKEN_LIFETIME", default=10080, cast=int)),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -195,34 +184,12 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_HTTPONLY = True
 
 
-
-# CORS : localhost (React/Vite) par défaut
-CORS_ALLOWED_ORIGINS = config(
-    "CORS_ALLOWED_ORIGINS",
-    default=(
-        "http://localhost:3000,"
-        "http://127.0.0.1:3000,"
-        "http://localhost:5173,"
-        "http://127.0.0.1:5173"
-    ),
-).split(",")
+CORS_ALLOWED_ORIGINS = [o for o in config("CORS_ALLOWED_ORIGINS", default="").split(",") if o]
 
 CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
 
-# CSRF trusted origins
-CSRF_TRUSTED_ORIGINS = [
-    o
-    for o in config(
-        "CSRF_TRUSTED_ORIGINS",
-        default=(
-            "http://localhost:3000,"
-            "http://127.0.0.1:3000,"
-            "http://localhost:5173,"
-            "http://127.0.0.1:5173"
-        ),
-    ).split(",")
-    if o
-]
+#
+CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 
 
 # -------------------------------------------------------------------
@@ -230,6 +197,8 @@ CSRF_TRUSTED_ORIGINS = [
 # -------------------------------------------------------------------
 
 ROOT_URLCONF = "config.urls"
+
+ASGI_APPLICATION = "config.asgi.application"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "LudoKan API",
@@ -274,10 +243,10 @@ DATABASES = {
             ),
         ),
         conn_max_age=600,
-        # ssl_require=True  # à activer si Render nécessite SSL obligatoire
     )
 }
 
+# Mettre ssl_require=True  dans la configuration si Render nécessite SSL obligatoire
 
 # -------------------------------------------------------------------
 # Password validation
@@ -327,8 +296,31 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 # -------------------------------------------------------------------
 
 if DEBUG:
-    MEDIA_URL = '/media/'
-    MEDIA_ROOT = BASE_DIR / 'media'
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
+else:
+    # Utilise Cloudflare R2 (compatible S3) pour le stockage des fichiers
+    INSTALLED_APPS += ["storages"]
+
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    # Endpoint R2 type: https://<account_id>.r2.cloudflarestorage.com
+    AWS_S3_ENDPOINT_URL = config("CLOUDFLARE_R2_ENDPOINT")
+    AWS_ACCESS_KEY_ID = config("CLOUDFLARE_R2_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = config("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = config("CLOUDFLARE_R2_BUCKET_NAME")
+    AWS_S3_REGION_NAME = "auto"
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+
+    # Optionnel : permet d'ajouter un préfixe (ex: "prod" ou "staging")
+    # pour organiser les fichiers dans un même bucket R2.
+    # Exemple: CLOUDFLARE_R2_PREFIX=staging => clés "staging/avatars/..."
+    AWS_LOCATION = config("CLOUDFLARE_R2_PREFIX", default="").strip() or None
+
+    # Optionnel : domaine Cloudflare/Custom pour servir les fichiers
+    # (ex: cdn.ludokan.com). Si non défini, l'URL R2 par défaut est utilisée.
+    AWS_S3_CUSTOM_DOMAIN = config("CLOUDFLARE_R2_CUSTOM_DOMAIN", default=None)
 
 
 # -------------------------------------------------------------------
@@ -368,6 +360,25 @@ CACHES = {
 
 
 # -------------------------------------------------------------------
+# Channels (WebSockets via Redis)
+# -------------------------------------------------------------------
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            # URL Redis dédiée aux websockets (DB 3 par défaut).
+            # Surchageable via la variable d'env CHANNEL_REDIS_URL,
+            # ex: redis://127.0.0.1:6379/3 en dev hors Docker.
+            "hosts": [
+                config("CHANNEL_REDIS_URL", default="redis://redis:6379/3"),
+            ],
+        },
+    }
+}
+
+
+# -------------------------------------------------------------------
 # Email
 # -------------------------------------------------------------------
 
@@ -398,5 +409,3 @@ if SENTRY_DSN:
     )
 else:
     print("SENTRY_DSN is not set")
-
-

@@ -18,7 +18,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
@@ -53,46 +53,48 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       switchLabel="S’inscrire"
       onSwitch={onSwitchToRegister}
     >
-      <Stack spacing={2.5} width={320}>
-        <TextField
-          label="Email"
-          variant="outlined"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        />
-        <TextField
-          label="Mot de passe"
-          type="password"
-          variant="outlined"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
-      </Stack>
+      <form onSubmit={handleSubmit}>
+        <Stack spacing={2.5} width={320}>
+          <TextField
+            label="Email"
+            variant="outlined"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+          />
+          <TextField
+            label="Mot de passe"
+            type="password"
+            variant="outlined"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+        </Stack>
 
-      {error && (
-        <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
+            {error}
+          </Alert>
+        )}
 
-      <Typography variant="body1" mt={5}>
-        Se connecter avec
-      </Typography>
+        <Typography variant="body1" mt={5}>
+          Se connecter avec
+        </Typography>
 
-      <Stack direction="row" spacing={3} mt={1.5}>
-        <SocialLoginButton icon="google" />
-        <SocialLoginButton icon="apple" />
-        <SocialLoginButton icon="x" />
-        <SocialLoginButton icon="instagram" />
-      </Stack>
+        <Stack direction="row" spacing={3} mt={1.5}>
+          <SocialLoginButton icon="google" />
+          <SocialLoginButton icon="apple" />
+          <SocialLoginButton icon="x" />
+          <SocialLoginButton icon="instagram" />
+        </Stack>
 
-      <PrimaryButton
-        sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
-        type="submit"
-        disabled={loading}
-      >
-        {loading ? 'Connexion...' : 'Se connecter'}
-      </PrimaryButton>
+        <PrimaryButton
+          sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
+          type="submit"
+          disabled={loading}
+        >
+          {loading ? 'Connexion...' : 'Se connecter'}
+        </PrimaryButton>
+      </form>
     </AuthFormContainer>
   );
 };

@@ -1,6 +1,7 @@
-from django.core.exceptions import ValidationError
 import os
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 from .errors import UserErrors
 
@@ -33,4 +34,3 @@ def validate_avatar(file):
         raise ValidationError(UserErrors.AVATAR_INVALID_FORMAT)
 
     return file
-

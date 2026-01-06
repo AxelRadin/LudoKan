@@ -2,9 +2,11 @@
 Fixtures pytest pour les tests de l'app users
 """
 import pytest
-from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from .constants import TEST_USER_CREDENTIAL
 
 User = get_user_model()
 
@@ -20,11 +22,11 @@ def sample_user_data():
     """Données utilisateur valides pour l'inscription"""
     return {
         "email": "testuser@example.com",
-        "password1": "SuperPass123!",
-        "password2": "SuperPass123!",
+        "password1": TEST_USER_CREDENTIAL,
+        "password2": TEST_USER_CREDENTIAL,
         "pseudo": "testuser",
         "first_name": "Test",
-        "last_name": "User"
+        "last_name": "User",
     }
 
 
@@ -32,23 +34,18 @@ def sample_user_data():
 def user(db):
     """Créer un utilisateur existant dans la base de données"""
     from allauth.account.models import EmailAddress
-    
+
     user = User.objects.create_user(
         email="existing@example.com",
-        password="SuperPass123!",
+        password=TEST_USER_CREDENTIAL,
         pseudo="existinguser",
         first_name="Existing",
-        last_name="User"
+        last_name="User",
     )
-    
+
     # Marquer l'email comme vérifié
-    EmailAddress.objects.create(
-        user=user,
-        email=user.email,
-        verified=True,
-        primary=True
-    )
-    
+    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+
     return user
 
 
@@ -56,21 +53,12 @@ def user(db):
 def another_user(db):
     """Créer un deuxième utilisateur pour les tests de collision"""
     from allauth.account.models import EmailAddress
-    
-    user = User.objects.create_user(
-        email="another@example.com",
-        password="AnotherPass123!",
-        pseudo="anotheruser"
-    )
-    
+
+    user = User.objects.create_user(email="another@example.com", password="AnotherPass123!", pseudo="anotheruser")
+
     # Marquer l'email comme vérifié
-    EmailAddress.objects.create(
-        user=user,
-        email=user.email,
-        verified=True,
-        primary=True
-    )
-    
+    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+
     return user
 
 
@@ -90,20 +78,20 @@ def auth_client_with_tokens(api_client, user):
     """
     login_url = "/api/auth/login/"
     response = api_client.post(
-        login_url, 
-        {"email": user.email, "password": "SuperPass123!"}, 
-        format="json"
+        login_url,
+        {"email": user.email, "password": TEST_USER_CREDENTIAL},
+        format="json",
     )
 
     # Vérifier que le login a réussi
     assert response.status_code == 200, f"Login failed: {response.data}"
-    
+
     # Mettre les cookies JWT dans le client
-    if 'access_token' in response.cookies:
-        api_client.cookies['access_token'] = response.cookies['access_token'].value
-    if 'refresh_token' in response.cookies:
-        api_client.cookies['refresh_token'] = response.cookies['refresh_token'].value
-    
+    if "access_token" in response.cookies:
+        api_client.cookies["access_token"] = response.cookies["access_token"].value
+    if "refresh_token" in response.cookies:
+        api_client.cookies["refresh_token"] = response.cookies["refresh_token"].value
+
     return api_client
 
 
@@ -112,14 +100,14 @@ def user_tokens(user):
     """Générer des tokens JWT pour un utilisateur"""
     refresh = RefreshToken.for_user(user)
     return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
+        "refresh": str(refresh),
+        "access": str(refresh.access_token),
     }
 
 
 @pytest.fixture
 def api_client_with_token(api_client, user_tokens):
     """Client API avec token dans les cookies"""
-    api_client.cookies['access_token'] = user_tokens['access']
-    api_client.cookies['refresh_token'] = user_tokens['refresh']
+    api_client.cookies["access_token"] = user_tokens["access"]
+    api_client.cookies["refresh_token"] = user_tokens["refresh"]
     return api_client

@@ -8,8 +8,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-from apps.games.models import Publisher, Genre, Platform, Game
-
+from apps.games.models import Game, Genre, Platform, Publisher
 
 User = get_user_model()
 
@@ -27,6 +26,16 @@ def user(db):
         email="testgames@example.com",
         password="TestPass123!",
         pseudo="testgamesuser",
+    )
+
+
+@pytest.fixture
+def another_user(db):
+    """Second test user for ownership checks."""
+    return User.objects.create_user(
+        email="anothergames@example.com",
+        password="AnotherTestPass123!",
+        pseudo="anothergamesuser",
     )
 
 
@@ -81,4 +90,3 @@ def game(db, publisher, genre, platform):
     game.genres.add(genre)
     game.platforms.add(platform)
     return game
-
