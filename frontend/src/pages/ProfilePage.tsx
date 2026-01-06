@@ -1,7 +1,5 @@
 import { Avatar, Box, Button, Paper, Typography } from '@mui/material';
-import Header from '../components/Header';
 import SecondaryButton from '../components/SecondaryButton';
-import useAuth from '../hooks/useAuth';
 
 export default function ProfilePage() {
   return (
