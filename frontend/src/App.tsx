@@ -10,6 +10,6 @@ const App = () => {
       <Outlet />
     </>
   );
-}
+};
 
 export default App;
