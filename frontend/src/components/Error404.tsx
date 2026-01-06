@@ -1,42 +1,42 @@
-import React, { CSSProperties } from "react";
-import ludokanLogo from "../assets/logo.png"; 
+import React, { CSSProperties } from 'react';
+import ludokanLogo from '../assets/logo.png';
 
 const styles: Record<string, CSSProperties> = {
   page: {
-    minHeight: "100vh",
-    backgroundColor: "#ffffff",
+    minHeight: '100vh',
+    backgroundColor: '#ffffff',
     margin: 0,
     paddingTop: 16,
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
   header: {
-    width: "100%",
+    width: '100%',
     maxWidth: 1100,
-    padding: "0 5vw 8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start",
+    padding: '0 5vw 8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   logoImg: {
     maxHeight: 70,
-    width: "auto",
-    objectFit: "contain",
-    display: "block",
+    width: 'auto',
+    objectFit: 'contain',
+    display: 'block',
   },
   main: {
     flex: 1,
-    width: "100%",
+    width: '100%',
     maxWidth: 1100,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-    padding: "0 5vw 40px",
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    padding: '0 5vw 40px',
   },
   title: {
     fontSize: 40,

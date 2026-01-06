@@ -1,5 +1,5 @@
-import React, { CSSProperties, useEffect, useState } from "react";
-import ludokanLogo from "../assets/logo.png"; 
+import React, { CSSProperties, useEffect, useState } from 'react';
+import ludokanLogo from '../assets/logo.png';
 
 type User = {
   first_name?: string;
@@ -19,88 +19,88 @@ type User = {
 const styles: Record<string, CSSProperties> = {
   // PAGE BLANCHE PLEINE HAUTEUR
   page: {
-    minHeight: "100vh",
-    backgroundColor: "#ffffff",
+    minHeight: '100vh',
+    backgroundColor: '#ffffff',
     margin: 0,
     paddingTop: 16,
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
   },
 
   // BARRE DU HAUT AVEC LOGO (responsive grâce à padding en vw)
   topbar: {
-    width: "100%",
+    width: '100%',
     maxWidth: 1100,
-    padding: "0 5vw 8px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start",
+    padding: '0 5vw 8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
   logoImg: {
     maxHeight: 70,
-    width: "auto",
-    objectFit: "contain",
-    display: "block",
+    width: 'auto',
+    objectFit: 'contain',
+    display: 'block',
   },
 
   // CONTENEUR PRINCIPAL
   card: {
-    width: "100%",
+    width: '100%',
     maxWidth: 1100,
-    backgroundColor: "#ffffff",
+    backgroundColor: '#ffffff',
     paddingBottom: 40,
   },
 
   // BANDEAU + AVATAR
   hero: {
-    borderTop: "1px solid #000",
-    borderLeft: "1px solid #000",
-    borderRight: "1px solid #000",
+    borderTop: '1px solid #000',
+    borderLeft: '1px solid #000',
+    borderRight: '1px solid #000',
   },
   bannerWrapper: {
-    position: "relative",
+    position: 'relative',
   },
   bannerImg: {
-    width: "100%",
+    width: '100%',
     height: 260,
-    maxHeight: "40vh",
-    objectFit: "cover",
-    display: "block",
+    maxHeight: '40vh',
+    objectFit: 'cover',
+    display: 'block',
   },
   avatarOverlay: {
-    position: "absolute",
+    position: 'absolute',
     left: 24,
     bottom: 12,
-    display: "flex",
-    alignItems: "center",
+    display: 'flex',
+    alignItems: 'center',
     gap: 12,
   },
   avatarCircle: {
     width: 64,
     height: 64,
-    borderRadius: "50%",
-    backgroundColor: "#000",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
+    borderRadius: '50%',
+    backgroundColor: '#000',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#fff',
     fontSize: 28,
     fontWeight: 600,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   avatarImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
   overlayTextBlock: {
-    display: "flex",
-    flexDirection: "column",
+    display: 'flex',
+    flexDirection: 'column',
     gap: 2,
-    color: "#fff",
+    color: '#fff',
   },
   overlayPseudo: {
     fontWeight: 600,
@@ -108,30 +108,30 @@ const styles: Record<string, CSSProperties> = {
   },
   editLink: {
     fontSize: 12,
-    color: "#fff",
-    background: "#000",
+    color: '#fff',
+    background: '#000',
     borderRadius: 999,
-    border: "1px solid #fff",
-    padding: "2px 10px",
-    cursor: "pointer",
-    alignSelf: "flex-start",
+    border: '1px solid #fff',
+    padding: '2px 10px',
+    cursor: 'pointer',
+    alignSelf: 'flex-start',
   },
 
   // LIGNE N/A / 5 / 20 (responsive avec auto-fit)
   topStatsRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    borderLeft: "1px solid #000",
-    borderRight: "1px solid #000",
-    borderBottom: "1px solid #000",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+    borderLeft: '1px solid #000',
+    borderRight: '1px solid #000',
+    borderBottom: '1px solid #000',
   },
   topStatCell: {
-    padding: "14px 8px",
-    textAlign: "center",
-    borderLeft: "1px solid #000",
+    padding: '14px 8px',
+    textAlign: 'center',
+    borderLeft: '1px solid #000',
   },
   topStatCellFirst: {
-    borderLeft: "none",
+    borderLeft: 'none',
   },
   topStatValue: {
     fontSize: 18,
@@ -143,7 +143,7 @@ const styles: Record<string, CSSProperties> = {
 
   // CONTENU (padding en vw pour s’adapter)
   content: {
-    padding: "24px 7vw 0",
+    padding: '24px 7vw 0',
   },
   section: {
     marginTop: 24,
@@ -155,24 +155,24 @@ const styles: Record<string, CSSProperties> = {
 
   // CARTES STATISTIQUES (auto-fit → 3 / 2 / 1 colonnes selon la largeur)
   statCards: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: 24,
   },
   statCard: {
-    border: "1px solid #000",
+    border: '1px solid #000',
     borderRadius: 6,
-    overflow: "hidden",
-    textAlign: "center",
+    overflow: 'hidden',
+    textAlign: 'center',
   },
   statLabel: {
     fontSize: 13,
-    borderBottom: "1px solid #000",
-    padding: "8px 4px",
+    borderBottom: '1px solid #000',
+    padding: '8px 4px',
   },
   statValue: {
     fontSize: 20,
-    padding: "12px 4px 14px",
+    padding: '12px 4px 14px',
   },
 
   // MESSAGES
@@ -181,12 +181,12 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: 4,
   },
   errorText: {
-    color: "#b91c1c",
+    color: '#b91c1c',
     fontSize: 14,
     marginBottom: 4,
   },
   successText: {
-    color: "#047857",
+    color: '#047857',
     fontSize: 14,
   },
 
@@ -199,108 +199,108 @@ const styles: Record<string, CSSProperties> = {
     marginBottom: 10,
   },
   form: {
-    display: "flex",
-    flexDirection: "column",
+    display: 'flex',
+    flexDirection: 'column',
     gap: 10,
     maxWidth: 520,
   },
   formRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
     gap: 10,
   },
   field: {
-    display: "flex",
-    flexDirection: "column",
+    display: 'flex',
+    flexDirection: 'column',
     gap: 4,
   },
   label: {
     fontSize: 13,
   },
   input: {
-    border: "1px solid #d1d5db",
+    border: '1px solid #d1d5db',
     borderRadius: 4,
-    padding: "6px 8px",
+    padding: '6px 8px',
     fontSize: 14,
-    fontFamily: "inherit",
+    fontFamily: 'inherit',
   },
   textarea: {
-    border: "1px solid #d1d5db",
+    border: '1px solid #d1d5db',
     borderRadius: 4,
-    padding: "6px 8px",
+    padding: '6px 8px',
     fontSize: 14,
-    fontFamily: "inherit",
-    resize: "vertical",
+    fontFamily: 'inherit',
+    resize: 'vertical',
   },
   formActions: {
     marginTop: 8,
-    display: "flex",
-    flexWrap: "wrap",
+    display: 'flex',
+    flexWrap: 'wrap',
     gap: 8,
   },
   btn: {
     borderRadius: 4,
-    padding: "6px 12px",
+    padding: '6px 12px',
     fontSize: 14,
-    border: "none",
-    cursor: "pointer",
+    border: 'none',
+    cursor: 'pointer',
   },
   btnPrimary: {
-    backgroundColor: "#111827",
-    color: "#f9fafb",
+    backgroundColor: '#111827',
+    color: '#f9fafb',
   },
   btnSecondary: {
-    backgroundColor: "#e5e7eb",
-    color: "#111827",
+    backgroundColor: '#e5e7eb',
+    color: '#111827',
   },
   btnDanger: {
     marginTop: 8,
-    backgroundColor: "#dc2626",
-    color: "#f9fafb",
+    backgroundColor: '#dc2626',
+    color: '#f9fafb',
   },
 
   // JEUX (wrap + responsive)
   gamesHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 32,
     marginBottom: 12,
   },
   arrowBtn: {
-    border: "none",
-    background: "transparent",
+    border: 'none',
+    background: 'transparent',
     fontSize: 26,
-    cursor: "pointer",
+    cursor: 'pointer',
   },
   gamesRow: {
-    display: "flex",
-    flexWrap: "wrap",
+    display: 'flex',
+    flexWrap: 'wrap',
     gap: 16,
   },
   gameItem: {
     width: 120,
     height: 170,
     borderRadius: 4,
-    overflow: "hidden",
-    flex: "0 0 auto",
+    overflow: 'hidden',
+    flex: '0 0 auto',
   },
   gameImg: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
   },
 };
 
 const PageProfile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [form, setForm] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    avatar_url: "",
-    descriptionCourte: "",
-    preferences: "",
+    first_name: '',
+    last_name: '',
+    email: '',
+    avatar_url: '',
+    descriptionCourte: '',
+    preferences: '',
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -308,7 +308,7 @@ const PageProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const token = localStorage.getItem("authToken"); // à adapter si besoin
+  const token = localStorage.getItem('authToken'); // à adapter si besoin
 
   // GET /api/me
   useEffect(() => {
@@ -317,32 +317,32 @@ const PageProfile: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch("/api/me", {
+        const res = await fetch('/api/me', {
           headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
+            'Content-Type': 'application/json',
+            Authorization: token ? `Bearer ${token}` : '',
           },
         });
 
         if (res.status === 401) {
-          throw new Error("Tu dois être connecté pour voir ton profil (401).");
+          throw new Error('Tu dois être connecté pour voir ton profil (401).');
         }
         if (!res.ok) {
-          throw new Error("Impossible de charger ton profil.");
+          throw new Error('Impossible de charger ton profil.');
         }
 
         const data: User = await res.json();
         setUser(data);
         setForm({
-          first_name: data.first_name ?? "",
-          last_name: data.last_name ?? "",
-          email: data.email ?? "",
-          avatar_url: data.avatar_url ?? "",
-          descriptionCourte: data.descriptionCourte ?? "",
-          preferences: data.preferences ?? "",
+          first_name: data.first_name ?? '',
+          last_name: data.last_name ?? '',
+          email: data.email ?? '',
+          avatar_url: data.avatar_url ?? '',
+          descriptionCourte: data.descriptionCourte ?? '',
+          preferences: data.preferences ?? '',
         });
       } catch (e: any) {
-        setError(e.message ?? "Erreur inattendue.");
+        setError(e.message ?? 'Erreur inattendue.');
       } finally {
         setLoading(false);
       }
@@ -352,13 +352,13 @@ const PageProfile: React.FC = () => {
   }, [token]);
 
   const fullName =
-    `${form.first_name} ${form.last_name}`.trim() || "Pseudo utilisateur";
+    `${form.first_name} ${form.last_name}`.trim() || 'Pseudo utilisateur';
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   // PATCH /api/me
@@ -367,9 +367,9 @@ const PageProfile: React.FC = () => {
     setError(null);
     setMessage(null);
 
-    if (user && form.email !== (user.email ?? "")) {
+    if (user && form.email !== (user.email ?? '')) {
       const ok = window.confirm(
-        "Tu es sur le point de modifier ton adresse e-mail. Continuer ?"
+        'Tu es sur le point de modifier ton adresse e-mail. Continuer ?'
       );
       if (!ok) return;
     }
@@ -377,36 +377,36 @@ const PageProfile: React.FC = () => {
     try {
       setSaving(true);
 
-      const res = await fetch("/api/me", {
-        method: "PATCH",
+      const res = await fetch('/api/me', {
+        method: 'PATCH',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: token ? `Bearer ${token}` : "",
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
         },
         body: JSON.stringify(form),
       });
 
       if (res.status === 401) {
-        throw new Error("Non autorisé : reconnecte-toi (401).");
+        throw new Error('Non autorisé : reconnecte-toi (401).');
       }
       if (res.status === 400) {
-        throw new Error("Données invalides (400 Bad Request).");
+        throw new Error('Données invalides (400 Bad Request).');
       }
       if (res.status === 403) {
         throw new Error(
-          "Tu essaies de modifier un champ non autorisé (403 Forbidden)."
+          'Tu essaies de modifier un champ non autorisé (403 Forbidden).'
         );
       }
       if (!res.ok) {
-        throw new Error("Erreur lors de la sauvegarde du profil.");
+        throw new Error('Erreur lors de la sauvegarde du profil.');
       }
 
       const updated: User = await res.json();
       setUser(updated);
-      setMessage("Profil mis à jour ✅");
+      setMessage('Profil mis à jour ✅');
       setIsEditing(false);
     } catch (e: any) {
-      setError(e.message ?? "Erreur inattendue.");
+      setError(e.message ?? 'Erreur inattendue.');
     } finally {
       setSaving(false);
     }
@@ -419,20 +419,20 @@ const PageProfile: React.FC = () => {
 
     if (!form.email) {
       setError(
-        "Aucune adresse e-mail renseignée pour réinitialiser le mot de passe."
+        'Aucune adresse e-mail renseignée pour réinitialiser le mot de passe.'
       );
       return;
     }
 
     const ok = window.confirm(
-      "Un e-mail de réinitialisation sera envoyé à cette adresse. Continuer ?"
+      'Un e-mail de réinitialisation sera envoyé à cette adresse. Continuer ?'
     );
     if (!ok) return;
 
     try {
-      const res = await fetch("/api/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email }),
       });
 
@@ -440,20 +440,20 @@ const PageProfile: React.FC = () => {
         throw new Error("Impossible d'envoyer l'e-mail de réinitialisation.");
       }
 
-      setMessage("E-mail de réinitialisation envoyé 📧");
+      setMessage('E-mail de réinitialisation envoyé 📧');
     } catch (e: any) {
-      setError(e.message ?? "Erreur inattendue.");
+      setError(e.message ?? 'Erreur inattendue.');
     }
   };
 
   // jaquettes juste pour la maquette
   const games = [
-    "https://image.api.playstation.com/cdn/EP9000/CUSA08342_00/6hOJtV8LojRxurx8zS7imLwY2zLsyO2V.png",
-    "https://static.fnac-static.com/multimedia/Images/FR/MDM/40/ae/85/8851776/1540-1/tsp20221117101644/The-Legend-of-Zelda-Breath-of-the-Wild-Nintendo-Switch.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202008/2420/Ew0uxnxOQk1GDIsdbKwvKq49.png",
-    "https://image.api.playstation.com/cdn/EP0700/CUSA00572_00/oUPj6vD2vuzk5vW7NQ2Ad2QdNCz7L3Uq.png",
-    "https://image.api.playstation.com/cdn/UP0700/CUSA05933_00/lxaZ6UiHqdP1M1kwFevkpawuO/8fT0HZEvYe5UEQyAQ5GSz4.png",
-    "https://image.api.playstation.com/cdn/UP0001/CUSA02152_00/h1JtVw2FCpfvzNwZ7nHU8pUB7G4qKzjL.png",
+    'https://image.api.playstation.com/cdn/EP9000/CUSA08342_00/6hOJtV8LojRxurx8zS7imLwY2zLsyO2V.png',
+    'https://static.fnac-static.com/multimedia/Images/FR/MDM/40/ae/85/8851776/1540-1/tsp20221117101644/The-Legend-of-Zelda-Breath-of-the-Wild-Nintendo-Switch.jpg',
+    'https://image.api.playstation.com/vulcan/ap/rnd/202008/2420/Ew0uxnxOQk1GDIsdbKwvKq49.png',
+    'https://image.api.playstation.com/cdn/EP0700/CUSA00572_00/oUPj6vD2vuzk5vW7NQ2Ad2QdNCz7L3Uq.png',
+    'https://image.api.playstation.com/cdn/UP0700/CUSA05933_00/lxaZ6UiHqdP1M1kwFevkpawuO/8fT0HZEvYe5UEQyAQ5GSz4.png',
+    'https://image.api.playstation.com/cdn/UP0001/CUSA02152_00/h1JtVw2FCpfvzNwZ7nHU8pUB7G4qKzjL.png',
   ];
 
   if (loading) {
@@ -487,7 +487,7 @@ const PageProfile: React.FC = () => {
                     style={styles.avatarImg}
                   />
                 ) : (
-                  <span>{fullName[0] || "?"}</span>
+                  <span>{fullName[0] || '?'}</span>
                 )}
               </div>
               <div style={styles.overlayTextBlock}>
@@ -495,9 +495,9 @@ const PageProfile: React.FC = () => {
                 <button
                   type="button"
                   style={styles.editLink}
-                  onClick={() => setIsEditing((v) => !v)}
+                  onClick={() => setIsEditing(v => !v)}
                 >
-                  {isEditing ? "Annuler" : "Modifier"}
+                  {isEditing ? 'Annuler' : 'Modifier'}
                 </button>
               </div>
             </div>
@@ -512,12 +512,12 @@ const PageProfile: React.FC = () => {
               }}
             >
               <div style={styles.topStatValue}>
-                {user?.comments_count ?? "N/A"}
+                {user?.comments_count ?? 'N/A'}
               </div>
               <div style={styles.topStatLabel}>Commentaires</div>
             </div>
             <div style={styles.topStatCell}>
-              <div style={styles.topStatValue}>{user?.rating ?? "5"}</div>
+              <div style={styles.topStatValue}>{user?.rating ?? '5'}</div>
               <div style={styles.topStatLabel}>Notation</div>
             </div>
             <div style={styles.topStatCell}>
@@ -541,20 +541,16 @@ const PageProfile: React.FC = () => {
             <div style={styles.statCards}>
               <div style={styles.statCard}>
                 <div style={styles.statLabel}>Total de jeux</div>
-                <div style={styles.statValue}>
-                  {user?.total_games ?? 20}
-                </div>
+                <div style={styles.statValue}>{user?.total_games ?? 20}</div>
               </div>
               <div style={styles.statCard}>
                 <div style={styles.statLabel}>Total des plateformes</div>
-                <div style={styles.statValue}>
-                  {user?.total_platforms ?? 4}
-                </div>
+                <div style={styles.statValue}>{user?.total_platforms ?? 4}</div>
               </div>
               <div style={styles.statCard}>
                 <div style={styles.statLabel}>Titres terminés</div>
                 <div style={styles.statValue}>
-                  {user?.finished_titles ?? "N/A"}
+                  {user?.finished_titles ?? 'N/A'}
                 </div>
               </div>
             </div>
@@ -645,7 +641,7 @@ const PageProfile: React.FC = () => {
                     style={{ ...styles.btn, ...styles.btnPrimary }}
                     disabled={saving}
                   >
-                    {saving ? "Sauvegarde..." : "Sauvegarder"}
+                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                   </button>
                 </div>
               </form>
@@ -664,12 +660,16 @@ const PageProfile: React.FC = () => {
           <section style={styles.section}>
             <div style={styles.gamesHeader}>
               <h2 style={styles.sectionTitle}>Jeux</h2>
-              <button style={styles.arrowBtn}>{">"}</button>
+              <button style={styles.arrowBtn}>{'>'}</button>
             </div>
             <div style={styles.gamesRow}>
               {games.map((src, index) => (
                 <div key={index} style={styles.gameItem}>
-                  <img src={src} alt={`Jeu ${index + 1}`} style={styles.gameImg} />
+                  <img
+                    src={src}
+                    alt={`Jeu ${index + 1}`}
+                    style={styles.gameImg}
+                  />
                 </div>
               ))}
             </div>
