@@ -1,7 +1,43 @@
 import { Box, Button, Divider, Paper, Rating, Typography } from '@mui/material';
 import SecondaryButton from '../components/SecondaryButton';
+import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { apiGet } from '../services/api';
 
 export default function GamePage() {
+  const { id } = useParams();
+  const [game, setGame] = useState<any>(null);
+
+  useEffect(() => {
+    if (id) {
+      apiGet(`/api/games/${id}/`).then((data) => {
+        let image = data.cover_url;
+        if (image && image.includes('t_thumb')) {
+          image = image.replace('t_thumb', 't_1080p');
+        } else if (image && image.includes('t_cover_big')) {
+          image = image.replace('t_cover_big', 't_1080p');
+        }
+        setGame({ ...data, image });
+      });
+    }
+  }, [id]);
+
+  if (!game) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+        }}
+      >
+        <Typography variant="h5">Chargement du jeu...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -49,8 +85,8 @@ export default function GamePage() {
             }}
           >
             <img
-              src="/zelda-twilight.jpg"
-              alt="Zelda Twilight Princess"
+              src={game.image}
+              alt={game.name}
               style={{
                 width: '100%',
                 height: '90%',
@@ -70,21 +106,41 @@ export default function GamePage() {
             }}
           >
             <Typography variant="h3" sx={{ mb: 3, fontWeight: 700 }}>
-              TITRE
+              {game.name}
             </Typography>
             <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
-              Plateforme
+              Plateformes
             </Typography>
             <Typography variant="body1" sx={{ mb: 3 }}>
-              pesetting industry. Lorem Ipsum has been the...
+              {game.platforms && game.platforms.length > 0
+                ? game.platforms.map((p: any) => p.name).join(', ')
+                : 'Non renseigné'}
             </Typography>
             <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
               Description
             </Typography>
             <Typography variant="body1" sx={{ mb: 3 }}>
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry. Lorem Ipsum has been the industry's standard dummy text
-              ever since the 1500s...
+              {game.description || 'Aucune description disponible.'}
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Genres
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              {game.genres && game.genres.length > 0
+                ? game.genres.map((g: any) => g.nom_genre || g.name).join(', ')
+                : 'Non renseigné'}
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Date de sortie
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              {game.release_date || 'Non renseignée'}
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+              Éditeur
+            </Typography>
+            <Typography variant="body1" sx={{ mb: 3 }}>
+              {game.publisher?.name || 'Non renseigné'}
             </Typography>
           </Box>
           <Divider
@@ -104,18 +160,17 @@ export default function GamePage() {
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
               Notes de la communauté
             </Typography>
-            <Rating value={5} readOnly sx={{ mb: 2, fontSize: 40 }} />
+            <Rating
+              value={game.average_rating || game.rating_avg || 0}
+              readOnly
+              sx={{ mb: 2, fontSize: 40 }}
+            />
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
               Avis
             </Typography>
             <Box sx={{ width: '100%', mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1 }}>
-                <b>Pseudo 1 :</b> pesetting industry. Lorem Ipsum has been the
-                industry's standard dummy text ever since the 1500s...
-              </Typography>
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <b>Pseudo 2 :</b> pesetting industry. Lorem Ipsum has been the
-                industry's standard dummy text ever since the 1500s...
+                Aucun avis disponible.
               </Typography>
             </Box>
           </Box>
