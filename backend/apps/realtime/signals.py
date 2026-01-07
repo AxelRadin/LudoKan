@@ -1,3 +1,6 @@
+import logging
+import time
+
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models.signals import post_save
@@ -5,6 +8,8 @@ from django.dispatch import receiver
 from notifications.models import Notification
 
 from apps.core.serializers import NotificationSerializer
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=Notification)
@@ -38,10 +43,23 @@ def push_notification_via_websocket(sender, instance: Notification, created: boo
     group_name = f"user_notifications_{instance.recipient_id}"
     payload = NotificationSerializer(instance).data
 
+    start = time.monotonic()
+
     async_to_sync(channel_layer.group_send)(
         group_name,
         {
             "type": "notification_message",
             "notification": payload,
+        },
+    )
+
+    duration_ms = (time.monotonic() - start) * 1000
+    logger.info(
+        "WebSocket notification sent in %.2f ms",
+        duration_ms,
+        extra={
+            "user_id": instance.recipient_id,
+            "notification_id": instance.id,
+            "verb": instance.verb,
         },
     )
