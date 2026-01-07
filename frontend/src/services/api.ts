@@ -16,15 +16,19 @@ function getCookie(name: string): string | null {
 async function request(path: string, options: RequestInit = {}) {
   const method = (options.method || 'GET').toString().toUpperCase();
 
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string>),
-  };
+  const headers = new Headers(options.headers || {});
 
-  // Ajoute automatiquement le header CSRF pour les méthodes non-sûres
+  // Ajoute le header Authorization si token présent
+  const token = localStorage.getItem('token');
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  // Ajoute le header CSRF pour les méthodes non-sûres
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
     const csrftoken = getCookie('csrftoken');
-    if (csrftoken && !headers['X-CSRFToken'] && !headers['X-CSRF-Token']) {
-      headers['X-CSRFToken'] = csrftoken;
+    if (csrftoken && !headers.has('X-CSRFToken') && !headers.has('X-CSRF-Token')) {
+      headers.set('X-CSRFToken', csrftoken);
     }
   }
 
@@ -50,17 +54,13 @@ async function request(path: string, options: RequestInit = {}) {
   return data;
 }
 
-// GET simple
+// GET
 export async function apiGet(path: string, options: RequestInit = {}) {
   return request(path, { method: 'GET', ...options });
 }
 
-// POST pratique
-export async function apiPost(
-  path: string,
-  body: any,
-  options: RequestInit = {}
-) {
+// POST
+export async function apiPost(path: string, body: any, options: RequestInit = {}) {
   return request(path, {
     method: 'POST',
     headers: {
@@ -72,12 +72,8 @@ export async function apiPost(
   });
 }
 
-// PATCH pratique
-export async function apiPatch(
-  path: string,
-  body: any,
-  options: RequestInit = {}
-) {
+// PATCH
+export async function apiPatch(path: string, body: any, options: RequestInit = {}) {
   return request(path, {
     method: 'PATCH',
     headers: {
