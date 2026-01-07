@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "corsheaders",
+    "notifications",
     "apps.users",
     "apps.games",
     "apps.core",
