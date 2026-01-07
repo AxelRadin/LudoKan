@@ -104,7 +104,6 @@ class MatchmakingMatchesView(APIView):
 
         # 2. Matching
         matches_with_distance = find_matches(user_request)
-        # matches_with_distance = [(req, distance), ...]
 
         matches = [req for req, _ in matches_with_distance]
         distances = {req.id: distance for req, distance in matches_with_distance}

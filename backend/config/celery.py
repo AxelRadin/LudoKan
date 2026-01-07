@@ -1,6 +1,7 @@
 import os
 
 from celery import Celery
+from celery.schedules import crontab
 
 # Configuration de l'environnement Django pour Celery
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -15,11 +16,10 @@ app.autodiscover_tasks()
 
 # Configuration des tâches périodiques (optionnel)
 app.conf.beat_schedule = {
-    # Exemple de tâche périodique
-    # 'cleanup-sessions': {
-    #     'task': 'apps.core.tasks.cleanup_sessions',
-    #     'schedule': 3600.0,  # Toutes les heures
-    # },
+    "expire-old-matchmaking-requests": {
+        "task": "apps.matchmaking.tasks.expire_old_matchmaking_requests",
+        "schedule": crontab(minute="*/15"),  # toutes les 15 minutes
+    },
 }
 
 # Configuration des résultats (optionnel)
