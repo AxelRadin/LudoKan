@@ -8,6 +8,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 
+import { Link } from 'react-router-dom';
 import theme from '../theme';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -51,16 +52,18 @@ export const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
         <Toolbar
           sx={{ justifyContent: 'space-between', py: 1, px: 4, minHeight: 64 }}
         >
-          <Box display="flex" alignItems="center">
-            <img
-              src="/logo.png"
-              alt="Ludokan Logo"
-              style={{ height: 40, marginRight: 8 }}
-            />
-            <Typography variant="h6" sx={{ fontFamily: 'Lobster, cursive' }}>
-              Ludokan
-            </Typography>
-          </Box>
+          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Box display="flex" alignItems="center">
+              <img
+                src="/logo.png"
+                alt="Ludokan Logo"
+                style={{ height: 40, marginRight: 8 }}
+              />
+              <Typography variant="h6" sx={{ fontFamily: 'Lobster, cursive' }}>
+                Ludokan
+              </Typography>
+            </Box>
+          </Link>
 
           <SearchBar />
 
