@@ -7,19 +7,16 @@ import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-
 import { Link } from 'react-router-dom';
 import theme from '../theme';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
+import { useAuth } from '../contexts/AuthContext';
 
-type HeaderProps = {
-  isAuthenticated: boolean;
-};
-
-export const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
+export const Header: React.FC = () => {
+  const { isAuthenticated, setAuthenticated } = useAuth();
   const [openAuth, setOpenAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
@@ -35,6 +32,11 @@ export const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
 
   const handleAuthClose = () => {
     setOpenAuth(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setAuthenticated(false);
   };
 
   return (
@@ -69,9 +71,14 @@ export const Header: React.FC<HeaderProps> = ({ isAuthenticated }) => {
 
           <Box display="flex" alignItems="center" gap={2}>
             {isAuthenticated ? (
-              <Button color="inherit" href="/profile">
-                Profile
-              </Button>
+              <>
+                <Button color="inherit" href="/profile">
+                  Profile
+                </Button>
+                <Button color="inherit" onClick={handleLogout}>
+                  Se déconnecter
+                </Button>
+              </>
             ) : (
               <>
                 <Button color="inherit" onClick={handleLoginOpen}>

@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import App from './App.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
+import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
 import GamePage from './pages/GamePage.tsx';
@@ -39,9 +40,11 @@ const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
-      <Sentry.ErrorBoundary fallback={errorFallback}>
-        <RouterProvider router={router} />
-      </Sentry.ErrorBoundary>
+      <AuthProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
+      </AuthProvider>
     </ThemeProvider>
   </StrictMode>
 );
