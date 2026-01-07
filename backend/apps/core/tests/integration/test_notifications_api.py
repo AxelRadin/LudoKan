@@ -73,3 +73,30 @@ class TestNotificationAPI:
         response = authenticated_api_client.patch(url, {"unread": False}, format="json")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_mark_all_read_updates_only_current_user_notifications(
+        self,
+        authenticated_api_client,
+        user,
+        admin_user,
+    ):
+        """
+        Vérifie que l'endpoint mark-all-read ne met à jour que les notifications
+        de l'utilisateur courant et renvoie le bon compte.
+        """
+        notify.send(user, recipient=user, verb="u1-notif-1")
+        notify.send(user, recipient=user, verb="u1-notif-2")
+
+        notify.send(admin_user, recipient=admin_user, verb="admin-notif")
+
+        assert Notification.objects.filter(recipient=user, unread=True).count() == 2
+        assert Notification.objects.filter(recipient=admin_user, unread=True).count() == 1
+
+        url = "/api/notifications/mark-all-read/"
+        response = authenticated_api_client.patch(url, {}, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["updated"] == 2
+
+        assert Notification.objects.filter(recipient=user, unread=True).count() == 0
+        assert Notification.objects.filter(recipient=admin_user, unread=True).count() == 1
