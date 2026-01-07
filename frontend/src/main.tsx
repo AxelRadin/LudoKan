@@ -22,7 +22,7 @@ const router = createBrowserRouter([
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
       { path: 'profile', element: <ProfilePage /> },
-      { path: 'game', element: <GamePage /> },
+      { path: 'game/:id', element: <GamePage /> },
       { path: 'test', element: <TestSentry /> },
       { path: 'connector', element: <BackendConnector /> },
     ],

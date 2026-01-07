@@ -1,12 +1,14 @@
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { Card, CardMedia, IconButton } from '@mui/material';
+import { Card, IconButton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { apiGet } from '../services/api';
+import GameCard from './GameCard';
 
 export interface Game {
+  id: number;
   title: string;
   image: string;
 }
@@ -24,9 +26,10 @@ export const TrendingGames: React.FC = () => {
         const mappedGames = (data.results || []).map((game: any) => {
           let image = game.cover_url || game.image;
           if (image && image.includes('t_thumb')) {
-            image = image.replace('t_thumb', 't_cover_big'); // ou 't_720p'
+            image = image.replace('t_thumb', 't_cover_big');
           }
           return {
+            id: game.id,
             title: game.name,
             image,
           };
@@ -104,38 +107,19 @@ export const TrendingGames: React.FC = () => {
         >
           {games.length === 0
             ? emptyCards.map((_, idx) => (
-              <Card
-                key={idx}
-                sx={{
-                  minWidth: 150,
-                  height: 200,
-                  borderRadius: 2,
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'grey.400',
-                  bgcolor: 'grey.100',
-                }}
-              >
+              <Card key={idx}>
                 <Typography variant="body2" color="textSecondary">
                   Aucun jeu à afficher
                 </Typography>
               </Card>
             ))
             : games.map(game => (
-              <Card
-                key={game.title}
-                sx={{ minWidth: 150, borderRadius: 2, flexShrink: 0 }}
-              >
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={game.image}
-                  alt={game.title}
-                  sx={{ objectFit: 'cover' }}
-                />
-              </Card>
+              <GameCard
+                key={game.id}
+                id={game.id}
+                title={game.title}
+                image={game.image}
+              />
             ))}
         </Box>
         {canScrollRight && (
