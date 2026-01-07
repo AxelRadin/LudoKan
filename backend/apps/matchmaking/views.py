@@ -1,12 +1,15 @@
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.matchmaking.models import MatchmakingRequest
 from apps.matchmaking.permissions import IsOwnerOrAdmin
-from apps.matchmaking.serializers import MatchmakingRequestSerializer
+from apps.matchmaking.serializers import MatchmakingRequestSerializer, MatchResultSerializer
+from apps.matchmaking.utils import find_matches
 
 
 @extend_schema_view(
@@ -76,3 +79,44 @@ class MatchmakingRequestViewSet(ModelViewSet):
             raise serializers.ValidationError("This matchmaking request has expired.")
 
         serializer.save()
+
+
+class MatchmakingMatchesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # 1. Demande active de l'utilisateur
+        user_request = (
+            MatchmakingRequest.objects.filter(
+                user=request.user,
+                status=MatchmakingRequest.STATUS_PENDING,
+                expires_at__gt=timezone.now(),
+            )
+            .order_by("-created_at")
+            .first()
+        )
+
+        if not user_request:
+            return Response(
+                {"detail": "Aucune demande de matchmaking active."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # 2. Matching
+        matches_with_distance = find_matches(user_request)
+        # matches_with_distance = [(req, distance), ...]
+
+        matches = [req for req, _ in matches_with_distance]
+        distances = {req.id: distance for req, distance in matches_with_distance}
+
+        # 3. Tri par distance croissante
+        matches.sort(key=lambda r: distances[r.id])
+
+        # 4. Sérialisation
+        serializer = MatchResultSerializer(
+            matches,
+            many=True,
+            context={"distances": distances},
+        )
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
