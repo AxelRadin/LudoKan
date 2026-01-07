@@ -1,6 +1,6 @@
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { Card, IconButton } from '@mui/material';
+import { Card, IconButton, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,8 +28,10 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   const [games, setGames] = useState<Game[]>([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     let url = ordering ? `/api/games/?ordering=${ordering}` : '/api/games/';
     if (genre) {
       url +=
@@ -48,10 +50,10 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             image,
           };
         });
-        console.log('Fetched games for TrendingGames:', mappedGames);
         setGames(mappedGames);
       })
-      .catch(() => setGames([]));
+      .catch(() => setGames([]))
+      .finally(() => setLoading(false));
   }, [ordering, genre]);
 
   const checkScroll = () => {
@@ -83,8 +85,6 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       scrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
     }
   };
-
-  const emptyCards = Array.from({ length: 20 });
 
   return (
     <Box px={4} py={4} position="relative">
@@ -120,22 +120,29 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             flex: 1,
           }}
         >
-          {games.length === 0
-            ? emptyCards.map((_, idx) => (
-                <Card key={idx}>
-                  <Typography variant="body2" color="textSecondary">
-                    Aucun jeu à afficher
-                  </Typography>
-                </Card>
-              ))
-            : games.map(game => (
-                <GameCard
-                  key={game.id}
-                  id={game.id}
-                  title={game.title}
-                  image={game.image}
-                />
-              ))}
+          {loading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <Box key={idx} width={160}>
+                <Skeleton variant="rectangular" width={160} height={220} />
+                <Skeleton width="80%" />
+              </Box>
+            ))
+          ) : games.length === 0 ? (
+            <Card>
+              <Typography variant="body2" color="textSecondary">
+                Aucun jeu à afficher
+              </Typography>
+            </Card>
+          ) : (
+            games.map(game => (
+              <GameCard
+                key={game.id}
+                id={game.id}
+                title={game.title}
+                image={game.image}
+              />
+            ))
+          )}
         </Box>
         {canScrollRight && (
           <IconButton
