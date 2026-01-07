@@ -32,8 +32,8 @@ def create_message_notifications(sender, instance: Message, created: bool, **kwa
 
     from django.contrib.auth import get_user_model
 
-    User = get_user_model()
-    recipients = User.objects.filter(id__in=member_ids)
+    user_model = get_user_model()
+    recipients = user_model.objects.filter(id__in=member_ids)
 
     for recipient in recipients:
         notify.send(

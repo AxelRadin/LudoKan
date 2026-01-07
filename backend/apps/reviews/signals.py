@@ -36,8 +36,8 @@ def create_review_notifications(sender, instance: Review, created: bool, **kwarg
 
     from django.contrib.auth import get_user_model
 
-    User = get_user_model()
-    recipients = User.objects.filter(id__in=user_ids)
+    user_model = get_user_model()
+    recipients = user_model.objects.filter(id__in=user_ids)
 
     for recipient in recipients:
         notify.send(
