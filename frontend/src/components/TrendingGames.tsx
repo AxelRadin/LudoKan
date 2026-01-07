@@ -32,7 +32,8 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   useEffect(() => {
     let url = ordering ? `/api/games/?ordering=${ordering}` : '/api/games/';
     if (genre) {
-      url += (url.includes('?') ? '&' : '?') + `genres=${encodeURIComponent(genre)}`;
+      url +=
+        (url.includes('?') ? '&' : '?') + `genres=${encodeURIComponent(genre)}`;
     }
     apiGet(url)
       .then(data => {
@@ -121,20 +122,20 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
         >
           {games.length === 0
             ? emptyCards.map((_, idx) => (
-              <Card key={idx}>
-                <Typography variant="body2" color="textSecondary">
-                  Aucun jeu à afficher
-                </Typography>
-              </Card>
-            ))
+                <Card key={idx}>
+                  <Typography variant="body2" color="textSecondary">
+                    Aucun jeu à afficher
+                  </Typography>
+                </Card>
+              ))
             : games.map(game => (
-              <GameCard
-                key={game.id}
-                id={game.id}
-                title={game.title}
-                image={game.image}
-              />
-            ))}
+                <GameCard
+                  key={game.id}
+                  id={game.id}
+                  title={game.title}
+                  image={game.image}
+                />
+              ))}
         </Box>
         {canScrollRight && (
           <IconButton
