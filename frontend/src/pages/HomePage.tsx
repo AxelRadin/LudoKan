@@ -1,9 +1,14 @@
 import Box from '@mui/material/Box';
+import { useState } from 'react';
 import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 
 export const HomePage = () => {
+  const [selectedGenre, setSelectedGenre] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
   return (
     <Box
       sx={{
@@ -26,7 +31,27 @@ export const HomePage = () => {
         }}
       >
         <Banner />
-        <TrendingGames />
+        <TrendingGames
+          ordering="-average_rating"
+          title="Jeux les mieux notés"
+        />
+        <TrendingGames
+          ordering="-popularity_score"
+          title="Jeux les plus populaires"
+        />
+        <TrendingGames ordering="-release_date" title="Jeux les plus récents" />
+        <TrendingGames ordering="-rating_count" title="Jeux les plus notés" />
+        <TrendingGames
+          ordering="-rating_avg"
+          title="Jeux avec meilleure note moyenne"
+        />
+        {selectedGenre && (
+          <TrendingGames
+            title={selectedGenre.name}
+            genre={selectedGenre.id.toString()}
+            ordering="-popularity_score"
+          />
+        )}
         <Box
           sx={{
             flex: 1,
@@ -36,7 +61,9 @@ export const HomePage = () => {
             marginTop: 5,
           }}
         >
-          <GenreGrid />
+          <GenreGrid
+            onGenreClick={(id, name) => setSelectedGenre({ id, name })}
+          />
         </Box>
       </Box>
     </Box>

@@ -13,16 +13,30 @@ export interface Game {
   image: string;
 }
 
-export const TrendingGames: React.FC = () => {
+export interface TrendingGamesProps {
+  ordering?: string;
+  title?: string;
+  genre?: string;
+}
+
+export const TrendingGames: React.FC<TrendingGamesProps> = ({
+  ordering = '',
+  title = 'Jeux tendances ➜',
+  genre,
+}) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [games, setGames] = useState<Game[]>([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
-    apiGet('/api/games/')
+    let url = ordering ? `/api/games/?ordering=${ordering}` : '/api/games/';
+    if (genre) {
+      url +=
+        (url.includes('?') ? '&' : '?') + `genres=${encodeURIComponent(genre)}`;
+    }
+    apiGet(url)
       .then(data => {
-        console.log('Réponse backend /api/games/ :', data);
         const mappedGames = (data.results || []).map((game: any) => {
           let image = game.cover_url || game.image;
           if (image && image.includes('t_thumb')) {
@@ -34,10 +48,11 @@ export const TrendingGames: React.FC = () => {
             image,
           };
         });
+        console.log('Fetched games for TrendingGames:', mappedGames);
         setGames(mappedGames);
       })
       .catch(() => setGames([]));
-  }, []);
+  }, [ordering, genre]);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -74,7 +89,7 @@ export const TrendingGames: React.FC = () => {
   return (
     <Box px={4} py={4} position="relative">
       <Typography variant="h6" fontWeight="bold" mb={2}>
-        Jeux tendances ➜
+        {title ? `${title} ➜` : 'Jeux tendances ➜'}
       </Typography>
       <Box display="flex" alignItems="center" position="relative">
         {canScrollLeft && (

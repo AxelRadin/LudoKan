@@ -5,34 +5,32 @@ import React from 'react';
 import Images from '../assets/genres';
 
 interface Genre {
+  id: number;
   name: string;
   image: string;
 }
 
 const genres: Genre[] = [
-  { name: 'Action', image: Images.action },
-  { name: 'Aventure', image: Images.aventure },
-  { name: 'RPG', image: Images.rpg },
-  { name: 'FPS', image: Images.fps },
-  { name: 'TPS', image: Images.tps },
-  { name: 'Stratégie', image: Images.strategie },
-  { name: 'Simulation', image: Images.simulation },
-  { name: 'Puzzle', image: Images.puzzle },
-  { name: 'Course', image: Images.course },
-  { name: 'Sport', image: Images.sport },
-  { name: "Hack'n Slash", image: Images.hacknslash },
-  { name: 'Plateforme', image: Images.plateforme },
-  { name: 'MMO', image: Images.mmo },
-  { name: 'Party Game', image: Images.party },
-  { name: 'Roguelike', image: Images.roguelike },
-  { name: 'Jeu de cartes', image: Images.cartes },
-  { name: 'Musical', image: Images.musical },
-  { name: 'Narratif', image: Images.narratif },
-  { name: 'Sandbox', image: Images.sandbox },
-  { name: 'Metroidvania', image: Images.metroidvania },
+  { id: 4, name: 'Action', image: Images.action },
+  { id: 31, name: 'Aventure', image: Images.aventure },
+  { id: 12, name: 'RPG', image: Images.rpg },
+  { id: 5, name: 'FPS', image: Images.fps },
+  { id: 24, name: 'TPS', image: Images.tps },
+  { id: 15, name: 'Stratégie', image: Images.strategie },
+  { id: 13, name: 'Simulation', image: Images.simulation },
+  { id: 9, name: 'Puzzle', image: Images.puzzle },
+  { id: 10, name: 'Course', image: Images.course },
+  { id: 14, name: 'Sport', image: Images.sport },
+  { id: 25, name: "Hack'n Slash", image: Images.hacknslash },
+  { id: 8, name: 'Plateforme', image: Images.plateforme },
+  { id: 35, name: 'Jeu de cartes', image: Images.cartes },
 ];
 
-export const GenreGrid: React.FC = () => (
+interface GenreGridProps {
+  onGenreClick?: (genreId: number, genreName: string) => void;
+}
+
+export const GenreGrid: React.FC<GenreGridProps> = ({ onGenreClick }) => (
   <Box
     px={4}
     py={4}
@@ -57,6 +55,7 @@ export const GenreGrid: React.FC = () => (
       {genres.map(genre => (
         <Card
           key={genre.name}
+          onClick={() => onGenreClick && onGenreClick(genre.id, genre.name)}
           sx={{
             backgroundColor: '#1e1e1e',
             borderRadius: 2,
