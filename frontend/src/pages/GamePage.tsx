@@ -1,5 +1,4 @@
 import { Box, Button, Divider, Paper, Rating, Typography } from '@mui/material';
-import Header from '../components/Header';
 import SecondaryButton from '../components/SecondaryButton';
 
 export default function GamePage() {
@@ -10,9 +9,10 @@ export default function GamePage() {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#fff',
+        ml: 25,
+        mr: 25,
       }}
     >
-      <Header />
       <Box
         component="main"
         sx={{
