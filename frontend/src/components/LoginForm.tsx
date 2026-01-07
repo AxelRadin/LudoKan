@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Ajout
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
@@ -17,6 +18,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate(); // Ajout
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,13 +35,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         email: email,
         password: password,
       });
-      // ajouter une redirection à la connexion
-      // data contient le token, ex:
-      // { "key": "abc123" }
       console.log('User connecté', data);
 
-      // Stocker le token localement pour authentifier les prochaines requêtes
       localStorage.setItem('token', data.key || data.access);
+
+      // Redirection et refresh
+      navigate('/', { replace: true });
+      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {
