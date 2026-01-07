@@ -114,6 +114,60 @@ async def test_notification_consumer_ping_pong(user):
     await communicator.disconnect()
 
 
+@pytest.mark.anyio
+@pytest.mark.django_db
+@override_settings(
+    CHANNEL_LAYERS={
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+)
+async def test_notification_consumer_receive_ignores_empty_text(user):
+    """
+    Vérifie que receive() retourne silencieusement si le payload est vide.
+    """
+    application = NotificationConsumer.as_asgi()
+    communicator = WebsocketCommunicator(application, "/ws/notifications/")
+    communicator.scope["user"] = user
+
+    connected, _ = await communicator.connect()
+    assert connected is True
+
+    # Envoi d'un payload binaire non vide -> text_data reste None côté consumer,
+    # ce qui couvre la branche `if not text_data` dans receive()
+    await communicator.send_to(bytes_data=b"x")
+
+    # Aucun message n'est attendu, on vérifie juste que ça ne plante pas
+    await communicator.disconnect()
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db
+@override_settings(
+    CHANNEL_LAYERS={
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+)
+async def test_notification_consumer_receive_invalid_json(user):
+    """
+    Vérifie que receive() gère un JSON invalide (branche JSONDecodeError).
+    """
+    application = NotificationConsumer.as_asgi()
+    communicator = WebsocketCommunicator(application, "/ws/notifications/")
+    communicator.scope["user"] = user
+
+    connected, _ = await communicator.connect()
+    assert connected is True
+
+    # Payload invalide -> déclenche JSONDecodeError et return
+    await communicator.send_to(text_data="{invalid")
+
+    await communicator.disconnect()
+
+
 @pytest.mark.django_db
 def test_signal_push_notification_via_websocket(monkeypatch, user):
     """
@@ -152,3 +206,24 @@ def test_signal_push_notification_via_websocket(monkeypatch, user):
     assert message["type"] == "notification_message"
     assert message["notification"]["verb"] == "signal-test"
     assert message["notification"]["unread"] is True
+
+
+@pytest.mark.django_db
+def test_signal_push_notification_without_channel_layer(monkeypatch, user):
+    """
+    Vérifie que le signal sort proprement si aucun channel_layer n'est dispo.
+    """
+
+    monkeypatch.setattr(
+        realtime_signals,
+        "get_channel_layer",
+        lambda: None,
+    )
+
+    # Ne doit pas lever d'erreur même si aucun layer n'est configuré
+    notify.send(
+        user,
+        recipient=user,
+        verb="no-layer",
+        description="No channel layer available",
+    )
