@@ -3,14 +3,12 @@ from django.core.cache import cache
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
-from rest_framework import status
+from rest_framework import filters, status
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from rest_framework import filters
-
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.serializers import (
@@ -30,13 +28,13 @@ class GameViewSet(ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = [
-    "release_date",
-    "rating_avg",
-    "average_rating",
-    "rating_count",
-    "popularity_score",
-]
-    ordering = ['-popularity_score']
+        "release_date",
+        "rating_avg",
+        "average_rating",
+        "rating_count",
+        "popularity_score",
+    ]
+    ordering = ["-popularity_score"]
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
