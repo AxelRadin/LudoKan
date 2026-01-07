@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import filters
+
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.serializers import (
@@ -26,6 +28,15 @@ from apps.reviews.models import Review
 class GameViewSet(ModelViewSet):
     queryset = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").order_by("-popularity_score")
     permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = [
+    "release_date",
+    "rating_avg",
+    "average_rating",
+    "rating_count",
+    "popularity_score",
+]
+    ordering = ['-popularity_score']
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
