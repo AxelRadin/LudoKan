@@ -259,6 +259,11 @@ jobs:
 
             echo "🧹 Cleanup"
             docker image prune -f
+
+            echo "🔄 Restart nginx"
+            cd /srv/ludokan/proxy
+            docker compose restart nginx
+            
           EOF
 
   deploy_prod:
@@ -299,6 +304,12 @@ jobs:
             echo "📋 Containers status"
             docker compose ps
 
+
             echo "🧹 Cleanup"
             docker image prune -f
+
+            echo "🔄 Restart nginx"
+            cd /srv/ludokan/proxy
+            docker compose restart nginx
+
           EOF
