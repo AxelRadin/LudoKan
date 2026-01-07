@@ -21,7 +21,7 @@ export const TrendingGames: React.FC = () => {
 
   useEffect(() => {
     apiGet('/api/games/')
-      .then((data) => {
+      .then(data => {
         console.log('Réponse backend /api/games/ :', data);
         const mappedGames = (data.results || []).map((game: any) => {
           let image = game.cover_url || game.image;
@@ -107,20 +107,20 @@ export const TrendingGames: React.FC = () => {
         >
           {games.length === 0
             ? emptyCards.map((_, idx) => (
-              <Card key={idx}>
-                <Typography variant="body2" color="textSecondary">
-                  Aucun jeu à afficher
-                </Typography>
-              </Card>
-            ))
+                <Card key={idx}>
+                  <Typography variant="body2" color="textSecondary">
+                    Aucun jeu à afficher
+                  </Typography>
+                </Card>
+              ))
             : games.map(game => (
-              <GameCard
-                key={game.id}
-                id={game.id}
-                title={game.title}
-                image={game.image}
-              />
-            ))}
+                <GameCard
+                  key={game.id}
+                  id={game.id}
+                  title={game.title}
+                  image={game.image}
+                />
+              ))}
         </Box>
         {canScrollRight && (
           <IconButton

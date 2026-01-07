@@ -8,7 +8,15 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ListIcon from '@mui/icons-material/List';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import { Box, Button, Divider, Paper, Rating, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Divider,
+  Paper,
+  Rating,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SecondaryButton from '../components/SecondaryButton';
@@ -21,7 +29,7 @@ export default function GamePage() {
 
   useEffect(() => {
     if (id) {
-      apiGet(`/api/games/${id}/`).then((data) => {
+      apiGet(`/api/games/${id}/`).then(data => {
         let image = data.cover_url;
         if (image && image.includes('t_thumb')) {
           image = image.replace('t_thumb', 't_1080p');
@@ -59,7 +67,6 @@ export default function GamePage() {
         px: { xs: 1, sm: 4, md: 10, lg: 25 },
       }}
     >
-
       <Box
         component="main"
         sx={{
@@ -129,15 +136,17 @@ export default function GamePage() {
                 position: 'relative',
               }}
             >
-              <span style={{
-                WebkitTextStroke: '2px #fff',
-                WebkitTextFillColor: '#fff',
-                color: '#fff',
-                padding: '0 8px',
-                borderRadius: 8,
-                background: 'rgba(0,0,0,0.25)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
-              }}>
+              <span
+                style={{
+                  WebkitTextStroke: '2px #fff',
+                  WebkitTextFillColor: '#fff',
+                  color: '#fff',
+                  padding: '0 8px',
+                  borderRadius: 8,
+                  background: 'rgba(0,0,0,0.25)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                }}
+              >
                 {game.name}
               </span>
             </Typography>
@@ -213,7 +222,7 @@ export default function GamePage() {
                     alignItems: 'center',
                   }}
                 >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700,}}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                     Ma note
                   </Typography>
                   <Rating
@@ -221,7 +230,15 @@ export default function GamePage() {
                     onChange={(_, value) => setUserRating(value)}
                     sx={{ mb: 2, fontSize: 32 }}
                   />
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%', mt: 1 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                      width: '100%',
+                      mt: 1,
+                    }}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <CheckCircleIcon color="action" />
                       <Typography variant="body2">Joué</Typography>
@@ -240,7 +257,9 @@ export default function GamePage() {
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <ListIcon color="action" />
-                      <Typography variant="body2">Ajouter à une liste</Typography>
+                      <Typography variant="body2">
+                        Ajouter à une liste
+                      </Typography>
                     </Box>
                   </Box>
                 </Box>
@@ -258,7 +277,9 @@ export default function GamePage() {
                 mt: { xs: 4, md: 0 },
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
+              >
                 <DevicesIcon color="action" />
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Plateformes
@@ -269,7 +290,9 @@ export default function GamePage() {
                   ? game.platforms.map((p: any) => p.nom_plateforme).join(', ')
                   : 'Non renseigné'}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
+              >
                 <DescriptionIcon color="action" />
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Description
@@ -278,7 +301,9 @@ export default function GamePage() {
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.description || 'Aucune description disponible.'}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
+              >
                 <CategoryIcon color="action" />
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Genres
@@ -286,10 +311,14 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.genres && game.genres.length > 0
-                  ? game.genres.map((g: any) => g.nom_genre || g.name).join(', ')
+                  ? game.genres
+                      .map((g: any) => g.nom_genre || g.name)
+                      .join(', ')
                   : 'Non renseigné'}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
+              >
                 <CalendarTodayIcon color="action" />
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Date de sortie
@@ -298,7 +327,9 @@ export default function GamePage() {
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.release_date || 'Non renseignée'}
               </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
+              >
                 <BusinessIcon color="action" />
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Éditeur
@@ -358,7 +389,9 @@ export default function GamePage() {
               fullWidth={false}
               variant="outlined"
               sx={{
-                mb: 3, width: '350px', maxWidth: '100%',
+                mb: 3,
+                width: '350px',
+                maxWidth: '100%',
                 alignItems: 'flex-start',
               }}
             />
