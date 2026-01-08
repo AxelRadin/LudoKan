@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
+import GameList, { GameListItem } from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch } from '../services/api';
 
@@ -32,8 +33,8 @@ type UserGame = {
     id: number;
     name: string;
     cover_url?: string;
+    image?: string;
     publisher?: { name: string };
-    // Ajoute d'autres champs si besoin
   };
 };
 
@@ -71,9 +72,7 @@ export default function ProfilePage() {
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
 
-    // Récupère les jeux du user
     apiGet('/api/me/games/').then(res => {
-      // Si l'API est paginée, adapter ici
       setUserGames(res.results || res || []);
     });
   }, []);
@@ -122,6 +121,42 @@ export default function ProfilePage() {
       alert('Erreur lors de la modification: ' + (err?.message || ''));
     }
   };
+
+  const gamesEnCours: GameListItem[] = userGames
+    .filter(ug => ug.status === 'EN_COURS')
+    .map(ug => ({
+      id: ug.game.id,
+      name: ug.game.name,
+      cover_url: ug.game.cover_url,
+      status: ug.status,
+    }));
+
+  const gamesTermines: GameListItem[] = userGames
+    .filter(ug => ug.status === 'TERMINE')
+    .map(ug => ({
+      id: ug.game.id,
+      name: ug.game.name,
+      cover_url: ug.game.cover_url,
+      status: ug.status,
+    }));
+
+  const gamesEnvie: GameListItem[] = userGames
+    .filter(ug => ug.status === 'ENVIE')
+    .map(ug => ({
+      id: ug.game.id,
+      name: ug.game.name,
+      cover_url: ug.game.cover_url,
+      status: ug.status,
+    }));
+
+  const gamesFavoris: GameListItem[] = userGames
+    .filter(ug => ug.status === 'FAVORI')
+    .map(ug => ({
+      id: ug.game.id,
+      name: ug.game.name,
+      cover_url: ug.game.cover_url,
+      status: ug.status,
+    }));
 
   return (
     <Box
@@ -209,37 +244,16 @@ export default function ProfilePage() {
             </Paper>
           </Box>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Jeux
+            Jeux par statut
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {userGames.length === 0 ? (
-              <Typography>Aucun jeu dans votre collection.</Typography>
-            ) : (
-              userGames.map(ug => (
-                <Box key={ug.id} sx={{ width: 120, textAlign: 'center' }}>
-                  <img
-                    src={ug.game.cover_url || '/default-cover.jpg'}
-                    alt={ug.game.name}
-                    style={{
-                      width: 80,
-                      height: 120,
-                      objectFit: 'cover',
-                      borderRadius: 4,
-                    }}
-                  />
-                  <Typography variant="subtitle2" sx={{ mt: 1 }}>
-                    {ug.game.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {ug.status.replace('_', ' ').toLowerCase()}
-                  </Typography>
-                </Box>
-              ))
-            )}
+          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mb: 4 }}>
+            <GameList games={gamesEnCours} title="En cours" />
+            <GameList games={gamesTermines} title="Terminés" />
+            <GameList games={gamesEnvie} title="Envie d'y jouer" />
+            <GameList games={gamesFavoris} title="Favoris" />
           </Box>
         </Box>
       </Box>
-      {/* Dialog pour modifier le profil */}
       <Dialog open={editOpen} onClose={handleEditClose}>
         <DialogTitle>Modifier mon profil</DialogTitle>
         <DialogContent>
