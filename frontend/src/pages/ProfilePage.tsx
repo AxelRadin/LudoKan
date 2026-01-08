@@ -24,6 +24,19 @@ type UserProfile = {
   created_at?: string;
 };
 
+type UserGame = {
+  id: number;
+  status: string;
+  date_added: string;
+  game: {
+    id: number;
+    name: string;
+    cover_url?: string;
+    publisher?: { name: string };
+    // Ajoute d'autres champs si besoin
+  };
+};
+
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -38,6 +51,8 @@ export default function ProfilePage() {
     created_at: '',
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
+  const [userGames, setUserGames] = useState<UserGame[]>([]);
 
   useEffect(() => {
     apiGet('/api/me/')
@@ -55,6 +70,12 @@ export default function ProfilePage() {
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+
+    // Récupère les jeux du user
+    apiGet('/api/me/games/').then(res => {
+      // Si l'API est paginée, adapter ici
+      setUserGames(res.results || res || []);
+    });
   }, []);
 
   const handleEditOpen = () => setEditOpen(true);
@@ -190,33 +211,31 @@ export default function ProfilePage() {
           <Typography variant="h6" sx={{ mb: 1 }}>
             Jeux
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <img
-              src="/game1.jpg"
-              alt="Game 1"
-              style={{ width: 80, height: 120, objectFit: 'cover' }}
-            />
-            <img
-              src="/game2.jpg"
-              alt="Game 2"
-              style={{ width: 80, height: 120, objectFit: 'cover' }}
-            />
-            <img
-              src="/game3.jpg"
-              alt="Game 3"
-              style={{ width: 80, height: 120, objectFit: 'cover' }}
-            />
-            <img
-              src="/game4.jpg"
-              alt="Game 4"
-              style={{ width: 80, height: 120, objectFit: 'cover' }}
-            />
-            <img
-              src="/game5.jpg"
-              alt="Game 5"
-              style={{ width: 80, height: 120, objectFit: 'cover' }}
-            />
-            <Button>{'>'}</Button>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {userGames.length === 0 ? (
+              <Typography>Aucun jeu dans votre collection.</Typography>
+            ) : (
+              userGames.map(ug => (
+                <Box key={ug.id} sx={{ width: 120, textAlign: 'center' }}>
+                  <img
+                    src={ug.game.cover_url || '/default-cover.jpg'}
+                    alt={ug.game.name}
+                    style={{
+                      width: 80,
+                      height: 120,
+                      objectFit: 'cover',
+                      borderRadius: 4,
+                    }}
+                  />
+                  <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                    {ug.game.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {ug.status.replace('_', ' ').toLowerCase()}
+                  </Typography>
+                </Box>
+              ))
+            )}
           </Box>
         </Box>
       </Box>
