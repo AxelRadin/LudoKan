@@ -43,7 +43,7 @@ export const HomePage = () => {
         <TrendingGames ordering="-rating_count" title="Jeux les plus notés" />
         <TrendingGames
           ordering="-rating_avg"
-          title="Jeux avec meilleure note moyenne"
+          title="Jeux avec meilleure note"
         />
         {selectedGenre && (
           <TrendingGames

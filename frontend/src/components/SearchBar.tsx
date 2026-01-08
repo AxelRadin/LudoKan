@@ -98,12 +98,11 @@ const GameSearchBar: React.FC = () => {
     }
     setLoadingLocal(true);
     setShowDropdown(true);
-    apiGet(`/games/search/?q=${encodeURIComponent(query)}`)
-      .then(res =>
-        setLocalResults(
-          (res || []).map((g: any) => ({ ...g, source: 'local' }))
-        )
-      )
+    apiGet(`/api/games/${encodeURIComponent(query)}`)
+      .then(res => {
+        const results = Array.isArray(res) ? res : res ? [res] : [];
+        setLocalResults(results.map((g: any) => ({ ...g, source: 'local' })));
+      })
       .finally(() => setLoadingLocal(false));
   }, [query]);
 
