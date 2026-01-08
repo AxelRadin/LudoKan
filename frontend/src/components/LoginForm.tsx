@@ -57,6 +57,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
+  // Fonction générique pour gérer la connexion sociale
+  const handleSocialLogin = (provider: 'google' | 'facebook' | 'apple') => {
+    // À adapter selon votre backend.
+    // Souvent, on redirige l'utilisateur vers l'URL d'autorisation OAuth du backend.
+    console.log(`Tentative de connexion avec ${provider}`);
+    window.location.href = `/api/auth/${provider}/login/`;
+  };
+
   return (
     <AuthFormContainer
       title="Connexion"
@@ -90,11 +98,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           Se connecter avec
         </Typography>
 
-        <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" />
-          <SocialLoginButton icon="apple" />
-          <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
+        <Stack direction="row" spacing={3} mt={1.5} justifyContent="center">
+          <SocialLoginButton
+            icon="google"
+            onClick={() => handleSocialLogin('google')}
+          />
+          <SocialLoginButton
+            icon="facebook"
+            onClick={() => handleSocialLogin('facebook')}
+          />
+          <SocialLoginButton
+            icon="apple"
+            onClick={() => handleSocialLogin('apple')}
+          />
         </Stack>
 
         <PrimaryButton
