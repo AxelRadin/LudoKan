@@ -39,6 +39,7 @@ class GameNestedSerializer(serializers.ModelSerializer):
             "min_age",
             "rating_avg",
             "popularity_score",
+            "cover_url",
             "publisher",
             "genres",
             "platforms",
@@ -67,13 +68,11 @@ class UserGameSerializer(serializers.ModelSerializer):
         if not game_id:
             raise serializers.ValidationError({"game_id": "Ce champ est obligatoire."})
 
-        # Vérifie que le jeu existe
         try:
             game = Game.objects.get(id=game_id)
         except Game.DoesNotExist:
             raise serializers.ValidationError({"game_id": "Jeu non trouvé."})
 
-        # Vérifie que le jeu n'est pas déjà dans la collection
         if UserGame.objects.filter(user=user, game=game).exists():
             raise serializers.ValidationError({"error": "Jeu déjà ajouté."})
 

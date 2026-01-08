@@ -6,7 +6,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
 import DevicesIcon from '@mui/icons-material/Devices';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ListIcon from '@mui/icons-material/List';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import {
   Box,
@@ -20,12 +19,16 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SecondaryButton from '../components/SecondaryButton';
-import { apiGet } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 
 export default function GamePage() {
   const { id } = useParams();
+  const { isAuthenticated } = useAuth();
   const [game, setGame] = useState<any>(null);
   const [userRating, setUserRating] = useState<number | null>(null);
+  const [userGame, setUserGame] = useState<any>(null);
+  const [userReview, setUserReview] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -40,6 +43,82 @@ export default function GamePage() {
       });
     }
   }, [id]);
+
+  useEffect(() => {
+    if (id && isAuthenticated) {
+      apiGet(`/api/reviews/?game=${id}`)
+        .then(data => {
+          const myReview = data.find(
+            (r: any) => r.user?.id === userGame?.user?.id
+          );
+          if (myReview) {
+            setUserReview(myReview);
+            setUserRating(myReview.rating?.value || null);
+          } else {
+            setUserReview(null);
+            setUserRating(null);
+          }
+        })
+        .catch(() => {
+          setUserReview(null);
+        });
+    } else {
+      setUserReview(null);
+    }
+  }, [id, isAuthenticated, userGame?.user?.id]);
+
+  async function handleRatingChange(value: number | null) {
+    if (!isAuthenticated || !id || !value) return;
+    setUserRating(value);
+
+    try {
+      const ratingRes = await apiPost('/api/ratings/', {
+        game: id,
+        value: value,
+        rating_type: 'etoiles',
+      });
+
+      const ratingId = ratingRes.id;
+
+      if (userReview) {
+        const updated = await apiPatch(`/api/reviews/${userReview.id}/`, {
+          game: id,
+          rating: ratingId,
+          content: userReview.content || 'Note automatique',
+        });
+        setUserReview(updated);
+      } else {
+        const created = await apiPost('/api/reviews/', {
+          game: id,
+          rating: ratingId,
+          content: 'Note automatique',
+        });
+        setUserReview(created);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de l'envoi de la note");
+    }
+  }
+
+  async function handleSetStatus(status: 'EN_COURS' | 'TERMINE') {
+    if (!isAuthenticated || !id) return;
+    try {
+      if (userGame) {
+        const updated = await apiPatch(`/api/me/games/${id}/`, { status });
+        setUserGame({ ...userGame, status: updated.status });
+      } else {
+        const created = await apiPost('/api/me/games/', {
+          game_id: id,
+          status,
+        });
+        setUserGame(created);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erreur lors de la mise à jour du statut');
+    }
+  }
 
   if (!game) {
     return (
@@ -227,7 +306,7 @@ export default function GamePage() {
                   </Typography>
                   <Rating
                     value={userRating || 0}
-                    onChange={(_, value) => setUserRating(value)}
+                    onChange={(_, value) => handleRatingChange(value)}
                     sx={{ mb: 2, fontSize: 32 }}
                   />
                   <Box
@@ -240,7 +319,15 @@ export default function GamePage() {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CheckCircleIcon color="action" />
+                      <CheckCircleIcon
+                        color={
+                          userGame?.status === 'TERMINE' ? 'success' : 'action'
+                        }
+                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
+                        onClick={() =>
+                          isAuthenticated && handleSetStatus('TERMINE')
+                        }
+                      />
                       <Typography variant="body2">Joué</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -248,18 +335,20 @@ export default function GamePage() {
                       <Typography variant="body2">Envie d'y jouer</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PlayCircleIcon color="action" />
+                      <PlayCircleIcon
+                        color={
+                          userGame?.status === 'EN_COURS' ? 'primary' : 'action'
+                        }
+                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
+                        onClick={() =>
+                          isAuthenticated && handleSetStatus('EN_COURS')
+                        }
+                      />
                       <Typography variant="body2">En cours</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <FavoriteIcon color="action" />
                       <Typography variant="body2">Coup de cœur</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <ListIcon color="action" />
-                      <Typography variant="body2">
-                        Ajouter à une liste
-                      </Typography>
                     </Box>
                   </Box>
                 </Box>
