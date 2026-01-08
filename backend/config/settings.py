@@ -182,7 +182,9 @@ SIMPLE_JWT = {
 
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_HTTPONLY = True
+# Le cookie CSRF doit être lisible par le frontend pour pouvoir être
+# renvoyé dans le header X-CSRFToken sur les requêtes POST/PATCH/DELETE.
+CSRF_COOKIE_HTTPONLY = False
 
 
 CORS_ALLOWED_ORIGINS = [o for o in config("CORS_ALLOWED_ORIGINS", default="").split(",") if o]
