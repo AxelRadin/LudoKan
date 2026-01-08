@@ -11,7 +11,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
-import GameList, { GameListItem } from '../components/GameList';
+import type { GameListItem } from '../components/GameList';
+import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch } from '../services/api';
 
@@ -112,7 +113,7 @@ export default function ProfilePage() {
         };
       }
 
-      const updated = await apiPatch('/api/me/', dataToSend, !!avatarFile);
+      const updated = await apiPatch('/api/me/', dataToSend);
       setUser(updated);
       setEditOpen(false);
       setAvatarFile(null);
