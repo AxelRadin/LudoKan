@@ -14,6 +14,7 @@ import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
 import { useAuth } from '../contexts/AuthContext';
+import { apiPost } from '../services/api';
 
 export const Header: React.FC = () => {
   const { isAuthenticated, setAuthenticated } = useAuth();
@@ -34,9 +35,15 @@ export const Header: React.FC = () => {
     setOpenAuth(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setAuthenticated(false);
+  const handleLogout = async () => {
+    try {
+      await apiPost('/api/auth/logout/', {});
+    } catch (e) {
+      // On ignore l'erreur de logout pour l'UX, mais on peut logguer
+      console.error('Erreur lors du logout', e);
+    } finally {
+      setAuthenticated(false);
+    }
   };
 
   return (
@@ -111,7 +118,13 @@ export const Header: React.FC = () => {
         </Box>
 
         {authMode === 'login' ? (
-          <LoginForm onSwitchToRegister={() => setAuthMode('register')} />
+          <LoginForm
+            onSwitchToRegister={() => setAuthMode('register')}
+            onLoginSuccess={() => {
+              setAuthenticated(true);
+              setOpenAuth(false);
+            }}
+          />
         ) : (
           <RegisterForm onSwitchToLogin={() => setAuthMode('login')} />
         )}

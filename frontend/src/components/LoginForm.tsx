@@ -5,20 +5,26 @@ import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Ajout
 import { apiPost } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
 
 type LoginFormProps = {
   onSwitchToRegister: () => void;
+  onLoginSuccess?: () => void;
 };
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
+export const LoginForm: React.FC<LoginFormProps> = ({
+  onSwitchToRegister,
+  onLoginSuccess,
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate(); // Ajout
+  const { setAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,11 +43,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       });
       console.log('User connecté', data);
 
-      localStorage.setItem('token', data.key || data.access);
+      // Met à jour l'état d'authentification global
+      setAuthenticated(true);
+      onLoginSuccess?.();
 
-      // Redirection et refresh
+      // Redirection vers la page d'accueil (les cookies JWT sont déjà posés par le backend)
       navigate('/', { replace: true });
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {

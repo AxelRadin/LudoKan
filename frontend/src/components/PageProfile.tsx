@@ -317,11 +317,9 @@ const PageProfile: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem('token');
         const data: User = await apiGet('/api/me', {
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
         setUser(data);
@@ -369,11 +367,8 @@ const PageProfile: React.FC = () => {
     try {
       setSaving(true);
 
-      const token = localStorage.getItem('token');
       const updated: User = await apiPatch('/api/me', form, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: {},
       });
       setUser(updated);
       setMessage('Profil mis à jour ✅');
