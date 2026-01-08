@@ -37,9 +37,8 @@ class CustomUserAdminForm(forms.ModelForm):
         pw1 = cleaned_data.get("new_password1")
         pw2 = cleaned_data.get("new_password2")
 
-        if pw1 or pw2:
-            if pw1 != pw2:
-                raise forms.ValidationError("Les mots de passe ne correspondent pas.")
+        if (pw1 or pw2) and pw1 != pw2:
+            raise forms.ValidationError("Les mots de passe ne correspondent pas.")
 
         return cleaned_data
 
