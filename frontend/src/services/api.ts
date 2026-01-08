@@ -27,7 +27,11 @@ async function request(path: string, options: RequestInit = {}) {
   // Ajoute le header CSRF pour les méthodes non-sûres
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
     const csrftoken = getCookie('csrftoken');
-    if (csrftoken && !headers.has('X-CSRFToken') && !headers.has('X-CSRF-Token')) {
+    if (
+      csrftoken &&
+      !headers.has('X-CSRFToken') &&
+      !headers.has('X-CSRF-Token')
+    ) {
       headers.set('X-CSRFToken', csrftoken);
     }
   }
@@ -60,7 +64,11 @@ export async function apiGet(path: string, options: RequestInit = {}) {
 }
 
 // POST
-export async function apiPost(path: string, body: any, options: RequestInit = {}) {
+export async function apiPost(
+  path: string,
+  body: any,
+  options: RequestInit = {}
+) {
   return request(path, {
     method: 'POST',
     headers: {
@@ -73,7 +81,11 @@ export async function apiPost(path: string, body: any, options: RequestInit = {}
 }
 
 // PATCH
-export async function apiPatch(path: string, body: any, options: RequestInit = {}) {
+export async function apiPatch(
+  path: string,
+  body: any,
+  options: RequestInit = {}
+) {
   return request(path, {
     method: 'PATCH',
     headers: {
