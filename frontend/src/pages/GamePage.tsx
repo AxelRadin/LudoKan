@@ -28,6 +28,7 @@ export default function GamePage() {
   const [game, setGame] = useState<any>(null);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [userGame, setUserGame] = useState<any>(null);
+  const [userReview, setUserReview] = useState<any>(null);
 
   useEffect(() => {
     if (id) {
@@ -43,22 +44,63 @@ export default function GamePage() {
     }
   }, [id]);
 
-  // Récupère le UserGame si connecté
   useEffect(() => {
     if (id && isAuthenticated) {
-      apiGet(`/api/me/games/`)
+      apiGet(`/api/reviews/?game=${id}`)
         .then(data => {
-          setUserGame(
-            data?.find((ug: any) => ug.game.id === Number(id)) || null
+          const myReview = data.find(
+            (r: any) => r.user?.id === userGame?.user?.id
           );
+          if (myReview) {
+            setUserReview(myReview);
+            setUserRating(myReview.rating?.value || null);
+          } else {
+            setUserReview(null);
+            setUserRating(null);
+          }
         })
-        .catch(() => setUserGame(null));
+        .catch(() => {
+          setUserReview(null);
+        });
     } else {
-      setUserGame(null);
+      setUserReview(null);
     }
-  }, [id, isAuthenticated]);
+  }, [id, isAuthenticated, userGame?.user?.id]);
 
-  // Ajoute ou met à jour le UserGame
+  async function handleRatingChange(value: number | null) {
+    if (!isAuthenticated || !id || !value) return;
+    setUserRating(value);
+
+    try {
+      const ratingRes = await apiPost('/api/ratings/', {
+        game: id,
+        value: value,
+        rating_type: 'etoiles',
+      });
+
+      const ratingId = ratingRes.id;
+
+      if (userReview) {
+        const updated = await apiPatch(`/api/reviews/${userReview.id}/`, {
+          game: id,
+          rating: ratingId,
+          content: userReview.content || 'Note automatique',
+        });
+        setUserReview(updated);
+      } else {
+        const created = await apiPost('/api/reviews/', {
+          game: id,
+          rating: ratingId,
+          content: 'Note automatique',
+        });
+        setUserReview(created);
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de l'envoi de la note");
+    }
+  }
+
   async function handleSetStatus(status: 'EN_COURS' | 'TERMINE') {
     if (!isAuthenticated || !id) return;
     try {
@@ -264,7 +306,7 @@ export default function GamePage() {
                   </Typography>
                   <Rating
                     value={userRating || 0}
-                    onChange={(_, value) => setUserRating(value)}
+                    onChange={(_, value) => handleRatingChange(value)}
                     sx={{ mb: 2, fontSize: 32 }}
                   />
                   <Box
