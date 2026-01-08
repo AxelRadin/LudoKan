@@ -122,12 +122,15 @@ export default function ProfilePage() {
     }
   };
 
+  console.log('User games:', userGames);
+
   const gamesEnCours: GameListItem[] = userGames
     .filter(ug => ug.status === 'EN_COURS')
     .map(ug => ({
       id: ug.game.id,
       name: ug.game.name,
       cover_url: ug.game.cover_url,
+      image: ug.game.image,
       status: ug.status,
     }));
 
@@ -137,6 +140,7 @@ export default function ProfilePage() {
       id: ug.game.id,
       name: ug.game.name,
       cover_url: ug.game.cover_url,
+      image: ug.game.image,
       status: ug.status,
     }));
 
@@ -146,15 +150,7 @@ export default function ProfilePage() {
       id: ug.game.id,
       name: ug.game.name,
       cover_url: ug.game.cover_url,
-      status: ug.status,
-    }));
-
-  const gamesFavoris: GameListItem[] = userGames
-    .filter(ug => ug.status === 'FAVORI')
-    .map(ug => ({
-      id: ug.game.id,
-      name: ug.game.name,
-      cover_url: ug.game.cover_url,
+      image: ug.game.image,
       status: ug.status,
     }));
 
@@ -250,7 +246,6 @@ export default function ProfilePage() {
             <GameList games={gamesEnCours} title="En cours" />
             <GameList games={gamesTermines} title="Terminés" />
             <GameList games={gamesEnvie} title="Envie d'y jouer" />
-            <GameList games={gamesFavoris} title="Favoris" />
           </Box>
         </Box>
       </Box>

@@ -1,4 +1,4 @@
-import { Box, Typography, Card, CardMedia, CardContent } from '@mui/material';
+import { Box, Card, CardContent, CardMedia, Typography } from '@mui/material';
 
 export type GameListItem = {
   id: number;
@@ -16,6 +16,8 @@ export type GameListProps = {
 
 function getGameImage(game: GameListItem) {
   let image = game.cover_url || game.image;
+  console.log('Game image:', image);
+
   if (image && image.includes('t_thumb')) {
     image = image.replace('t_thumb', 't_cover_big');
   }
