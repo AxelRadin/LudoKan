@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { apiGet } from '../services/api';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -13,14 +14,30 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [isAuthenticated, setAuthenticated] = useState<boolean>(
-    !!localStorage.getItem('token')
-  );
+  const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
 
+  // Détermine l'état d'authentification au chargement de l'application
   useEffect(() => {
-    const handler = () => setAuthenticated(!!localStorage.getItem('token'));
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
+    let cancelled = false;
+
+    const checkAuth = async () => {
+      try {
+        await apiGet('/api/me');
+        if (!cancelled) {
+          setAuthenticated(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthenticated(false);
+        }
+      }
+    };
+
+    checkAuth();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

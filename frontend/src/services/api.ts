@@ -18,12 +18,6 @@ async function request(path: string, options: RequestInit = {}) {
 
   const headers = new Headers(options.headers || {});
 
-  // Ajoute le header Authorization si token présent
-  const token = localStorage.getItem('token');
-  if (token && !headers.has('Authorization')) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
   // Ajoute le header CSRF pour les méthodes non-sûres
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
     const csrftoken = getCookie('csrftoken');
