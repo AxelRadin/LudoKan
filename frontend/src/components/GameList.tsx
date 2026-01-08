@@ -1,4 +1,5 @@
 import { Box, Card, CardContent, CardMedia, Typography } from '@mui/material';
+import { Link } from 'react-router-dom';
 
 export type GameListItem = {
   id: number;
@@ -16,7 +17,6 @@ export type GameListProps = {
 
 function getGameImage(game: GameListItem) {
   let image = game.cover_url || game.image;
-  console.log('Game image:', image);
 
   if (image && image.includes('t_thumb')) {
     image = image.replace('t_thumb', 't_cover_big');
@@ -41,32 +41,38 @@ export default function GameList({
           <Typography>Aucun jeu à afficher.</Typography>
         ) : (
           games.map(game => (
-            <Card
+            <Link
               key={game.id}
-              sx={{ width: 140, textAlign: 'center', boxShadow: 2 }}
+              to={`/game/${game.id}`}
+              style={{ textDecoration: 'none' }}
             >
-              <CardMedia
-                component="img"
-                image={getGameImage(game)}
-                alt={game.name}
-                sx={{
-                  width: '100%',
-                  height: 180,
-                  objectFit: 'cover',
-                  borderRadius: 2,
-                }}
-              />
-              <CardContent sx={{ p: 1 }}>
-                <Typography variant="subtitle2" noWrap>
-                  {game.name}
-                </Typography>
-                {showStatus && game.status && (
-                  <Typography variant="caption" color="text.secondary">
-                    {game.status.replace('_', ' ').toLowerCase()}
+              <Card
+                key={game.id}
+                sx={{ width: 140, textAlign: 'center', boxShadow: 2 }}
+              >
+                <CardMedia
+                  component="img"
+                  image={getGameImage(game)}
+                  alt={game.name}
+                  sx={{
+                    width: '100%',
+                    height: 180,
+                    objectFit: 'cover',
+                    borderRadius: 2,
+                  }}
+                />
+                <CardContent sx={{ p: 1 }}>
+                  <Typography variant="subtitle2" noWrap>
+                    {game.name}
                   </Typography>
-                )}
-              </CardContent>
-            </Card>
+                  {showStatus && game.status && (
+                    <Typography variant="caption" color="text.secondary">
+                      {game.status.replace('_', ' ').toLowerCase()}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
           ))
         )}
       </Box>

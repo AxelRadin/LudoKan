@@ -122,8 +122,6 @@ export default function ProfilePage() {
     }
   };
 
-  console.log('User games:', userGames);
-
   const gamesEnCours: GameListItem[] = userGames
     .filter(ug => ug.status === 'EN_COURS')
     .map(ug => ({
