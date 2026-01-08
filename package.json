@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@sentry/react": "^10.25.0",
+    "react-hook-form": "^7.72.0",
     "vite": "^7.2.4"
   }
 }
