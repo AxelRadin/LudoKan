@@ -10,11 +10,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch } from '../services/api';
+import defaultAvatar from '../assets/default/defaultAvatar.png';
 
 type UserProfile = {
   pseudo: string;
@@ -39,6 +40,9 @@ type UserGame = {
   };
 };
 
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,7 +56,11 @@ export default function ProfilePage() {
     description_courte: '',
     created_at: '',
   });
+
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarError, setAvatarError] = useState('');
+  const [removeAvatar, setRemoveAvatar] = useState(false);
 
   const [userGames, setUserGames] = useState<UserGame[]>([]);
 
@@ -78,32 +86,120 @@ export default function ProfilePage() {
     });
   }, []);
 
-  const handleEditOpen = () => setEditOpen(true);
+  useEffect(() => {
+    if (!avatarFile) {
+      setAvatarPreview('');
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(avatarFile);
+    setAvatarPreview(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [avatarFile]);
+
+  const displayedAvatar = useMemo(() => {
+    if (removeAvatar) return defaultAvatar;
+    if (avatarPreview) return avatarPreview;
+    if (form.avatar_url) return form.avatar_url;
+    if (user?.avatar_url) return user.avatar_url;
+    return defaultAvatar;
+  }, [removeAvatar, avatarPreview, form.avatar_url, user?.avatar_url]);
+
+  const handleEditOpen = () => {
+    setAvatarError('');
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setRemoveAvatar(false);
+    setForm({
+      pseudo: user?.pseudo || '',
+      email: user?.email || '',
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
+      avatar_url: user?.avatar_url || '',
+      description_courte: user?.description_courte || '',
+      created_at: user?.created_at || '',
+    });
+    setEditOpen(true);
+  };
+
   const handleEditClose = () => {
     setEditOpen(false);
     setAvatarFile(null);
+    setAvatarPreview('');
+    setAvatarError('');
+    setRemoveAvatar(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAvatarFile(e.target.files[0]);
+  const validateAvatarFile = (file: File) => {
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+      return 'Format invalide. Seuls les fichiers JPG, PNG et WEBP sont autorisés.';
     }
+
+    if (file.size > MAX_AVATAR_SIZE) {
+      return 'Le fichier est trop volumineux. Taille maximale autorisée : 2 MB.';
+    }
+
+    return '';
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+
+    if (!selectedFile) {
+      return;
+    }
+
+    const validationError = validateAvatarFile(selectedFile);
+
+    if (validationError) {
+      setAvatarError(validationError);
+      setAvatarFile(null);
+      setAvatarPreview('');
+      e.target.value = '';
+      return;
+    }
+
+    setAvatarError('');
+    setRemoveAvatar(false);
+    setAvatarFile(selectedFile);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview('');
+    setAvatarError('');
+    setRemoveAvatar(true);
+    setForm(prev => ({
+      ...prev,
+      avatar_url: '',
+    }));
   };
 
   const handleSave = async () => {
     try {
-      let dataToSend: FormData | Partial<UserProfile>;
-      if (avatarFile) {
+      let dataToSend: FormData | Record<string, string | undefined>;
+
+      if (avatarFile || removeAvatar) {
         dataToSend = new FormData();
         dataToSend.append('pseudo', form.pseudo);
         dataToSend.append('first_name', form.first_name || '');
         dataToSend.append('last_name', form.last_name || '');
         dataToSend.append('description_courte', form.description_courte || '');
-        dataToSend.append('avatar', avatarFile);
+
+        if (avatarFile) {
+          dataToSend.append('avatar', avatarFile);
+        }
+
+        if (removeAvatar) {
+          dataToSend.append('remove_avatar', 'true');
+        }
       } else {
         dataToSend = {
           pseudo: form.pseudo,
@@ -114,9 +210,22 @@ export default function ProfilePage() {
       }
 
       const updated = await apiPatch('/api/me/', dataToSend);
+
       setUser(updated);
+      setForm({
+        pseudo: updated.pseudo || '',
+        email: updated.email || '',
+        first_name: updated.first_name || '',
+        last_name: updated.last_name || '',
+        avatar_url: updated.avatar_url || '',
+        description_courte: updated.description_courte || '',
+        created_at: updated.created_at || '',
+      });
       setEditOpen(false);
       setAvatarFile(null);
+      setAvatarPreview('');
+      setAvatarError('');
+      setRemoveAvatar(false);
     } catch (err: any) {
       console.error('Erreur API:', err);
       alert('Erreur lors de la modification: ' + (err?.message || ''));
@@ -178,6 +287,7 @@ export default function ProfilePage() {
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5">Ludokan</Typography>
           </Box>
+
           <Box sx={{ mb: 2 }}>
             <img
               src="src/assets/default/zelda-banner.png"
@@ -187,7 +297,7 @@ export default function ProfilePage() {
             <Box sx={{ position: 'relative', top: -60, left: 20 }}>
               <Avatar
                 sx={{ width: 60, height: 60 }}
-                src={user?.avatar_url || undefined}
+                src={user?.avatar_url || defaultAvatar}
                 alt={user?.pseudo}
               />
               <SecondaryButton sx={{ mt: 1 }} onClick={handleEditOpen}>
@@ -195,6 +305,7 @@ export default function ProfilePage() {
               </SecondaryButton>
             </Box>
           </Box>
+
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
               <Typography>
@@ -211,9 +322,11 @@ export default function ProfilePage() {
               <Typography variant="caption">Email</Typography>
             </Paper>
           </Box>
+
           <Typography variant="h6" sx={{ mb: 1 }}>
             Statistiques
           </Typography>
+
           <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
             <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
               <Typography>
@@ -238,9 +351,11 @@ export default function ProfilePage() {
               <Typography variant="caption">Nom</Typography>
             </Paper>
           </Box>
+
           <Typography variant="h6" sx={{ mb: 1 }}>
             Jeux par statut
           </Typography>
+
           <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mb: 4 }}>
             <GameList games={gamesEnCours} title="En cours" />
             <GameList games={gamesTermines} title="Terminés" />
@@ -248,7 +363,8 @@ export default function ProfilePage() {
           </Box>
         </Box>
       </Box>
-      <Dialog open={editOpen} onClose={handleEditClose}>
+
+      <Dialog open={editOpen} onClose={handleEditClose} fullWidth maxWidth="sm">
         <DialogTitle>Modifier mon profil</DialogTitle>
         <DialogContent>
           <TextField
@@ -283,20 +399,62 @@ export default function ProfilePage() {
             value={form.description_courte}
             onChange={handleChange}
           />
-          <Button variant="outlined" component="label" sx={{ mt: 2 }}>
-            {'Choisir un avatar'}
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleFileChange}
-            />
-          </Button>
-          {avatarFile && (
-            <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-              {avatarFile.name}
-            </Typography>
-          )}
+
+          <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Typography variant="subtitle2">Avatar</Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar
+                src={displayedAvatar}
+                alt="Prévisualisation avatar"
+                sx={{ width: 72, height: 72 }}
+              />
+
+              <Box>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Button variant="outlined" component="label">
+                    Choisir un avatar
+                    <input
+                      type="file"
+                      accept="image/jpeg, image/png, image/webp"
+                      hidden
+                      onChange={handleFileChange}
+                    />
+                  </Button>
+
+                  <Button
+                    variant="text"
+                    color="error"
+                    onClick={handleRemoveAvatar}
+                  >
+                    Supprimer
+                  </Button>
+                </Box>
+
+                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                  Formats autorisés : JPG, PNG, WEBP — Taille max : 2 MB
+                </Typography>
+              </Box>
+            </Box>
+
+            {avatarFile && (
+              <Typography variant="caption">
+                Fichier sélectionné : {avatarFile.name}
+              </Typography>
+            )}
+
+            {removeAvatar && (
+              <Typography variant="caption">
+                L’avatar sera supprimé et remplacé par l’image par défaut.
+              </Typography>
+            )}
+
+            {avatarError && (
+              <Typography color="error" variant="caption">
+                {avatarError}
+              </Typography>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleEditClose}>Annuler</Button>
