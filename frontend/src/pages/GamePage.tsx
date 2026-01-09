@@ -6,6 +6,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
 import DevicesIcon from '@mui/icons-material/Devices';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import {
   Box,
@@ -15,6 +16,7 @@ import {
   Rating,
   TextField,
   Typography,
+  Tooltip,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -40,6 +42,8 @@ export default function GamePage() {
           image = image.replace('t_cover_big', 't_1080p');
         }
         setGame({ ...data, image });
+        setUserGame(data.user_library);
+        setUserRating(data.user_rating?.value || null);
       });
     }
   }, [id]);
@@ -72,7 +76,7 @@ export default function GamePage() {
     setUserRating(value);
 
     try {
-      const ratingRes = await apiPost('/api/ratings/', {
+      const ratingRes = await apiPost(`/api/games/${id}/ratings/`, {
         game: id,
         value: value,
         rating_type: 'etoiles',
@@ -101,7 +105,9 @@ export default function GamePage() {
     }
   }
 
-  async function handleSetStatus(status: 'EN_COURS' | 'TERMINE') {
+  async function handleSetStatus(
+    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
+  ) {
     if (!isAuthenticated || !id) return;
     try {
       if (userGame) {
@@ -117,6 +123,39 @@ export default function GamePage() {
     } catch (error) {
       console.error(error);
       alert('Erreur lors de la mise à jour du statut');
+    }
+  }
+
+  async function handleToggleFavorite() {
+    if (!id) return;
+
+    if (!isAuthenticated) {
+      alert('Connecte-toi pour ajouter ce jeu en coup de cœur');
+      return;
+    }
+
+    const nextIsFavorite = !userGame?.is_favorite;
+
+    try {
+      if (userGame) {
+        const updated = await apiPatch(`/api/me/games/${id}/`, {
+          is_favorite: nextIsFavorite,
+        });
+        setUserGame({
+          ...userGame,
+          is_favorite: updated.is_favorite,
+        });
+      } else {
+        const created = await apiPost('/api/me/games/', {
+          game_id: id,
+          status: 'ENVIE_DE_JOUER',
+          is_favorite: true,
+        });
+        setUserGame(created);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erreur lors de la mise à jour du coup de cœur');
     }
   }
 
@@ -258,8 +297,47 @@ export default function GamePage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   mb: 2,
+                  position: 'relative',
                 }}
               >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    zIndex: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0,0,0,0.55)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: isAuthenticated ? 'pointer' : 'default',
+                    }}
+                    onClick={handleToggleFavorite}
+                  >
+                    <Tooltip title="Coup de cœur" arrow>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {userGame?.is_favorite ? (
+                          <FavoriteIcon sx={{ color: '#ff1744' }} />
+                        ) : (
+                          <FavoriteBorderIcon sx={{ color: '#ffffff' }} />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  </Box>
+                </Box>
                 <img
                   src={game.image}
                   alt={game.name}
@@ -301,14 +379,55 @@ export default function GamePage() {
                     alignItems: 'center',
                   }}
                 >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                    Ma note
-                  </Typography>
-                  <Rating
-                    value={userRating || 0}
-                    onChange={(_, value) => handleRatingChange(value)}
-                    sx={{ mb: 2, fontSize: 32 }}
-                  />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        Ma note
+                      </Typography>
+                      <Rating
+                        value={userRating || 0}
+                        onChange={(_, value) => handleRatingChange(value)}
+                        sx={{ mb: 2, fontSize: 32 }}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Tooltip title="Coup de cœur" arrow>
+                        <Box>
+                          {userGame?.is_favorite ? (
+                            <FavoriteIcon
+                              color="error"
+                              sx={{
+                                cursor: isAuthenticated ? 'pointer' : 'default',
+                              }}
+                              onClick={handleToggleFavorite}
+                            />
+                          ) : (
+                            <FavoriteBorderIcon
+                              color="action"
+                              sx={{
+                                cursor: isAuthenticated ? 'pointer' : 'default',
+                              }}
+                              onClick={handleToggleFavorite}
+                            />
+                          )}
+                        </Box>
+                      </Tooltip>
+                    </Box>
+                  </Box>
                   <Box
                     sx={{
                       display: 'flex',
@@ -328,10 +447,20 @@ export default function GamePage() {
                           isAuthenticated && handleSetStatus('TERMINE')
                         }
                       />
-                      <Typography variant="body2">Joué</Typography>
+                      <Typography variant="body2">Terminé</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <BookmarkIcon color="action" />
+                      <BookmarkIcon
+                        color={
+                          userGame?.status === 'ENVIE_DE_JOUER'
+                            ? 'warning'
+                            : 'action'
+                        }
+                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
+                        onClick={() =>
+                          isAuthenticated && handleSetStatus('ENVIE_DE_JOUER')
+                        }
+                      />
                       <Typography variant="body2">Envie d'y jouer</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -345,10 +474,6 @@ export default function GamePage() {
                         }
                       />
                       <Typography variant="body2">En cours</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <FavoriteIcon color="action" />
-                      <Typography variant="body2">Coup de cœur</Typography>
                     </Box>
                   </Box>
                 </Box>
