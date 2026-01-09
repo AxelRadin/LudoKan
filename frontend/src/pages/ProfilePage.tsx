@@ -366,6 +366,7 @@ export default function ProfilePage() {
 
       <Dialog open={editOpen} onClose={handleEditClose} fullWidth maxWidth="sm">
         <DialogTitle>Modifier mon profil</DialogTitle>
+
         <DialogContent>
           <TextField
             margin="dense"
@@ -456,6 +457,7 @@ export default function ProfilePage() {
             )}
           </Box>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={handleEditClose}>Annuler</Button>
           <Button onClick={handleSave} variant="contained">
