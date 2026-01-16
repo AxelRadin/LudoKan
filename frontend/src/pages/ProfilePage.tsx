@@ -15,7 +15,8 @@ import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch } from '../services/api';
-import defaultAvatar from '../assets/default/defaultAvatar.png';
+
+const defaultAvatar = '';
 
 type UserProfile = {
   pseudo: string;
@@ -299,7 +300,9 @@ export default function ProfilePage() {
                 sx={{ width: 60, height: 60 }}
                 src={user?.avatar_url || defaultAvatar}
                 alt={user?.pseudo}
-              />
+              >
+                {user?.pseudo?.[0]?.toUpperCase() || 'U'}
+              </Avatar>
               <SecondaryButton sx={{ mt: 1 }} onClick={handleEditOpen}>
                 Modifier
               </SecondaryButton>
@@ -409,7 +412,9 @@ export default function ProfilePage() {
                 src={displayedAvatar}
                 alt="Prévisualisation avatar"
                 sx={{ width: 72, height: 72 }}
-              />
+              >
+                {form.pseudo?.[0]?.toUpperCase() || 'U'}
+              </Avatar>
 
               <Box>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
