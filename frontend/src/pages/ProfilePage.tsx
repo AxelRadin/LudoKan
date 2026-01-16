@@ -2,21 +2,24 @@ import {
   Avatar,
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Paper,
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch } from '../services/api';
 
 const defaultAvatar = '';
+const bannerUrl = '/zelda-banner.png';
 
 type UserProfile = {
   pseudo: string;
@@ -62,8 +65,10 @@ export default function ProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarError, setAvatarError] = useState('');
   const [removeAvatar, setRemoveAvatar] = useState(false);
-
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const modalAvatarInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     apiGet('/api/me/')
@@ -150,12 +155,8 @@ export default function ProfilePage() {
     return '';
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-
-    if (!selectedFile) {
-      return;
-    }
+  const applySelectedFile = (selectedFile?: File) => {
+    if (!selectedFile) return;
 
     const validationError = validateAvatarFile(selectedFile);
 
@@ -163,13 +164,18 @@ export default function ProfilePage() {
       setAvatarError(validationError);
       setAvatarFile(null);
       setAvatarPreview('');
-      e.target.value = '';
       return;
     }
 
     setAvatarError('');
     setRemoveAvatar(false);
     setAvatarFile(selectedFile);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    applySelectedFile(selectedFile);
+    e.target.value = '';
   };
 
   const handleRemoveAvatar = () => {
@@ -267,205 +273,508 @@ export default function ProfilePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#ffffff',
-        ml: 25,
-        mr: 25,
+        background:
+          'linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #ffffff 100%)',
+        px: { xs: 2, md: 6 },
+        py: 4,
       }}
     >
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          pt: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-        }}
-      >
-        <Box sx={{ p: 3, bgcolor: 'white', minHeight: '100vh' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h5">Ludokan</Typography>
-          </Box>
-
-          <Box sx={{ mb: 2 }}>
-            <img
-              src="src/assets/default/zelda-banner.png"
+      <Box component="main" sx={{ maxWidth: 1200, mx: 'auto' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            overflow: 'hidden',
+            borderRadius: 6,
+            border: '1px solid',
+            borderColor: 'rgba(99, 102, 241, 0.12)',
+            boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)',
+            backgroundColor: '#fff',
+          }}
+        >
+          <Box sx={{ position: 'relative' }}>
+            <Box
+              component="img"
+              src={bannerUrl}
               alt="Zelda Banner"
-              style={{ width: '100%', maxHeight: 250, objectFit: 'cover' }}
+              sx={{
+                width: '100%',
+                height: { xs: 180, md: 260 },
+                objectFit: 'cover',
+                display: 'block',
+                filter: 'saturate(1.05)',
+              }}
             />
-            <Box sx={{ position: 'relative', top: -60, left: 20 }}>
-              <Avatar
-                sx={{ width: 60, height: 60 }}
-                src={user?.avatar_url || defaultAvatar}
-                alt={user?.pseudo}
-              >
-                {user?.pseudo?.[0]?.toUpperCase() || 'U'}
-              </Avatar>
-              <SecondaryButton sx={{ mt: 1 }} onClick={handleEditOpen}>
-                Modifier
-              </SecondaryButton>
-            </Box>
-          </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
-              <Typography>
-                {loading ? '...' : user?.description_courte || 'N/A'}
-              </Typography>
-              <Typography variant="caption">Description</Typography>
-            </Paper>
-            <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
-              <Typography>{loading ? '...' : user?.pseudo || 'N/A'}</Typography>
-              <Typography variant="caption">Pseudo</Typography>
-            </Paper>
-            <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
-              <Typography>{loading ? '...' : user?.email || 'N/A'}</Typography>
-              <Typography variant="caption">Email</Typography>
-            </Paper>
-          </Box>
+            <Box
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(15,23,42,0.10) 0%, rgba(15,23,42,0.45) 100%)',
+              }}
+            />
 
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Statistiques
-          </Typography>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: { xs: 20, md: 32 },
+                bottom: { xs: -54, md: -64 },
+                display: 'flex',
+                alignItems: 'flex-end',
+                gap: 2,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Box sx={{ position: 'relative' }}>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg, image/png, image/webp"
+                  hidden
+                  onChange={handleFileChange}
+                />
 
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
-              <Typography>
-                {loading
-                  ? '...'
-                  : user?.created_at
-                    ? new Date(user.created_at).toLocaleDateString()
-                    : 'N/A'}
-              </Typography>
-              <Typography variant="caption">Inscrit depuis</Typography>
-            </Paper>
-            <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
-              <Typography>
-                {loading ? '...' : user?.first_name || 'N/A'}
-              </Typography>
-              <Typography variant="caption">Prénom</Typography>
-            </Paper>
-            <Paper sx={{ flex: 1, p: 2, textAlign: 'center' }}>
-              <Typography>
-                {loading ? '...' : user?.last_name || 'N/A'}
-              </Typography>
-              <Typography variant="caption">Nom</Typography>
-            </Paper>
-          </Box>
-
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Jeux par statut
-          </Typography>
-
-          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap', mb: 4 }}>
-            <GameList games={gamesEnCours} title="En cours" />
-            <GameList games={gamesTermines} title="Terminés" />
-            <GameList games={gamesEnvie} title="Envie d'y jouer" />
-          </Box>
-        </Box>
-      </Box>
-
-      <Dialog open={editOpen} onClose={handleEditClose} fullWidth maxWidth="sm">
-        <DialogTitle>Modifier mon profil</DialogTitle>
-
-        <DialogContent>
-          <TextField
-            margin="dense"
-            label="Pseudo"
-            name="pseudo"
-            fullWidth
-            value={form.pseudo}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="dense"
-            label="Prénom"
-            name="first_name"
-            fullWidth
-            value={form.first_name}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="dense"
-            label="Nom"
-            name="last_name"
-            fullWidth
-            value={form.last_name}
-            onChange={handleChange}
-          />
-          <TextField
-            margin="dense"
-            label="Description"
-            name="description_courte"
-            fullWidth
-            value={form.description_courte}
-            onChange={handleChange}
-          />
-
-          <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="subtitle2">Avatar</Typography>
-
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar
-                src={displayedAvatar}
-                alt="Prévisualisation avatar"
-                sx={{ width: 72, height: 72 }}
-              >
-                {form.pseudo?.[0]?.toUpperCase() || 'U'}
-              </Avatar>
-
-              <Box>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Button variant="outlined" component="label">
-                    Choisir un avatar
-                    <input
-                      type="file"
-                      accept="image/jpeg, image/png, image/webp"
-                      hidden
-                      onChange={handleFileChange}
-                    />
-                  </Button>
-
-                  <Button
-                    variant="text"
-                    color="error"
-                    onClick={handleRemoveAvatar}
+                <Box
+                  onClick={() => avatarInputRef.current?.click()}
+                  sx={{
+                    position: 'relative',
+                    width: { xs: 108, md: 128 },
+                    height: { xs: 108, md: 128 },
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    '&:hover .avatar-overlay': {
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={displayedAvatar}
+                    alt={user?.pseudo}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      fontSize: 40,
+                      border: '4px solid white',
+                      boxShadow: '0 12px 30px rgba(15, 23, 42, 0.22)',
+                      bgcolor: '#6366f1',
+                    }}
                   >
-                    Supprimer
-                  </Button>
-                </Box>
+                    {user?.pseudo?.[0]?.toUpperCase() || 'U'}
+                  </Avatar>
 
-                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                  Formats autorisés : JPG, PNG, WEBP — Taille max : 2 MB
+                  <Box
+                    className="avatar-overlay"
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      background: 'rgba(15, 23, 42, 0.45)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease',
+                      textAlign: 'center',
+                      px: 1,
+                    }}
+                  >
+                    Cliquer pour changer
+                  </Box>
+                </Box>
+              </Box>
+
+              <Box sx={{ color: '#fff', mb: 1 }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 800,
+                    textShadow: '0 2px 20px rgba(0,0,0,0.25)',
+                  }}
+                >
+                  {loading ? '...' : user?.pseudo || 'Mon profil'}
+                </Typography>
+                <Typography sx={{ opacity: 0.95 }}>
+                  {loading ? '...' : user?.email || 'Email non renseigné'}
                 </Typography>
               </Box>
             </Box>
+          </Box>
 
-            {avatarFile && (
-              <Typography variant="caption">
-                Fichier sélectionné : {avatarFile.name}
-              </Typography>
-            )}
+          <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 8, md: 10 }, pb: 4 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: { xs: 'flex-start', md: 'center' },
+                gap: 2,
+                flexDirection: { xs: 'column', md: 'row' },
+                mb: 3,
+              }}
+            >
+              <Box>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 800, color: '#0f172a' }}
+                >
+                  Ludokan
+                </Typography>
+                <Typography sx={{ color: '#64748b', mt: 0.5 }}>
+                  Gère ton profil et personnalise ton avatar en un clic.
+                </Typography>
+              </Box>
 
-            {removeAvatar && (
-              <Typography variant="caption">
-                L’avatar sera supprimé et remplacé par l’image par défaut.
-              </Typography>
-            )}
+              <SecondaryButton
+                onClick={handleEditOpen}
+                sx={{
+                  borderRadius: 999,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 700,
+                }}
+              >
+                Modifier le profil
+              </SecondaryButton>
+            </Box>
 
-            {avatarError && (
-              <Typography color="error" variant="caption">
-                {avatarError}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+                gap: 2,
+                mb: 4,
+              }}
+            >
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  border: '1px solid #e2e8f0',
+                  background:
+                    'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                  Description
+                </Typography>
+                <Typography sx={{ color: '#475569' }}>
+                  {loading
+                    ? '...'
+                    : user?.description_courte || 'Aucune description'}
+                </Typography>
+              </Paper>
+
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  border: '1px solid #e2e8f0',
+                  background:
+                    'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                  Identité
+                </Typography>
+                <Typography sx={{ color: '#475569', mb: 0.5 }}>
+                  <strong>Pseudo :</strong>{' '}
+                  {loading ? '...' : user?.pseudo || 'N/A'}
+                </Typography>
+                <Typography sx={{ color: '#475569' }}>
+                  <strong>Email :</strong>{' '}
+                  {loading ? '...' : user?.email || 'N/A'}
+                </Typography>
+              </Paper>
+
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  border: '1px solid #e2e8f0',
+                  background:
+                    'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+                }}
+              >
+                <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                  Statistiques
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <Chip
+                    label={`Prénom : ${loading ? '...' : user?.first_name || 'N/A'}`}
+                    sx={{ borderRadius: 999 }}
+                  />
+                  <Chip
+                    label={`Nom : ${loading ? '...' : user?.last_name || 'N/A'}`}
+                    sx={{ borderRadius: 999 }}
+                  />
+                  <Chip
+                    label={`Inscrit depuis : ${
+                      loading
+                        ? '...'
+                        : user?.created_at
+                          ? new Date(user.created_at).toLocaleDateString()
+                          : 'N/A'
+                    }`}
+                    sx={{ borderRadius: 999 }}
+                  />
+                </Box>
+              </Paper>
+            </Box>
+
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: 4,
+                border: '1px solid #e2e8f0',
+                background: '#fff',
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{ mb: 2, fontWeight: 800, color: '#0f172a' }}
+              >
+                Jeux par statut
               </Typography>
-            )}
+
+              <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                <GameList games={gamesEnCours} title="En cours" />
+                <GameList games={gamesTermines} title="Terminés" />
+                <GameList games={gamesEnvie} title="Envie d'y jouer" />
+              </Box>
+            </Paper>
+          </Box>
+        </Paper>
+      </Box>
+
+      <Dialog
+        open={editOpen}
+        onClose={handleEditClose}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 5,
+            p: 1,
+            boxShadow: '0 24px 60px rgba(15, 23, 42, 0.18)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
+          Modifier mon profil
+        </DialogTitle>
+
+        <DialogContent>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mb: 1,
+              }}
+            >
+              <Box sx={{ position: 'relative' }}>
+                <input
+                  ref={modalAvatarInputRef}
+                  type="file"
+                  accept="image/jpeg, image/png, image/webp"
+                  hidden
+                  onChange={handleFileChange}
+                />
+
+                <Box
+                  onClick={() => modalAvatarInputRef.current?.click()}
+                  sx={{
+                    position: 'relative',
+                    width: 112,
+                    height: 112,
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    '&:hover .modal-avatar-overlay': {
+                      opacity: 1,
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={displayedAvatar}
+                    alt="Prévisualisation avatar"
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      fontSize: 36,
+                      bgcolor: '#6366f1',
+                      boxShadow: '0 12px 30px rgba(99, 102, 241, 0.28)',
+                    }}
+                  >
+                    {form.pseudo?.[0]?.toUpperCase() || 'U'}
+                  </Avatar>
+
+                  <Box
+                    className="modal-avatar-overlay"
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      background: 'rgba(15, 23, 42, 0.45)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease',
+                      textAlign: 'center',
+                      px: 1,
+                    }}
+                  >
+                    Cliquer pour uploader
+                  </Box>
+                </Box>
+
+                <IconButton
+                  onClick={() => modalAvatarInputRef.current?.click()}
+                  sx={{
+                    position: 'absolute',
+                    right: -4,
+                    bottom: -4,
+                    width: 36,
+                    height: 36,
+                    bgcolor: '#111827',
+                    color: '#fff',
+                    boxShadow: '0 8px 20px rgba(15,23,42,0.25)',
+                    '&:hover': {
+                      bgcolor: '#1f2937',
+                    },
+                  }}
+                >
+                  +
+                </IconButton>
+              </Box>
+            </Box>
+
+            <Typography
+              variant="body2"
+              sx={{ textAlign: 'center', color: '#64748b', mb: 1 }}
+            >
+              Clique directement sur l’avatar pour choisir une image.
+            </Typography>
+
+            <TextField
+              label="Pseudo"
+              name="pseudo"
+              fullWidth
+              value={form.pseudo}
+              onChange={handleChange}
+            />
+
+            <TextField
+              label="Prénom"
+              name="first_name"
+              fullWidth
+              value={form.first_name}
+              onChange={handleChange}
+            />
+
+            <TextField
+              label="Nom"
+              name="last_name"
+              fullWidth
+              value={form.last_name}
+              onChange={handleChange}
+            />
+
+            <TextField
+              label="Description"
+              name="description_courte"
+              fullWidth
+              multiline
+              minRows={3}
+              value={form.description_courte}
+              onChange={handleChange}
+            />
+
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 3,
+                backgroundColor: '#f8fafc',
+                border: '1px dashed #cbd5e1',
+              }}
+            >
+              <Typography variant="caption" sx={{ color: '#475569' }}>
+                Formats autorisés : JPG, PNG, WEBP — Taille max : 2 MB
+              </Typography>
+
+              {avatarFile && (
+                <Typography
+                  variant="body2"
+                  sx={{ mt: 1, color: '#0f172a', fontWeight: 600 }}
+                >
+                  Fichier sélectionné : {avatarFile.name}
+                </Typography>
+              )}
+
+              {removeAvatar && (
+                <Typography variant="body2" sx={{ mt: 1, color: '#b45309' }}>
+                  L’avatar sera supprimé et remplacé par le fallback visuel.
+                </Typography>
+              )}
+
+              {avatarError && (
+                <Typography variant="body2" sx={{ mt: 1, color: '#dc2626' }}>
+                  {avatarError}
+                </Typography>
+              )}
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+              <Button
+                variant="outlined"
+                onClick={() => modalAvatarInputRef.current?.click()}
+                sx={{ borderRadius: 999, px: 2.5 }}
+              >
+                Changer l’avatar
+              </Button>
+
+              <Button
+                variant="text"
+                color="error"
+                onClick={handleRemoveAvatar}
+                sx={{ borderRadius: 999, px: 2.5 }}
+              >
+                Supprimer
+              </Button>
+            </Box>
           </Box>
         </DialogContent>
 
-        <DialogActions>
-          <Button onClick={handleEditClose}>Annuler</Button>
-          <Button onClick={handleSave} variant="contained">
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={handleEditClose} sx={{ borderRadius: 999, px: 2.5 }}>
+            Annuler
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            sx={{
+              borderRadius: 999,
+              px: 3,
+              fontWeight: 700,
+              boxShadow: 'none',
+            }}
+          >
             Enregistrer
           </Button>
         </DialogActions>
