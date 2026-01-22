@@ -12,7 +12,7 @@ def test_create_game_ticket_authenticated(authenticated_api_client, genre, platf
     }
 
     response = authenticated_api_client.post(
-        "/api/game-tickets/",
+        "/api/game-tickets/create/",
         payload,
         format="json",
     )
@@ -24,5 +24,5 @@ def test_create_game_ticket_authenticated(authenticated_api_client, genre, platf
 
 @pytest.mark.django_db
 def test_create_game_ticket_unauthenticated(api_client):
-    response = api_client.post("/api/game-tickets/", {"game_name": "Test"})
+    response = api_client.post("/api/game-tickets/create/", {"game_name": "Test"})
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

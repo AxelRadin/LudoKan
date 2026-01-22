@@ -78,3 +78,22 @@ class GameTicketCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You already have a pending ticket for this game.")
 
         return attrs
+
+
+class GameTicketListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameTicket
+        fields = [
+            "id",
+            "game_name",
+            "description",
+            "publisher",
+            "year",
+            "players",
+            "age",
+            "status",
+            "genres",
+            "platforms",
+            "created_at",
+            "updated_at",
+        ]
