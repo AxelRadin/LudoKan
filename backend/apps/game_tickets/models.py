@@ -60,3 +60,16 @@ class GameTicket(models.Model):
 
     def __str__(self):
         return f"{self.game_name} ({self.status})"
+
+
+class GameTicketAttachment(models.Model):
+    ticket = models.ForeignKey(
+        GameTicket,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+    file = models.FileField(upload_to="game_tickets/attachments/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Attachment for ticket {self.ticket_id}"

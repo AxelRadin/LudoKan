@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.game_tickets.models import GameTicket
+from apps.game_tickets.models import GameTicket, GameTicketAttachment
 from apps.games.models import Genre, Platform
 
 
@@ -97,3 +97,22 @@ class GameTicketListSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class GameTicketAttachmentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameTicketAttachment
+        fields = ["id", "file", "created_at"]
+        read_only_fields = ["id", "created_at"]
+
+    def validate_file(self, file):
+        max_size = 5 * 1024 * 1024  # 5 MB
+        allowed_types = ["image/png", "image/jpeg", "image/webp"]
+
+        if file.size > max_size:
+            raise serializers.ValidationError("File too large (max 5MB).")
+
+        if file.content_type not in allowed_types:
+            raise serializers.ValidationError("Unsupported file format.")
+
+        return file

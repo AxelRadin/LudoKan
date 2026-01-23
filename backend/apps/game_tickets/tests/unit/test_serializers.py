@@ -1,8 +1,9 @@
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIRequestFactory
 
 from apps.game_tickets.models import GameTicket
-from apps.game_tickets.serializers import GameTicketCreateSerializer
+from apps.game_tickets.serializers import GameTicketAttachmentCreateSerializer, GameTicketCreateSerializer
 
 
 @pytest.mark.django_db
@@ -139,3 +140,30 @@ def test_validate_duplicate_game_ticket_triggers_validate(user):
 
     assert serializer.is_valid() is False
     assert "non_field_errors" in serializer.errors
+
+
+@pytest.mark.django_db
+def test_validate_year_valid(user):
+    factory = APIRequestFactory()
+    request = factory.post("/")
+    request.user = user
+
+    serializer = GameTicketCreateSerializer(
+        data={"game_name": "Valid Game", "year": 2020},
+        context={"request": request},
+    )
+
+    assert serializer.is_valid() is True
+    assert serializer.validated_data["year"] == 2020
+
+
+@pytest.mark.django_db
+def test_attachment_serializer_valid_file():
+    file = SimpleUploadedFile(
+        "image.png",
+        b"valid image",
+        content_type="image/png",
+    )
+
+    serializer = GameTicketAttachmentCreateSerializer(data={"file": file})
+    assert serializer.is_valid() is True
