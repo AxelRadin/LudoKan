@@ -34,7 +34,7 @@ class GameTicketCreateAPIView(CreateAPIView):
     get=extend_schema(
         tags=["Game tickets"],
         summary="Lister mes demandes d’ajout de jeu",
-        description=("Retourne la liste paginée des tickets d’ajout de jeu " "créés par l’utilisateur authentifié, triés par date décroissante."),
+        description=("Retourne la liste paginée des tickets d’ajout de jeu " + "créés par l’utilisateur authentifié, triés par date décroissante."),
     )
 )
 class GameTicketListAPIView(ListAPIView):
