@@ -1,8 +1,9 @@
 from django.urls import path
-from . import views
+from .views import UserGameListCreateView, UserGameDetailView
 
-app_name = 'library'
+app_name = "library"
 
 urlpatterns = [
-    # URLs à développer plus tard
+    path("user/games/", UserGameListCreateView.as_view(), name="user-game-list"),
+    path("user/games/<int:pk>/", UserGameDetailView.as_view(), name="user-game-detail"),
 ]

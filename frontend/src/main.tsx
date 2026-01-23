@@ -6,10 +6,13 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { Sentry, initSentry } from './monitoring/sentry';
 import ErrorFallback from './components/ErrorFallback';
 import TestSentry from './pages/TestSentry.tsx';
+import LicensePage from './pages/LicencePage.tsx';
 
 const router = createBrowserRouter([
   { path: '/', element: <App /> },
   { path: '/test', element: <TestSentry /> },
+  { path: '/license/:id', element: <LicensePage /> }
+
 ]);
 
 initSentry();

@@ -40,6 +40,7 @@ urlpatterns = [
     path("api/", include(router.urls)),
     path("health/", health, name="health"),
     path("sentry-debug/", sentry_debug, name="sentry-debug"),
+     path("api/library/", include("apps.library.urls", namespace="library")),
 
 
 ]
