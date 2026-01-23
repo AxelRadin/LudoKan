@@ -20,6 +20,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     UserRole.Role.ADMIN: {
         "user.view",
         "user.suspend",
+        "suspend_user",
         "user.edit",
         "review.moderate",
         "rating.moderate",
