@@ -12,6 +12,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.serializers import (
+    GameDetailSerializer,
     GameReadSerializer,
     GameWriteSerializer,
     GenreCRUDSerializer,
@@ -37,8 +38,10 @@ class GameViewSet(ModelViewSet):
     ordering = ["-popularity_score"]
 
     def get_serializer_class(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action == "list":
             return GameReadSerializer
+        if self.action == "retrieve":
+            return GameDetailSerializer
         return GameWriteSerializer
 
 

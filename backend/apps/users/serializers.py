@@ -110,3 +110,15 @@ class UserSerializer(serializers.ModelSerializer):
         if user is not None and User.objects.exclude(pk=user.pk).filter(pseudo=value).exists():
             raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)  # pragma: no cover
         return value
+
+
+class UserSuspendSerializer(serializers.Serializer):
+    """
+    Payload pour la suspension d'un utilisateur.
+
+    - reason : obligatoire, message libre.
+    - end_date : optionnelle, date de fin de suspension.
+    """
+
+    reason = serializers.CharField()
+    end_date = serializers.DateTimeField(required=False, allow_null=True)

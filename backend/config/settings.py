@@ -128,6 +128,8 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
+        # Bloque les utilisateurs suspendus sur tous les endpoints protégés
+        "apps.users.permissions.IsNotSuspended",
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_PARSER_CLASSES": [

@@ -6,6 +6,7 @@ from apps.games.models import Game
 
 class UserGame(models.Model):
     class GameStatus(models.TextChoices):
+        ENVIE_DE_JOUER = "ENVIE_DE_JOUER", "Envie de jouer"
         EN_COURS = "EN_COURS", "En cours"
         TERMINE = "TERMINE", "Terminé"
         ABANDONNE = "ABANDONNE", "Abandonné"
@@ -16,13 +17,17 @@ class UserGame(models.Model):
 
     status = models.CharField(max_length=20, choices=GameStatus.choices, default=GameStatus.EN_COURS)
 
+    is_favorite = models.BooleanField(default=False)
+
     date_added = models.DateTimeField(auto_now_add=True)
+
+    date_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ("user", "game")
         verbose_name = "Jeu de la ludothèque"
         verbose_name_plural = "Ludothèque utilisateurs"
-        ordering = ["-date_added"]
+        ordering = ["-date_modified"]
         indexes = [
             models.Index(fields=["game", "status"]),
         ]

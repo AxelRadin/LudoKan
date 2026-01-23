@@ -11,7 +11,7 @@ from PIL import Image
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.users.models import CustomUser
+from apps.users.models import AdminAction, CustomUser, UserRole, UserSuspension
 from apps.users.tests.constants import TEST_USER_CREDENTIAL
 
 
@@ -574,3 +574,93 @@ class TestCORSAndSecurity:
         access_cookie = response.cookies.get("access_token")
         if access_cookie:
             assert access_cookie.get("httponly", False) or "HttpOnly" in str(access_cookie)
+
+
+@pytest.mark.django_db
+class TestAdminSuspendUserView:
+    """Tests pour l'endpoint admin de suspension d'utilisateur."""
+
+    def test_admin_can_suspend_normal_user_and_log_action(self, auth_admin_client_with_tokens, user):
+        url = f"/api/admin/users/{user.id}/suspend/"
+        payload = {"reason": "Violation des règles"}
+
+        response = auth_admin_client_with_tokens.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        data = response.data
+        assert data["user_id"] == user.id
+        assert data["reason"] == payload["reason"]
+
+        # Suspension créée
+        assert UserSuspension.objects.filter(user=user, is_active=True).exists()
+
+        # Log admin créé
+        assert AdminAction.objects.filter(
+            action_type="user.suspend",
+            target_type="user",
+            target_id=user.id,
+        ).exists()
+
+    def test_suspended_user_cannot_access_protected_endpoint_anymore(self, auth_admin_client_with_tokens, api_client, user):
+        # L'admin suspend l'utilisateur "user"
+        suspend_url = f"/api/admin/users/{user.id}/suspend/"
+        auth_admin_client_with_tokens.post(suspend_url, {"reason": "Test suspension"}, format="json")
+
+        # Le user tente d'accéder à /api/auth/user/ après suspension
+        login_url = "/api/auth/login/"
+        login_response = api_client.post(
+            login_url,
+            {"email": user.email, "password": TEST_USER_CREDENTIAL},
+            format="json",
+        )
+        assert login_response.status_code == status.HTTP_200_OK
+
+        # Récupérer les cookies JWT et les réinjecter dans le client
+        if "access_token" in login_response.cookies:
+            api_client.cookies["access_token"] = login_response.cookies["access_token"].value
+        if "refresh_token" in login_response.cookies:
+            api_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
+
+        me_url = "/api/auth/user/"
+        me_response = api_client.get(me_url)
+
+        # L'utilisateur est authentifié mais suspendu -> 403 Forbidden
+        assert me_response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_cannot_suspend_self(self, auth_admin_client_with_tokens, admin_user):
+        url = f"/api/admin/users/{admin_user.id}/suspend/"
+        payload = {"reason": "Tentative auto-suspension"}
+
+        response = auth_admin_client_with_tokens.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "vous ne pouvez pas vous suspendre vous-même" in str(response.data["detail"]).lower()
+
+    def test_cannot_suspend_superadmin(self, api_client, admin_user, db):
+        # Crée un superadmin distinct de l'admin
+        superadmin = CustomUser.objects.create_superuser(
+            email="superadmin@example.com",
+            pseudo="superadmin",
+            password=TEST_USER_CREDENTIAL,
+        )
+        UserRole.objects.create(user=superadmin, role=UserRole.Role.SUPERADMIN)
+
+        # Se connecter en tant qu'admin
+        login_url = "/api/auth/login/"
+        login_response = api_client.post(
+            login_url,
+            {"email": admin_user.email, "password": TEST_USER_CREDENTIAL},
+            format="json",
+        )
+        assert login_response.status_code == status.HTTP_200_OK
+
+        if "access_token" in login_response.cookies:
+            api_client.cookies["access_token"] = login_response.cookies["access_token"].value
+        if "refresh_token" in login_response.cookies:
+            api_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
+
+        url = f"/api/admin/users/{superadmin.id}/suspend/"
+        response = api_client.post(url, {"reason": "Tentative sur superadmin"}, format="json")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert "superadmin" in str(response.data["detail"]).lower()
