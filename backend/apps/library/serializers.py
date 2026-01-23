@@ -52,11 +52,11 @@ class UserGameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserGame
-        fields = ["id", "game", "game_id", "status", "date_added"]
+        fields = ["id", "game", "game_id", "status", "is_favorite", "date_added"]
         read_only_fields = ["date_added"]
 
     def validate_status(self, value):
-        allowed = ["EN_COURS", "TERMINE", "ABANDONNE"]
+        allowed = ["EN_COURS", "TERMINE", "ABANDONNE", "ENVIE_DE_JOUER"]
         if value not in allowed:
             raise serializers.ValidationError(f"Le statut doit être l’un de : {', '.join(allowed)}")
         return value
@@ -80,5 +80,6 @@ class UserGameSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.status = validated_data.get("status", instance.status)
+        instance.is_favorite = validated_data.get("is_favorite", instance.is_favorite)
         instance.save()
         return instance
