@@ -24,6 +24,10 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "user.edit",
         "review.moderate",
         "rating.moderate",
+        # Endpoints admin reviews
+        "review_read",
+        "review_edit",
+        "review_delete",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},
