@@ -1,9 +1,14 @@
 """
 Tests pour les modèles de l'app users
 """
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.utils import timezone
+
+from apps.users.models import AdminAction, UserRole, UserSuspension
 
 User = get_user_model()
 
@@ -103,27 +108,93 @@ class TestUserModel:
 
 
 @pytest.mark.django_db
-@pytest.mark.skip(reason="Modèle UserProfile pas encore implémenté")
-class TestUserProfileModel:
-    """Tests pour le modèle UserProfile (quand il sera créé)"""
+class TestUserRoleModel:
+    """Tests pour le modèle UserRole."""
 
-    def test_user_profile_creation(self, user):
-        """Test de création d'un profil utilisateur"""
-        # Ce test sera implémenté quand le modèle UserProfile sera créé
-        pass
+    def test_user_role_str_representation(self, user):
+        role = UserRole.objects.create(user=user, role=UserRole.Role.ADMIN)
 
-    def test_user_profile_str_representation(self, user):
-        """Test de la représentation string du profil"""
-        # Ce test sera implémenté quand le modèle UserProfile sera créé
-        pass
+        assert str(role) == f"{user.pseudo} - Admin"
+
+    def test_user_role_unique_per_user_and_role(self, user):
+        UserRole.objects.create(user=user, role=UserRole.Role.MODERATOR)
+
+        with pytest.raises(IntegrityError):
+            UserRole.objects.create(user=user, role=UserRole.Role.MODERATOR)
 
 
 @pytest.mark.django_db
-@pytest.mark.skip(reason="Modèle UserPreferences pas encore implémenté")
-class TestUserPreferencesModel:
-    """Tests pour le modèle UserPreferences (quand il sera créé)"""
+class TestUserSuspensionModel:
+    """Tests pour le modèle UserSuspension."""
 
-    def test_user_preferences_creation(self, user):
-        """Test de création des préférences utilisateur"""
-        # Ce test sera implémenté quand le modèle UserPreferences sera créé
-        pass
+    def test_user_suspension_str_without_end_date(self, user):
+        suspension = UserSuspension.objects.create(
+            user=user,
+            reason="Test",
+        )
+
+        assert str(suspension) == f"Suspension de {user.pseudo}"
+
+    def test_user_suspension_str_with_end_date(self, user):
+        end = timezone.now() + timedelta(days=1)
+        suspension = UserSuspension.objects.create(
+            user=user,
+            reason="Test",
+            end_date=end,
+        )
+
+        # Le __str__ doit inclure la date de fin
+        assert "jusqu'au" in str(suspension)
+
+    def test_is_expired_true_when_inactive(self, user):
+        suspension = UserSuspension.objects.create(
+            user=user,
+            reason="Test",
+            is_active=False,
+        )
+
+        assert suspension.is_expired is True
+
+    def test_is_expired_false_when_no_end_date_and_active(self, user):
+        suspension = UserSuspension.objects.create(
+            user=user,
+            reason="Test",
+            is_active=True,
+            end_date=None,
+        )
+
+        assert suspension.is_expired is False
+
+    def test_is_expired_depends_on_end_date(self, user):
+        past = timezone.now() - timedelta(days=1)
+        future = timezone.now() + timedelta(days=1)
+
+        expired = UserSuspension.objects.create(
+            user=user,
+            reason="Past",
+            end_date=past,
+        )
+        active = UserSuspension.objects.create(
+            user=user,
+            reason="Future",
+            end_date=future,
+        )
+
+        assert expired.is_expired is True
+        assert active.is_expired is False
+
+
+@pytest.mark.django_db
+class TestAdminActionModel:
+    """Tests pour le modèle AdminAction."""
+
+    def test_admin_action_str_representation(self, user):
+        action = AdminAction.objects.create(
+            admin_user=user,
+            action_type="user.suspend",
+            target_type="user",
+            target_id=123,
+            description="Suspension pour test",
+        )
+
+        assert "user.suspend par" in str(action)
