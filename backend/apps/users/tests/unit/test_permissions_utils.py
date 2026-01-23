@@ -10,7 +10,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.utils import timezone
 
 from apps.users.models import UserRole, UserSuspension
-from apps.users.permissions import HasPermission, IsNotSuspended, _collect_role_permissions, has_permission, is_user_suspended
+from apps.users.permissions import HasPermission, IsAdminWithPermission, IsNotSuspended, _collect_role_permissions, has_permission, is_user_suspended
 
 User = get_user_model()
 
@@ -41,12 +41,12 @@ class TestHasPermissionHelper:
         assert has_permission(user, "nimporte.quoi") is True
 
     def test_moderator_permissions(self, user):
-        """Un moderator a les permissions de modération mais pas les droits admin."""
+        """Un moderator a uniquement les permissions de lecture admin (reviews/ratings)."""
 
         UserRole.objects.create(user=user, role=UserRole.Role.MODERATOR)
 
-        assert has_permission(user, "review.moderate") is True
-        assert has_permission(user, "rating.moderate") is True
+        assert has_permission(user, "review_read") is True
+        assert has_permission(user, "rating_read") is True
         assert has_permission(user, "user.suspend") is False
 
     def test_admin_permissions(self, user):
@@ -84,7 +84,7 @@ class TestHasPermissionHelper:
         # Permissions spécifiques admin
         assert "user.suspend" in perms
         # Permissions spécifiques modérateur
-        assert "review.moderate" in perms
+        assert "review_read" in perms
 
     def test_suspended_user_has_no_permissions_even_with_roles(self, user):
         """Un utilisateur suspendu ne doit plus avoir de permissions métier."""
@@ -188,9 +188,35 @@ class TestDRFPermissions:
         UserRole.objects.create(user=user, role=UserRole.Role.MODERATOR)
 
         class CanModerateReviews(HasPermission):
-            required_permission = "review.moderate"
+            required_permission = "review_read"
 
         perm = CanModerateReviews()
+        view = self.DummyView()
+        request = self.DummyRequest(user)
+
+        assert perm.has_permission(request, view) is True
+
+    def test_is_admin_with_permission_rejects_user_without_role(self, user):
+        """IsAdminWithPermission doit refuser un user sans rôle admin/modérateur."""
+
+        class CanReadAdminStuff(IsAdminWithPermission):
+            required_permission = "review_read"
+
+        perm = CanReadAdminStuff()
+        view = self.DummyView()
+        request = self.DummyRequest(user)
+
+        assert perm.has_permission(request, view) is False
+
+    def test_is_admin_with_permission_allows_admin_with_permission(self, user):
+        """IsAdminWithPermission doit autoriser un admin avec la permission requise."""
+
+        UserRole.objects.create(user=user, role=UserRole.Role.ADMIN)
+
+        class CanReadAdminStuff(IsAdminWithPermission):
+            required_permission = "review_read"
+
+        perm = CanReadAdminStuff()
         view = self.DummyView()
         request = self.DummyRequest(user)
 

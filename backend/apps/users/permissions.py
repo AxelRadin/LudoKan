@@ -14,8 +14,8 @@ from .models import UserRole, UserSuspension
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     UserRole.Role.MODERATOR: {
         "user.view",
-        "review.moderate",
-        "rating.moderate",
+        "review_read",
+        "rating_read",
     },
     UserRole.Role.ADMIN: {
         "user.view",
@@ -28,6 +28,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "review_read",
         "review_edit",
         "review_delete",
+        "rating_read",
+        "rating_delete",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},
@@ -114,6 +116,39 @@ class HasPermission(BasePermission):
             return getattr(request.user, "is_authenticated", False)
 
         return has_permission(request.user, perm_name)
+
+
+class IsAdminWithPermission(HasPermission):
+    """
+    Permission DRF pour les endpoints admin sécurisés.
+
+    Vérifie :
+    - utilisateur authentifié
+    - rôle admin/modérateur/superadmin
+    - permission métier associée (via ROLE_PERMISSIONS)
+    """
+
+    admin_roles = {
+        UserRole.Role.MODERATOR,
+        UserRole.Role.ADMIN,
+        UserRole.Role.SUPERADMIN,
+    }
+
+    def has_permission(self, request, view) -> bool:
+        user = request.user
+
+        if not getattr(user, "is_authenticated", False):
+            return False
+
+        # Superuser Django est traité comme superadmin : toutes permissions
+        if getattr(user, "is_superuser", False):
+            return super().has_permission(request, view)
+
+        user_roles = set(UserRole.objects.filter(user=user).values_list("role", flat=True))
+        if not (user_roles & self.admin_roles):
+            return False
+
+        return super().has_permission(request, view)
 
 
 class IsNotSuspended(BasePermission):

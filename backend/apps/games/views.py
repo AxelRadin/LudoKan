@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
+from apps.games.permissions import CanDeleteRating, CanReadRating
 from apps.games.serializers import (
     GameDetailSerializer,
     GameReadSerializer,
@@ -22,6 +23,7 @@ from apps.games.serializers import (
 )
 from apps.library.models import UserGame
 from apps.reviews.models import Review
+from apps.users.models import AdminAction
 
 
 class GameViewSet(ModelViewSet):
@@ -155,6 +157,54 @@ class RatingListView(ListAPIView):
             queryset = queryset.filter(game_id=game_id)
 
         return queryset
+
+
+class AdminRatingListView(APIView):
+    """
+    Endpoint admin pour lister toutes les notes (ratings).
+
+    GET /api/admin/ratings
+    """
+
+    permission_classes = [CanReadRating]
+
+    def get(self, request):
+        queryset = Rating.objects.select_related("user", "game").all()
+
+        user_id = request.query_params.get("user_id")
+        game_id = request.query_params.get("game_id")
+
+        if user_id is not None:
+            queryset = queryset.filter(user_id=user_id)
+        if game_id is not None:
+            queryset = queryset.filter(game_id=game_id)
+
+        serializer = RatingSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminRatingDetailView(APIView):
+    """
+    Endpoint admin pour supprimer une note spécifique.
+
+    DELETE /api/admin/ratings/{id}
+    """
+
+    permission_classes = [CanDeleteRating]
+
+    def delete(self, request, pk: int):
+        rating = get_object_or_404(Rating, pk=pk)
+
+        AdminAction.objects.create(
+            admin_user=request.user,
+            action_type="rating.delete",
+            target_type="rating",
+            target_id=rating.pk,
+            description=f"Rating supprimée par admin (id={request.user.id})",
+        )
+
+        rating.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GameStatsView(APIView):

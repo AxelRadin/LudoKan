@@ -664,3 +664,34 @@ class TestAdminSuspendUserView:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert "superadmin" in str(response.data["detail"]).lower()
+
+    def test_moderator_cannot_suspend_user(self, api_client, user, db):
+        """Un modérateur ne doit pas pouvoir suspendre un utilisateur."""
+
+        # Créer un modérateur
+        moderator = CustomUser.objects.create_user(
+            email="mod@example.com",
+            pseudo="moderator",
+            password=TEST_USER_CREDENTIAL,
+        )
+        UserRole.objects.create(user=moderator, role=UserRole.Role.MODERATOR)
+
+        # Login en tant que modérateur
+        login_url = "/api/auth/login/"
+        login_response = api_client.post(
+            login_url,
+            {"email": moderator.email, "password": TEST_USER_CREDENTIAL},
+            format="json",
+        )
+        assert login_response.status_code == status.HTTP_200_OK
+
+        if "access_token" in login_response.cookies:
+            api_client.cookies["access_token"] = login_response.cookies["access_token"].value
+        if "refresh_token" in login_response.cookies:
+            api_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
+
+        # Tentative de suspension
+        url = f"/api/admin/users/{user.id}/suspend/"
+        response = api_client.post(url, {"reason": "Mod attempt"}, format="json")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN

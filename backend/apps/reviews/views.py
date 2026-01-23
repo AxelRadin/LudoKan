@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.reviews.models import Review
+from apps.reviews.permissions import CanDeleteReview, CanEditReview, CanReadReview
 from apps.reviews.serializers import ReviewReadSerializer, ReviewWriteSerializer
 from apps.users.models import AdminAction
-from apps.users.permissions import HasPermission
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -87,18 +87,6 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
         # Modification/suppression : uniquement le proprietaire
         return obj.user == request.user
-
-
-class CanReadReview(HasPermission):
-    required_permission = "review_read"
-
-
-class CanEditReview(HasPermission):
-    required_permission = "review_edit"
-
-
-class CanDeleteReview(HasPermission):
-    required_permission = "review_delete"
 
 
 class AdminReviewListView(APIView):
