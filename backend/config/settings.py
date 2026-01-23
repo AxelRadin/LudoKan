@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.realtime",
     "apps.matchmaking",
+    "apps.game_tickets",
     "apps.chat",
     "api",
 ]
