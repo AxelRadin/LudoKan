@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
+from apps.library.models import UserGame
 from apps.library.serializers import GenreSerializer, PlatformSerializer, PublisherSerializer
 
 
@@ -33,6 +34,79 @@ class GameReadSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+
+
+class GameDetailSerializer(GameReadSerializer):
+    """
+    Serializer pour le détail d'un jeu.
+
+    Ajoute les informations personnalisées pour l'utilisateur authentifié :
+    - son entrée de bibliothèque (status, is_favorite)
+    - sa note (rating) pour ce jeu
+    """
+
+    user_library = serializers.SerializerMethodField()
+    user_rating = serializers.SerializerMethodField()
+
+    class Meta(GameReadSerializer.Meta):
+        fields = GameReadSerializer.Meta.fields + [
+            "user_library",
+            "user_rating",
+        ]
+
+    def _get_request_user(self):
+        request = self.context.get("request")
+        if request is None:
+            return None
+        user = getattr(request, "user", None)
+        if user is None or not user.is_authenticated:
+            return None
+        return user
+
+    def get_user_library(self, obj: Game):
+        """
+        Retourne les infos de bibliothèque de l'utilisateur pour ce jeu :
+        {
+            "status": "EN_COURS" | "TERMINE" | "ABANDONNE" | "ENVIE_DE_JOUER",
+            "is_favorite": bool
+        }
+        ou None si l'utilisateur n'est pas authentifié ou n'a pas ajouté le jeu.
+        """
+        user = self._get_request_user()
+        if user is None:
+            return None
+
+        try:
+            user_game = UserGame.objects.get(user=user, game=obj)
+        except UserGame.DoesNotExist:
+            return None
+
+        return {
+            "status": user_game.status,
+            "is_favorite": user_game.is_favorite,
+        }
+
+    def get_user_rating(self, obj: Game):
+        """
+        Retourne la note de l'utilisateur pour ce jeu :
+        {
+            "value": float,
+            "rating_type": str
+        }
+        ou None si aucune note ou utilisateur non authentifié.
+        """
+        user = self._get_request_user()
+        if user is None:
+            return None
+
+        rating = Rating.objects.filter(user=user, game=obj).first()
+        if rating is None:
+            return None
+
+        return {
+            "value": float(rating.value),
+            "rating_type": rating.rating_type,
+        }
 
 
 class GameWriteSerializer(serializers.ModelSerializer):
