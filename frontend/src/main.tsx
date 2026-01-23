@@ -19,6 +19,7 @@ import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 import SettingsPage from './pages/SettingsPage';
+import PolitiquesPage from './pages/PolitiquesPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -36,7 +37,8 @@ const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsPage /> },
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
-      { path: 'settings', element: <SettingsPage /> }
+      { path: 'settings', element: <SettingsPage /> },
+      { path: 'politiques', element: <PolitiquesPage /> }
     ],
   },
 ]);

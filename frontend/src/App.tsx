@@ -1,6 +1,8 @@
 import Box from '@mui/material/Box';
 import { Outlet } from 'react-router-dom';
 import Header from './components/Header';
+import SettingsPage from './pages/SettingsPage';
+import PolitiquesPage from './pages/PolitiquesPage';
 import './App.css';
 
 const App = () => {
