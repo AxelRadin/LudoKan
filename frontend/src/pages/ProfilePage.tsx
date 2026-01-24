@@ -2,12 +2,10 @@ import {
   Avatar,
   Box,
   Button,
-  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  IconButton,
   Paper,
   TextField,
   Typography,
@@ -269,63 +267,80 @@ export default function ProfilePage() {
       status: ug.status,
     }));
 
+  const infoCardSx = {
+    flex: 1,
+    p: 2.5,
+    textAlign: 'center',
+    borderRadius: 4,
+    boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
+    border: '1px solid #f1f5f9',
+  };
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background:
-          'linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #ffffff 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#ffffff',
         px: { xs: 2, md: 6 },
         py: 4,
       }}
     >
-      <Box component="main" sx={{ maxWidth: 1200, mx: 'auto' }}>
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+          maxWidth: 1200,
+          width: '100%',
+          mx: 'auto',
+        }}
+      >
         <Paper
           elevation={0}
           sx={{
             overflow: 'hidden',
-            borderRadius: 6,
-            border: '1px solid',
-            borderColor: 'rgba(99, 102, 241, 0.12)',
-            boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)',
+            borderRadius: 5,
+            border: '1px solid #f1f5f9',
+            boxShadow: '0 12px 30px rgba(0,0,0,0.05)',
             backgroundColor: '#fff',
           }}
         >
-          <Box sx={{ position: 'relative' }}>
-            <Box
-              component="img"
-              src={bannerUrl}
-              alt="Zelda Banner"
-              sx={{
-                width: '100%',
-                height: { xs: 180, md: 260 },
-                objectFit: 'cover',
-                display: 'block',
-                filter: 'saturate(1.05)',
-              }}
-            />
+          <Box sx={{ p: 3, bgcolor: 'white' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                Ludokan
+              </Typography>
+            </Box>
 
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'linear-gradient(180deg, rgba(15,23,42,0.10) 0%, rgba(15,23,42,0.45) 100%)',
-              }}
-            />
+            <Box sx={{ mb: 6, position: 'relative' }}>
+              <Box
+                component="img"
+                src={bannerUrl}
+                alt="Zelda Banner"
+                sx={{
+                  width: '100%',
+                  maxHeight: 260,
+                  height: { xs: 180, md: 260 },
+                  objectFit: 'cover',
+                  borderRadius: 4,
+                  display: 'block',
+                }}
+              />
 
-            <Box
-              sx={{
-                position: 'absolute',
-                left: { xs: 20, md: 32 },
-                bottom: { xs: -54, md: -64 },
-                display: 'flex',
-                alignItems: 'flex-end',
-                gap: 2,
-                flexWrap: 'wrap',
-              }}
-            >
-              <Box sx={{ position: 'relative' }}>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: { xs: 20, md: 28 },
+                  bottom: -45,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  gap: 2,
+                }}
+              >
                 <input
                   ref={avatarInputRef}
                   type="file"
@@ -338,207 +353,135 @@ export default function ProfilePage() {
                   onClick={() => avatarInputRef.current?.click()}
                   sx={{
                     position: 'relative',
-                    width: { xs: 108, md: 128 },
-                    height: { xs: 108, md: 128 },
+                    width: 96,
+                    height: 96,
                     borderRadius: '50%',
                     cursor: 'pointer',
-                    '&:hover .avatar-overlay': {
+                    '&:hover .avatar-hover': {
                       opacity: 1,
                     },
                   }}
                 >
                   <Avatar
+                    sx={{
+                      width: 96,
+                      height: 96,
+                      border: '4px solid white',
+                      boxShadow: '0 10px 24px rgba(0,0,0,0.18)',
+                      fontSize: 34,
+                    }}
                     src={displayedAvatar}
                     alt={user?.pseudo}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      fontSize: 40,
-                      border: '4px solid white',
-                      boxShadow: '0 12px 30px rgba(15, 23, 42, 0.22)',
-                      bgcolor: '#6366f1',
-                    }}
                   >
                     {user?.pseudo?.[0]?.toUpperCase() || 'U'}
                   </Avatar>
 
                   <Box
-                    className="avatar-overlay"
+                    className="avatar-hover"
                     sx={{
                       position: 'absolute',
                       inset: 0,
                       borderRadius: '50%',
-                      background: 'rgba(15, 23, 42, 0.45)',
+                      backgroundColor: 'rgba(0,0,0,0.35)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       color: '#fff',
-                      fontWeight: 700,
-                      fontSize: 13,
+                      fontSize: 12,
+                      fontWeight: 600,
                       opacity: 0,
-                      transition: 'opacity 0.2s ease',
+                      transition: '0.2s ease',
                       textAlign: 'center',
                       px: 1,
                     }}
                   >
-                    Cliquer pour changer
+                    Changer
                   </Box>
                 </Box>
-              </Box>
 
-              <Box sx={{ color: '#fff', mb: 1 }}>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    fontWeight: 800,
-                    textShadow: '0 2px 20px rgba(0,0,0,0.25)',
-                  }}
-                >
-                  {loading ? '...' : user?.pseudo || 'Mon profil'}
-                </Typography>
-                <Typography sx={{ opacity: 0.95 }}>
-                  {loading ? '...' : user?.email || 'Email non renseigné'}
-                </Typography>
+                <Box sx={{ mb: 1 }}>
+                  <SecondaryButton onClick={handleEditOpen}>
+                    Modifier
+                  </SecondaryButton>
+                </Box>
               </Box>
             </Box>
-          </Box>
 
-          <Box sx={{ px: { xs: 2, md: 4 }, pt: { xs: 8, md: 10 }, pb: 4 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: { xs: 'flex-start', md: 'center' },
-                gap: 2,
-                flexDirection: { xs: 'column', md: 'row' },
-                mb: 3,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 800, color: '#0f172a' }}
-                >
-                  Ludokan
+            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
+              <Paper sx={infoCardSx}>
+                <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {loading ? '...' : user?.description_courte || 'N/A'}
                 </Typography>
-                <Typography sx={{ color: '#64748b', mt: 0.5 }}>
-                  Gère ton profil et personnalise ton avatar en un clic.
-                </Typography>
-              </Box>
-
-              <SecondaryButton
-                onClick={handleEditOpen}
-                sx={{
-                  borderRadius: 999,
-                  px: 3,
-                  py: 1,
-                  fontWeight: 700,
-                }}
-              >
-                Modifier le profil
-              </SecondaryButton>
-            </Box>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
-                gap: 2,
-                mb: 4,
-              }}
-            >
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 4,
-                  border: '1px solid #e2e8f0',
-                  background:
-                    'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-                }}
-              >
-                <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
                   Description
                 </Typography>
-                <Typography sx={{ color: '#475569' }}>
-                  {loading
-                    ? '...'
-                    : user?.description_courte || 'Aucune description'}
-                </Typography>
               </Paper>
 
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 4,
-                  border: '1px solid #e2e8f0',
-                  background:
-                    'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-                }}
-              >
-                <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
-                  Identité
-                </Typography>
-                <Typography sx={{ color: '#475569', mb: 0.5 }}>
-                  <strong>Pseudo :</strong>{' '}
+              <Paper sx={infoCardSx}>
+                <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
                   {loading ? '...' : user?.pseudo || 'N/A'}
                 </Typography>
-                <Typography sx={{ color: '#475569' }}>
-                  <strong>Email :</strong>{' '}
-                  {loading ? '...' : user?.email || 'N/A'}
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Pseudo
                 </Typography>
               </Paper>
 
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  borderRadius: 4,
-                  border: '1px solid #e2e8f0',
-                  background:
-                    'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
-                }}
-              >
-                <Typography sx={{ fontWeight: 700, color: '#0f172a', mb: 1 }}>
-                  Statistiques
+              <Paper sx={infoCardSx}>
+                <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {loading ? '...' : user?.email || 'N/A'}
                 </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  <Chip
-                    label={`Prénom : ${loading ? '...' : user?.first_name || 'N/A'}`}
-                    sx={{ borderRadius: 999 }}
-                  />
-                  <Chip
-                    label={`Nom : ${loading ? '...' : user?.last_name || 'N/A'}`}
-                    sx={{ borderRadius: 999 }}
-                  />
-                  <Chip
-                    label={`Inscrit depuis : ${
-                      loading
-                        ? '...'
-                        : user?.created_at
-                          ? new Date(user.created_at).toLocaleDateString()
-                          : 'N/A'
-                    }`}
-                    sx={{ borderRadius: 999 }}
-                  />
-                </Box>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Email
+                </Typography>
+              </Paper>
+            </Box>
+
+            <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700 }}>
+              Statistiques
+            </Typography>
+
+            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+              <Paper sx={infoCardSx}>
+                <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {loading
+                    ? '...'
+                    : user?.created_at
+                      ? new Date(user.created_at).toLocaleDateString()
+                      : 'N/A'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Inscrit depuis
+                </Typography>
+              </Paper>
+
+              <Paper sx={infoCardSx}>
+                <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {loading ? '...' : user?.first_name || 'N/A'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Prénom
+                </Typography>
+              </Paper>
+
+              <Paper sx={infoCardSx}>
+                <Typography sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {loading ? '...' : user?.last_name || 'N/A'}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Nom
+                </Typography>
               </Paper>
             </Box>
 
             <Paper
-              elevation={0}
               sx={{
                 p: 3,
                 borderRadius: 4,
-                border: '1px solid #e2e8f0',
-                background: '#fff',
+                boxShadow: '0 6px 18px rgba(0,0,0,0.05)',
+                border: '1px solid #f1f5f9',
               }}
             >
-              <Typography
-                variant="h6"
-                sx={{ mb: 2, fontWeight: 800, color: '#0f172a' }}
-              >
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700 }}>
                 Jeux par statut
               </Typography>
 
@@ -559,117 +502,79 @@ export default function ProfilePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            borderRadius: 5,
-            p: 1,
-            boxShadow: '0 24px 60px rgba(15, 23, 42, 0.18)',
+            borderRadius: 4,
+            boxShadow: '0 18px 45px rgba(0,0,0,0.12)',
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>
-          Modifier mon profil
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Modifier mon profil</DialogTitle>
 
         <DialogContent>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2,
-              mt: 1,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                mb: 1,
-              }}
-            >
-              <Box sx={{ position: 'relative' }}>
-                <input
-                  ref={modalAvatarInputRef}
-                  type="file"
-                  accept="image/jpeg, image/png, image/webp"
-                  hidden
-                  onChange={handleFileChange}
-                />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+              <input
+                ref={modalAvatarInputRef}
+                type="file"
+                accept="image/jpeg, image/png, image/webp"
+                hidden
+                onChange={handleFileChange}
+              />
+
+              <Box
+                onClick={() => modalAvatarInputRef.current?.click()}
+                sx={{
+                  position: 'relative',
+                  width: 100,
+                  height: 100,
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  '&:hover .modal-avatar-hover': {
+                    opacity: 1,
+                  },
+                }}
+              >
+                <Avatar
+                  src={displayedAvatar}
+                  alt="Prévisualisation avatar"
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    fontSize: 34,
+                    boxShadow: '0 10px 24px rgba(0,0,0,0.14)',
+                  }}
+                >
+                  {form.pseudo?.[0]?.toUpperCase() || 'U'}
+                </Avatar>
 
                 <Box
-                  onClick={() => modalAvatarInputRef.current?.click()}
-                  sx={{
-                    position: 'relative',
-                    width: 112,
-                    height: 112,
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    '&:hover .modal-avatar-overlay': {
-                      opacity: 1,
-                    },
-                  }}
-                >
-                  <Avatar
-                    src={displayedAvatar}
-                    alt="Prévisualisation avatar"
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      fontSize: 36,
-                      bgcolor: '#6366f1',
-                      boxShadow: '0 12px 30px rgba(99, 102, 241, 0.28)',
-                    }}
-                  >
-                    {form.pseudo?.[0]?.toUpperCase() || 'U'}
-                  </Avatar>
-
-                  <Box
-                    className="modal-avatar-overlay"
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      background: 'rgba(15, 23, 42, 0.45)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontWeight: 700,
-                      fontSize: 12,
-                      opacity: 0,
-                      transition: 'opacity 0.2s ease',
-                      textAlign: 'center',
-                      px: 1,
-                    }}
-                  >
-                    Cliquer pour uploader
-                  </Box>
-                </Box>
-
-                <IconButton
-                  onClick={() => modalAvatarInputRef.current?.click()}
+                  className="modal-avatar-hover"
                   sx={{
                     position: 'absolute',
-                    right: -4,
-                    bottom: -4,
-                    width: 36,
-                    height: 36,
-                    bgcolor: '#111827',
+                    inset: 0,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0,0,0,0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     color: '#fff',
-                    boxShadow: '0 8px 20px rgba(15,23,42,0.25)',
-                    '&:hover': {
-                      bgcolor: '#1f2937',
-                    },
+                    fontSize: 12,
+                    fontWeight: 600,
+                    opacity: 0,
+                    transition: '0.2s ease',
+                    textAlign: 'center',
+                    px: 1,
                   }}
                 >
-                  +
-                </IconButton>
+                  Cliquer pour changer
+                </Box>
               </Box>
             </Box>
 
             <Typography
-              variant="body2"
+              variant="caption"
               sx={{ textAlign: 'center', color: '#64748b', mb: 1 }}
             >
-              Clique directement sur l’avatar pour choisir une image.
+              Clique directement sur l’image pour importer un avatar
             </Typography>
 
             <TextField
@@ -679,7 +584,6 @@ export default function ProfilePage() {
               value={form.pseudo}
               onChange={handleChange}
             />
-
             <TextField
               label="Prénom"
               name="first_name"
@@ -687,7 +591,6 @@ export default function ProfilePage() {
               value={form.first_name}
               onChange={handleChange}
             />
-
             <TextField
               label="Nom"
               name="last_name"
@@ -695,7 +598,6 @@ export default function ProfilePage() {
               value={form.last_name}
               onChange={handleChange}
             />
-
             <TextField
               label="Description"
               name="description_courte"
@@ -711,18 +613,15 @@ export default function ProfilePage() {
                 p: 2,
                 borderRadius: 3,
                 backgroundColor: '#f8fafc',
-                border: '1px dashed #cbd5e1',
+                border: '1px solid #e2e8f0',
               }}
             >
-              <Typography variant="caption" sx={{ color: '#475569' }}>
+              <Typography variant="caption" sx={{ color: '#64748b' }}>
                 Formats autorisés : JPG, PNG, WEBP — Taille max : 2 MB
               </Typography>
 
               {avatarFile && (
-                <Typography
-                  variant="body2"
-                  sx={{ mt: 1, color: '#0f172a', fontWeight: 600 }}
-                >
+                <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
                   Fichier sélectionné : {avatarFile.name}
                 </Typography>
               )}
@@ -744,16 +643,15 @@ export default function ProfilePage() {
               <Button
                 variant="outlined"
                 onClick={() => modalAvatarInputRef.current?.click()}
-                sx={{ borderRadius: 999, px: 2.5 }}
+                sx={{ borderRadius: 999 }}
               >
                 Changer l’avatar
               </Button>
-
               <Button
                 variant="text"
                 color="error"
                 onClick={handleRemoveAvatar}
-                sx={{ borderRadius: 999, px: 2.5 }}
+                sx={{ borderRadius: 999 }}
               >
                 Supprimer
               </Button>
@@ -762,18 +660,13 @@ export default function ProfilePage() {
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleEditClose} sx={{ borderRadius: 999, px: 2.5 }}>
+          <Button onClick={handleEditClose} sx={{ borderRadius: 999 }}>
             Annuler
           </Button>
           <Button
             onClick={handleSave}
             variant="contained"
-            sx={{
-              borderRadius: 999,
-              px: 3,
-              fontWeight: 700,
-              boxShadow: 'none',
-            }}
+            sx={{ borderRadius: 999, boxShadow: 'none' }}
           >
             Enregistrer
           </Button>
