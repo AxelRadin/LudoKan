@@ -116,3 +116,7 @@ class GameTicketAttachmentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Unsupported file format.")
 
         return file
+
+
+class GameTicketStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=GameTicket.Status.choices)
