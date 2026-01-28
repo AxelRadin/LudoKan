@@ -1,6 +1,24 @@
 from django.contrib import admin
+from django.forms import ModelForm
 
 from apps.game_tickets.models import GameTicket
+
+
+class GameTicketAdminForm(ModelForm):
+    class Meta:
+        model = GameTicket
+        fields = ["status", "game_name", "description", "publisher", "year", "players", "age", "genres", "platforms", "user"]
+
+    def clean_status(self):
+        new_status = self.cleaned_data["status"]
+
+        if self.instance.pk:
+            old_status = GameTicket.objects.get(pk=self.instance.pk).status
+            if old_status != new_status:
+                self.instance.change_status(new_status)
+                return old_status
+
+        return new_status
 
 
 @admin.register(GameTicket)
