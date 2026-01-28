@@ -37,6 +37,25 @@ def authenticated_client(user):
     return client
 
 
+@pytest.fixture
+def moderator_user(db):
+    """Utilisateur avec rôle MODERATOR (lecture seule sur endpoints admin)."""
+    user = User.objects.create_user(
+        email="modreviews@example.com",
+        password="ModPass123!",
+        pseudo="modreviews",
+    )
+    UserRole.objects.create(user=user, role=UserRole.Role.MODERATOR)
+    return user
+
+
+@pytest.fixture
+def moderator_client(moderator_user):
+    client = APIClient()
+    client.force_authenticate(user=moderator_user)
+    return client
+
+
 @pytest.mark.django_db
 class TestAdminReviewEndpoints:
     def test_admin_can_list_reviews_with_review_read_permission(self, admin_client, user, user2, game):
@@ -84,6 +103,25 @@ class TestAdminReviewEndpoints:
         response = authenticated_client.get(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_moderator_can_list_but_cannot_edit_or_delete(self, moderator_client, user, user2, game):
+        review = Review.objects.create(user=user, game=game, content="Mod visible review")
+        Review.objects.create(user=user2, game=game, content="Another review")
+
+        # Listing autorisé
+        list_url = "/api/admin/reviews/"
+        list_response = moderator_client.get(list_url)
+        assert list_response.status_code == status.HTTP_200_OK
+        assert len(list_response.data) == 2
+
+        # PATCH interdit
+        detail_url = f"/api/admin/reviews/{review.id}/"
+        patch_response = moderator_client.patch(detail_url, {"content": "Mod try update"}, format="json")
+        assert patch_response.status_code == status.HTTP_403_FORBIDDEN
+
+        # DELETE interdit
+        delete_response = moderator_client.delete(detail_url)
+        assert delete_response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_admin_can_patch_review_and_logs_action(self, admin_client, user, game):
         review = Review.objects.create(user=user, game=game, content="Original content")

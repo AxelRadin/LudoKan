@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.users.models import AdminAction, UserRole, UserSuspension
-from apps.users.permissions import HasPermission, IsNotSuspended
+from apps.users.permissions import IsAdminWithPermission, IsNotSuspended
 from apps.users.serializers import UserSuspendSerializer
 
 User = get_user_model()
@@ -28,7 +28,7 @@ class AdminSuspendUserView(APIView):
     POST /api/admin/users/{id}/suspend
     """
 
-    permission_classes = [HasPermission]
+    permission_classes = [IsAdminWithPermission]
     required_permission = "suspend_user"
 
     def post(self, request, pk: int):
