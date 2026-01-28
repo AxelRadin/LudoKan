@@ -7,7 +7,7 @@ from apps.game_tickets.models import GameTicket
 class GameTicketAdminForm(ModelForm):
     class Meta:
         model = GameTicket
-        fields = "__all__"
+        fields = ["status", "game_name", "description", "publisher", "year", "players", "age", "genres", "platforms", "user"]
 
     def clean_status(self):
         new_status = self.cleaned_data["status"]
@@ -16,7 +16,7 @@ class GameTicketAdminForm(ModelForm):
             old_status = GameTicket.objects.get(pk=self.instance.pk).status
             if old_status != new_status:
                 self.instance.change_status(new_status)
-                return old_status  # rollback visuel
+                return old_status
 
         return new_status
 

@@ -72,9 +72,7 @@ class GameTicket(models.Model):
         """
         Hook de notification / events
         """
-        # Exemples (optionnel)
-        # notify_ticket_reviewing(self)
-        # notify_ticket_approved(self)
+
         pass
 
     def __str__(self):
