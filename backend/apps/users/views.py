@@ -6,7 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.reviews.models import ContentReport
+from apps.game_tickets.models import GameTicket
+from apps.games.models import Game
+from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.users.models import AdminAction, UserRole, UserSuspension
 from apps.users.permissions import IsAdminWithPermission, IsNotSuspended
@@ -99,6 +101,37 @@ class AdminUserSuspensionListView(APIView):
         suspensions = UserSuspension.objects.filter(user=user).order_by("-start_date")
         serializer = UserSuspensionSerializer(suspensions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminStatsView(APIView):
+    """
+    Endpoint admin pour récupérer les statistiques globales du Dashboard.
+
+    GET /api/admin/stats/
+
+    Réponse attendue :
+    {
+      "totals": {
+        "users": 1234,
+        "games": 542,
+        "tickets": 32,
+        "reviews": 900
+      }
+    }
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "dashboard.view"
+
+    def get(self, request):
+        totals = {
+            "users": User.objects.count(),
+            "games": Game.objects.count(),
+            "tickets": GameTicket.objects.count(),
+            "reviews": Review.objects.count(),
+        }
+
+        return Response({"totals": totals}, status=status.HTTP_200_OK)
 
 
 class MyReportsView(APIView):
