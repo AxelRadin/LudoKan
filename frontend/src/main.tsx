@@ -20,6 +20,8 @@ import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 import SettingsPage from './pages/SettingsPage';
 import PolitiquesPage from './pages/PolitiquesPage.tsx';
+import CookiesPage from './pages/CookiesPage.tsx';
+import CookieBanner from './pages/CookieBanner.tsx';
 
 const router = createBrowserRouter([
   {
@@ -38,7 +40,9 @@ const router = createBrowserRouter([
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
       { path: 'settings', element: <SettingsPage /> },
-      { path: 'politiques', element: <PolitiquesPage /> }
+      { path: 'politiques', element: <PolitiquesPage /> },
+      { path: 'cookies', element: <CookiesPage /> },
+      { path: 'cookie-banner', element: <CookieBanner /> },
     ],
   },
 ]);
