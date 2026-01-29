@@ -131,7 +131,30 @@ class AdminStatsView(APIView):
             "reviews": Review.objects.count(),
         }
 
-        return Response({"totals": totals}, status=status.HTTP_200_OK)
+        recent_actions = AdminAction.objects.select_related("admin_user").order_by("-timestamp")[:20]
+
+        recent_activity = []
+        for action in recent_actions:
+            actor = action.admin_user.pseudo if action.admin_user else None
+            target = f"{action.target_type}#{action.target_id}" if action.target_type and action.target_id is not None else None
+
+            action_name = action.action_type.replace(".", "_") if action.action_type else None
+
+            recent_activity.append(
+                {
+                    "action": action_name,
+                    "actor": actor,
+                    "target": target,
+                    "time": action.timestamp,
+                }
+            )
+
+        payload = {
+            "totals": totals,
+            "recent_activity": recent_activity,
+        }
+
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class MyReportsView(APIView):
