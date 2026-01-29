@@ -19,3 +19,15 @@ class CanDeleteReview(IsAdminWithPermission, BasePermission):
     """Permission admin pour la suppression des reviews."""
 
     required_permission = "review_delete"
+
+
+class CanReadReport(IsAdminWithPermission, BasePermission):
+    """Permission admin pour la lecture des signalements."""
+
+    required_permission = "report_read"
+
+
+class CanEditReport(IsAdminWithPermission, BasePermission):
+    """Permission admin pour la mise à jour des signalements (résolution)."""
+
+    required_permission = "report_edit"

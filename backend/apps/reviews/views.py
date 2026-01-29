@@ -1,10 +1,13 @@
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import permissions, status, viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.reviews.models import Review
-from apps.reviews.permissions import CanDeleteReview, CanEditReview, CanReadReview
-from apps.reviews.serializers import ReviewReadSerializer, ReviewWriteSerializer
+from apps.reviews.models import ContentReport, Review
+from apps.reviews.permissions import CanDeleteReview, CanEditReport, CanEditReview, CanReadReport, CanReadReview
+from apps.reviews.serializers import ContentReportAdminSerializer, ContentReportCreateSerializer, ReviewReadSerializer, ReviewWriteSerializer
 from apps.users.models import AdminAction
 
 
@@ -174,3 +177,94 @@ class AdminReviewDetailView(APIView):
 
         review.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ReviewReportView(APIView):
+    """
+    Permet à un utilisateur connecté de signaler une review.
+
+    POST /api/reviews/{id}/report
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk: int):
+        review = get_object_or_404(Review, pk=pk)
+
+        serializer = ContentReportCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        report, created = ContentReport.objects.get_or_create(
+            reporter=request.user,
+            target_type=ContentReport.TargetType.REVIEW,
+            target_id=review.pk,
+            defaults={"reason": serializer.validated_data["reason"]},
+        )
+
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        payload = {
+            "id": report.id,
+            "already_reported": not created,
+        }
+        return Response(payload, status=status_code)
+
+
+class AdminReportListView(APIView):
+    """
+    Endpoint admin pour lister les signalements (reviews + ratings).
+
+    GET /api/admin/reports
+    """
+
+    permission_classes = [CanReadReport]
+
+    def get(self, request):
+        queryset = ContentReport.objects.select_related("reporter").all()
+
+        target_type = request.query_params.get("target_type")
+        target_id = request.query_params.get("target_id")
+        reporter_id = request.query_params.get("reporter")
+        handled = request.query_params.get("handled")
+
+        if target_type:
+            queryset = queryset.filter(target_type=target_type)
+        if target_id:
+            queryset = queryset.filter(target_id=target_id)
+        if reporter_id:
+            queryset = queryset.filter(reporter_id=reporter_id)
+        if handled is not None:
+            if handled.lower() in {"true", "1"}:
+                queryset = queryset.filter(handled=True)
+            elif handled.lower() in {"false", "0"}:
+                queryset = queryset.filter(handled=False)
+
+        serializer = ContentReportAdminSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminReportDetailView(APIView):
+    """
+    Endpoint admin pour marquer un signalement comme traité.
+
+    PATCH /api/admin/reports/{id}
+    """
+
+    permission_classes = [CanEditReport]
+
+    def patch(self, request, pk: int):
+        report = get_object_or_404(ContentReport, pk=pk)
+
+        handled = request.data.get("handled")
+        if handled is not None:
+            handled_bool = bool(handled) if isinstance(handled, bool) else str(handled).lower() in {"true", "1"}
+            report.handled = handled_bool
+            if handled_bool:
+                report.handled_by = request.user
+                report.handled_at = timezone.now()
+            else:
+                report.handled_by = None
+                report.handled_at = None
+
+        report.save()
+        serializer = ContentReportAdminSerializer(report)
+        return Response(serializer.data, status=status.HTTP_200_OK)

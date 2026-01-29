@@ -59,9 +59,10 @@ def moderator_client(moderator_user):
 @pytest.mark.django_db
 class TestAdminReviewEndpoints:
     def test_admin_can_list_reviews_with_review_read_permission(self, admin_client, user, user2, game):
-        Review.objects.create(user=user, game=game, content="Review 1")
+        # Contenu suffisamment long pour satisfaire le validateur (min 4 caractères)
+        Review.objects.create(user=user, game=game, content="Review 1 ok")
         # Utiliser un autre utilisateur pour respecter la contrainte d'unicité (user, game)
-        Review.objects.create(user=user2, game=game, content="Review 2")
+        Review.objects.create(user=user2, game=game, content="Review 2 ok")
 
         url = "/api/admin/reviews/"
         response = admin_client.get(url)

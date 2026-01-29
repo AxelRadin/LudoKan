@@ -6,9 +6,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.reviews.models import ContentReport
+from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.users.models import AdminAction, UserRole, UserSuspension
 from apps.users.permissions import IsAdminWithPermission, IsNotSuspended
-from apps.users.serializers import UserSuspendSerializer
+from apps.users.serializers import UserSuspendSerializer, UserSuspensionSerializer
 
 User = get_user_model()
 
@@ -80,3 +82,35 @@ class AdminSuspendUserView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class AdminUserSuspensionListView(APIView):
+    """
+    Endpoint admin pour lister les suspensions d'un utilisateur.
+
+    GET /api/admin/users/{id}/suspensions
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "user.suspend"
+
+    def get(self, request, pk: int):
+        user = get_object_or_404(User, pk=pk)
+        suspensions = UserSuspension.objects.filter(user=user).order_by("-start_date")
+        serializer = UserSuspensionSerializer(suspensions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MyReportsView(APIView):
+    """
+    Endpoint pour récupérer les signalements faits par l'utilisateur courant.
+
+    GET /api/me/reports
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        reports = ContentReport.objects.filter(reporter=request.user).order_by("-created_at")
+        serializer = ContentReportAdminSerializer(reports, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

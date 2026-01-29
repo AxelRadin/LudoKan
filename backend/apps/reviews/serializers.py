@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.games.serializers import GameReadSerializer
-from apps.reviews.models import Review
+from apps.reviews.models import ContentReport, Review
 from apps.reviews.validators import validate_review_content_length
 from apps.users.serializers import UserSerializer
 
@@ -60,3 +60,29 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Vous avez deja laisse un avis pour ce jeu.")
 
         return data
+
+
+class ContentReportCreateSerializer(serializers.ModelSerializer):
+    """Serializer minimal pour créer un signalement."""
+
+    class Meta:
+        model = ContentReport
+        fields = ["reason"]
+
+
+class ContentReportAdminSerializer(serializers.ModelSerializer):
+    reporter = UserSerializer(read_only=True)
+
+    class Meta:
+        model = ContentReport
+        fields = [
+            "id",
+            "reporter",
+            "target_type",
+            "target_id",
+            "reason",
+            "handled",
+            "handled_by",
+            "handled_at",
+            "created_at",
+        ]

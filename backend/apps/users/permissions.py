@@ -14,8 +14,11 @@ from .models import UserRole, UserSuspension
 ROLE_PERMISSIONS: dict[str, set[str]] = {
     UserRole.Role.MODERATOR: {
         "user.view",
+        # Lecture / traitement basique côté modération
         "review_read",
         "rating_read",
+        "report_read",
+        "report_edit",
     },
     UserRole.Role.ADMIN: {
         "user.view",
@@ -28,8 +31,12 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "review_read",
         "review_edit",
         "review_delete",
+        # Endpoints admin ratings
         "rating_read",
         "rating_delete",
+        # Gestion des signalements
+        "report_read",
+        "report_edit",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},

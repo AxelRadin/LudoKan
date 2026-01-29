@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.reviews.models import Review
+from apps.reviews.models import ContentReport, Review
 
 
 @admin.register(Review)
@@ -11,7 +11,7 @@ class ReviewAdmin(admin.ModelAdmin):
 
     list_display = ["user", "game", "date_created", "content_preview", "rating"]
     list_filter = ["game", "user", "date_created"]
-    search_fields = ["user__username", "game__name", "content"]
+    search_fields = ["user__pseudo", "user__email", "game__name", "content"]
     readonly_fields = ["date_created", "date_modified"]
 
     fieldsets = (
@@ -29,3 +29,22 @@ class ReviewAdmin(admin.ModelAdmin):
         return obj.content
 
     content_preview.short_description = "Apercu du contenu"
+
+
+@admin.register(ContentReport)
+class ContentReportAdmin(admin.ModelAdmin):
+    """
+    Interface d'admin pour les signalements de contenu (reviews / ratings).
+    """
+
+    list_display = ("reporter", "target_type", "target_id", "created_at", "reason_preview")
+    list_filter = ("target_type", "created_at")
+    search_fields = ("reporter__email", "reporter__pseudo", "target_type", "target_id", "reason")
+    readonly_fields = ("created_at",)
+
+    def reason_preview(self, obj):
+        if len(obj.reason) > 50:
+            return obj.reason[:50] + "..."
+        return obj.reason
+
+    reason_preview.short_description = "Raison"

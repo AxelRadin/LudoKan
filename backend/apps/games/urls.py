@@ -11,6 +11,7 @@ from .views import (
     RatingCreateView,
     RatingDetailView,
     RatingListView,
+    RatingReportView,
 )
 
 app_name = "games"
@@ -95,5 +96,6 @@ urlpatterns = [
     path("admin/ratings/<int:pk>/", AdminRatingDetailView.as_view(), name="admin-rating-detail"),
     path("games/<int:game_id>/ratings/", RatingCreateView.as_view(), name="game-rating-create"),
     path("ratings/<int:pk>/", RatingDetailView.as_view(), name="rating-detail"),
+    path("ratings/<int:pk>/report/", RatingReportView.as_view(), name="rating-report"),
     path("games/<int:game_id>/stats/", GameStatsView.as_view(), name="game-stats"),
 ]

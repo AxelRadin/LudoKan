@@ -222,6 +222,38 @@ class TestDRFPermissions:
 
         assert perm.has_permission(request, view) is True
 
+    def test_is_admin_with_permission_rejects_anonymous_user(self, rf):
+        """IsAdminWithPermission doit refuser un utilisateur anonyme (non authentifié)."""
+
+        class CanReadAdminStuff(IsAdminWithPermission):
+            required_permission = "review_read"
+
+        request = rf.get("/")
+        request.user = AnonymousUser()
+
+        perm = CanReadAdminStuff()
+        view = self.DummyView()
+
+        assert perm.has_permission(request, view) is False
+
+    def test_is_admin_with_permission_allows_django_superuser(self):
+        """IsAdminWithPermission doit autoriser un superuser Django via le raccourci super()."""
+
+        superuser = User.objects.create_superuser(
+            email="superadmin-perm@example.com",
+            pseudo="superadmin-perm",
+            password="SuperAdminPass123!",
+        )
+
+        class CanReadAdminStuff(IsAdminWithPermission):
+            required_permission = "review_read"
+
+        perm = CanReadAdminStuff()
+        view = self.DummyView()
+        request = self.DummyRequest(superuser)
+
+        assert perm.has_permission(request, view) is True
+
     def test_is_not_suspended_denies_suspended_user(self, user):
         """IsNotSuspended doit bloquer un utilisateur avec une suspension active."""
 
