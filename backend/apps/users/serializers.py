@@ -3,6 +3,7 @@ from rest_framework import serializers
 
 from .errors import UserErrors
 from .models import CustomUser as User
+from .models import UserSuspension
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -110,6 +111,24 @@ class UserSerializer(serializers.ModelSerializer):
         if user is not None and User.objects.exclude(pk=user.pk).filter(pseudo=value).exists():
             raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)  # pragma: no cover
         return value
+
+
+class UserSuspensionSerializer(serializers.ModelSerializer):
+    is_expired = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = UserSuspension
+        fields = [
+            "id",
+            "user",
+            "suspended_by",
+            "reason",
+            "start_date",
+            "end_date",
+            "is_active",
+            "is_expired",
+            "created_at",
+        ]
 
 
 class UserSuspendSerializer(serializers.Serializer):

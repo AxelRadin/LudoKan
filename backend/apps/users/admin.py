@@ -1,8 +1,10 @@
 from allauth.account.models import EmailAddress
 from django import forms
 from django.contrib import admin
+from django.db.models import Q
+from django.utils import timezone
 
-from .models import CustomUser
+from .models import AdminAction, CustomUser, UserRole, UserSuspension
 
 
 class CustomUserAdminForm(forms.ModelForm):
@@ -72,14 +74,22 @@ def verify_user(modeladmin, request, queryset):
         )
 
 
+class UserRoleInline(admin.TabularInline):
+    model = UserRole
+    extra = 0
+    autocomplete_fields = ["user"]
+    can_delete = True
+
+
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     form = CustomUserAdminForm
 
-    list_display = ("pseudo", "email", "first_name", "last_name", "is_staff", "email_verified")
+    list_display = ("pseudo", "email", "first_name", "last_name", "is_staff", "is_suspended", "email_verified")
     search_fields = ("pseudo", "email")
     list_filter = ("is_staff", "is_active")
     actions = [verify_user]
+    inlines = [UserRoleInline]
 
     @admin.display(boolean=True, description="Email vérifié (allauth)")
     def email_verified(self, obj):
@@ -88,3 +98,29 @@ class CustomUserAdmin(admin.ModelAdmin):
         vérifié côté django-allauth.
         """
         return EmailAddress.objects.filter(user=obj, email=obj.email, verified=True).exists()
+
+    @admin.display(boolean=True, description="Suspendu")
+    def is_suspended(self, obj):
+        """
+        Indique si l'utilisateur a au moins une suspension active (non expirée).
+        """
+        now = timezone.now()
+        return UserSuspension.objects.filter(user=obj, is_active=True).filter(Q(end_date__isnull=True) | Q(end_date__gt=now)).exists()
+
+
+@admin.register(UserSuspension)
+class UserSuspensionAdmin(admin.ModelAdmin):
+    list_display = ("user", "suspended_by", "is_active", "is_expired", "start_date", "end_date")
+    list_filter = ("is_active", "start_date", "end_date")
+    search_fields = ("user__email", "user__pseudo", "suspended_by__email", "suspended_by__pseudo")
+    autocomplete_fields = ("user", "suspended_by")
+    readonly_fields = ("created_at",)
+
+
+@admin.register(AdminAction)
+class AdminActionAdmin(admin.ModelAdmin):
+    list_display = ("timestamp", "admin_user", "action_type", "target_type", "target_id")
+    list_filter = ("action_type", "target_type")
+    search_fields = ("admin_user__email", "admin_user__pseudo", "description")
+    autocomplete_fields = ("admin_user",)
+    readonly_fields = ("timestamp",)

@@ -9,8 +9,10 @@ import pytest
 from django.conf import settings
 from PIL import Image
 from rest_framework import status
+from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.reviews.models import ContentReport
 from apps.users.models import AdminAction, CustomUser, UserRole, UserSuspension
 from apps.users.tests.constants import TEST_USER_CREDENTIAL
 
@@ -687,3 +689,64 @@ class TestAdminSuspendUserView:
         response = api_client.post(url, {"reason": "Mod attempt"}, format="json")
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+class TestAdminUserQueries:
+    """Tests pour les endpoints admin de consultation des suspensions et des reports."""
+
+    def test_admin_can_list_user_suspensions(self, auth_admin_client_with_tokens, user):
+        # Créer deux suspensions pour le même utilisateur
+        UserSuspension.objects.create(user=user, suspended_by=None, reason="First", end_date=None)
+        UserSuspension.objects.create(user=user, suspended_by=None, reason="Second", end_date=None)
+
+        url = f"/api/admin/users/{user.id}/suspensions/"
+        response = auth_admin_client_with_tokens.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
+        reasons = {s["reason"] for s in response.data}
+        assert {"First", "Second"} == reasons
+
+    def test_non_admin_cannot_list_user_suspensions(self, user):
+        # Utilisateur normal connecté sans rôle admin/modérateur
+        client = APIClient()
+        client.force_authenticate(user=user)
+
+        url = f"/api/admin/users/{user.id}/suspensions/"
+        response = client.get(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+class TestMyReportsView:
+    """Tests pour l'endpoint /api/me/reports."""
+
+    def test_me_reports_returns_only_current_user_reports(self, auth_client_with_tokens, user, another_user):
+        # Créer deux reports, un pour user et un pour another_user
+        r1 = ContentReport.objects.create(
+            reporter=user,
+            target_type=ContentReport.TargetType.REVIEW,
+            target_id=1,
+            reason="Bad language",
+        )
+        ContentReport.objects.create(
+            reporter=another_user,
+            target_type=ContentReport.TargetType.RATING,
+            target_id=2,
+            reason="Offensive",
+        )
+
+        url = "/api/me/reports/"
+        response = auth_client_with_tokens.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        ids = [item["id"] for item in response.data]
+        assert ids == [r1.id]
+
+    def test_me_reports_requires_authentication(self, api_client):
+        url = "/api/me/reports/"
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED

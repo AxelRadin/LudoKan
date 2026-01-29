@@ -22,7 +22,8 @@ from apps.games.serializers import (
     RatingSerializer,
 )
 from apps.library.models import UserGame
-from apps.reviews.models import Review
+from apps.reviews.models import ContentReport, Review
+from apps.reviews.serializers import ContentReportCreateSerializer
 from apps.users.models import AdminAction
 
 
@@ -205,6 +206,36 @@ class AdminRatingDetailView(APIView):
 
         rating.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RatingReportView(APIView):
+    """
+    Permet à un utilisateur connecté de signaler une note (rating).
+
+    POST /api/ratings/{id}/report
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk: int):
+        rating = get_object_or_404(Rating, pk=pk)
+
+        serializer = ContentReportCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        report, created = ContentReport.objects.get_or_create(
+            reporter=request.user,
+            target_type=ContentReport.TargetType.RATING,
+            target_id=rating.pk,
+            defaults={"reason": serializer.validated_data["reason"]},
+        )
+
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        payload = {
+            "id": report.id,
+            "already_reported": not created,
+        }
+        return Response(payload, status=status_code)
 
 
 class GameStatsView(APIView):
