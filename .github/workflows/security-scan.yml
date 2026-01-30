@@ -1,0 +1,54 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main, staging, develop]
+  pull_request:
+    branches: [main, staging]
+  schedule:
+    # Scan quotidien à 2h du matin
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  grype-scan:
+    name: Grype Vulnerability Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker compose build web
+
+      - name: Run Grype vulnerability scanner
+        uses: anchore/scan-action@v3
+        id: grype
+        with:
+          image: ludokan-web:latest
+          fail-build: true
+          severity-cutoff: high
+          output-format: sarif
+
+      - name: Upload Grype SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ steps.grype.outputs.sarif }}
+
+      - name: Generate readable report
+        if: always()
+        uses: anchore/scan-action@v3
+        with:
+          image: ludokan-web:latest
+          output-format: table
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Security vulnerabilities detected! Check the Security tab for details."

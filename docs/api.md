@@ -1,3 +1,107 @@
+# API Documentation
+
+## Django-filter Configuration
+
+### Overview
+
+The API uses `django-filter` to enable filtering on Django REST Framework endpoints.
+
+### Installation
+
+```bash
+pip install django-filter
+```
+
+### Configuration
+
+1. **Add to `INSTALLED_APPS`** in `config/settings.py`:
+
+```python
+INSTALLED_APPS = [
+    # ...
+    "django_filters",
+    # ...
+]
+```
+
+2. **Configure DRF filter backends** in `REST_FRAMEWORK` settings:
+
+```python
+REST_FRAMEWORK = {
+    # ...
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
+    # ...
+}
+```
+
+3. **Enable filtering on viewsets**:
+
+```python
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+class GameViewSet(ModelViewSet):
+    queryset = Game.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["name"]  # Simple field filtering
+    ordering_fields = ["release_date", "rating_avg"]
+```
+
+### Usage Examples
+
+#### Filter games by name
+
+```bash
+# Exact match filter
+GET /api/games/?name=zelda
+
+# Returns all games with exact name "zelda"
+```
+
+#### Combine filters
+
+```bash
+# Multiple filters can be combined
+GET /api/games/?name=zelda&publisher=Nintendo
+```
+
+#### Testing with curl
+
+```bash
+# Test the filter endpoint
+curl -X GET "http://localhost:8000/api/games/?name=zelda" \
+  -H "Accept: application/json"
+```
+
+### Available Filters
+
+#### Games Endpoint (`/api/games/`)
+
+- `name`: Filter by exact game name
+
+### Advanced Filtering
+
+For more complex filtering (partial matches, ranges, etc.), you can create custom `FilterSet` classes:
+
+```python
+from django_filters import rest_framework as filters
+
+class GameFilter(filters.FilterSet):
+    name = filters.CharFilter(lookup_expr='icontains')  # Case-insensitive contains
+    release_year = filters.NumberFilter(field_name='release_date', lookup_expr='year')
+
+    class Meta:
+        model = Game
+        fields = ['name', 'publisher']
+
+class GameViewSet(ModelViewSet):
+    filterset_class = GameFilter  # Use custom filter instead of filterset_fields
+```
+
+---
+
 # Ratings API Guide
 
 ## Endpoints overview
