@@ -1,13 +1,17 @@
+from datetime import timedelta
+
 from dj_rest_auth.views import UserDetailsView as DjUserDetailsView
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.chat.models import Message
 from apps.game_tickets.models import GameTicket
-from apps.games.models import Game
+from apps.games.models import Game, Rating
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.users.models import AdminAction, UserRole, UserSuspension
@@ -124,6 +128,12 @@ class AdminStatsView(APIView):
     required_permission = "dashboard.view"
 
     def get(self, request):
+        now = timezone.now()
+        day_ago = now - timedelta(days=1)
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
+
+        # Totaux globaux pour le dashboard
         totals = {
             "users": User.objects.count(),
             "games": Game.objects.count(),
@@ -131,6 +141,18 @@ class AdminStatsView(APIView):
             "reviews": Review.objects.count(),
         }
 
+        # Engagement utilisateurs (basé sur last_login)
+        engagement = {
+            "active_day": User.objects.filter(last_login__gte=day_ago).count(),
+            "active_week": User.objects.filter(last_login__gte=week_ago).count(),
+            "active_month": User.objects.filter(last_login__gte=month_ago).count(),
+            # Engagement contenu (optionnel)
+            "reviews_last_30d": Review.objects.filter(date_created__gte=month_ago).count(),
+            "ratings_last_30d": Rating.objects.filter(date_created__gte=month_ago).count(),
+            "messages_last_30d": Message.objects.filter(created_at__gte=month_ago).count(),
+        }
+
+        # Activité récente (20 dernières actions admin, triées par timestamp décroissant)
         recent_actions = AdminAction.objects.select_related("admin_user").order_by("-timestamp")[:20]
 
         recent_activity = []
@@ -151,6 +173,7 @@ class AdminStatsView(APIView):
 
         payload = {
             "totals": totals,
+            "engagement": engagement,
             "recent_activity": recent_activity,
         }
 

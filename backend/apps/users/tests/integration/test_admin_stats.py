@@ -1,9 +1,13 @@
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import status
 
+from apps.chat.models import ChatRoom, Message
 from apps.game_tickets.models import GameTicket
-from apps.games.models import Game, Publisher
+from apps.games.models import Game, Publisher, Rating
 from apps.reviews.models import Review
 from apps.users.models import AdminAction
 
@@ -14,7 +18,7 @@ User = get_user_model()
 class TestAdminStatsView:
     """Tests pour l'endpoint GET /api/admin/stats/."""
 
-    def test_admin_can_retrieve_global_stats_and_recent_activity(self, auth_admin_client_with_tokens, admin_user):
+    def test_admin_can_retrieve_global_stats_recent_activity_and_engagement(self, auth_admin_client_with_tokens, admin_user):
         # Créer des données supplémentaires pour chaque entité comptabilisée
         publisher = Publisher.objects.create(name="Test Publisher")
         game = Game.objects.create(name="Test Game", publisher=publisher)
@@ -54,6 +58,7 @@ class TestAdminStatsView:
 
         assert response.status_code == status.HTTP_200_OK
         assert "totals" in response.data
+        assert "engagement" in response.data
         assert "recent_activity" in response.data
 
         totals = response.data["totals"]
@@ -62,6 +67,14 @@ class TestAdminStatsView:
         assert totals["games"] == Game.objects.count()
         assert totals["tickets"] == GameTicket.objects.count()
         assert totals["reviews"] == Review.objects.count()
+
+        engagement = response.data["engagement"]
+        assert "active_day" in engagement
+        assert "active_week" in engagement
+        assert "active_month" in engagement
+        assert "reviews_last_30d" in engagement
+        assert "ratings_last_30d" in engagement
+        assert "messages_last_30d" in engagement
 
         recent_activity = response.data["recent_activity"]
         # On a créé au moins 2 actions, vérifier qu'elles sont présentes et correctement mappées
@@ -106,6 +119,89 @@ class TestAdminStatsView:
         # On s'attend à voir au moins les plus gros IDs (ex: 29, 28, ...)
         assert "29" in latest_ids
         assert "28" in latest_ids
+
+    def test_engagement_user_activity_and_content_metrics(self, auth_admin_client_with_tokens, admin_user):
+        """
+        Vérifie que les métriques d'engagement renvoient des valeurs cohérentes
+        pour les utilisateurs actifs et le contenu récent.
+        """
+        now = timezone.now()
+
+        # Créer des utilisateurs avec des last_login dans différentes fenêtres temporelles
+        user_day = User.objects.create_user(
+            email="active_day@example.com",
+            password="TestPass123!",
+            pseudo="active_day",
+        )
+        user_day.last_login = now - timedelta(hours=12)
+        user_day.save(update_fields=["last_login"])
+
+        user_week = User.objects.create_user(
+            email="active_week@example.com",
+            password="TestPass123!",
+            pseudo="active_week",
+        )
+        user_week.last_login = now - timedelta(days=3)
+        user_week.save(update_fields=["last_login"])
+
+        user_month = User.objects.create_user(
+            email="active_month@example.com",
+            password="TestPass123!",
+            pseudo="active_month",
+        )
+        user_month.last_login = now - timedelta(days=20)
+        user_month.save(update_fields=["last_login"])
+
+        # Un utilisateur plus ancien que 30 jours ne doit pas être compté
+        user_old = User.objects.create_user(
+            email="inactive@example.com",
+            password="TestPass123!",
+            pseudo="inactive_user",
+        )
+        user_old.last_login = now - timedelta(days=40)
+        user_old.save(update_fields=["last_login"])
+
+        # Créer un publisher / game pour rattacher ratings & reviews
+        publisher = Publisher.objects.create(name="Engagement Publisher")
+        game = Game.objects.create(name="Engagement Game", publisher=publisher)
+
+        # Reviews récentes (dans les 30 derniers jours)
+        Review.objects.create(user=admin_user, game=game, content="Review récente 1")
+        Review.objects.create(user=user_day, game=game, content="Review récente 2")
+
+        # Rating récents
+        Rating.objects.create(
+            user=admin_user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=5,
+        )
+
+        # Messages récents (chat)
+        room = ChatRoom.objects.create()
+        room.members.add(admin_user, user_day)
+        Message.objects.create(room=room, user=admin_user, content="Hello")
+        Message.objects.create(room=room, user=user_day, content="World")
+
+        url = "/api/admin/stats/"
+        response = auth_admin_client_with_tokens.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        engagement = response.data["engagement"]
+
+        day_ago = now - timedelta(days=1)
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
+
+        # Vérifier la cohérence des métriques utilisateurs
+        assert engagement["active_day"] == User.objects.filter(last_login__gte=day_ago).count()
+        assert engagement["active_week"] == User.objects.filter(last_login__gte=week_ago).count()
+        assert engagement["active_month"] == User.objects.filter(last_login__gte=month_ago).count()
+
+        # Vérifier la cohérence des métriques de contenu
+        assert engagement["reviews_last_30d"] == Review.objects.filter(date_created__gte=month_ago).count()
+        assert engagement["ratings_last_30d"] == Rating.objects.filter(date_created__gte=month_ago).count()
+        assert engagement["messages_last_30d"] == Message.objects.filter(created_at__gte=month_ago).count()
 
     def test_non_admin_cannot_access_stats(self, auth_client_with_tokens):
         url = "/api/admin/stats/"
