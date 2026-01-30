@@ -1,8 +1,9 @@
 # Django + DRF
-Django==4.2.7
+Django==4.2.18
 djangorestframework==3.14.0
 django-filter==23.3
 django-notifications-hq==1.8.2
+wheel>=0.46.0
 
 # Authentification
 django-allauth==0.57.0
