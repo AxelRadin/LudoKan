@@ -1,7 +1,10 @@
 from datetime import timedelta
 
 from dj_rest_auth.views import UserDetailsView as DjUserDetailsView
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -133,23 +136,52 @@ class AdminStatsView(APIView):
         week_ago = now - timedelta(days=7)
         month_ago = now - timedelta(days=30)
 
-        # Totaux globaux pour le dashboard
+        # Cache configurable pour éviter d'impacter les tests (désactivé par défaut).
+        cache_timeout = getattr(settings, "ADMIN_STATS_CACHE_TIMEOUT", 0)
+        use_cache = cache_timeout > 0
+
+        cache_key = "admin:stats"
+        if use_cache:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data, status=status.HTTP_200_OK)
+
+        # Totaux globaux pour le dashboard + engagement utilisateurs en une requête
+        user_agg = User.objects.aggregate(
+            total=Count("id"),
+            active_day=Count("id", filter=Q(last_login__gte=day_ago)),
+            active_week=Count("id", filter=Q(last_login__gte=week_ago)),
+            active_month=Count("id", filter=Q(last_login__gte=month_ago)),
+        )
+
+        # Totaux + reviews récentes en une requête
+        review_agg = Review.objects.aggregate(
+            total=Count("id"),
+            last_30d=Count("id", filter=Q(date_created__gte=month_ago)),
+        )
+
+        # Totaux simples sur autres entités
+        games_total = Game.objects.count()
+        tickets_total = GameTicket.objects.count()
+
+        # Engagement contenu (ratings, messages) via agrégations conditionnelles
+        ratings_agg = Rating.objects.aggregate(last_30d=Count("id", filter=Q(date_created__gte=month_ago)))
+        messages_agg = Message.objects.aggregate(last_30d=Count("id", filter=Q(created_at__gte=month_ago)))
+
         totals = {
-            "users": User.objects.count(),
-            "games": Game.objects.count(),
-            "tickets": GameTicket.objects.count(),
-            "reviews": Review.objects.count(),
+            "users": user_agg["total"],
+            "games": games_total,
+            "tickets": tickets_total,
+            "reviews": review_agg["total"],
         }
 
-        # Engagement utilisateurs (basé sur last_login)
         engagement = {
-            "active_day": User.objects.filter(last_login__gte=day_ago).count(),
-            "active_week": User.objects.filter(last_login__gte=week_ago).count(),
-            "active_month": User.objects.filter(last_login__gte=month_ago).count(),
-            # Engagement contenu (optionnel)
-            "reviews_last_30d": Review.objects.filter(date_created__gte=month_ago).count(),
-            "ratings_last_30d": Rating.objects.filter(date_created__gte=month_ago).count(),
-            "messages_last_30d": Message.objects.filter(created_at__gte=month_ago).count(),
+            "active_day": user_agg["active_day"],
+            "active_week": user_agg["active_week"],
+            "active_month": user_agg["active_month"],
+            "reviews_last_30d": review_agg["last_30d"],
+            "ratings_last_30d": ratings_agg["last_30d"],
+            "messages_last_30d": messages_agg["last_30d"],
         }
 
         # Activité récente (20 dernières actions admin, triées par timestamp décroissant)
@@ -176,6 +208,9 @@ class AdminStatsView(APIView):
             "engagement": engagement,
             "recent_activity": recent_activity,
         }
+
+        if use_cache:
+            cache.set(cache_key, payload, timeout=cache_timeout)
 
         return Response(payload, status=status.HTTP_200_OK)
 
