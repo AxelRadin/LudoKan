@@ -10,6 +10,7 @@ from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Publisher, Rating
 from apps.reviews.models import Review
 from apps.users.models import AdminAction
+from apps.users.tests.constants import TEST_USER_CREDENTIAL
 
 User = get_user_model()
 
@@ -202,6 +203,31 @@ class TestAdminStatsView:
         assert engagement["reviews_last_30d"] == Review.objects.filter(date_created__gte=month_ago).count()
         assert engagement["ratings_last_30d"] == Rating.objects.filter(date_created__gte=month_ago).count()
         assert engagement["messages_last_30d"] == Message.objects.filter(created_at__gte=month_ago).count()
+
+    def test_moderator_can_access_stats(self, api_client, moderator_user):
+        """
+        Les utilisateurs avec rôle MODERATOR doivent pouvoir accéder au dashboard
+        grâce à la permission métier "dashboard.view".
+        """
+        login_url = "/api/auth/login/"
+        login_response = api_client.post(
+            login_url,
+            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL},
+            format="json",
+        )
+
+        assert login_response.status_code == status.HTTP_200_OK
+
+        # Propager les cookies JWT dans le client
+        if "access_token" in login_response.cookies:
+            api_client.cookies["access_token"] = login_response.cookies["access_token"].value
+        if "refresh_token" in login_response.cookies:
+            api_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
+
+        url = "/api/admin/stats/"
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
 
     def test_non_admin_cannot_access_stats(self, auth_client_with_tokens):
         url = "/api/admin/stats/"
