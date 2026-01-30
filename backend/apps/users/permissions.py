@@ -19,6 +19,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "rating_read",
         "report_read",
         "report_edit",
+        # Dashboard admin en lecture seule
+        "dashboard.view",
     },
     UserRole.Role.ADMIN: {
         "user.view",
@@ -37,6 +39,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         # Gestion des signalements
         "report_read",
         "report_edit",
+        # Accès complet au dashboard admin
+        "dashboard.view",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},
