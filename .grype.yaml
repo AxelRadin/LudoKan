@@ -1,0 +1,38 @@
+# Configuration Grype pour LudoKan
+# Documentation: https://github.com/anchore/grype#configuration
+
+# Niveau de sévérité minimum à rapporter
+fail-on-severity: high
+
+# Ignorer certaines CVE (à utiliser avec précaution, seulement pour faux positifs)
+ignore:
+  # Exemple (décommenter si nécessaire):
+  # - vulnerability: CVE-XXXX-XXXXX
+  #   reason: "False positive - not applicable to our use case"
+
+# Sources de données de vulnérabilités
+db:
+  auto-update: true
+  cache-dir: ".grype/db"
+  update-url: "https://toolbox-data.anchore.io/grype/databases/listing.json"
+
+# Format de sortie
+output:
+  # Options: table, json, cyclonedx, sarif
+  format: table
+
+# Registres privés (si nécessaire)
+# registry:
+#   insecure-skip-tls-verify: false
+#   auth:
+#     - authority: "my-registry.com"
+#       username: "user"
+#       password: "pass"
+
+# Exclure certains chemins de l'analyse
+exclude:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/.venv/**"
+  - "**/venv/**"
+  - "**/node_modules/**"
