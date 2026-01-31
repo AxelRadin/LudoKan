@@ -24,7 +24,7 @@ from apps.games.serializers import (
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportCreateSerializer
-from apps.users.models import AdminAction
+from apps.users.utils import log_admin_action
 
 
 class GameViewSet(ModelViewSet):
@@ -251,7 +251,7 @@ class AdminRatingDetailView(APIView):
     def delete(self, request, pk: int):
         rating = get_object_or_404(Rating, pk=pk)
 
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=request.user,
             action_type="rating.delete",
             target_type="rating",

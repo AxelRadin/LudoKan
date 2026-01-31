@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.game_tickets.models import GameTicket
-from apps.users.models import UserRole
+from apps.users.models import AdminAction, UserRole
 from apps.users.tests.constants import TEST_USER_CREDENTIAL
 
 User = get_user_model()
@@ -113,3 +113,42 @@ class TestAdminGameTicketListView:
             {"created_before": before, "created_after": after},
         )
         assert resp_dates.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestGameTicketStatusUpdateLogging:
+    def test_staff_status_update_to_approved_creates_admin_action(self, authenticated_staff_api_client, user):
+        ticket = GameTicket.objects.create(user=user, game_name="Status Ticket", status=GameTicket.Status.REVIEWING)
+
+        url = f"/api/game-tickets/{ticket.id}/status/"
+        response = authenticated_staff_api_client.post(
+            url,
+            {"status": GameTicket.Status.APPROVED},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        assert AdminAction.objects.filter(
+            action_type="ticket.approve",
+            target_type="game_ticket",
+            target_id=ticket.id,
+        ).exists()
+
+    def test_staff_status_update_to_rejected_creates_admin_action(self, authenticated_staff_api_client, user):
+        ticket = GameTicket.objects.create(user=user, game_name="Status Ticket", status=GameTicket.Status.REVIEWING)
+
+        url = f"/api/game-tickets/{ticket.id}/status/"
+        response = authenticated_staff_api_client.post(
+            url,
+            {"status": GameTicket.Status.REJECTED},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        assert AdminAction.objects.filter(
+            action_type="ticket.reject",
+            target_type="game_ticket",
+            target_id=ticket.id,
+        ).exists()

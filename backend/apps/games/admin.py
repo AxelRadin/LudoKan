@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from apps.users.models import AdminAction
+from apps.users.utils import log_admin_action
 
 from .models import Game, Genre, Platform, Publisher, Rating
 
@@ -75,7 +75,7 @@ def delete_ratings_with_log(modeladmin, request, queryset):
 
     # On utilise select_related pour optimiser les accès à user/game
     for rating in queryset.select_related("user", "game"):
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=actor,
             action_type="rating.delete",
             target_type="rating",

@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 
 from apps.game_tickets.models import GameTicket
-from apps.users.models import AdminAction
+from apps.users.utils import log_admin_action
 
 
 class GameTicketAdminForm(ModelForm):
@@ -40,7 +40,7 @@ def approve_tickets(modeladmin, request, queryset):
             skipped_count += 1
             continue
 
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=actor,
             action_type="ticket.approve",
             target_type="game_ticket",
@@ -80,7 +80,7 @@ def reject_tickets(modeladmin, request, queryset):
             skipped_count += 1
             continue
 
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=actor,
             action_type="ticket.reject",
             target_type="game_ticket",

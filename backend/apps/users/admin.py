@@ -9,6 +9,7 @@ from import_export.admin import ImportExportModelAdmin
 
 from .models import AdminAction, CustomUser, UserRole, UserSuspension
 from .permissions import has_permission
+from .utils import log_admin_action
 
 
 class CustomUserAdminForm(forms.ModelForm):
@@ -115,7 +116,7 @@ def suspend_users(modeladmin, request, queryset):
             reason="Suspension via Django admin",
         )
 
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=actor,
             action_type="user.suspend",
             target_type="user",

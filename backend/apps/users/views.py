@@ -21,6 +21,7 @@ from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.users.models import AdminAction, UserRole, UserSuspension
 from apps.users.permissions import IsAdminWithPermission, IsNotSuspended
 from apps.users.serializers import AdminActionSerializer, AdminUserListSerializer, UserSuspendSerializer, UserSuspensionSerializer
+from apps.users.utils import log_admin_action
 
 User = get_user_model()
 
@@ -74,7 +75,7 @@ class AdminSuspendUserView(APIView):
         )
 
         # Logguer l'action admin
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=actor,
             action_type="user.suspend",
             target_type="user",

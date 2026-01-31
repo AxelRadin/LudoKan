@@ -244,3 +244,31 @@ class TestAdminActionListView:
             {"before": before, "after": after},
         )
         assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestAdminSuspendUserView:
+    def test_admin_suspend_user_creates_admin_action(self, admin_client):
+        # Créer une cible à suspendre
+        target = User.objects.create_user(
+            email="target-suspend@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="targetsuspend",
+        )
+
+        url = f"/api/admin/users/{target.id}/suspend/"
+        payload = {
+            "reason": "Violation des règles",
+            "end_date": None,
+        }
+
+        response = admin_client.post(url, payload, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # Vérifier que l'action admin a été loggée
+        assert AdminAction.objects.filter(
+            action_type="user.suspend",
+            target_type="user",
+            target_id=target.id,
+        ).exists()
