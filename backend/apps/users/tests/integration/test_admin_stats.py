@@ -2,6 +2,8 @@ from datetime import timedelta
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework import status
 
@@ -10,6 +12,7 @@ from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Publisher, Rating
 from apps.reviews.models import Review
 from apps.users.models import AdminAction
+from apps.users.tests.constants import TEST_USER_CREDENTIAL
 
 User = get_user_model()
 
@@ -203,8 +206,60 @@ class TestAdminStatsView:
         assert engagement["ratings_last_30d"] == Rating.objects.filter(date_created__gte=month_ago).count()
         assert engagement["messages_last_30d"] == Message.objects.filter(created_at__gte=month_ago).count()
 
+    def test_moderator_can_access_stats(self, api_client, moderator_user):
+        """
+        Les utilisateurs avec rôle MODERATOR doivent pouvoir accéder au dashboard
+        grâce à la permission métier "dashboard.view".
+        """
+        login_url = "/api/auth/login/"
+        login_response = api_client.post(
+            login_url,
+            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL},
+            format="json",
+        )
+
+        assert login_response.status_code == status.HTTP_200_OK
+
+        # Propager les cookies JWT dans le client
+        if "access_token" in login_response.cookies:
+            api_client.cookies["access_token"] = login_response.cookies["access_token"].value
+        if "refresh_token" in login_response.cookies:
+            api_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
+
+        url = "/api/admin/stats/"
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+
     def test_non_admin_cannot_access_stats(self, auth_client_with_tokens):
         url = "/api/admin/stats/"
         response = auth_client_with_tokens.get(url)
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    @override_settings(ADMIN_STATS_CACHE_TIMEOUT=60)
+    def test_admin_stats_uses_cache(self, auth_admin_client_with_tokens, admin_user):
+        """
+        Vérifie que le cache est bien utilisé quand ADMIN_STATS_CACHE_TIMEOUT > 0.
+        """
+        cache.clear()
+        url = "/api/admin/stats/"
+
+        # Premier appel : pas de donnée en cache, on calcule et on stocke
+        response1 = auth_admin_client_with_tokens.get(url)
+        assert response1.status_code == status.HTTP_200_OK
+        data1 = response1.data
+
+        # Modifier les données après le premier appel
+        AdminAction.objects.create(
+            admin_user=admin_user,
+            action_type="user.suspend",
+            target_type="user",
+            target_id=999,
+            description="Action après premier calcul",
+        )
+
+        # Second appel : doit renvoyer les données du cache, donc identiques à data1
+        response2 = auth_admin_client_with_tokens.get(url)
+        assert response2.status_code == status.HTTP_200_OK
+        assert response2.data == data1
