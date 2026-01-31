@@ -55,11 +55,6 @@ class GameTicketCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Year must be between 1970 and 2100.")
         return value
 
-    def validate_age(self, value):
-        if value is not None and value < 0:
-            raise serializers.ValidationError("Age must be positive.")
-        return value
-
     def validate(self, attrs):
         """
         Validation métier globale (doublon optionnel).
@@ -85,6 +80,7 @@ class GameTicketListSerializer(serializers.ModelSerializer):
         model = GameTicket
         fields = [
             "id",
+            "user",
             "game_name",
             "description",
             "publisher",
@@ -97,6 +93,32 @@ class GameTicketListSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class AdminGameTicketListSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source="user.email", read_only=True)
+    user_pseudo = serializers.CharField(source="user.pseudo", read_only=True)
+
+    class Meta:
+        model = GameTicket
+        fields = [
+            "id",
+            "user",
+            "user_email",
+            "user_pseudo",
+            "game_name",
+            "description",
+            "publisher",
+            "year",
+            "players",
+            "age",
+            "status",
+            "genres",
+            "platforms",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
 
 
 class GameTicketAttachmentCreateSerializer(serializers.ModelSerializer):

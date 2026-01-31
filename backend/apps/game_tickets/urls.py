@@ -1,6 +1,12 @@
 from django.urls import path
 
-from apps.game_tickets.views import GameTicketAttachmentCreateView, GameTicketCreateAPIView, GameTicketListAPIView, GameTicketStatusUpdateAPIView
+from apps.game_tickets.views import (
+    AdminGameTicketListView,
+    GameTicketAttachmentCreateView,
+    GameTicketCreateAPIView,
+    GameTicketListAPIView,
+    GameTicketStatusUpdateAPIView,
+)
 
 urlpatterns = [
     path(
@@ -18,4 +24,6 @@ urlpatterns = [
         "game-tickets/<int:pk>/status/",
         GameTicketStatusUpdateAPIView.as_view(),
     ),
+    # Admin tickets
+    path("admin/tickets/", AdminGameTicketListView.as_view(), name="admin-game-ticket-list"),
 ]
