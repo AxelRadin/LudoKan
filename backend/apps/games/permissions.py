@@ -13,3 +13,9 @@ class CanDeleteRating(IsAdminWithPermission, BasePermission):
     """Permission admin pour la suppression des ratings."""
 
     required_permission = "rating_delete"
+
+
+class CanReadGame(IsAdminWithPermission, BasePermission):
+    """Permission admin pour la lecture des jeux."""
+
+    required_permission = "game_read"

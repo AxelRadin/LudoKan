@@ -8,6 +8,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,7 +20,7 @@ from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.users.models import AdminAction, UserRole, UserSuspension
 from apps.users.permissions import IsAdminWithPermission, IsNotSuspended
-from apps.users.serializers import UserSuspendSerializer, UserSuspensionSerializer
+from apps.users.serializers import AdminActionSerializer, AdminUserListSerializer, UserSuspendSerializer, UserSuspensionSerializer
 
 User = get_user_model()
 
@@ -228,3 +229,86 @@ class MyReportsView(APIView):
         reports = ContentReport.objects.filter(reporter=request.user).order_by("-created_at")
         serializer = ContentReportAdminSerializer(reports, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminUserListView(ListAPIView):
+    """
+    Endpoint admin pour lister les utilisateurs.
+
+    GET /api/admin/users
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "user.view"
+    serializer_class = AdminUserListSerializer
+
+    def get_queryset(self):
+        qs = User.objects.all().order_by("-created_at")
+
+        email = self.request.query_params.get("email")
+        pseudo = self.request.query_params.get("pseudo")
+        is_active = self.request.query_params.get("is_active")
+        is_staff = self.request.query_params.get("is_staff")
+        role = self.request.query_params.get("role")
+        created_before = self.request.query_params.get("created_before")
+        created_after = self.request.query_params.get("created_after")
+
+        if email:
+            qs = qs.filter(email__icontains=email)
+        if pseudo:
+            qs = qs.filter(pseudo__icontains=pseudo)
+        if is_active is not None:
+            if is_active.lower() in {"true", "1"}:
+                qs = qs.filter(is_active=True)
+            elif is_active.lower() in {"false", "0"}:
+                qs = qs.filter(is_active=False)
+        if is_staff is not None:
+            if is_staff.lower() in {"true", "1"}:
+                qs = qs.filter(is_staff=True)
+            elif is_staff.lower() in {"false", "0"}:
+                qs = qs.filter(is_staff=False)
+        if role:
+            qs = qs.filter(roles__role=role)
+        if created_before:
+            qs = qs.filter(created_at__lte=created_before)
+        if created_after:
+            qs = qs.filter(created_at__gte=created_after)
+
+        return qs.select_related().prefetch_related("roles", "suspensions")
+
+
+class AdminActionListView(ListAPIView):
+    """
+    Endpoint admin pour lister les actions d'administration.
+
+    GET /api/admin/actions
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "admin_action_read"
+    serializer_class = AdminActionSerializer
+
+    def get_queryset(self):
+        qs = AdminAction.objects.select_related("admin_user").all().order_by("-timestamp")
+
+        action_type = self.request.query_params.get("action_type")
+        target_type = self.request.query_params.get("target_type")
+        target_id = self.request.query_params.get("target_id")
+        admin_user_id = self.request.query_params.get("admin_user_id")
+        created_before = self.request.query_params.get("before")
+        created_after = self.request.query_params.get("after")
+
+        if action_type:
+            qs = qs.filter(action_type=action_type)
+        if target_type:
+            qs = qs.filter(target_type=target_type)
+        if target_id:
+            qs = qs.filter(target_id=target_id)
+        if admin_user_id:
+            qs = qs.filter(admin_user_id=admin_user_id)
+        if created_before:
+            qs = qs.filter(timestamp__lte=created_before)
+        if created_after:
+            qs = qs.filter(timestamp__gte=created_after)
+
+        return qs

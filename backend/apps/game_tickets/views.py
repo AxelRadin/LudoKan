@@ -9,8 +9,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.game_tickets.models import GameTicket
-from apps.game_tickets.permissions import IsStaff
+from apps.game_tickets.permissions import CanReadTicket, IsStaff
 from apps.game_tickets.serializers import (
+    AdminGameTicketListSerializer,
     GameTicketAttachmentCreateSerializer,
     GameTicketCreateSerializer,
     GameTicketListSerializer,
@@ -135,3 +136,36 @@ class GameTicketStatusUpdateAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class AdminGameTicketListView(ListAPIView):
+    """
+    Endpoint admin pour lister tous les tickets de jeux.
+
+    GET /api/admin/tickets
+    """
+
+    serializer_class = AdminGameTicketListSerializer
+    permission_classes = [CanReadTicket]
+
+    def get_queryset(self):
+        qs = GameTicket.objects.select_related("user").prefetch_related("genres", "platforms").all().order_by("-created_at")
+
+        status_param = self.request.query_params.get("status")
+        user_id = self.request.query_params.get("user_id")
+        game_name = self.request.query_params.get("game_name")
+        created_before = self.request.query_params.get("created_before")
+        created_after = self.request.query_params.get("created_after")
+
+        if status_param:
+            qs = qs.filter(status=status_param)
+        if user_id:
+            qs = qs.filter(user_id=user_id)
+        if game_name:
+            qs = qs.filter(game_name__icontains=game_name)
+        if created_before:
+            qs = qs.filter(created_at__lte=created_before)
+        if created_after:
+            qs = qs.filter(created_at__gte=created_after)
+
+        return qs

@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
-from apps.games.permissions import CanDeleteRating, CanReadRating
+from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
 from apps.games.serializers import (
     GameDetailSerializer,
     GameReadSerializer,
@@ -158,6 +158,61 @@ class RatingListView(ListAPIView):
             queryset = queryset.filter(game_id=game_id)
 
         return queryset
+
+
+class AdminGameListView(ListAPIView):
+    """
+    Endpoint admin pour lister les jeux.
+
+    GET /api/admin/games
+    """
+
+    serializer_class = GameReadSerializer
+    permission_classes = [CanReadGame]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = [
+        "release_date",
+        "rating_avg",
+        "average_rating",
+        "rating_count",
+        "popularity_score",
+        "created_at",
+    ]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        qs = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").all()
+
+        name = self.request.query_params.get("name")
+        publisher_id = self.request.query_params.get("publisher_id")
+        status_param = self.request.query_params.get("status")
+        min_rating = self.request.query_params.get("min_rating")
+        max_rating = self.request.query_params.get("max_rating")
+        created_before = self.request.query_params.get("created_before")
+        created_after = self.request.query_params.get("created_after")
+
+        if name:
+            qs = qs.filter(name__icontains=name)
+        if publisher_id:
+            qs = qs.filter(publisher_id=publisher_id)
+        if status_param:
+            qs = qs.filter(status=status_param)
+        if min_rating:
+            try:
+                qs = qs.filter(average_rating__gte=float(min_rating))
+            except ValueError:
+                pass
+        if max_rating:
+            try:
+                qs = qs.filter(average_rating__lte=float(max_rating))
+            except ValueError:
+                pass
+        if created_before:
+            qs = qs.filter(created_at__lte=created_before)
+        if created_after:
+            qs = qs.filter(created_at__gte=created_after)
+
+        return qs
 
 
 class AdminRatingListView(APIView):

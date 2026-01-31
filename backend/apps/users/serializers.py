@@ -2,6 +2,7 @@ from dj_rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
 
 from .errors import UserErrors
+from .models import AdminAction
 from .models import CustomUser as User
 from .models import UserSuspension
 
@@ -141,3 +142,42 @@ class UserSuspendSerializer(serializers.Serializer):
 
     reason = serializers.CharField()
     end_date = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    roles = serializers.SlugRelatedField(many=True, read_only=True, slug_field="role")
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "pseudo",
+            "first_name",
+            "last_name",
+            "is_active",
+            "is_staff",
+            "created_at",
+            "roles",
+        ]
+        read_only_fields = fields
+
+
+class AdminActionSerializer(serializers.ModelSerializer):
+    admin_user_email = serializers.EmailField(source="admin_user.email", read_only=True)
+    admin_user_pseudo = serializers.CharField(source="admin_user.pseudo", read_only=True)
+
+    class Meta:
+        model = AdminAction
+        fields = [
+            "id",
+            "timestamp",
+            "admin_user",
+            "admin_user_email",
+            "admin_user_pseudo",
+            "action_type",
+            "target_type",
+            "target_id",
+            "description",
+        ]
+        read_only_fields = fields
