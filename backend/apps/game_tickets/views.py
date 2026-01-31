@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.game_tickets.models import GameTicket
-from apps.game_tickets.permissions import CanReadTicket, IsStaff
+from apps.game_tickets.permissions import CanReadTicket
 from apps.game_tickets.serializers import (
     AdminGameTicketListSerializer,
     GameTicketAttachmentCreateSerializer,
@@ -17,6 +17,7 @@ from apps.game_tickets.serializers import (
     GameTicketListSerializer,
     GameTicketStatusUpdateSerializer,
 )
+from apps.users.permissions import IsAdminWithPermission
 from apps.users.utils import log_admin_action
 
 
@@ -108,7 +109,8 @@ class GameTicketAttachmentCreateView(generics.CreateAPIView):
     },
 )
 class GameTicketStatusUpdateAPIView(APIView):
-    permission_classes = [IsStaff]
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "ticket.change_status"
 
     def post(self, request, pk):
         serializer = GameTicketStatusUpdateSerializer(data=request.data)
