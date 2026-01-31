@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.game_tickets.models import GameTicket
-from apps.game_tickets.permissions import CanReadTicket, IsStaff
+from apps.game_tickets.permissions import CanReadTicket
 from apps.game_tickets.serializers import (
     AdminGameTicketListSerializer,
     GameTicketAttachmentCreateSerializer,
@@ -17,6 +17,8 @@ from apps.game_tickets.serializers import (
     GameTicketListSerializer,
     GameTicketStatusUpdateSerializer,
 )
+from apps.users.permissions import IsAdminWithPermission
+from apps.users.utils import log_admin_action
 
 
 @extend_schema_view(
@@ -107,7 +109,8 @@ class GameTicketAttachmentCreateView(generics.CreateAPIView):
     },
 )
 class GameTicketStatusUpdateAPIView(APIView):
-    permission_classes = [IsStaff]
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "ticket.change_status"
 
     def post(self, request, pk):
         serializer = GameTicketStatusUpdateSerializer(data=request.data)
@@ -117,6 +120,7 @@ class GameTicketStatusUpdateAPIView(APIView):
 
         try:
             ticket = GameTicket.objects.get(pk=pk)
+            old_status = ticket.status
             ticket.change_status(new_status)
         except GameTicket.DoesNotExist:
             return Response(
@@ -127,6 +131,22 @@ class GameTicketStatusUpdateAPIView(APIView):
             return Response(
                 {"detail": str(e)},
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Log d'action admin sur les transitions sensibles (approve / reject)
+        action_type = None
+        if new_status == GameTicket.Status.APPROVED:
+            action_type = "ticket.approve"
+        elif new_status == GameTicket.Status.REJECTED:
+            action_type = "ticket.reject"
+
+        if action_type is not None:
+            log_admin_action(
+                admin_user=request.user,
+                action_type=action_type,
+                target_type="game_ticket",
+                target_id=ticket.pk,
+                description=f"Changement de statut {old_status} → {new_status} via API",
             )
 
         return Response(

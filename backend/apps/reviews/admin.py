@@ -3,7 +3,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
 from apps.reviews.models import ContentReport, Review
-from apps.users.models import AdminAction
+from apps.users.utils import log_admin_action
 
 
 class ReviewResource(resources.ModelResource):
@@ -31,7 +31,7 @@ def delete_reviews_with_log(modeladmin, request, queryset):
     deleted_count = 0
 
     for review in queryset.select_related("user", "game"):
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=actor,
             action_type="review.delete",
             target_type="review",

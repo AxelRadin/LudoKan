@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.permissions import CanDeleteReview, CanEditReport, CanEditReview, CanReadReport, CanReadReview
 from apps.reviews.serializers import ContentReportAdminSerializer, ContentReportCreateSerializer, ReviewReadSerializer, ReviewWriteSerializer
-from apps.users.models import AdminAction
+from apps.users.utils import log_admin_action
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -153,7 +153,7 @@ class AdminReviewDetailView(APIView):
         serializer.save()
 
         # Log d'action admin
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=request.user,
             action_type="review.edit",
             target_type="review",
@@ -167,7 +167,7 @@ class AdminReviewDetailView(APIView):
         review = self.get_object(pk)
 
         # Log avant suppression pour conserver l'ID
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=request.user,
             action_type="review.delete",
             target_type="review",
