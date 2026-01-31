@@ -41,6 +41,11 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "report_edit",
         # Accès complet au dashboard admin
         "dashboard.view",
+        # Import / export de données via Django Admin
+        "import_export.user",
+        "import_export.game",
+        "import_export.review",
+        "import_export.rating",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},
