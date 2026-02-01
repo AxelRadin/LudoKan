@@ -15,9 +15,9 @@ import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch } from '../services/api';
+import zeldaBanner from '../assets/default/zelda-banner.png';
 
 const defaultAvatar = '';
-const bannerUrl = '/zelda-banner.png';
 
 type UserProfile = {
   pseudo: string;
@@ -319,7 +319,7 @@ export default function ProfilePage() {
             <Box sx={{ mb: 6, position: 'relative' }}>
               <Box
                 component="img"
-                src={bannerUrl}
+                src={zeldaBanner}
                 alt="Zelda Banner"
                 sx={{
                   width: '100%',
