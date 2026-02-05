@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "apps.matchmaking",
     "apps.game_tickets",
     "apps.chat",
+    "django_fsm",
     "api",
 ]
 

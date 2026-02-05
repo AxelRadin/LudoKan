@@ -1,6 +1,6 @@
 from django.conf import settings
-from django.core.exceptions import ValidationError
 from django.db import models
+from django_fsm import FSMField, transition
 
 from apps.games.models import Genre, Platform
 
@@ -12,14 +12,6 @@ class GameTicket(models.Model):
         APPROVED = "approved", "Approved"
         PUBLISHED = "published", "Published"
         REJECTED = "rejected", "Rejected"
-
-    ALLOWED_TRANSITIONS = {
-        Status.PENDING: [Status.REVIEWING],
-        Status.REVIEWING: [Status.APPROVED, Status.REJECTED],
-        Status.APPROVED: [Status.PUBLISHED],
-        Status.PUBLISHED: [],
-        Status.REJECTED: [],
-    }
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -38,10 +30,11 @@ class GameTicket(models.Model):
     genres = models.ManyToManyField(Genre, related_name="game_tickets", blank=True)
     platforms = models.ManyToManyField(Platform, related_name="game_tickets", blank=True)
 
-    status = models.CharField(
+    status = FSMField(
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING,
+        protected=True,
         db_index=True,
     )
 
@@ -56,17 +49,21 @@ class GameTicket(models.Model):
         ]
         ordering = ["-created_at"]
 
-    def change_status(self, new_status: str):
-        allowed = self.ALLOWED_TRANSITIONS.get(self.status, [])
+    @transition(field=status, source=Status.PENDING, target=Status.REVIEWING)
+    def start_review(self):
+        self.on_status_changed(GameTicket.Status.PENDING, GameTicket.Status.REVIEWING)
 
-        if new_status not in allowed:
-            raise ValidationError(f"Invalid status transition: {self.status} → {new_status}")
+    @transition(field=status, source=Status.REVIEWING, target=Status.APPROVED)
+    def approve(self):
+        self.on_status_changed(GameTicket.Status.REVIEWING, GameTicket.Status.APPROVED)
 
-        old_status = self.status
-        self.status = new_status
-        self.save(update_fields=["status", "updated_at"])
+    @transition(field=status, source=Status.REVIEWING, target=Status.REJECTED)
+    def reject(self):
+        self.on_status_changed(GameTicket.Status.REVIEWING, GameTicket.Status.REJECTED)
 
-        self.on_status_changed(old_status, new_status)
+    @transition(field=status, source=Status.APPROVED, target=Status.PUBLISHED)
+    def publish(self):
+        self.on_status_changed(GameTicket.Status.APPROVED, GameTicket.Status.PUBLISHED)
 
     def on_status_changed(self, old_status, new_status):
         """
