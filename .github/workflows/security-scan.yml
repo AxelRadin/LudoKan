@@ -26,27 +26,24 @@ jobs:
         run: |
           docker compose build web
 
+      - name: Install Grype
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
       - name: Run Grype vulnerability scanner
-        uses: anchore/scan-action@v3
-        id: grype
-        with:
-          image: ludokan-web:latest
-          output-format: sarif
-          grype-config: .grype.yaml
+        run: |
+          grype ludokan-web:latest -o sarif > grype-report.sarif
+        continue-on-error: true
 
       - name: Upload Grype SARIF report
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: ${{ steps.grype.outputs.sarif }}
+          sarif_file: grype-report.sarif
 
-      - name: Generate readable report
-        if: always()
-        uses: anchore/scan-action@v3
-        with:
-          image: ludokan-web:latest
-          output-format: table
-          grype-config: .grype.yaml
+      - name: Generate readable report and fail if needed
+        run: |
+          grype ludokan-web:latest
 
       - name: Notify on failure
         if: failure()
