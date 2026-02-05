@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import filters, status
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
@@ -30,7 +31,8 @@ from apps.users.utils import log_admin_action
 class GameViewSet(ModelViewSet):
     queryset = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").order_by("-popularity_score")
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["name"]
     ordering_fields = [
         "release_date",
         "rating_avg",
