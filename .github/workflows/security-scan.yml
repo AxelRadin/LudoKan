@@ -32,7 +32,7 @@ jobs:
 
       - name: Run Grype vulnerability scanner
         run: |
-          grype ludokan-web:latest -o sarif > grype-report.sarif
+          grype ludokan-web:latest --config .grype.yaml -o sarif > grype-report.sarif
         continue-on-error: true
 
       - name: Upload Grype SARIF report
@@ -43,7 +43,7 @@ jobs:
 
       - name: Generate readable report and fail if needed
         run: |
-          grype ludokan-web:latest
+          grype ludokan-web:latest --config .grype.yaml
 
       - name: Notify on failure
         if: failure()
