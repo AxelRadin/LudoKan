@@ -51,3 +51,6 @@ sentry-sdk[django]==2.20.0
 
 # Runtime tooling (provides pkg_resources used by some libs)
 setuptools>=75.0.0
+
+# transitions for state tickets
+django-fsm==3.0.1

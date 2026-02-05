@@ -1,4 +1,4 @@
-from django.core.exceptions import ValidationError
+from django_fsm import TransitionNotAllowed
 from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied
@@ -112,6 +112,13 @@ class GameTicketStatusUpdateAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
     required_permission = "ticket.change_status"
 
+    TRANSITION_MAP = {
+        GameTicket.Status.REVIEWING: "start_review",
+        GameTicket.Status.APPROVED: "approve",
+        GameTicket.Status.REJECTED: "reject",
+        GameTicket.Status.PUBLISHED: "publish",
+    }
+
     def post(self, request, pk):
         serializer = GameTicketStatusUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -121,15 +128,27 @@ class GameTicketStatusUpdateAPIView(APIView):
         try:
             ticket = GameTicket.objects.get(pk=pk)
             old_status = ticket.status
-            ticket.change_status(new_status)
+
+            transition_method_name = self.TRANSITION_MAP.get(new_status)
+            if not transition_method_name:
+                return Response(
+                    {"detail": "Invalid status transition."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            transition_method = getattr(ticket, transition_method_name)
+            transition_method()
+            ticket.save()
+
         except GameTicket.DoesNotExist:
             return Response(
                 {"detail": "Ticket not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-        except ValidationError as e:
+
+        except TransitionNotAllowed:
             return Response(
-                {"detail": str(e)},
+                {"detail": "Invalid status transition."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
