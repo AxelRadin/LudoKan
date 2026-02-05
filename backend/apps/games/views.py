@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
-from apps.games.permissions import CanDeleteRating, CanReadRating
+from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
 from apps.games.serializers import (
     GameDetailSerializer,
     GameReadSerializer,
@@ -25,7 +25,7 @@ from apps.games.serializers import (
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportCreateSerializer
-from apps.users.models import AdminAction
+from apps.users.utils import log_admin_action
 
 
 class GameViewSet(ModelViewSet):
@@ -162,6 +162,61 @@ class RatingListView(ListAPIView):
         return queryset
 
 
+class AdminGameListView(ListAPIView):
+    """
+    Endpoint admin pour lister les jeux.
+
+    GET /api/admin/games
+    """
+
+    serializer_class = GameReadSerializer
+    permission_classes = [CanReadGame]
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = [
+        "release_date",
+        "rating_avg",
+        "average_rating",
+        "rating_count",
+        "popularity_score",
+        "created_at",
+    ]
+    ordering = ["-created_at"]
+
+    def get_queryset(self):
+        qs = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").all()
+
+        name = self.request.query_params.get("name")
+        publisher_id = self.request.query_params.get("publisher_id")
+        status_param = self.request.query_params.get("status")
+        min_rating = self.request.query_params.get("min_rating")
+        max_rating = self.request.query_params.get("max_rating")
+        created_before = self.request.query_params.get("created_before")
+        created_after = self.request.query_params.get("created_after")
+
+        if name:
+            qs = qs.filter(name__icontains=name)
+        if publisher_id:
+            qs = qs.filter(publisher_id=publisher_id)
+        if status_param:
+            qs = qs.filter(status=status_param)
+        if min_rating:
+            try:
+                qs = qs.filter(average_rating__gte=float(min_rating))
+            except ValueError:
+                pass
+        if max_rating:
+            try:
+                qs = qs.filter(average_rating__lte=float(max_rating))
+            except ValueError:
+                pass
+        if created_before:
+            qs = qs.filter(created_at__lte=created_before)
+        if created_after:
+            qs = qs.filter(created_at__gte=created_after)
+
+        return qs
+
+
 class AdminRatingListView(APIView):
     """
     Endpoint admin pour lister toutes les notes (ratings).
@@ -198,7 +253,7 @@ class AdminRatingDetailView(APIView):
     def delete(self, request, pk: int):
         rating = get_object_or_404(Rating, pk=pk)
 
-        AdminAction.objects.create(
+        log_admin_action(
             admin_user=request.user,
             action_type="rating.delete",
             target_type="rating",

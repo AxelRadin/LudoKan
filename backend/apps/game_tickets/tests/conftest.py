@@ -2,6 +2,8 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
+from apps.users.models import UserRole
+
 User = get_user_model()
 
 
@@ -17,6 +19,7 @@ def authenticated_staff_api_client(api_client, django_user_model):
         password="password",
         is_staff=True,
     )
+    UserRole.objects.create(user=user, role=UserRole.Role.ADMIN)
     api_client.force_authenticate(user=user)
     return api_client
 
@@ -31,6 +34,7 @@ def ticket(user):
 @pytest.fixture
 def staff_api_client(db):
     user = User.objects.create_user(email="staff@test.com", password="password123", is_staff=True)
+    UserRole.objects.create(user=user, role=UserRole.Role.ADMIN)
     client = APIClient()
     client.force_authenticate(user=user)
     return client

@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_filters",
     "notifications",
+    "import_export",
     "apps.users",
     "apps.games",
     "apps.core",

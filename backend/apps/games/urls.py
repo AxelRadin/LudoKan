@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminGameListView,
     AdminRatingDetailView,
     AdminRatingListView,
     GameStatsView,
@@ -92,6 +93,8 @@ urlpatterns = [
     path("platforms/", platform_list, name="platform-list"),
     path("platforms/<int:pk>/", platform_detail, name="platform-detail"),
     path("ratings/", RatingListView.as_view(), name="rating-list"),
+    # Admin
+    path("admin/games/", AdminGameListView.as_view(), name="admin-game-list"),
     path("admin/ratings/", AdminRatingListView.as_view(), name="admin-rating-list"),
     path("admin/ratings/<int:pk>/", AdminRatingDetailView.as_view(), name="admin-rating-detail"),
     path("games/<int:game_id>/ratings/", RatingCreateView.as_view(), name="game-rating-create"),

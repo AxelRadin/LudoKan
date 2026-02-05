@@ -9,13 +9,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.game_tickets.models import GameTicket
-from apps.game_tickets.permissions import IsStaff
+from apps.game_tickets.permissions import CanReadTicket
 from apps.game_tickets.serializers import (
+    AdminGameTicketListSerializer,
     GameTicketAttachmentCreateSerializer,
     GameTicketCreateSerializer,
     GameTicketListSerializer,
     GameTicketStatusUpdateSerializer,
 )
+from apps.users.permissions import IsAdminWithPermission
+from apps.users.utils import log_admin_action
 
 
 @extend_schema_view(
@@ -106,7 +109,8 @@ class GameTicketAttachmentCreateView(generics.CreateAPIView):
     },
 )
 class GameTicketStatusUpdateAPIView(APIView):
-    permission_classes = [IsStaff]
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "ticket.change_status"
 
     def post(self, request, pk):
         serializer = GameTicketStatusUpdateSerializer(data=request.data)
@@ -116,6 +120,7 @@ class GameTicketStatusUpdateAPIView(APIView):
 
         try:
             ticket = GameTicket.objects.get(pk=pk)
+            old_status = ticket.status
             ticket.change_status(new_status)
         except GameTicket.DoesNotExist:
             return Response(
@@ -128,6 +133,22 @@ class GameTicketStatusUpdateAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Log d'action admin sur les transitions sensibles (approve / reject)
+        action_type = None
+        if new_status == GameTicket.Status.APPROVED:
+            action_type = "ticket.approve"
+        elif new_status == GameTicket.Status.REJECTED:
+            action_type = "ticket.reject"
+
+        if action_type is not None:
+            log_admin_action(
+                admin_user=request.user,
+                action_type=action_type,
+                target_type="game_ticket",
+                target_id=ticket.pk,
+                description=f"Changement de statut {old_status} → {new_status} via API",
+            )
+
         return Response(
             {
                 "id": ticket.id,
@@ -135,3 +156,36 @@ class GameTicketStatusUpdateAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class AdminGameTicketListView(ListAPIView):
+    """
+    Endpoint admin pour lister tous les tickets de jeux.
+
+    GET /api/admin/tickets
+    """
+
+    serializer_class = AdminGameTicketListSerializer
+    permission_classes = [CanReadTicket]
+
+    def get_queryset(self):
+        qs = GameTicket.objects.select_related("user").prefetch_related("genres", "platforms").all().order_by("-created_at")
+
+        status_param = self.request.query_params.get("status")
+        user_id = self.request.query_params.get("user_id")
+        game_name = self.request.query_params.get("game_name")
+        created_before = self.request.query_params.get("created_before")
+        created_after = self.request.query_params.get("created_after")
+
+        if status_param:
+            qs = qs.filter(status=status_param)
+        if user_id:
+            qs = qs.filter(user_id=user_id)
+        if game_name:
+            qs = qs.filter(game_name__icontains=game_name)
+        if created_before:
+            qs = qs.filter(created_at__lte=created_before)
+        if created_after:
+            qs = qs.filter(created_at__gte=created_after)
+
+        return qs

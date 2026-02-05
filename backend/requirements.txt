@@ -4,6 +4,7 @@ djangorestframework==3.14.0
 django-filter==23.3
 django-notifications-hq==1.8.2
 wheel>=0.46.0
+django-import-export[all]==4.4.0
 
 # Authentification
 django-allauth==0.57.0
