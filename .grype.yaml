@@ -2,6 +2,8 @@
 # Documentation: https://github.com/anchore/grype#configuration
 
 # Niveau de sévérité minimum à rapporter
+# Options: negligible, low, medium, high, critical
+# Avec "high", seuls HIGH et CRITICAL font échouer le scan
 fail-on-severity: high
 
 # Ignorer certaines CVE (à utiliser avec précaution, seulement pour faux positifs)
@@ -20,6 +22,11 @@ db:
 output:
   # Options: table, json, cyclonedx, sarif
   format: table
+
+# Ne rapporter que les vulnérabilités HIGH et CRITICAL
+# (masquer LOW, MEDIUM, NEGLIGIBLE du rapport)
+match:
+  severity: high
 
 # Registres privés (si nécessaire)
 # registry:
