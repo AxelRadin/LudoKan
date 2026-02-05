@@ -25,6 +25,12 @@ ignore:
     reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
   - vulnerability: CVE-2026-0861
     reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
+  - vulnerability: CVE-2025-14819
+    reason: "Won't fix by Debian - curl system package"
+  - vulnerability: CVE-2025-14524
+    reason: "Won't fix by Debian - curl system package"
+  - vulnerability: CVE-2025-13034
+    reason: "Won't fix by Debian - curl system package"
 
 # Sources de données de vulnérabilités
 db:
