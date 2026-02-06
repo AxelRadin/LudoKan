@@ -1,0 +1,315 @@
+name: CI + CD 🚀
+
+concurrency:
+  group: ci-cd-${{ github.ref }}
+
+on:
+  pull_request:
+    branches: ["main", "staging"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "sonar-project.properties"
+      - ".github/workflows/ci-cd.yml"
+  push:
+    branches: ["main", "staging"]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "sonar-project.properties"
+      - ".github/workflows/ci-cd.yml"
+
+  
+
+jobs:
+  backend:
+    name: Backend CI 🐍
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: ludokan
+          POSTGRES_USER: ludokan
+          POSTGRES_PASSWORD: ludokan
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U ludokan -d ludokan"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      SECRET_KEY: test-secret-key
+      DEBUG: "True"
+      DATABASE_URL: postgres://ludokan:ludokan@localhost:5432/ludokan
+      REDIS_URL: redis://localhost:6379/0
+      CELERY_BROKER_URL: redis://localhost:6379/1
+      CHANNEL_REDIS_URL: redis://localhost:6379/3
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
+      CSRF_TRUSTED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
+
+    steps:
+      - name: Checkout 📦
+        uses: actions/checkout@v4
+
+      - name: Set up Python 🐍
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install backend dependencies 📥
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run migrations 🗄️
+        working-directory: ./backend
+        run: python manage.py migrate --noinput
+
+      - name: Black 🎨
+        working-directory: ./backend
+        run: black . --check --diff
+
+      - name: isort 📚
+        working-directory: ./backend
+        run: isort . --check-only --diff
+
+      - name: Ruff 🐕
+        working-directory: ./backend
+        run: ruff check .
+
+      - name: flake8 🔍
+        working-directory: ./backend
+        run: flake8 .
+
+      - name: Pytest + coverage.xml 🧪
+        working-directory: ./backend
+        run: pytest --cov=. --cov-report=xml:coverage.xml
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage.xml
+
+  frontend:
+    name: Frontend CI ⚛️
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+      - name: Checkout 📦
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 📦
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "./frontend/package-lock.json"
+
+      - name: Install dependencies 📦
+        run: npm ci
+
+      - name: ESLint 🔍
+        run: npm run lint
+
+      - name: Prettier (format check) 🎨
+        run: npm run format:check
+
+      - name: TypeScript check 🧠
+        run: npm run type-check
+
+      # ✅ Si tu as des tests frontend qui génèrent coverage/lcov.info, active ce step
+      # - name: Tests + coverage (lcov)
+      #   run: npm run test -- --coverage --watch=false
+      #   env:
+      #     CI: "true"
+
+      - name: Build ⚙️
+        run: npm run build
+
+      # ✅ Si tu actives les tests au-dessus, décommente aussi cet upload
+      # - name: Upload frontend coverage artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: frontend-coverage
+      #     path: frontend/coverage
+
+  sonar:
+    name: SonarCloud Scan 🔎
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    environment: general 
+
+    steps:
+      - name: Checkout (full history) 📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend
+
+      - name: Verify Sonar secrets are set
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "❌ SONAR_TOKEN is empty or not available"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SONAR_ORG }}" ]; then
+            echo "❌ SONAR_ORG is empty or not available"
+            exit 1
+          fi
+          if [ -z "${{ secrets.SONAR_PROJECT_KEY }}" ]; then
+            echo "❌ SONAR_PROJECT_KEY is empty or not available"
+            exit 1
+          fi
+          echo "✅ Sonar secrets are present"
+
+      # ✅ Si tu actives la couverture frontend, décommente ces 2 blocs :
+      # - name: Download frontend coverage
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: frontend-coverage
+      #     path: frontend/coverage
+
+      - name: Run SonarCloud scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.host.url=https://sonarcloud.io
+
+      - name: Debug report-task
+        run: |
+          ls -la .scannerwork || true
+          cat .scannerwork/report-task.txt || true
+
+      - name: SonarCloud Quality Gate
+        if: github.event_name == 'pull_request'
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonarcloud.io
+        timeout-minutes: 5
+
+
+  deploy_staging:
+    name: Deploy Backend (staging) 🚚
+    runs-on: ubuntu-latest
+    needs: [sonar]
+    environment: deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+
+    steps:
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS (staging) via SSH
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              -p "${{ secrets.VPS_SSH_PORT }}" \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+            set -euo pipefail
+
+            echo "📦 Update code (staging)"
+            cd /srv/ludokan/repo-staging
+            git fetch --all
+            git reset --hard origin/staging
+
+            echo "✅ Deployed commit: $(git rev-parse --short HEAD)"
+            git log -1 --oneline
+
+            echo "🐳 Rebuild + restart containers (staging)"
+            cd /srv/ludokan/staging
+            docker compose up -d --build
+
+            echo "📋 Containers status"
+            docker compose ps
+
+            echo "🧹 Cleanup"
+            docker image prune -f
+
+            echo "🔄 Restart nginx"
+            cd /srv/ludokan/proxy
+            docker compose restart nginx
+            
+          EOF
+
+  deploy_prod:
+    name: Deploy Backend (prod) 🚀
+    runs-on: ubuntu-latest
+    needs: [sonar]
+    environment: deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.VPS_SSH_PORT }}" -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS (prod) via SSH
+        shell: bash
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+              -p "${{ secrets.VPS_SSH_PORT }}" \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" << 'EOF'
+            set -euo pipefail
+
+            echo "📦 Update code (prod)"
+            cd /srv/ludokan/repo-prod
+            git fetch --all
+            git reset --hard origin/main
+            echo "✅ Deployed commit: $(git rev-parse --short HEAD)"
+            git log -1 --oneline
+
+            echo "🐳 Rebuild + restart containers (prod)"
+            cd /srv/ludokan/prod
+            docker compose up -d --build
+
+            echo "📋 Containers status"
+            docker compose ps
+
+
+            echo "🧹 Cleanup"
+            docker image prune -f
+
+            echo "🔄 Restart nginx"
+            cd /srv/ludokan/proxy
+            docker compose restart nginx
+
+          EOF

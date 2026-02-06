@@ -1,26 +1,52 @@
+import { ThemeProvider } from '@mui/material/styles';
+import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
-import App from './App.tsx';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import { Sentry, initSentry } from './monitoring/sentry';
+import App from './App.tsx';
+import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
+import { AuthProvider } from './contexts/AuthContext.tsx';
+import './index.css';
+import { initSentry } from './monitoring/sentry';
+import GamePage from './pages/GamePage.tsx';
+import HomePage from './pages/HomePage.tsx';
+import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
+import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 
 const router = createBrowserRouter([
-  { path: '/', element: <App /> },
-  { path: '/test', element: <TestSentry /> },
-  { path: '/license/:id', element: <LicensePage /> }
-
+  {
+    path: '/',
+    element: <App />,
+    children: [
+      { path: '', element: <HomePage /> },
+      { path: 'home', element: <HomePage /> },
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'game/:id', element: <GamePage /> },
+      { path: 'test', element: <TestSentry /> },
+      { path: 'connector', element: <BackendConnector /> },
+      { path: 'license', element: <LicensePage /> },
+    ],
+  },
 ]);
 
 initSentry();
 
+const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
+  error,
+  resetError,
+}) => <ErrorFallback error={error} resetError={resetError} />;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Sentry.ErrorBoundary fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}>
-      <RouterProvider router={router} />
-    </Sentry.ErrorBoundary>
+    <ThemeProvider theme={theme}>
+      <AuthProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
+      </AuthProvider>
+    </ThemeProvider>
   </StrictMode>
 );

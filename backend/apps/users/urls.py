@@ -1,8 +1,6 @@
+from dj_rest_auth.views import UserDetailsView
 from django.urls import path
-from . import views
-
-app_name = 'users'
 
 urlpatterns = [
-    # URLs à développer plus tard
+    path("me/", UserDetailsView.as_view(), name="current-user"),
 ]

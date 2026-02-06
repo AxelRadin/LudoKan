@@ -13,5 +13,3 @@ export default function TestSentry() {
     </div>
   );
 }
-
-

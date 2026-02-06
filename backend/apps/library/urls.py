@@ -1,9 +1,10 @@
-from django.urls import path
-from .views import UserGameListCreateView, UserGameDetailView
+from rest_framework.routers import DefaultRouter
+
+from .views import UserGameViewSet
 
 app_name = "library"
 
-urlpatterns = [
-    path("user/games/", UserGameListCreateView.as_view(), name="user-game-list"),
-    path("user/games/<int:pk>/", UserGameDetailView.as_view(), name="user-game-detail"),
-]
+router = DefaultRouter()
+router.register("me/games", UserGameViewSet, basename="my-games")
+
+urlpatterns = router.urls

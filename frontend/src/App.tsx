@@ -1,8 +1,18 @@
-import "./App.css";
+import { Outlet } from 'react-router-dom';
+import Header from './components/Header';
 import SearchWithSuggestionsPage from "./pages/SearchWithSuggestionsPage";
-// import UserLibraryPage from "./pages/UserLibraryPage";
-// import SearchGamesPage from "./pages/SearchGamesPage";
+import "./App.css";
 
-export default function App() {
-  return <SearchWithSuggestionsPage />;
-}
+
+
+const App = () => {
+  return (
+    <>
+      <Header />
+      <Outlet />
+      <SearchWithSuggestionsPage />
+    </>
+  );
+};
+
+export default App;

@@ -1,3 +1,5 @@
-from django.contrib import admin
+"""
+Le modèle Notification de django-notifications-hq
+"""
 
-# Register your models here.
+from django.contrib import admin  # noqa: F401

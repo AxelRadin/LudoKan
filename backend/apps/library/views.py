@@ -1,31 +1,49 @@
-from rest_framework import generics, permissions
-from .models import UserGame
-from .serializers import UserGameSerializer
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from apps.library.models import UserGame
+from apps.library.serializers import UserGameSerializer
 
 
-class UserGameListCreateView(generics.ListCreateAPIView):
-    """
-    GET  -> liste des jeux (temporairement tous les jeux)
-    POST -> ajouter un jeu (sans auth pour l’instant)
-    """
+@extend_schema_view(
+    list=extend_schema(
+        summary="Lister les jeux de la bibliothèque de l'utilisateur",
+        description="Retourne la liste complète des jeux appartenant à l'utilisateur authentifié.",
+        responses=UserGameSerializer(many=True),
+    ),
+    destroy=extend_schema(
+        summary="Supprimer un jeu de la bibliothèque de l'utilisateur",
+        description=(
+            "Supprime un jeu de la collection personnelle de l'utilisateur. "
+            + "Le `game_id` doit correspondre à un jeu présent dans sa bibliothèque."
+        ),
+        responses={
+            204: None,
+            404: {"description": "Le jeu n'existe pas dans la bibliothèque de l'utilisateur."},
+        },
+    ),
+)
+class UserGameViewSet(viewsets.ModelViewSet):
     serializer_class = UserGameSerializer
-    # ⬇⬇⬇ AVANT : IsAuthenticated
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAuthenticated]
+
+    lookup_field = "game_id"
 
     def get_queryset(self):
-        # Pour tester simplement, on renvoie tout
-        return UserGame.objects.all().order_by("-created_at")
+        user = self.request.user
 
-    def perform_create(self, serializer):
-        # ⚠️ TEMPORAIRE : on ne met pas encore de "user"
-        # Tu pourras adapter plus tard quand on aura l’auth
-        serializer.save(user_id=1)  # à condition que l'user id=1 existe
+        return (
+            UserGame.objects.filter(user=user)
+            .select_related("game", "game__publisher")
+            .prefetch_related("game__genres", "game__platforms")
+            .order_by("-date_added")
+        )
 
-
-class UserGameDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = UserGameSerializer
-    # ⬇⬇⬇ AVANT : IsAuthenticated
-    permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        return UserGame.objects.all()
+    def destroy(self, request, *args, **kwargs):
+        game_id = kwargs.get("game_id")
+        user_game = get_object_or_404(UserGame, user=request.user, game_id=game_id)
+        user_game.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

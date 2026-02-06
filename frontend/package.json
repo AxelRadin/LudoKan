@@ -5,22 +5,32 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
+    "preview": "vite preview",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "type-check": "tsc -p tsconfig.app.json --noEmit",
+    "ci:check": "npm run lint && npm run format:check && npm run type-check && npm run build"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
     "@sentry/react": "^8.55.0",
+    "react-icons": "^5.3.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "react-router-dom": "^6.28.0"
+    "react-router-dom": "^6.30.2"
   },
   "devDependencies": {
     "@eslint/css": "^0.11.0",
     "@eslint/js": "^9.35.0",
     "@eslint/json": "^0.13.2",
     "@eslint/markdown": "^7.2.0",
-    "@types/react": "^19.1.13",
+    "@types/react": "^19.2.4",
     "@types/react-dom": "^19.1.9",
     "@typescript-eslint/eslint-plugin": "^8.44.0",
     "@typescript-eslint/parser": "^8.44.0",
