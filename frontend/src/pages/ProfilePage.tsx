@@ -6,6 +6,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Paper,
   TextField,
   Typography,
@@ -21,16 +22,18 @@ const defaultAvatar = '';
 
 const profileColors = {
   pageBg: '#ffd3d3',
-  mainCardBg: '#fafafa',
+  shellBg: '#fff6f6',
+  cardBg: '#ffffff',
   sectionBg: '#fffafa',
-  whiteCard: '#ffffff',
-  border: '#f3bcbc',
-  softBorder: '#f6d4d4',
-  title: '#8b1e1e',
-  subtitle: '#b23a48',
-  textMuted: '#7a4b4b',
-  overlay: 'rgba(139, 30, 30, 0.45)',
-  dialogBg: '#fff7f7',
+  border: '#f1c7c7',
+  softBorder: '#f7dddd',
+  title: '#111111',
+  text: '#2c2c2c',
+  muted: '#6b6b6b',
+  accent: '#d32f2f',
+  accentDark: '#b71c1c',
+  overlay: 'rgba(0, 0, 0, 0.28)',
+  dialogBg: '#fff9f9',
 };
 
 type UserProfile = {
@@ -281,207 +284,391 @@ export default function ProfilePage() {
       status: ug.status,
     }));
 
-  const infoCardSx = {
-    flex: 1,
-    p: 2.5,
-    textAlign: 'center',
-    borderRadius: 4,
-    boxShadow: '0 6px 18px rgba(139, 30, 30, 0.08)',
+  const smallCardSx = {
+    borderRadius: 5,
     border: `1px solid ${profileColors.softBorder}`,
-    backgroundColor: profileColors.whiteCard,
+    backgroundColor: profileColors.cardBg,
+    boxShadow: '0 10px 30px rgba(0,0,0,0.04)',
+    p: 3,
+    height: '100%',
   };
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
         backgroundColor: profileColors.pageBg,
-        px: { xs: 2, md: 6 },
-        py: 4,
+        px: { xs: 2, md: 5, lg: 8 },
+        py: { xs: 2, md: 4 },
       }}
     >
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          maxWidth: 1200,
-          width: '100%',
-          mx: 'auto',
-        }}
-      >
+      <Box component="main" sx={{ maxWidth: 1280, mx: 'auto' }}>
         <Paper
-          elevation={3}
+          elevation={0}
           sx={{
-            overflow: 'hidden',
-            borderRadius: 5,
+            backgroundColor: profileColors.shellBg,
             border: `1px solid ${profileColors.border}`,
-            boxShadow: '0 12px 30px rgba(139, 30, 30, 0.08)',
-            backgroundColor: profileColors.mainCardBg,
+            borderRadius: 8,
+            overflow: 'hidden',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.06)',
           }}
         >
-          <Box sx={{ p: 3, bgcolor: profileColors.mainCardBg }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <Box sx={{ p: { xs: 2, md: 3 } }}>
+            <Box sx={{ mb: 2 }}>
               <Typography
                 variant="h5"
-                sx={{ fontWeight: 700, color: profileColors.title }}
+                sx={{
+                  fontWeight: 800,
+                  color: profileColors.title,
+                  letterSpacing: 0.2,
+                }}
               >
                 Ludokan
               </Typography>
             </Box>
 
-            <Box sx={{ mb: 6, position: 'relative' }}>
+            <Box sx={{ position: 'relative', mb: { xs: 9, md: 10 } }}>
               <Box
                 component="img"
                 src={zeldaBanner}
                 alt="Zelda Banner"
                 sx={{
                   width: '100%',
-                  maxHeight: 260,
-                  height: { xs: 180, md: 260 },
+                  height: { xs: 200, sm: 260, md: 320 },
                   objectFit: 'cover',
-                  borderRadius: 4,
+                  borderRadius: 6,
                   display: 'block',
-                  border: `1px solid ${profileColors.border}`,
                 }}
               />
 
               <Box
                 sx={{
                   position: 'absolute',
-                  left: { xs: 20, md: 28 },
-                  bottom: -45,
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  gap: 2,
+                  inset: 0,
+                  borderRadius: 6,
+                  background:
+                    'linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.30) 100%)',
+                }}
+              />
+
+              <Paper
+                elevation={0}
+                sx={{
+                  position: 'absolute',
+                  left: { xs: 16, md: 24 },
+                  right: { xs: 16, md: 24 },
+                  bottom: { xs: -72, md: -64 },
+                  borderRadius: 6,
+                  backgroundColor: 'rgba(255,255,255,0.95)',
+                  border: `1px solid ${profileColors.softBorder}`,
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.08)',
+                  p: { xs: 2, md: 2.5 },
                 }}
               >
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/jpeg, image/png, image/webp"
-                  hidden
-                  onChange={handleFileChange}
-                />
-
                 <Box
-                  onClick={() => avatarInputRef.current?.click()}
                   sx={{
-                    position: 'relative',
-                    width: 96,
-                    height: 96,
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    '&:hover .avatar-hover': {
-                      opacity: 1,
-                    },
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    alignItems: { xs: 'flex-start', md: 'center' },
+                    justifyContent: 'space-between',
+                    gap: 2,
                   }}
                 >
-                  <Avatar
-                    sx={{
-                      width: 96,
-                      height: 96,
-                      border: '4px solid white',
-                      boxShadow: '0 10px 24px rgba(139, 30, 30, 0.18)',
-                      fontSize: 34,
-                      bgcolor: '#d32f2f',
-                    }}
-                    src={displayedAvatar}
-                    alt={user?.pseudo}
-                  >
-                    {user?.pseudo?.[0]?.toUpperCase() || 'U'}
-                  </Avatar>
-
                   <Box
-                    className="avatar-hover"
                     sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      backgroundColor: profileColors.overlay,
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      opacity: 0,
-                      transition: '0.2s ease',
-                      textAlign: 'center',
-                      px: 1,
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: 2,
+                      flexDirection: { xs: 'column', sm: 'row' },
                     }}
                   >
-                    Changer
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/jpeg, image/png, image/webp"
+                      hidden
+                      onChange={handleFileChange}
+                    />
+
+                    <Box
+                      onClick={() => avatarInputRef.current?.click()}
+                      sx={{
+                        position: 'relative',
+                        width: 118,
+                        height: 118,
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        '&:hover .avatar-hover': {
+                          opacity: 1,
+                        },
+                      }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          border: '5px solid white',
+                          boxShadow: '0 12px 30px rgba(0,0,0,0.16)',
+                          fontSize: 40,
+                          bgcolor: profileColors.accent,
+                        }}
+                        src={displayedAvatar}
+                        alt={user?.pseudo}
+                      >
+                        {user?.pseudo?.[0]?.toUpperCase() || 'U'}
+                      </Avatar>
+
+                      <Box
+                        className="avatar-hover"
+                        sx={{
+                          position: 'absolute',
+                          inset: 0,
+                          borderRadius: '50%',
+                          backgroundColor: profileColors.overlay,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#fff',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          opacity: 0,
+                          transition: '0.2s ease',
+                          textAlign: 'center',
+                          px: 1,
+                        }}
+                      >
+                        Changer l’avatar
+                      </Box>
+                    </Box>
+
+                    <Box>
+                      <Typography
+                        sx={{
+                          fontSize: { xs: 24, md: 28 },
+                          fontWeight: 800,
+                          color: profileColors.title,
+                          lineHeight: 1.15,
+                        }}
+                      >
+                        {loading ? '...' : user?.pseudo || 'Utilisateur'}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          mt: 0.8,
+                          color: profileColors.muted,
+                          fontSize: 15,
+                        }}
+                      >
+                        {loading ? '...' : user?.email || 'Email non renseigné'}
+                      </Typography>
+
+                      <Typography
+                        sx={{
+                          mt: 1.2,
+                          color: profileColors.text,
+                          fontSize: 14.5,
+                          maxWidth: 520,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {loading
+                          ? '...'
+                          : user?.description_courte ||
+                            'Aucune description pour le moment.'}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ alignSelf: { xs: 'stretch', md: 'center' } }}>
+                    <SecondaryButton onClick={handleEditOpen}>
+                      Modifier le profil
+                    </SecondaryButton>
                   </Box>
                 </Box>
-
-                <Box sx={{ mb: 1 }}>
-                  <SecondaryButton onClick={handleEditOpen}>
-                    Modifier
-                  </SecondaryButton>
-                </Box>
-              </Box>
+              </Paper>
             </Box>
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap' }}>
-              <Paper sx={infoCardSx}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr 1fr' },
+                gap: 2.2,
+                mb: 3,
+              }}
+            >
+              <Paper sx={smallCardSx}>
                 <Typography
-                  sx={{ fontWeight: 600, mb: 0.5, color: profileColors.title }}
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                    textTransform: 'uppercase',
+                    color: profileColors.muted,
+                    mb: 1.2,
+                  }}
                 >
-                  {loading ? '...' : user?.description_courte || 'N/A'}
+                  Présentation
                 </Typography>
+
                 <Typography
-                  variant="caption"
-                  sx={{ color: profileColors.textMuted }}
+                  sx={{
+                    color: profileColors.title,
+                    fontWeight: 700,
+                    mb: 1,
+                  }}
                 >
-                  Description
+                  Profil joueur
+                </Typography>
+
+                <Typography
+                  sx={{
+                    color: profileColors.text,
+                    lineHeight: 1.65,
+                  }}
+                >
+                  {loading
+                    ? '...'
+                    : user?.description_courte ||
+                      'Ajoute une petite description pour personnaliser ton profil.'}
                 </Typography>
               </Paper>
 
-              <Paper sx={infoCardSx}>
+              <Paper sx={smallCardSx}>
                 <Typography
-                  sx={{ fontWeight: 600, mb: 0.5, color: profileColors.title }}
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                    textTransform: 'uppercase',
+                    color: profileColors.muted,
+                    mb: 1.2,
+                  }}
                 >
-                  {loading ? '...' : user?.pseudo || 'N/A'}
+                  Identité
                 </Typography>
+
                 <Typography
-                  variant="caption"
-                  sx={{ color: profileColors.textMuted }}
+                  sx={{ color: profileColors.title, fontWeight: 700 }}
                 >
-                  Pseudo
+                  {loading ? '...' : user?.first_name || 'N/A'}{' '}
+                  {loading ? '' : user?.last_name || ''}
+                </Typography>
+
+                <Typography sx={{ color: profileColors.text, mt: 0.8 }}>
+                  Pseudo : {loading ? '...' : user?.pseudo || 'N/A'}
+                </Typography>
+
+                <Typography sx={{ color: profileColors.text, mt: 0.5 }}>
+                  Email : {loading ? '...' : user?.email || 'N/A'}
                 </Typography>
               </Paper>
 
-              <Paper sx={infoCardSx}>
+              <Paper sx={smallCardSx}>
                 <Typography
-                  sx={{ fontWeight: 600, mb: 0.5, color: profileColors.title }}
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: 0.6,
+                    textTransform: 'uppercase',
+                    color: profileColors.muted,
+                    mb: 1.2,
+                  }}
                 >
-                  {loading ? '...' : user?.email || 'N/A'}
+                  Compte
                 </Typography>
+
                 <Typography
-                  variant="caption"
-                  sx={{ color: profileColors.textMuted }}
+                  sx={{
+                    color: profileColors.title,
+                    fontWeight: 700,
+                  }}
                 >
-                  Email
+                  Inscrit depuis
+                </Typography>
+
+                <Typography sx={{ color: profileColors.text, mt: 0.8 }}>
+                  {loading
+                    ? '...'
+                    : user?.created_at
+                      ? new Date(user.created_at).toLocaleDateString()
+                      : 'N/A'}
                 </Typography>
               </Paper>
             </Box>
 
             <Typography
               variant="h6"
-              sx={{ mb: 1.5, fontWeight: 700, color: profileColors.title }}
+              sx={{
+                mb: 2,
+                fontWeight: 800,
+                color: profileColors.title,
+              }}
             >
               Statistiques
             </Typography>
 
-            <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-              <Paper sx={infoCardSx}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                gap: 2.2,
+                mb: 3.5,
+              }}
+            >
+              <Paper sx={smallCardSx}>
                 <Typography
-                  sx={{ fontWeight: 600, mb: 0.5, color: profileColors.title }}
+                  sx={{
+                    color: profileColors.title,
+                    fontSize: 26,
+                    fontWeight: 800,
+                    textAlign: 'center',
+                  }}
+                >
+                  {loading ? '...' : user?.first_name || 'N/A'}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: profileColors.muted,
+                    textAlign: 'center',
+                    mt: 0.6,
+                  }}
+                >
+                  Prénom
+                </Typography>
+              </Paper>
+
+              <Paper sx={smallCardSx}>
+                <Typography
+                  sx={{
+                    color: profileColors.title,
+                    fontSize: 26,
+                    fontWeight: 800,
+                    textAlign: 'center',
+                  }}
+                >
+                  {loading ? '...' : user?.last_name || 'N/A'}
+                </Typography>
+                <Typography
+                  sx={{
+                    color: profileColors.muted,
+                    textAlign: 'center',
+                    mt: 0.6,
+                  }}
+                >
+                  Nom
+                </Typography>
+              </Paper>
+
+              <Paper sx={smallCardSx}>
+                <Typography
+                  sx={{
+                    color: profileColors.title,
+                    fontSize: 26,
+                    fontWeight: 800,
+                    textAlign: 'center',
+                  }}
                 >
                   {loading
                     ? '...'
@@ -490,57 +677,57 @@ export default function ProfilePage() {
                       : 'N/A'}
                 </Typography>
                 <Typography
-                  variant="caption"
-                  sx={{ color: profileColors.textMuted }}
+                  sx={{
+                    color: profileColors.muted,
+                    textAlign: 'center',
+                    mt: 0.6,
+                  }}
                 >
-                  Inscrit depuis
-                </Typography>
-              </Paper>
-
-              <Paper sx={infoCardSx}>
-                <Typography
-                  sx={{ fontWeight: 600, mb: 0.5, color: profileColors.title }}
-                >
-                  {loading ? '...' : user?.first_name || 'N/A'}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: profileColors.textMuted }}
-                >
-                  Prénom
-                </Typography>
-              </Paper>
-
-              <Paper sx={infoCardSx}>
-                <Typography
-                  sx={{ fontWeight: 600, mb: 0.5, color: profileColors.title }}
-                >
-                  {loading ? '...' : user?.last_name || 'N/A'}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: profileColors.textMuted }}
-                >
-                  Nom
+                  Date d’inscription
                 </Typography>
               </Paper>
             </Box>
 
             <Paper
               sx={{
-                p: 3,
-                borderRadius: 4,
-                boxShadow: '0 6px 18px rgba(139, 30, 30, 0.06)',
+                p: { xs: 2, md: 3 },
+                borderRadius: 6,
+                boxShadow: '0 14px 34px rgba(0,0,0,0.05)',
                 border: `1px solid ${profileColors.softBorder}`,
                 backgroundColor: profileColors.sectionBg,
               }}
             >
-              <Typography
-                variant="h6"
-                sx={{ mb: 2, fontWeight: 700, color: profileColors.title }}
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  mb: 2,
+                }}
               >
-                Jeux par statut
-              </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 800,
+                    color: profileColors.title,
+                  }}
+                >
+                  Jeux par statut
+                </Typography>
+
+                <Typography
+                  sx={{
+                    color: profileColors.muted,
+                    fontSize: 14,
+                  }}
+                >
+                  Retrouve facilement ta bibliothèque personnelle
+                </Typography>
+              </Box>
+
+              <Divider sx={{ mb: 2, borderColor: profileColors.softBorder }} />
 
               <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 <GameList games={gamesEnCours} title="En cours" />
@@ -559,20 +746,28 @@ export default function ProfilePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            borderRadius: 4,
-            boxShadow: '0 18px 45px rgba(139, 30, 30, 0.12)',
+            borderRadius: 6,
+            boxShadow: '0 26px 60px rgba(0,0,0,0.16)',
             backgroundColor: profileColors.dialogBg,
             border: `1px solid ${profileColors.border}`,
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700, color: profileColors.title }}>
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            color: profileColors.title,
+            pb: 1,
+          }}
+        >
           Modifier mon profil
         </DialogTitle>
 
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+          <Box
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, pt: 1 }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.5 }}>
               <input
                 ref={modalAvatarInputRef}
                 type="file"
@@ -585,8 +780,8 @@ export default function ProfilePage() {
                 onClick={() => modalAvatarInputRef.current?.click()}
                 sx={{
                   position: 'relative',
-                  width: 100,
-                  height: 100,
+                  width: 112,
+                  height: 112,
                   borderRadius: '50%',
                   cursor: 'pointer',
                   '&:hover .modal-avatar-hover': {
@@ -598,11 +793,11 @@ export default function ProfilePage() {
                   src={displayedAvatar}
                   alt="Prévisualisation avatar"
                   sx={{
-                    width: 100,
-                    height: 100,
-                    fontSize: 34,
-                    boxShadow: '0 10px 24px rgba(139, 30, 30, 0.14)',
-                    bgcolor: '#d32f2f',
+                    width: '100%',
+                    height: '100%',
+                    fontSize: 40,
+                    boxShadow: '0 12px 28px rgba(0,0,0,0.16)',
+                    bgcolor: profileColors.accent,
                   }}
                 >
                   {form.pseudo?.[0]?.toUpperCase() || 'U'}
@@ -620,7 +815,7 @@ export default function ProfilePage() {
                     justifyContent: 'center',
                     color: '#fff',
                     fontSize: 12,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     opacity: 0,
                     transition: '0.2s ease',
                     textAlign: 'center',
@@ -636,8 +831,8 @@ export default function ProfilePage() {
               variant="caption"
               sx={{
                 textAlign: 'center',
-                color: profileColors.textMuted,
-                mb: 1,
+                color: profileColors.muted,
+                mb: 0.5,
               }}
             >
               Clique directement sur l’image pour importer un avatar
@@ -649,6 +844,12 @@ export default function ProfilePage() {
               fullWidth
               value={form.pseudo}
               onChange={handleChange}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3.5,
+                  backgroundColor: '#fff',
+                },
+              }}
             />
             <TextField
               label="Prénom"
@@ -656,6 +857,12 @@ export default function ProfilePage() {
               fullWidth
               value={form.first_name}
               onChange={handleChange}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3.5,
+                  backgroundColor: '#fff',
+                },
+              }}
             />
             <TextField
               label="Nom"
@@ -663,6 +870,12 @@ export default function ProfilePage() {
               fullWidth
               value={form.last_name}
               onChange={handleChange}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3.5,
+                  backgroundColor: '#fff',
+                },
+              }}
             />
             <TextField
               label="Description"
@@ -672,20 +885,23 @@ export default function ProfilePage() {
               minRows={3}
               value={form.description_courte}
               onChange={handleChange}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3.5,
+                  backgroundColor: '#fff',
+                },
+              }}
             />
 
             <Box
               sx={{
                 p: 2,
-                borderRadius: 3,
+                borderRadius: 4,
                 backgroundColor: '#fff',
                 border: `1px solid ${profileColors.softBorder}`,
               }}
             >
-              <Typography
-                variant="caption"
-                sx={{ color: profileColors.textMuted }}
-              >
+              <Typography variant="caption" sx={{ color: profileColors.muted }}>
                 Formats autorisés : JPG, PNG, WEBP — Taille max : 2 MB
               </Typography>
 
@@ -711,27 +927,29 @@ export default function ProfilePage() {
               )}
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5 }}>
               <Button
                 variant="outlined"
                 onClick={() => modalAvatarInputRef.current?.click()}
                 sx={{
                   borderRadius: 999,
-                  borderColor: '#d32f2f',
-                  color: '#b71c1c',
+                  px: 2.5,
+                  borderColor: profileColors.accent,
+                  color: profileColors.accentDark,
                   '&:hover': {
-                    borderColor: '#b71c1c',
+                    borderColor: profileColors.accentDark,
                     backgroundColor: '#fff1f1',
                   },
                 }}
               >
                 Changer l’avatar
               </Button>
+
               <Button
                 variant="text"
                 color="error"
                 onClick={handleRemoveAvatar}
-                sx={{ borderRadius: 999 }}
+                sx={{ borderRadius: 999, px: 2.5 }}
               >
                 Supprimer
               </Button>
@@ -739,12 +957,13 @@ export default function ProfilePage() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
           <Button
             onClick={handleEditClose}
             sx={{
               borderRadius: 999,
               color: profileColors.title,
+              px: 2.5,
             }}
           >
             Annuler
@@ -753,7 +972,12 @@ export default function ProfilePage() {
             onClick={handleSave}
             variant="contained"
             color="error"
-            sx={{ borderRadius: 999, boxShadow: 'none' }}
+            sx={{
+              borderRadius: 999,
+              boxShadow: 'none',
+              px: 3,
+              fontWeight: 700,
+            }}
           >
             Enregistrer
           </Button>
