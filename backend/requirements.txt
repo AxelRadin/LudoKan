@@ -9,7 +9,7 @@ django-import-export[all]==4.4.0
 # Authentification
 django-allauth==0.57.0
 dj-rest-auth==5.0.2
-djangorestframework-simplejwt==5.3.0  # JWT pour dj-rest-auth
+djangorestframework-simplejwt==5.5.1  # JWT pour dj-rest-auth (compatible Python 3.13)
 dj-rest-auth[with_jwt]==5.0.2
 
 
@@ -23,7 +23,7 @@ python-decouple==3.8
 dj-database-url==2.1.0  # pratique pour DATABASE_URL
 
 # Images
-Pillow==11.0.0
+Pillow==12.1.1  # Fix GHSA-cfh3-3jmp-rvhc (HIGH)
 
 # Storage (S3-compatible: Cloudflare R2)
 django-storages[s3]==1.14.2
