@@ -38,3 +38,13 @@ def staff_api_client(db):
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
+
+@pytest.fixture
+def authenticated_client(authenticated_api_client):
+    return authenticated_api_client
+
+
+@pytest.fixture
+def moderator_client(staff_api_client):
+    return staff_api_client
