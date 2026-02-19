@@ -1,0 +1,59 @@
+# Configuration Grype pour LudoKan
+# Documentation: https://github.com/anchore/grype#configuration
+
+# Niveau de sévérité minimum à rapporter
+# Options: negligible, low, medium, high, critical
+# Avec "high", seuls HIGH et CRITICAL font échouer le scan
+fail-on-severity: high
+
+# Ignorer certaines CVE (à utiliser avec précaution, seulement pour faux positifs)
+ignore:
+  # Won't fix by Debian - system packages with no available updates
+  - vulnerability: CVE-2025-13151
+    reason: "Won't fix by Debian - libtasn1-6 system package"
+  - vulnerability: CVE-2025-14104
+    reason: "Won't fix by Debian - util-linux system packages"
+  - vulnerability: CVE-2025-7709
+    reason: "Won't fix by Debian - libsqlite3-0 system package"
+  - vulnerability: CVE-2025-6141
+    reason: "Won't fix by Debian - ncurses system packages"
+  - vulnerability: CVE-2024-56433
+    reason: "Won't fix by Debian - shadow-utils (login/passwd)"
+  - vulnerability: CVE-2025-15281
+    reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
+  - vulnerability: CVE-2026-0915
+    reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
+  - vulnerability: CVE-2026-0861
+    reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
+  - vulnerability: CVE-2025-14819
+    reason: "Won't fix by Debian - curl system package"
+  - vulnerability: CVE-2025-14524
+    reason: "Won't fix by Debian - curl system package"
+  - vulnerability: CVE-2025-13034
+    reason: "Won't fix by Debian - curl system package"
+
+# Sources de données de vulnérabilités
+db:
+  auto-update: true
+
+# Format de sortie (simple string, pas un objet)
+# Options: table, json, cyclonedx, sarif
+output: table
+
+# Filtrage par sévérité (ne pas utiliser 'match', c'est géré par fail-on-severity)
+
+# Registres privés (si nécessaire)
+# registry:
+#   insecure-skip-tls-verify: false
+#   auth:
+#     - authority: "my-registry.com"
+#       username: "user"
+#       password: "pass"
+
+# Exclure certains chemins de l'analyse
+exclude:
+  - "**/test/**"
+  - "**/tests/**"
+  - "**/.venv/**"
+  - "**/venv/**"
+  - "**/node_modules/**"

@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import filters, status
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from apps.games.filters import GameFilter
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
 from apps.games.serializers import (
@@ -28,9 +30,15 @@ from apps.users.utils import log_admin_action
 
 
 class GameViewSet(ModelViewSet):
-    queryset = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").order_by("-popularity_score")
+    queryset = (
+        Game.objects.select_related("publisher")
+        .prefetch_related("genres", "platforms")
+        .order_by("-popularity_score")
+        .distinct()  # Éviter les doublons lors de filtrage Many-to-Many
+    )
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_class = GameFilter  # Utiliser le FilterSet personnalisé
     ordering_fields = [
         "release_date",
         "rating_avg",

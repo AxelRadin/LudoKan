@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "corsheaders",
+    "django_filters",
     "notifications",
     "import_export",
     "apps.users",
@@ -138,6 +139,9 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,

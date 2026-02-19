@@ -1,3 +1,200 @@
+# API Documentation
+
+## Django-filter Configuration
+
+### Overview
+
+The API uses `django-filter` to enable filtering on Django REST Framework endpoints.
+
+### Installation
+
+```bash
+pip install django-filter
+```
+
+### Configuration
+
+1. **Add to `INSTALLED_APPS`** in `config/settings.py`:
+
+```python
+INSTALLED_APPS = [
+    # ...
+    "django_filters",
+    # ...
+]
+```
+
+2. **Configure DRF filter backends** in `REST_FRAMEWORK` settings:
+
+```python
+REST_FRAMEWORK = {
+    # ...
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
+    # ...
+}
+```
+
+3. **Enable filtering on viewsets**:
+
+```python
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters
+
+class GameViewSet(ModelViewSet):
+    queryset = Game.objects.all()
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["name"]  # Simple field filtering
+    ordering_fields = ["release_date", "rating_avg"]
+```
+
+### Usage Examples
+
+#### Filter games by name
+
+```bash
+# Exact match filter
+GET /api/games/?name=zelda
+
+# Returns all games with exact name "zelda"
+```
+
+#### Combine filters
+
+```bash
+# Multiple filters can be combined
+GET /api/games/?name=zelda&publisher=Nintendo
+```
+
+#### Testing with curl
+
+```bash
+# Test the filter endpoint
+curl -X GET "http://localhost:8000/api/games/?name=zelda" \
+  -H "Accept: application/json"
+```
+
+### Available Filters
+
+#### Games Endpoint (`/api/games/`)
+
+The API supports filtering games by **genres** and **platforms** using Many-to-Many relationships. Multiple values can be provided for each filter.
+
+##### Filter Parameters
+
+- **`genre`**: Filter by genre ID(s) - supports multiple values separated by commas
+- **`platform`**: Filter by platform ID(s) - supports multiple values separated by commas
+
+##### Usage Examples
+
+**Filter by single genre:**
+```bash
+GET /api/games/?genre=1
+# Returns all games that have genre with ID 1
+```
+
+**Filter by multiple genres (OR condition):**
+```bash
+GET /api/games/?genre=1,2,3
+# Returns all games that have genre 1 OR 2 OR 3
+```
+
+**Filter by single platform:**
+```bash
+GET /api/games/?platform=4
+# Returns all games available on platform with ID 4
+```
+
+**Filter by multiple platforms (OR condition):**
+```bash
+GET /api/games/?platform=4,5
+# Returns all games available on platform 4 OR 5
+```
+
+**Combine genre and platform filters (AND condition):**
+```bash
+GET /api/games/?genre=1&platform=2
+# Returns all games that have genre 1 AND are available on platform 2
+```
+
+**Complex filtering example:**
+```bash
+GET /api/games/?genre=1,2&platform=3,4,5
+# Returns all games that:
+# - Have genre 1 OR 2
+# - AND are available on platform 3, 4 OR 5
+```
+
+##### Testing with curl
+
+```bash
+# Filter by genre
+curl -X GET "http://localhost:8000/api/games/?genre=1" \
+  -H "Accept: application/json"
+
+# Filter by multiple genres
+curl -X GET "http://localhost:8000/api/games/?genre=1,2,3" \
+  -H "Accept: application/json"
+
+# Filter by platform
+curl -X GET "http://localhost:8000/api/games/?platform=2" \
+  -H "Accept: application/json"
+
+# Combine filters
+curl -X GET "http://localhost:8000/api/games/?genre=1&platform=2" \
+  -H "Accept: application/json"
+```
+
+##### Testing with Postman
+
+1. Create a new GET request to `http://localhost:8000/api/games/`
+2. Go to the "Params" tab
+3. Add query parameters:
+   - Key: `genre`, Value: `1,2,3`
+   - Key: `platform`, Value: `4,5`
+4. Send the request
+
+### Advanced Filtering Implementation
+
+The filtering is implemented using a custom `FilterSet` class in `apps/games/filters.py`:
+
+```python
+import django_filters
+from apps.games.models import Game
+
+class GameFilter(django_filters.FilterSet):
+    # BaseInFilter allows multiple values separated by commas
+    genre = django_filters.BaseInFilter(
+        field_name='genres__id',
+        lookup_expr='in'
+    )
+
+    platform = django_filters.BaseInFilter(
+        field_name='platforms__id',
+        lookup_expr='in'
+    )
+
+    class Meta:
+        model = Game
+        fields = ['genre', 'platform']
+```
+
+The `GameViewSet` uses this filter and includes `.distinct()` to avoid duplicate results from Many-to-Many joins:
+
+```python
+class GameViewSet(ModelViewSet):
+    queryset = (
+        Game.objects.select_related("publisher")
+        .prefetch_related("genres", "platforms")
+        .order_by("-popularity_score")
+        .distinct()  # Avoid duplicates from M2M filtering
+    )
+    filterset_class = GameFilter
+```
+
+---
+
 # Ratings API Guide
 
 ## Endpoints overview
