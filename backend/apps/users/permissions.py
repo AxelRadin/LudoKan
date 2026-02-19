@@ -56,6 +56,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "admin_action_read",
         # Workflow des tickets
         "ticket.change_status",
+        "ticket.change_data",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},

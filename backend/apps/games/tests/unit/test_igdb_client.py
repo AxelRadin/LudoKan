@@ -104,3 +104,20 @@ def test_igdb_request_failure_with_non_json_body(monkeypatch):
 
     assert "IGDB error 400 on covers" in str(exc.value)
     assert "Bad Request" in str(exc.value)
+
+
+# def test_igdb_request_normalizes_endpoint_with_leading_slash(monkeypatch):
+#     """Vérifie que l'endpoint avec un slash initial est normalisé (lstrip)."""
+#     called = {}
+
+#     def fake_post(url, data, headers, timeout):
+#         called["url"] = url
+#         return SimpleNamespace(ok=True, json=lambda: [])
+
+#     monkeypatch.setenv("IGDB_CLIENT_ID", "cid")
+#     monkeypatch.setenv("IGDB_ACCESS_TOKEN", "token")
+#     monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+
+#     igdb_client.igdb_request("/games", "fields *;")
+
+#     assert called["url"].endswith("/games")
