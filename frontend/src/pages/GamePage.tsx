@@ -19,12 +19,12 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import ReviewSection from '../components/reviews/ReviewSection';
 import {
   fetchIgdbGameById,
-  translateDescription,
   importIgdbGameToDjango,
+  translateDescription,
 } from '../api/igdb';
+import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
@@ -42,6 +42,7 @@ export default function GamePage() {
     string | null
   >(null);
   const [translating, setTranslating] = useState(false);
+  const [isMatching, setIsMatching] = useState(false);
 
   useEffect(() => {
     if (igdbId) {
@@ -56,8 +57,8 @@ export default function GamePage() {
             image,
             display_release_date: normalizedData.release_date
               ? new Date(normalizedData.release_date).toLocaleDateString(
-                  'fr-FR'
-                )
+                'fr-FR'
+              )
               : null,
           });
 
@@ -99,7 +100,7 @@ export default function GamePage() {
     setTranslatedDescription(null);
     translateDescription(game.summary)
       .then(setTranslatedDescription)
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setTranslating(false));
   }, [game?.summary]);
 
@@ -118,6 +119,67 @@ export default function GamePage() {
       setUserReview(null);
     }
   }, [djangoId, isAuthenticated]);
+
+  async function handleMatchmaking(isPendingAction = false) {
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleMatchmaking(true));
+      setAuthModalOpen(true);
+      return;
+    }
+
+    const currentDjangoId = await ensureDjangoId();
+    if (!currentDjangoId) return;
+
+    if (!navigator.geolocation) {
+      alert("La géolocalisation n'est pas supportée par votre navigateur.");
+      return;
+    }
+
+    setIsMatching(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+
+          const expiresAt = new Date();
+          expiresAt.setHours(expiresAt.getHours() + 1);
+
+          try {
+            await apiPost('/api/matchmaking/requests/', {
+              game: currentDjangoId,
+              latitude,
+              longitude,
+              radius_km: 20,
+              expires_at: expiresAt.toISOString(),
+            });
+          } catch {
+            console.log("Une demande est potentiellement déjà active pour ce jeu.");
+          }
+
+          const matchesData = await apiGet('/api/matchmaking/matches/');
+          console.log("Joueurs trouvés :", matchesData);
+
+          if (matchesData.length > 0) {
+            alert(`Succès : ${matchesData.length} joueur(s) trouvé(s) dans la zone ! (Voir console)`);
+          } else {
+            alert("Aucun joueur trouvé près de vous pour l'instant. Votre demande reste active !");
+          }
+
+        } catch (error) {
+          console.error("Erreur API lors du matchmaking", error);
+          alert("Un problème est survenu lors de la recherche de joueurs.");
+        } finally {
+          setIsMatching(false);
+        }
+      },
+      (error) => {
+        console.error("Erreur géolocalisation", error);
+        alert("Vous devez autoriser la géolocalisation pour rechercher des joueurs à proximité.");
+        setIsMatching(false);
+      }
+    );
+  }
 
   async function ensureDjangoId(): Promise<string | null> {
     if (djangoId) return djangoId;
@@ -515,8 +577,8 @@ export default function GamePage() {
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.platforms && game.platforms.length > 0
                   ? game.platforms
-                      .map((p: any) => p.name || p.nom_plateforme)
-                      .join(', ')
+                    .map((p: any) => p.name || p.nom_plateforme)
+                    .join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -551,8 +613,8 @@ export default function GamePage() {
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.genres && game.genres.length > 0
                   ? game.genres
-                      .map((g: any) => g.nom_genre || g.name)
-                      .join(', ')
+                    .map((g: any) => g.nom_genre || g.name)
+                    .join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -593,13 +655,10 @@ export default function GamePage() {
             }}
           >
             <SecondaryButton
-              onClick={() => {
-                if (!isAuthenticated) {
-                  setAuthModalOpen(true);
-                }
-              }}
+              onClick={() => handleMatchmaking()}
+              disabled={isMatching}
             >
-              Matchmaking
+              {isMatching ? 'Recherche en cours...' : 'Matchmaking'}
             </SecondaryButton>
             <Button
               variant="contained"
