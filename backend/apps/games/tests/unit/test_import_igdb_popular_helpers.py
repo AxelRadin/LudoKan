@@ -87,6 +87,20 @@ def test_map_status_handles_none_and_unknown():
     assert cmd.map_status(0) == "released"
 
 
+def test_map_status_all_igdb_values():
+    """Couvre tous les codes status IGDB mappés (released, alpha, beta, etc.)."""
+    cmd = make_command()
+
+    assert cmd.map_status(0) == "released"
+    assert cmd.map_status(2) == "alpha"
+    assert cmd.map_status(3) == "beta"
+    assert cmd.map_status(4) == "early_access"
+    assert cmd.map_status(5) == "offline"
+    assert cmd.map_status(6) == "cancelled"
+    assert cmd.map_status(7) == "rumored"
+    assert cmd.map_status(8) == "delisted"
+
+
 def test_compute_cover_url_various_cases():
     cmd = make_command()
 
@@ -298,3 +312,29 @@ def test_sync_game_relations_clears_when_no_ids():
 
     assert game.genres.count() == 0
     assert game.platforms.count() == 0
+
+
+# @pytest.mark.django_db
+# def test_sync_game_relations_sets_genres_and_platforms_when_ids_present():
+#     """Couvre la branche où on fait .set() sur les M2M (genres et plateformes)."""
+#     cmd = make_command()
+
+#     genre1 = Genre.objects.create(igdb_id=10, nom_genre="Action", description="")
+#     genre2 = Genre.objects.create(igdb_id=11, nom_genre="RPG", description="")
+#     platform1 = Platform.objects.create(igdb_id=20, nom_plateforme="PC", description="")
+#     platform2 = Platform.objects.create(igdb_id=21, nom_plateforme="PS5", description="")
+#     publisher = Publisher.objects.create(name="Pub", description="")
+
+#     game = Game.objects.create(
+#         igdb_id=1,
+#         name="Test Game",
+#         description="",
+#         release_date=datetime.date(2020, 1, 1),
+#         publisher=publisher,
+#     )
+
+#     game_data = {"genres": [10, 11], "platforms": [20, 21]}
+#     cmd._sync_game_relations(game_data, game)
+
+#     assert set(game.genres.values_list("igdb_id", flat=True)) == {10, 11}
+#     assert set(game.platforms.values_list("igdb_id", flat=True)) == {20, 21}

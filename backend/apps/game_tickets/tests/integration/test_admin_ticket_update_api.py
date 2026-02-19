@@ -104,13 +104,162 @@ class TestAdminGameTicketUpdateAPI:
             format="json",
         )
 
-        print(response.data)
-
         assert response.status_code == status.HTTP_200_OK
         ticket = GameTicket.objects.get(pk=self.ticket.id)
         assert ticket.status == GameTicket.Status.REJECTED
         assert ticket.rejection_reason == "Duplicate game"
         assert ticket.reviewer == self.admin
+
+    def test_admin_start_review_success(self):
+        """Admin peut passer un ticket PENDING en REVIEWING."""
+        pending_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Pending Game",
+            description="Waiting",
+            status=GameTicket.Status.PENDING,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            f"/api/game-tickets/{pending_ticket.id}/start-review/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        pending_ticket = GameTicket.objects.get(pk=pending_ticket.id)
+        assert pending_ticket.status == GameTicket.Status.REVIEWING
+        assert pending_ticket.reviewer == self.admin
+
+    def test_start_review_not_found(self):
+        """start-review renvoie 404 si le ticket n'existe pas."""
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            "/api/game-tickets/999999/start-review/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data.get("detail") == "Ticket not found."
+
+    def test_start_review_invalid_transition(self):
+        """start-review renvoie 400 si le ticket n'est pas PENDING."""
+        self.client.force_authenticate(user=self.admin)
+        # self.ticket est déjà en REVIEWING
+
+        response = self.client.post(
+            f"/api/game-tickets/{self.ticket.id}/start-review/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "PENDING" in response.data.get("detail", "")
+
+    def test_approve_not_found(self):
+        """approve renvoie 404 si le ticket n'existe pas."""
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            "/api/game-tickets/999999/approve/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data.get("detail") == "Ticket not found."
+
+    def test_approve_invalid_transition(self):
+        """approve renvoie 400 si le ticket n'est pas en REVIEWING."""
+        pending_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Pending",
+            description="",
+            status=GameTicket.Status.PENDING,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            f"/api/game-tickets/{pending_ticket.id}/approve/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "REVIEWING" in response.data.get("detail", "")
+
+    def test_reject_not_found(self):
+        """reject renvoie 404 si le ticket n'existe pas."""
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            "/api/game-tickets/999999/reject/",
+            {"rejection_reason": "N/A"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data.get("detail") == "Ticket not found."
+
+    def test_reject_invalid_transition(self):
+        """reject renvoie 400 si le ticket n'est pas en REVIEWING."""
+        pending_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Pending",
+            description="",
+            status=GameTicket.Status.PENDING,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            f"/api/game-tickets/{pending_ticket.id}/reject/",
+            {"rejection_reason": "Not applicable"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "REVIEWING" in response.data.get("detail", "")
+
+    def test_admin_publish_success(self):
+        """Admin peut passer un ticket APPROVED en PUBLISHED."""
+        approved_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Approved Game",
+            description="",
+            status=GameTicket.Status.APPROVED,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            f"/api/game-tickets/{approved_ticket.id}/publish/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        approved_ticket = GameTicket.objects.get(pk=approved_ticket.id)
+        assert approved_ticket.status == GameTicket.Status.PUBLISHED
+
+    def test_publish_not_found(self):
+        """publish renvoie 404 si le ticket n'existe pas."""
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(
+            "/api/game-tickets/999999/publish/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.data.get("detail") == "Ticket not found."
+
+    def test_publish_invalid_transition(self):
+        """publish renvoie 400 si le ticket n'est pas APPROVED."""
+        self.client.force_authenticate(user=self.admin)
+        # self.ticket est en REVIEWING
+
+        response = self.client.post(
+            f"/api/game-tickets/{self.ticket.id}/publish/",
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "APPROVED" in response.data.get("detail", "")
 
     def test_normal_user_cannot_patch_ticket(self):
         """User normal ne peut pas updater le ticket."""
