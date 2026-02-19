@@ -55,7 +55,7 @@ class TestAdminGameTicketUpdateAPI:
                 "internal_comment": "Looks good",
                 "internal_note": "Approved by admin",
             },
-            format="json",  # ✅ Set Content-Type: application/json
+            format="json",
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -69,21 +69,19 @@ class TestAdminGameTicketUpdateAPI:
         response = self.client.patch(
             f"/api/game-tickets/{self.ticket.id}/",
             {
-                "status": GameTicket.Status.APPROVED,  # ❌ Tentative directe
+                "status": GameTicket.Status.APPROVED,
             },
             format="json",
         )
 
-        # Doit être rejeté ou ignoré
         assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_200_OK]
         ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.status == GameTicket.Status.REVIEWING  # Inchangé
+        assert ticket.status == GameTicket.Status.REVIEWING
 
     def test_admin_approve_via_fsm_action(self):
         """Admin approuve via l'action FSM."""
         self.client.force_authenticate(user=self.admin)
 
-        # ✅ Endpoint dédié pour les transitions FSM
         response = self.client.post(
             f"/api/game-tickets/{self.ticket.id}/approve/",
             format="json",
@@ -106,7 +104,7 @@ class TestAdminGameTicketUpdateAPI:
             format="json",
         )
 
-        print(response.data)  # Debug: Affiche la réponse pour vérifier les erreurs éventuelles
+        print(response.data)
 
         assert response.status_code == status.HTTP_200_OK
         ticket = GameTicket.objects.get(pk=self.ticket.id)
@@ -158,7 +156,7 @@ class TestAdminGameTicketUpdateAPI:
         assert response.status_code == status.HTTP_200_OK
         ticket = GameTicket.objects.get(pk=self.ticket.id)
         assert ticket.internal_comment == "Updated comment only"
-        assert ticket.internal_note == original_note  # Inchangé
+        assert ticket.internal_note == original_note
 
     def test_patch_does_not_trigger_fsm(self):
         """PATCH metadata n'affecte pas le status."""
