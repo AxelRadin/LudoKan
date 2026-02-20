@@ -48,8 +48,6 @@ class ReportScheduleAdminForm(forms.ModelForm):
             "last_run",
             "next_run",
             "enabled",
-            "created_at",
-            "updated_at",
         ]
 
     def __init__(self, *args, **kwargs):
