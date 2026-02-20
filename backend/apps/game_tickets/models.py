@@ -19,6 +19,14 @@ class GameTicket(models.Model):
         related_name="game_tickets",
     )
 
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_tickets",
+    )
+
     game_name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     publisher = models.CharField(max_length=255, blank=True)
@@ -37,6 +45,13 @@ class GameTicket(models.Model):
         protected=True,
         db_index=True,
     )
+
+    internal_comment = models.TextField(blank=True)
+    internal_note = models.TextField(blank=True)
+    admin_metadata = models.JSONField(default=dict, blank=True)
+
+    rejection_reason = models.TextField(blank=True, null=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)

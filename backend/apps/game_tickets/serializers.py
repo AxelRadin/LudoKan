@@ -41,10 +41,6 @@ class GameTicketCreateSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    # ------------------
-    # VALIDATIONS
-    # ------------------
-
     def validate_game_name(self, value):
         if len(value.strip()) < 2:
             raise serializers.ValidationError("Game name is too short.")
@@ -56,13 +52,9 @@ class GameTicketCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        """
-        Validation métier globale (doublon optionnel).
-        """
         user = self.context["request"].user
         game_name = attrs.get("game_name")
 
-        # Optionnel : éviter le spam de tickets identiques
         exists = GameTicket.objects.filter(
             user=user,
             game_name__iexact=game_name,
@@ -76,6 +68,8 @@ class GameTicketCreateSerializer(serializers.ModelSerializer):
 
 
 class GameTicketListSerializer(serializers.ModelSerializer):
+    reviewer_email = serializers.EmailField(source="reviewer.email", read_only=True, allow_null=True)
+
     class Meta:
         model = GameTicket
         fields = [
@@ -90,6 +84,9 @@ class GameTicketListSerializer(serializers.ModelSerializer):
             "status",
             "genres",
             "platforms",
+            "rejection_reason",
+            "reviewer_email",
+            "reviewed_at",
             "created_at",
             "updated_at",
         ]
@@ -98,6 +95,7 @@ class GameTicketListSerializer(serializers.ModelSerializer):
 class AdminGameTicketListSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_pseudo = serializers.CharField(source="user.pseudo", read_only=True)
+    reviewer_email = serializers.EmailField(source="reviewer.email", read_only=True, allow_null=True)
 
     class Meta:
         model = GameTicket
@@ -115,6 +113,12 @@ class AdminGameTicketListSerializer(serializers.ModelSerializer):
             "status",
             "genres",
             "platforms",
+            "rejection_reason",
+            "reviewer_email",
+            "reviewed_at",
+            "internal_comment",
+            "internal_note",
+            "admin_metadata",
             "created_at",
             "updated_at",
         ]
@@ -141,4 +145,37 @@ class GameTicketAttachmentCreateSerializer(serializers.ModelSerializer):
 
 
 class GameTicketStatusUpdateSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=GameTicket.Status.choices)
+    """For FSM transitions - only updates metadata, not status directly."""
+
+    rejection_reason = serializers.CharField(required=False, allow_blank=False, help_text="Required only for 'reject' action")
+    internal_comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+
+    def validate(self, attrs):
+        action = self.context.get("action")
+        if action == "reject" and not attrs.get("rejection_reason"):
+            raise serializers.ValidationError({"rejection_reason": "This field is required when rejecting a ticket."})
+        return attrs
+
+
+class AdminGameTicketUpdateSerializer(serializers.ModelSerializer):
+    """For updating metadata fields only - NOT status."""
+
+    class Meta:
+        model = GameTicket
+        fields = [
+            "internal_comment",
+            "internal_note",
+            "admin_metadata",
+        ]
+
+    def validate(self, attrs):
+        if "status" in self.initial_data:
+            raise serializers.ValidationError({"status": "Status cannot be modified via this endpoint. Use FSM transitions."})
+        return attrs
+
+    def update(self, instance, validated_data):
+        validated_data.pop("status", None)
+        return super().update(instance, validated_data)
