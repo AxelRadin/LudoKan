@@ -41,7 +41,14 @@ class ReportScheduleAdminForm(forms.ModelForm):
 
     class Meta:
         model = ReportSchedule
-        fields = "__all__"
+        fields = [
+            "report_type",
+            "frequency",
+            "recipients",
+            "last_run",
+            "next_run",
+            "enabled",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
