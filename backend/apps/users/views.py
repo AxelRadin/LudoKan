@@ -217,6 +217,73 @@ class AdminStatsView(APIView):
         return Response(payload, status=status.HTTP_200_OK)
 
 
+class AdminReportsUsersView(APIView):
+    """
+    Métriques détaillées utilisateurs pour les rapports planifiés (BACK-021B).
+
+    GET /api/admin/reports/users/
+
+    Réponse :
+    {
+      "total": 12340,
+      "new": { "day": 20, "week": 130, "month": 530 },
+      "active": { "day": 240, "week": 1500, "month": 6400 },
+      "suspended": 12
+    }
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "dashboard.view"
+
+    def get(self, request):
+        now = timezone.now()
+        day_ago = now - timedelta(days=1)
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
+
+        cache_timeout = getattr(settings, "ADMIN_REPORTS_USERS_CACHE_TIMEOUT", 60)
+        use_cache = cache_timeout > 0
+        cache_key = "admin:reports:users"
+        if use_cache:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data, status=status.HTTP_200_OK)
+
+        user_agg = User.objects.aggregate(
+            total=Count("id"),
+            new_day=Count("id", filter=Q(created_at__gte=day_ago)),
+            new_week=Count("id", filter=Q(created_at__gte=week_ago)),
+            new_month=Count("id", filter=Q(created_at__gte=month_ago)),
+            active_day=Count("id", filter=Q(last_login__gte=day_ago)),
+            active_week=Count("id", filter=Q(last_login__gte=week_ago)),
+            active_month=Count("id", filter=Q(last_login__gte=month_ago)),
+        )
+
+        suspended_count = (
+            UserSuspension.objects.filter(is_active=True).filter(Q(end_date__isnull=True) | Q(end_date__gt=now)).values("user").distinct().count()
+        )
+
+        payload = {
+            "total": user_agg["total"],
+            "new": {
+                "day": user_agg["new_day"],
+                "week": user_agg["new_week"],
+                "month": user_agg["new_month"],
+            },
+            "active": {
+                "day": user_agg["active_day"],
+                "week": user_agg["active_week"],
+                "month": user_agg["active_month"],
+            },
+            "suspended": suspended_count,
+        }
+
+        if use_cache:
+            cache.set(cache_key, payload, timeout=cache_timeout)
+
+        return Response(payload, status=status.HTTP_200_OK)
+
+
 class MyReportsView(APIView):
     """
     Endpoint pour récupérer les signalements faits par l'utilisateur courant.
