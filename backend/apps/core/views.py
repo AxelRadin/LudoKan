@@ -148,7 +148,6 @@ class AdminReportsActivityView(APIView):
 
         activity = []
 
-        # ActivityLog (utilisateurs) — filtres avant le slice
         qs_logs = ActivityLog.objects.filter(created_at__gte=since).select_related("user")
         if user_id:
             try:
