@@ -195,6 +195,64 @@ class GameViewSet(ModelViewSet):
 
 ---
 
+## Numeric Filters (min_age, min_players, max_players)
+
+In addition to Many-to-Many filters, the `GameFilter` also supports numeric comparison filters on three integer fields of the `Game` model.
+
+### Available parameters
+
+| Parameter | Field | Operator | Description |
+|-----------|-------|----------|-------------|
+| `min_age` | `min_age` | `gte` | Returns games where minimum required age ≥ value |
+| `min_players` | `min_players` | `lte` | Returns games where minimum player count ≤ value (playable with N players) |
+| `max_players` | `max_players` | `gte` | Returns games where maximum player count ≥ value (supports N players) |
+
+### Business logic
+
+- **`min_age=12`** → games requiring age 12 or older (`min_age >= 12`)
+- **`min_players=2`** → games playable with 2 players: includes solo games (min=1) and 2-player games (min=2), excludes games requiring 3+ players
+- **`max_players=4`** → games that support groups of 4: excludes solo (max=1) and 2-3 player games
+
+### Usage examples
+
+```
+# Jeux pour 12 ans et +
+GET /api/games/?min_age=12
+
+# Jeux jouables à 2 joueurs (minimum requis ≤ 2)
+GET /api/games/?min_players=2
+
+# Jeux acceptant au moins 4 joueurs (maximum ≥ 4)
+GET /api/games/?max_players=4
+
+# Combinaison : jeux pour 12 ans et + jouables à 2 (ticket critère d'acceptation)
+GET /api/games/?min_age=12&min_players=2
+
+# Combinaison avec filtres M2M : genre Action, pour 12 ans+, jouables à 2
+GET /api/games/?genre=1&min_age=12&min_players=2
+```
+
+### curl examples
+
+```bash
+# Filtrer par âge minimum
+curl "http://localhost:8000/api/games/?min_age=12"
+
+# Filtrer par nombre de joueurs
+curl "http://localhost:8000/api/games/?min_players=2&max_players=6"
+
+# Combinaison complète
+curl "http://localhost:8000/api/games/?min_age=12&min_players=2&genre=1,2"
+```
+
+### Notes
+
+- Games with `null` values for these fields are excluded when the corresponding filter is applied.
+- All numeric filters combine with AND logic (a game must satisfy all active filters).
+- Numeric filters combine with genre/platform filters as AND (e.g. `?genre=1&min_age=12` returns games that have genre 1 AND min_age ≥ 12).
+
+---
+
 # Ratings API Guide
 
 ## Endpoints overview
