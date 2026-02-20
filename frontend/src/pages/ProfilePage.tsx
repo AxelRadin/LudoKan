@@ -113,13 +113,9 @@ export default function ProfilePage() {
       setAvatarPreview('');
       return;
     }
-
     const objectUrl = URL.createObjectURL(avatarFile);
     setAvatarPreview(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
+    return () => URL.revokeObjectURL(objectUrl);
   }, [avatarFile]);
 
   const displayedAvatar = useMemo(() => {
@@ -160,29 +156,22 @@ export default function ProfilePage() {
   };
 
   const validateAvatarFile = (file: File) => {
-    if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    if (!ALLOWED_AVATAR_TYPES.includes(file.type))
       return 'Format invalide. Seuls les fichiers JPG, PNG et WEBP sont autorisés.';
-    }
-
-    if (file.size > MAX_AVATAR_SIZE) {
+    if (file.size > MAX_AVATAR_SIZE)
       return 'Le fichier est trop volumineux. Taille maximale autorisée : 2 MB.';
-    }
-
     return '';
   };
 
   const applySelectedFile = (selectedFile?: File) => {
     if (!selectedFile) return;
-
     const validationError = validateAvatarFile(selectedFile);
-
     if (validationError) {
       setAvatarError(validationError);
       setAvatarFile(null);
       setAvatarPreview('');
       return;
     }
-
     setAvatarError('');
     setRemoveAvatar(false);
     setAvatarFile(selectedFile);
@@ -199,10 +188,7 @@ export default function ProfilePage() {
     setAvatarPreview('');
     setAvatarError('');
     setRemoveAvatar(true);
-    setForm(prev => ({
-      ...prev,
-      avatar_url: '',
-    }));
+    setForm(prev => ({ ...prev, avatar_url: '' }));
   };
 
   const handleSave = async () => {
@@ -215,14 +201,8 @@ export default function ProfilePage() {
         dataToSend.append('first_name', form.first_name || '');
         dataToSend.append('last_name', form.last_name || '');
         dataToSend.append('description_courte', form.description_courte || '');
-
-        if (avatarFile) {
-          dataToSend.append('avatar', avatarFile);
-        }
-
-        if (removeAvatar) {
-          dataToSend.append('remove_avatar', 'true');
-        }
+        if (avatarFile) dataToSend.append('avatar', avatarFile);
+        if (removeAvatar) dataToSend.append('remove_avatar', 'true');
       } else {
         dataToSend = {
           pseudo: form.pseudo,
@@ -233,7 +213,6 @@ export default function ProfilePage() {
       }
 
       const updated = await apiPatch('/api/me/', dataToSend);
-
       setUser(updated);
       setForm({
         pseudo: updated.pseudo || '',
@@ -285,101 +264,149 @@ export default function ProfilePage() {
       status: ug.status,
     }));
 
-  const topLabelSx = {
-    fontSize: 12,
+  /* ─── Shared style tokens ─── */
+
+  const labelSx = {
+    fontSize: 10,
     fontWeight: 800,
-    letterSpacing: 0.7,
+    letterSpacing: 2,
     textTransform: 'uppercase' as const,
-    color: profileColors.lightMuted,
-    mb: 1,
+    color: profileColors.accent,
+    mb: 0.75,
+    display: 'block',
   };
 
   const cardSx = {
-    borderRadius: 5,
+    borderRadius: 4,
     border: `1px solid ${profileColors.softBorder}`,
     backgroundColor: profileColors.cardBg,
-    boxShadow: '0 12px 28px rgba(0,0,0,0.045)',
-    p: 3,
+    p: '24px 28px',
     height: '100%',
+    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+    '&:hover': {
+      boxShadow: '0 16px 40px rgba(211,47,47,0.08)',
+      transform: 'translateY(-2px)',
+    },
   };
 
   const fieldSx = {
     '& .MuiOutlinedInput-root': {
-      borderRadius: 3.5,
-      backgroundColor: '#fff',
+      borderRadius: 2.5,
+      backgroundColor: '#ffffff',
+      fontSize: 14.5,
+      '& fieldset': { borderColor: profileColors.softBorder },
+      '&:hover fieldset': { borderColor: profileColors.border },
+      '&.Mui-focused fieldset': { borderColor: profileColors.accent },
     },
+    '& .MuiInputLabel-root.Mui-focused': { color: profileColors.accent },
   };
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: profileColors.pageBg,
+        background: `
+          radial-gradient(ellipse 80% 60% at 10% 0%, rgba(211,47,47,0.10) 0%, transparent 60%),
+          radial-gradient(ellipse 60% 50% at 90% 100%, rgba(255,180,180,0.18) 0%, transparent 55%),
+          ${profileColors.pageBg}
+        `,
         px: { xs: 2, md: 5, lg: 8 },
-        py: { xs: 2, md: 4 },
+        py: { xs: 3, md: 5 },
       }}
     >
-      <Box component="main" sx={{ maxWidth: 1280, mx: 'auto' }}>
+      <Box component="main" sx={{ maxWidth: 1200, mx: 'auto' }}>
+        {/* ── Shell ── */}
         <Paper
           elevation={0}
           sx={{
             backgroundColor: profileColors.shellBg,
             border: `1px solid ${profileColors.border}`,
-            borderRadius: 8,
+            borderRadius: 6,
             overflow: 'hidden',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.06)',
+            boxShadow:
+              '0 2px 8px rgba(211,47,47,0.04), 0 24px 64px rgba(0,0,0,0.07)',
           }}
         >
-          <Box sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 900,
-                color: profileColors.title,
-                letterSpacing: 0.2,
-                mb: 2,
-              }}
+          <Box sx={{ p: { xs: 2.5, md: 4 } }}>
+            {/* ── Wordmark ── */}
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}
             >
-              Ludokan
-            </Typography>
+              <Box
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 2,
+                  background: `linear-gradient(135deg, ${profileColors.accent}, ${profileColors.accentDark})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                  }}
+                />
+              </Box>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  fontSize: 18,
+                  color: profileColors.title,
+                  letterSpacing: -0.5,
+                  fontFamily: "'Georgia', serif",
+                }}
+              >
+                Ludokan
+              </Typography>
+            </Box>
 
-            <Box sx={{ position: 'relative', mb: { xs: 9, md: 10 } }}>
+            {/* ── Hero banner ── */}
+            <Box sx={{ position: 'relative', mb: { xs: 10, md: 11 } }}>
               <Box
                 component="img"
                 src={zeldaBanner}
-                alt="Zelda Banner"
+                alt="Banner"
                 sx={{
                   width: '100%',
-                  height: { xs: 220, sm: 280, md: 340 },
+                  height: { xs: 200, sm: 260, md: 320 },
                   objectFit: 'cover',
-                  borderRadius: 6,
+                  borderRadius: 4,
                   display: 'block',
                 }}
               />
 
+              {/* Gradient scrim */}
               <Box
                 sx={{
                   position: 'absolute',
                   inset: 0,
-                  borderRadius: 6,
+                  borderRadius: 4,
                   background:
-                    'linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.34) 100%)',
+                    'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.45) 100%)',
                 }}
               />
 
+              {/* Profile card floating below banner */}
               <Paper
                 elevation={0}
                 sx={{
                   position: 'absolute',
-                  left: { xs: 16, md: 24 },
-                  right: { xs: 16, md: 24 },
-                  bottom: { xs: -82, md: -72 },
-                  borderRadius: 6,
-                  backgroundColor: 'rgba(255,255,255,0.96)',
+                  left: { xs: 12, md: 20 },
+                  right: { xs: 12, md: 20 },
+                  bottom: { xs: -88, md: -80 },
+                  borderRadius: 4,
+                  backgroundColor: 'rgba(255,255,255,0.97)',
                   border: `1px solid ${profileColors.softBorder}`,
-                  boxShadow: '0 18px 44px rgba(0,0,0,0.08)',
-                  px: { xs: 2, md: 3 },
-                  py: { xs: 2, md: 2.5 },
+                  boxShadow:
+                    '0 8px 32px rgba(211,47,47,0.08), 0 2px 8px rgba(0,0,0,0.06)',
+                  px: { xs: 2.5, md: 3.5 },
+                  py: 2.5,
+                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <Box
@@ -395,40 +422,41 @@ export default function ProfilePage() {
                     sx={{
                       display: 'flex',
                       alignItems: { xs: 'flex-start', sm: 'center' },
-                      gap: 2,
+                      gap: 2.5,
                       flexDirection: { xs: 'column', sm: 'row' },
                     }}
                   >
                     <input
                       ref={avatarInputRef}
                       type="file"
-                      accept="image/jpeg, image/png, image/webp"
+                      accept="image/jpeg,image/png,image/webp"
                       hidden
                       onChange={handleFileChange}
                     />
 
+                    {/* Avatar */}
                     <Box
                       onClick={() => avatarInputRef.current?.click()}
                       sx={{
                         position: 'relative',
-                        width: 120,
-                        height: 120,
+                        width: 100,
+                        height: 100,
                         borderRadius: '50%',
                         cursor: 'pointer',
                         flexShrink: 0,
-                        '&:hover .avatar-hover': {
-                          opacity: 1,
-                        },
+                        '&:hover .avatar-overlay': { opacity: 1 },
                       }}
                     >
                       <Avatar
                         sx={{
                           width: '100%',
                           height: '100%',
-                          border: '5px solid white',
-                          boxShadow: '0 14px 32px rgba(0,0,0,0.16)',
-                          fontSize: 42,
+                          border: `4px solid white`,
+                          outline: `2px solid ${profileColors.softBorder}`,
+                          boxShadow: '0 8px 24px rgba(211,47,47,0.18)',
+                          fontSize: 38,
                           bgcolor: profileColors.accent,
+                          fontFamily: "'Georgia', serif",
                         }}
                         src={displayedAvatar}
                         alt={user?.pseudo}
@@ -437,36 +465,39 @@ export default function ProfilePage() {
                       </Avatar>
 
                       <Box
-                        className="avatar-hover"
+                        className="avatar-overlay"
                         sx={{
                           position: 'absolute',
                           inset: 0,
                           borderRadius: '50%',
-                          backgroundColor: profileColors.overlay,
+                          backgroundColor: 'rgba(0,0,0,0.42)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: '#fff',
-                          fontSize: 12,
+                          fontSize: 11,
                           fontWeight: 700,
+                          letterSpacing: 0.3,
                           opacity: 0,
-                          transition: '0.2s ease',
+                          transition: 'opacity 0.18s ease',
                           textAlign: 'center',
                           px: 1,
                         }}
                       >
-                        Changer l’avatar
+                        Changer
                       </Box>
                     </Box>
 
-                    <Box sx={{ maxWidth: 620 }}>
+                    {/* User info */}
+                    <Box>
                       <Typography
                         sx={{
-                          fontSize: { xs: 26, md: 32 },
+                          fontSize: { xs: 24, md: 30 },
                           fontWeight: 900,
                           color: profileColors.title,
                           lineHeight: 1.1,
-                          letterSpacing: -0.4,
+                          letterSpacing: -0.5,
+                          fontFamily: "'Georgia', serif",
                         }}
                       >
                         {loading ? '...' : user?.pseudo || 'Utilisateur'}
@@ -474,21 +505,23 @@ export default function ProfilePage() {
 
                       <Typography
                         sx={{
-                          mt: 0.8,
+                          mt: 0.6,
                           color: profileColors.muted,
-                          fontSize: 15.5,
+                          fontSize: 13.5,
                           fontWeight: 500,
+                          letterSpacing: 0.1,
                         }}
                       >
-                        {loading ? '...' : user?.email || 'Email non renseigné'}
+                        {loading ? '...' : user?.email}
                       </Typography>
 
                       <Typography
                         sx={{
-                          mt: 1.4,
+                          mt: 1,
                           color: profileColors.text,
-                          fontSize: 15,
-                          lineHeight: 1.7,
+                          fontSize: 14.5,
+                          lineHeight: 1.65,
+                          maxWidth: 500,
                         }}
                       >
                         {loading
@@ -499,7 +532,12 @@ export default function ProfilePage() {
                     </Box>
                   </Box>
 
-                  <Box sx={{ alignSelf: { xs: 'stretch', md: 'center' } }}>
+                  <Box
+                    sx={{
+                      alignSelf: { xs: 'stretch', md: 'center' },
+                      flexShrink: 0,
+                    }}
+                  >
                     <SecondaryButton onClick={handleEditOpen}>
                       Modifier le profil
                     </SecondaryButton>
@@ -508,22 +546,27 @@ export default function ProfilePage() {
               </Paper>
             </Box>
 
+            {/* ── Info cards ── */}
             <Box
               sx={{
                 display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr 1fr' },
-                gap: 2.2,
+                gridTemplateColumns: { xs: '1fr', md: '1.3fr 1fr 1fr' },
+                gap: 2,
                 mb: 3,
               }}
             >
+              {/* Présentation */}
               <Paper sx={cardSx}>
-                <Typography sx={topLabelSx}>Présentation</Typography>
+                <Typography component="span" sx={labelSx}>
+                  Présentation
+                </Typography>
                 <Typography
                   sx={{
                     color: profileColors.title,
                     fontWeight: 800,
-                    fontSize: 20,
-                    mb: 1,
+                    fontSize: 18,
+                    mb: 1.25,
+                    fontFamily: "'Georgia', serif",
                     letterSpacing: -0.2,
                   }}
                 >
@@ -533,7 +576,7 @@ export default function ProfilePage() {
                   sx={{
                     color: profileColors.text,
                     lineHeight: 1.75,
-                    fontSize: 15,
+                    fontSize: 14.5,
                   }}
                 >
                   {loading
@@ -543,168 +586,205 @@ export default function ProfilePage() {
                 </Typography>
               </Paper>
 
+              {/* Identité */}
               <Paper sx={cardSx}>
-                <Typography sx={topLabelSx}>Identité</Typography>
+                <Typography component="span" sx={labelSx}>
+                  Identité
+                </Typography>
                 <Typography
                   sx={{
                     color: profileColors.title,
                     fontWeight: 800,
-                    fontSize: 20,
-                    mb: 1,
+                    fontSize: 18,
+                    mb: 1.25,
+                    fontFamily: "'Georgia', serif",
                     letterSpacing: -0.2,
                   }}
                 >
-                  {loading ? '...' : user?.first_name || 'N/A'}{' '}
-                  {loading ? '' : user?.last_name || ''}
-                </Typography>
-                <Typography
-                  sx={{ color: profileColors.text, mb: 0.7, fontSize: 15 }}
-                >
-                  <strong>Pseudo :</strong>{' '}
-                  {loading ? '...' : user?.pseudo || 'N/A'}
-                </Typography>
-                <Typography sx={{ color: profileColors.text, fontSize: 15 }}>
-                  <strong>Email :</strong>{' '}
-                  {loading ? '...' : user?.email || 'N/A'}
-                </Typography>
-              </Paper>
-
-              <Paper sx={cardSx}>
-                <Typography sx={topLabelSx}>Compte</Typography>
-                <Typography
-                  sx={{
-                    color: profileColors.title,
-                    fontWeight: 800,
-                    fontSize: 20,
-                    mb: 1,
-                    letterSpacing: -0.2,
-                  }}
-                >
-                  Inscrit depuis
-                </Typography>
-                <Typography sx={{ color: profileColors.text, fontSize: 15 }}>
                   {loading
                     ? '...'
-                    : user?.created_at
-                      ? new Date(user.created_at).toLocaleDateString()
-                      : 'N/A'}
+                    : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() ||
+                      'N/A'}
                 </Typography>
-              </Paper>
-            </Box>
 
-            <Typography
-              variant="h6"
-              sx={{
-                mb: 2,
-                fontWeight: 900,
-                color: profileColors.title,
-                letterSpacing: -0.2,
-              }}
-            >
-              Statistiques
-            </Typography>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-                gap: 2.2,
-                mb: 3.5,
-              }}
-            >
-              <Paper sx={cardSx}>
-                <Typography
-                  sx={{
-                    color: profileColors.title,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: 0.7,
-                    textTransform: 'uppercase',
-                    textAlign: 'center',
-                    mb: 1.5,
-                  }}
+                <Box
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}
                 >
-                  Prénom
-                </Typography>
-                <Typography
-                  sx={{
-                    color: profileColors.title,
-                    fontSize: 28,
-                    fontWeight: 900,
-                    textAlign: 'center',
-                    letterSpacing: -0.4,
-                  }}
-                >
-                  {loading ? '...' : user?.first_name || 'N/A'}
-                </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Typography
+                      sx={{
+                        color: profileColors.lightMuted,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        textTransform: 'uppercase',
+                        minWidth: 52,
+                      }}
+                    >
+                      Pseudo
+                    </Typography>
+                    <Typography
+                      sx={{ color: profileColors.text, fontSize: 14 }}
+                    >
+                      {loading ? '...' : user?.pseudo || 'N/A'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Typography
+                      sx={{
+                        color: profileColors.lightMuted,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: 1,
+                        textTransform: 'uppercase',
+                        minWidth: 52,
+                      }}
+                    >
+                      Email
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: profileColors.text,
+                        fontSize: 14,
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {loading ? '...' : user?.email || 'N/A'}
+                    </Typography>
+                  </Box>
+                </Box>
               </Paper>
 
+              {/* Compte */}
               <Paper sx={cardSx}>
+                <Typography component="span" sx={labelSx}>
+                  Compte
+                </Typography>
                 <Typography
                   sx={{
                     color: profileColors.title,
-                    fontSize: 12,
                     fontWeight: 800,
-                    letterSpacing: 0.7,
-                    textTransform: 'uppercase',
-                    textAlign: 'center',
-                    mb: 1.5,
+                    fontSize: 18,
+                    mb: 1.25,
+                    fontFamily: "'Georgia', serif",
+                    letterSpacing: -0.2,
                   }}
                 >
-                  Nom
+                  Membre depuis
                 </Typography>
                 <Typography
                   sx={{
-                    color: profileColors.title,
-                    fontSize: 28,
-                    fontWeight: 900,
-                    textAlign: 'center',
-                    letterSpacing: -0.4,
-                  }}
-                >
-                  {loading ? '...' : user?.last_name || 'N/A'}
-                </Typography>
-              </Paper>
-
-              <Paper sx={cardSx}>
-                <Typography
-                  sx={{
-                    color: profileColors.title,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    letterSpacing: 0.7,
-                    textTransform: 'uppercase',
-                    textAlign: 'center',
-                    mb: 1.5,
-                  }}
-                >
-                  Date d’inscription
-                </Typography>
-                <Typography
-                  sx={{
-                    color: profileColors.title,
+                    color: profileColors.accent,
                     fontSize: 22,
                     fontWeight: 900,
-                    textAlign: 'center',
+                    fontFamily: "'Georgia', serif",
                     letterSpacing: -0.3,
                   }}
                 >
                   {loading
                     ? '...'
                     : user?.created_at
-                      ? new Date(user.created_at).toLocaleDateString()
+                      ? new Date(user.created_at).toLocaleDateString('fr-FR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })
                       : 'N/A'}
                 </Typography>
               </Paper>
             </Box>
 
+            {/* ── Statistiques ── */}
+            <Box sx={{ mb: 3 }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 900,
+                    color: profileColors.title,
+                    letterSpacing: -0.3,
+                    fontFamily: "'Georgia', serif",
+                  }}
+                >
+                  Statistiques
+                </Typography>
+                <Box
+                  sx={{
+                    flex: 1,
+                    height: 1,
+                    backgroundColor: profileColors.softBorder,
+                  }}
+                />
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                  gap: 2,
+                }}
+              >
+                {[
+                  { label: 'Prénom', value: user?.first_name },
+                  { label: 'Nom', value: user?.last_name },
+                  {
+                    label: "Date d'inscription",
+                    value: user?.created_at
+                      ? new Date(user.created_at).toLocaleDateString('fr-FR')
+                      : null,
+                  },
+                ].map(({ label, value }) => (
+                  <Paper
+                    key={label}
+                    elevation={0}
+                    sx={{
+                      ...cardSx,
+                      background: `linear-gradient(135deg, #ffffff 60%, rgba(211,47,47,0.03) 100%)`,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      py: 3.5,
+                      gap: 0.5,
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: profileColors.lightMuted,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: 2,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                    <Typography
+                      sx={{
+                        color: profileColors.title,
+                        fontSize: label === "Date d'inscription" ? 20 : 26,
+                        fontWeight: 900,
+                        letterSpacing: -0.3,
+                        fontFamily: "'Georgia', serif",
+                      }}
+                    >
+                      {loading ? '...' : value || 'N/A'}
+                    </Typography>
+                  </Paper>
+                ))}
+              </Box>
+            </Box>
+
+            {/* ── Bibliothèque de jeux ── */}
             <Paper
               sx={{
-                p: { xs: 2, md: 3 },
-                borderRadius: 6,
-                boxShadow: '0 14px 34px rgba(0,0,0,0.05)',
+                p: { xs: 2.5, md: 3.5 },
+                borderRadius: 4,
                 border: `1px solid ${profileColors.softBorder}`,
                 backgroundColor: profileColors.sectionBg,
+                boxShadow: 'none',
               }}
             >
               <Box
@@ -714,32 +794,41 @@ export default function ProfilePage() {
                   alignItems: { xs: 'flex-start', sm: 'center' },
                   justifyContent: 'space-between',
                   gap: 1,
-                  mb: 2,
+                  mb: 2.5,
                 }}
               >
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 900,
-                    color: profileColors.title,
-                    letterSpacing: -0.2,
-                  }}
-                >
-                  Jeux par statut
-                </Typography>
+                <Box>
+                  <Typography component="span" sx={{ ...labelSx, mb: 0.25 }}>
+                    Bibliothèque
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      color: profileColors.title,
+                      letterSpacing: -0.3,
+                      fontFamily: "'Georgia', serif",
+                    }}
+                  >
+                    Jeux par statut
+                  </Typography>
+                </Box>
 
                 <Typography
                   sx={{
                     color: profileColors.muted,
-                    fontSize: 14.5,
+                    fontSize: 13.5,
                     fontWeight: 500,
+                    fontStyle: 'italic',
                   }}
                 >
-                  Retrouve facilement ta bibliothèque personnelle
+                  Ta collection personnelle
                 </Typography>
               </Box>
 
-              <Divider sx={{ mb: 2, borderColor: profileColors.softBorder }} />
+              <Divider
+                sx={{ mb: 2.5, borderColor: profileColors.softBorder }}
+              />
 
               <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                 <GameList games={gamesEnCours} title="En cours" />
@@ -751,6 +840,7 @@ export default function ProfilePage() {
         </Paper>
       </Box>
 
+      {/* ── Edit dialog ── */}
       <Dialog
         open={editOpen}
         onClose={handleEditClose}
@@ -758,8 +848,8 @@ export default function ProfilePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            borderRadius: 6,
-            boxShadow: '0 26px 60px rgba(0,0,0,0.16)',
+            borderRadius: 5,
+            boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
             backgroundColor: profileColors.dialogBg,
             border: `1px solid ${profileColors.border}`,
           },
@@ -769,8 +859,10 @@ export default function ProfilePage() {
           sx={{
             fontWeight: 900,
             color: profileColors.title,
-            pb: 1,
-            letterSpacing: -0.2,
+            pb: 0.5,
+            letterSpacing: -0.3,
+            fontFamily: "'Georgia', serif",
+            fontSize: 22,
           }}
         >
           Modifier mon profil
@@ -778,13 +870,22 @@ export default function ProfilePage() {
 
         <DialogContent>
           <Box
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, pt: 1 }}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 0.5 }}>
+            {/* Avatar picker */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                py: 1,
+              }}
+            >
               <input
                 ref={modalAvatarInputRef}
                 type="file"
-                accept="image/jpeg, image/png, image/webp"
+                accept="image/jpeg,image/png,image/webp"
                 hidden
                 onChange={handleFileChange}
               />
@@ -793,64 +894,60 @@ export default function ProfilePage() {
                 onClick={() => modalAvatarInputRef.current?.click()}
                 sx={{
                   position: 'relative',
-                  width: 112,
-                  height: 112,
+                  width: 100,
+                  height: 100,
                   borderRadius: '50%',
                   cursor: 'pointer',
-                  '&:hover .modal-avatar-hover': {
-                    opacity: 1,
-                  },
+                  '&:hover .modal-avatar-overlay': { opacity: 1 },
                 }}
               >
                 <Avatar
                   src={displayedAvatar}
-                  alt="Prévisualisation avatar"
+                  alt="Prévisualisation"
                   sx={{
                     width: '100%',
                     height: '100%',
-                    fontSize: 40,
-                    boxShadow: '0 12px 28px rgba(0,0,0,0.16)',
+                    fontSize: 36,
+                    boxShadow: '0 8px 24px rgba(211,47,47,0.18)',
                     bgcolor: profileColors.accent,
+                    fontFamily: "'Georgia', serif",
                   }}
                 >
                   {form.pseudo?.[0]?.toUpperCase() || 'U'}
                 </Avatar>
 
                 <Box
-                  className="modal-avatar-hover"
+                  className="modal-avatar-overlay"
                   sx={{
                     position: 'absolute',
                     inset: 0,
                     borderRadius: '50%',
-                    backgroundColor: profileColors.overlay,
+                    backgroundColor: 'rgba(0,0,0,0.40)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: 700,
                     opacity: 0,
-                    transition: '0.2s ease',
+                    transition: 'opacity 0.18s ease',
                     textAlign: 'center',
-                    px: 1,
                   }}
                 >
-                  Cliquer pour changer
+                  Changer
                 </Box>
               </Box>
-            </Box>
 
-            <Typography
-              variant="caption"
-              sx={{
-                textAlign: 'center',
-                color: profileColors.muted,
-                mb: 0.5,
-                fontSize: 12.5,
-              }}
-            >
-              Clique directement sur l’image pour importer un avatar
-            </Typography>
+              <Typography
+                sx={{
+                  color: profileColors.muted,
+                  fontSize: 12,
+                  textAlign: 'center',
+                }}
+              >
+                Clique sur l'image pour changer ton avatar
+              </Typography>
+            </Box>
 
             <TextField
               label="Pseudo"
@@ -887,40 +984,44 @@ export default function ProfilePage() {
               sx={fieldSx}
             />
 
+            {/* Avatar status box */}
             <Box
               sx={{
-                p: 2,
-                borderRadius: 4,
+                p: '12px 16px',
+                borderRadius: 3,
                 backgroundColor: '#fff',
                 border: `1px solid ${profileColors.softBorder}`,
               }}
             >
-              <Typography variant="caption" sx={{ color: profileColors.muted }}>
-                Formats autorisés : JPG, PNG, WEBP — Taille max : 2 MB
+              <Typography sx={{ color: profileColors.muted, fontSize: 12 }}>
+                Formats : JPG, PNG, WEBP — Max 2 MB
               </Typography>
 
               {avatarFile && (
                 <Typography
-                  variant="body2"
-                  sx={{ mt: 1, fontWeight: 700, color: profileColors.title }}
+                  sx={{
+                    mt: 0.75,
+                    fontWeight: 700,
+                    color: profileColors.title,
+                    fontSize: 13,
+                  }}
                 >
-                  Fichier sélectionné : {avatarFile.name}
+                  ✓ {avatarFile.name}
                 </Typography>
               )}
-
               {removeAvatar && (
-                <Typography variant="body2" sx={{ mt: 1, color: '#b45309' }}>
-                  L’avatar sera supprimé et remplacé par le fallback visuel.
+                <Typography sx={{ mt: 0.75, color: '#b45309', fontSize: 13 }}>
+                  L'avatar sera supprimé.
                 </Typography>
               )}
-
               {avatarError && (
-                <Typography variant="body2" sx={{ mt: 1, color: '#dc2626' }}>
+                <Typography sx={{ mt: 0.75, color: '#dc2626', fontSize: 13 }}>
                   {avatarError}
                 </Typography>
               )}
             </Box>
 
+            {/* Avatar action buttons */}
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5 }}>
               <Button
                 variant="outlined"
@@ -928,23 +1029,33 @@ export default function ProfilePage() {
                 sx={{
                   borderRadius: 999,
                   px: 2.5,
+                  py: 0.8,
                   borderColor: profileColors.accent,
                   color: profileColors.accentDark,
                   fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'none',
                   '&:hover': {
                     borderColor: profileColors.accentDark,
                     backgroundColor: '#fff1f1',
                   },
                 }}
               >
-                Changer l’avatar
+                Changer l'avatar
               </Button>
 
               <Button
                 variant="text"
                 color="error"
                 onClick={handleRemoveAvatar}
-                sx={{ borderRadius: 999, px: 2.5, fontWeight: 700 }}
+                sx={{
+                  borderRadius: 999,
+                  px: 2.5,
+                  py: 0.8,
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'none',
+                }}
               >
                 Supprimer
               </Button>
@@ -952,14 +1063,18 @@ export default function ProfilePage() {
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
           <Button
             onClick={handleEditClose}
             sx={{
               borderRadius: 999,
-              color: profileColors.title,
+              color: profileColors.muted,
               px: 2.5,
-              fontWeight: 700,
+              py: 0.8,
+              fontWeight: 600,
+              fontSize: 14,
+              textTransform: 'none',
+              '&:hover': { backgroundColor: profileColors.softBorder },
             }}
           >
             Annuler
@@ -967,12 +1082,19 @@ export default function ProfilePage() {
           <Button
             onClick={handleSave}
             variant="contained"
-            color="error"
             sx={{
               borderRadius: 999,
-              boxShadow: 'none',
-              px: 3,
+              px: 3.5,
+              py: 0.9,
               fontWeight: 800,
+              fontSize: 14,
+              textTransform: 'none',
+              background: `linear-gradient(135deg, ${profileColors.accent}, ${profileColors.accentDark})`,
+              boxShadow: '0 4px 16px rgba(211,47,47,0.30)',
+              '&:hover': {
+                background: `linear-gradient(135deg, ${profileColors.accentDark}, #8b0000)`,
+                boxShadow: '0 6px 20px rgba(211,47,47,0.40)',
+              },
             }}
           >
             Enregistrer
