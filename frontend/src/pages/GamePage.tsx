@@ -24,6 +24,7 @@ import {
   importIgdbGameToDjango,
   translateDescription,
 } from '../api/igdb';
+import MatchmakingModal from '../components/MatchmakingModal';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
@@ -43,6 +44,8 @@ export default function GamePage() {
   >(null);
   const [translating, setTranslating] = useState(false);
   const [isMatching, setIsMatching] = useState(false);
+  const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
+  const [matches, setMatches] = useState<any[]>([]);
 
   useEffect(() => {
     if (igdbId) {
@@ -157,14 +160,12 @@ export default function GamePage() {
             console.log("Une demande est potentiellement déjà active pour ce jeu.");
           }
 
+          // 2. Récupérer les matchs correspondants
           const matchesData = await apiGet('/api/matchmaking/matches/');
-          console.log("Joueurs trouvés :", matchesData);
 
-          if (matchesData.length > 0) {
-            alert(`Succès : ${matchesData.length} joueur(s) trouvé(s) dans la zone ! (Voir console)`);
-          } else {
-            alert("Aucun joueur trouvé près de vous pour l'instant. Votre demande reste active !");
-          }
+          // 3. Mettre à jour l'état et ouvrir la modale
+          setMatches(matchesData);
+          setIsMatchmakingModalOpen(true);
 
         } catch (error) {
           console.error("Erreur API lors du matchmaking", error);
@@ -686,6 +687,11 @@ export default function GamePage() {
           </Box>
         </Paper>
       </Box>
+      <MatchmakingModal
+        open={isMatchmakingModalOpen}
+        onClose={() => setIsMatchmakingModalOpen(false)}
+        matches={matches}
+      />
     </Box>
   );
 }
