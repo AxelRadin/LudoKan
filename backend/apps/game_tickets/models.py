@@ -1,5 +1,8 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django_fsm import FSMField, transition
 
 from apps.games.models import Genre, Platform
@@ -127,3 +130,23 @@ class GameTicketAttachment(models.Model):
 
     def __str__(self):
         return f"Attachment for ticket {self.ticket_id}"
+
+
+@receiver(post_save, sender=GameTicket)
+def notify_admins_on_ticket_creation(sender, instance, created, **kwargs):
+    """
+    Notifie tous les administrateurs (is_staff=True) lors de la création d'un nouveau GameTicket.
+    """
+    if created:
+        from notifications.signals import notify
+
+        User = get_user_model()
+        admins = User.objects.filter(is_staff=True)
+        for admin in admins:
+            notify.send(
+                sender=instance.user,
+                recipient=admin,
+                verb="ticket_created",
+                target=instance,
+                game_name=instance.game_name,
+            )

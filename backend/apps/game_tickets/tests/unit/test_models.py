@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django_fsm import TransitionNotAllowed
 
@@ -8,12 +9,30 @@ from apps.game_tickets.models import GameTicket, GameTicketAttachment
 
 
 @pytest.mark.django_db
-def test_game_ticket_default_status(user):
+@patch("notifications.signals.notify.send")
+def test_game_ticket_default_status_and_creation_notification(mock_notify, user):
+    User = get_user_model()
+    admin1 = User.objects.create_user(email="admin1@test.com", pseudo="a1", password="pw", is_staff=True)
+    admin2 = User.objects.create_user(email="admin2@test.com", pseudo="a2", password="pw", is_staff=True)
+
     ticket = GameTicket.objects.create(
         user=user,
         game_name="Test Game",
     )
     assert ticket.status == GameTicket.Status.PENDING
+
+    assert mock_notify.call_count == 2
+
+    calls = mock_notify.call_args_list
+    recipients = [call.kwargs.get("recipient") for call in calls]
+    assert admin1 in recipients
+    assert admin2 in recipients
+
+    for call in calls:
+        assert call.kwargs.get("verb") == "ticket_created"
+        assert call.kwargs.get("sender") == user
+        assert call.kwargs.get("target") == ticket
+        assert call.kwargs.get("game_name") == "Test Game"
 
 
 @pytest.mark.django_db
