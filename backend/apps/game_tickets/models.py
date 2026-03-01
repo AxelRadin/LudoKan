@@ -84,8 +84,33 @@ class GameTicket(models.Model):
         """
         Hook de notification / events
         """
+        from notifications.signals import notify
 
-        pass
+        status_to_verb = {
+            self.Status.REVIEWING: "ticket_reviewing",
+            self.Status.APPROVED: "ticket_approved",
+            self.Status.REJECTED: "ticket_rejected",
+            self.Status.PUBLISHED: "ticket_published",
+        }
+
+        verb = status_to_verb.get(new_status)
+        if verb:
+            actor = self.reviewer if self.reviewer else self.user
+            extra_data = {
+                "game_name": self.game_name,
+                "old_status": old_status,
+                "new_status": new_status,
+            }
+            if new_status == self.Status.REJECTED and self.rejection_reason:
+                extra_data["rejection_reason"] = self.rejection_reason
+
+            notify.send(
+                sender=actor,
+                recipient=self.user,
+                verb=verb,
+                target=self,
+                **extra_data,
+            )
 
     def __str__(self):
         return f"{self.game_name} ({self.status})"

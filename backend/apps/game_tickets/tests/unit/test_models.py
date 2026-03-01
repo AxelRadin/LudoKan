@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django_fsm import TransitionNotAllowed
@@ -41,21 +43,32 @@ def test_game_ticket_attachment_str(user):
 
 
 @pytest.mark.django_db
-def test_ticket_can_go_from_pending_to_reviewing(user):
+@patch("notifications.signals.notify.send")
+def test_ticket_can_go_from_pending_to_reviewing(mock_notify, user):
     ticket = GameTicket.objects.create(
         user=user,
         game_name="Test Game",
         status=GameTicket.Status.PENDING,
     )
 
-    ticket.start_review()  # correction ici
+    ticket.start_review()
     ticket.save()
 
     assert ticket.status == GameTicket.Status.REVIEWING
+    mock_notify.assert_called_once_with(
+        sender=user,
+        recipient=user,
+        verb="ticket_reviewing",
+        target=ticket,
+        game_name="Test Game",
+        old_status="pending",
+        new_status="reviewing",
+    )
 
 
 @pytest.mark.django_db
-def test_ticket_can_be_approved_from_reviewing(user):
+@patch("notifications.signals.notify.send")
+def test_ticket_can_be_approved_from_reviewing(mock_notify, user):
     ticket = GameTicket.objects.create(
         user=user,
         game_name="Test Game",
@@ -66,24 +79,46 @@ def test_ticket_can_be_approved_from_reviewing(user):
     ticket.save()
 
     assert ticket.status == GameTicket.Status.APPROVED
+    mock_notify.assert_called_once_with(
+        sender=user,
+        recipient=user,
+        verb="ticket_approved",
+        target=ticket,
+        game_name="Test Game",
+        old_status="reviewing",
+        new_status="approved",
+    )
 
 
 @pytest.mark.django_db
-def test_ticket_can_be_rejected_from_reviewing(user):
+@patch("notifications.signals.notify.send")
+def test_ticket_can_be_rejected_from_reviewing(mock_notify, user):
     ticket = GameTicket.objects.create(
         user=user,
         game_name="Test Game",
         status=GameTicket.Status.REVIEWING,
     )
+    ticket.rejection_reason = "Incomplet"
 
     ticket.reject()
     ticket.save()
 
     assert ticket.status == GameTicket.Status.REJECTED
+    mock_notify.assert_called_once_with(
+        sender=user,
+        recipient=user,
+        verb="ticket_rejected",
+        target=ticket,
+        game_name="Test Game",
+        old_status="reviewing",
+        new_status="rejected",
+        rejection_reason="Incomplet",
+    )
 
 
 @pytest.mark.django_db
-def test_ticket_can_be_published_from_approved(user):
+@patch("notifications.signals.notify.send")
+def test_ticket_can_be_published_from_approved(mock_notify, user):
     ticket = GameTicket.objects.create(
         user=user,
         game_name="Test Game",
@@ -94,6 +129,15 @@ def test_ticket_can_be_published_from_approved(user):
     ticket.save()
 
     assert ticket.status == GameTicket.Status.PUBLISHED
+    mock_notify.assert_called_once_with(
+        sender=user,
+        recipient=user,
+        verb="ticket_published",
+        target=ticket,
+        game_name="Test Game",
+        old_status="approved",
+        new_status="published",
+    )
 
 
 @pytest.mark.django_db
@@ -117,7 +161,7 @@ def test_rejected_ticket_is_final(user):
     )
 
     with pytest.raises(TransitionNotAllowed):
-        ticket.start_review()  # correction ici
+        ticket.start_review()
 
 
 @pytest.mark.django_db
@@ -129,4 +173,4 @@ def test_published_ticket_is_final(user):
     )
 
     with pytest.raises(TransitionNotAllowed):
-        ticket.start_review()  # correction ici
+        ticket.start_review()
