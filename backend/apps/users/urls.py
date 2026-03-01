@@ -1,7 +1,15 @@
 from dj_rest_auth.views import UserDetailsView
 from django.urls import path
 
-from apps.users.views import AdminActionListView, AdminStatsView, AdminSuspendUserView, AdminUserListView, AdminUserSuspensionListView, MyReportsView
+from apps.users.views import (
+    AdminActionListView,
+    AdminReportsUsersView,
+    AdminStatsView,
+    AdminSuspendUserView,
+    AdminUserListView,
+    AdminUserSuspensionListView,
+    MyReportsView,
+)
 
 urlpatterns = [
     path("me/", UserDetailsView.as_view(), name="current-user"),
@@ -12,4 +20,5 @@ urlpatterns = [
     path("admin/users/<int:pk>/suspensions/", AdminUserSuspensionListView.as_view(), name="admin-user-suspensions"),
     path("admin/stats/", AdminStatsView.as_view(), name="admin-stats"),
     path("admin/actions/", AdminActionListView.as_view(), name="admin-actions-list"),
+    path("admin/reports/users/", AdminReportsUsersView.as_view(), name="admin-reports-users"),
 ]
