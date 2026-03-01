@@ -1,4 +1,3 @@
-
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -203,3 +202,34 @@ class TestAdminGameTicketWorkflow:
         response = self.client.patch(url, {"internal_comment": "test"}, format="json")
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_start_review_success(self):
+        """Couvre lignes 119-131 : transition de PENDING à REVIEWING."""
+        pending_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Pending Game success",
+            status=GameTicket.Status.PENDING,
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(f"/api/admin/game-tickets/{pending_ticket.id}/start-review/")
+
+        assert response.status_code == status.HTTP_200_OK
+
+        ticket_db = GameTicket.objects.get(pk=pending_ticket.id)
+        assert ticket_db.status == GameTicket.Status.REVIEWING
+        assert ticket_db.reviewer == self.admin
+
+    def test_admin_patch_success(self):
+        """Couvre lignes 394-396 : mise à jour réussie des données internes d'un ticket."""
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.patch(
+            f"/api/admin/game-tickets/{self.ticket.id}/",
+            {"internal_comment": "Nouveau commentaire interne valide"},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+
+        ticket_db = GameTicket.objects.get(pk=self.ticket.id)
+        assert ticket_db.internal_comment == "Nouveau commentaire interne valide"
