@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Count, Max
+from django.db.models import Avg, Count, Max
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import filters, status
@@ -26,6 +29,7 @@ from apps.games.serializers import (
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportCreateSerializer
+from apps.users.permissions import IsAdminWithPermission
 from apps.users.utils import log_admin_action
 
 
@@ -299,6 +303,79 @@ class RatingReportView(APIView):
             "already_reported": not created,
         }
         return Response(payload, status=status_code)
+
+
+class AdminReportsGamesView(APIView):
+    """
+    Rapport détaillé jeux pour les rapports planifiés (BACK-021C).
+
+    GET /api/admin/reports/games/
+
+    Réponse :
+    {
+      "popular_games": [ { "id", "name", "owners_count", "average_rating" }, ... ],
+      "top_genres": [ { "id", "nom_genre", "games_count" }, ... ],
+      "ratings_summary": { "average": 7.2, "total_count": 500 },
+      "reviews_recent": 120,
+      "platforms_breakdown": [ { "id", "nom_plateforme", "games_count" }, ... ]
+    }
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "dashboard.view"
+
+    def get(self, request):
+        now = timezone.now()
+        month_ago = now - timedelta(days=30)
+
+        cache_timeout = getattr(settings, "ADMIN_REPORTS_GAMES_CACHE_TIMEOUT", 60)
+        use_cache = cache_timeout > 0
+        cache_key = "admin:reports:games"
+        if use_cache:
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return Response(cached_data, status=status.HTTP_200_OK)
+
+        # Top jeux par nombre d'owners (ludothèque)
+        popular_games = list(
+            Game.objects.annotate(owners_count=Count("user_games"))
+            .order_by("-owners_count")[:10]
+            .values("id", "name", "average_rating", "owners_count")
+        )
+
+        # Genres les plus populaires (par nombre de jeux)
+        top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "nom_genre", "games_count"))
+
+        # Résumé notes (moyenne globale, total)
+        ratings_agg = Rating.objects.aggregate(
+            average=Avg("normalized_value"),
+            total_count=Count("id"),
+        )
+        ratings_summary = {
+            "average": round(float(ratings_agg["average"] or 0), 2),
+            "total_count": ratings_agg["total_count"] or 0,
+        }
+
+        # Avis récents (30 jours)
+        reviews_recent = Review.objects.filter(date_created__gte=month_ago).count()
+
+        # Répartition plateformes
+        platforms_breakdown = list(
+            Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "nom_plateforme", "games_count")
+        )
+
+        payload = {
+            "popular_games": popular_games,
+            "top_genres": top_genres,
+            "ratings_summary": ratings_summary,
+            "reviews_recent": reviews_recent,
+            "platforms_breakdown": platforms_breakdown,
+        }
+
+        if use_cache:
+            cache.set(cache_key, payload, timeout=cache_timeout)
+
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class GameStatsView(APIView):
