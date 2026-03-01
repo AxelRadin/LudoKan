@@ -140,8 +140,8 @@ def notify_admins_on_ticket_creation(sender, instance, created, **kwargs):
     if created:
         from notifications.signals import notify
 
-        User = get_user_model()
-        admins = User.objects.filter(is_staff=True)
+        user_model = get_user_model()
+        admins = user_model.objects.filter(is_staff=True)
         for admin in admins:
             notify.send(
                 sender=instance.user,

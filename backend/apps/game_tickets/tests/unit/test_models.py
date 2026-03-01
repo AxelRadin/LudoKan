@@ -11,9 +11,9 @@ from apps.game_tickets.models import GameTicket, GameTicketAttachment
 @pytest.mark.django_db
 @patch("notifications.signals.notify.send")
 def test_game_ticket_default_status_and_creation_notification(mock_notify, user):
-    User = get_user_model()
-    admin1 = User.objects.create_user(email="admin1@test.com", pseudo="a1", password="pw", is_staff=True)
-    admin2 = User.objects.create_user(email="admin2@test.com", pseudo="a2", password="pw", is_staff=True)
+    user_model = get_user_model()
+    admin1 = user_model.objects.create_user(email="admin1@test.com", pseudo="a1", password="pw", is_staff=True)
+    admin2 = user_model.objects.create_user(email="admin2@test.com", pseudo="a2", password="pw", is_staff=True)
 
     ticket = GameTicket.objects.create(
         user=user,
