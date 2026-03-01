@@ -265,7 +265,7 @@ class GameTicketRejectAPIView(APIView):
 @extend_schema(
     tags=["Game tickets – Admin"],
     summary="Publier un ticket approuvé (Admin)",
-    description=("Permet à un utilisateur **staff** de passer un ticket du statut **approved** " "au statut **published**."),
+    description=("Permet à un utilisateur **staff** de passer un ticket du statut **approved** au statut **published**."),
     request=None,
     responses={
         200: AdminGameTicketListSerializer,
