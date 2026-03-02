@@ -9,13 +9,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.game_tickets.models import GameTicket
+from apps.game_tickets.models import GameTicket, GameTicketComment, GameTicketHistory
 from apps.game_tickets.permissions import CanReadTicket
 from apps.game_tickets.serializers import (
     AdminGameTicketListSerializer,
     AdminGameTicketUpdateSerializer,
     GameTicketAttachmentCreateSerializer,
+    GameTicketCommentSerializer,
     GameTicketCreateSerializer,
+    GameTicketHistorySerializer,
     GameTicketListSerializer,
     GameTicketStatusUpdateSerializer,
 )
@@ -115,8 +117,8 @@ class GameTicketStartReviewAPIView(APIView):
             ticket = GameTicket.objects.get(pk=pk)
             old_status = ticket.status
 
-            ticket.start_review()
             ticket.reviewer = request.user
+            ticket.start_review()
             ticket.save()
 
             log_admin_action(
@@ -232,11 +234,11 @@ class GameTicketRejectAPIView(APIView):
             ticket = GameTicket.objects.get(pk=pk)
             old_status = ticket.status
 
-            ticket.reject()
-
             ticket.rejection_reason = rejection_reason
             ticket.reviewer = request.user
             ticket.reviewed_at = timezone.now()
+
+            ticket.reject()
             ticket.save()
 
             log_admin_action(
@@ -399,4 +401,65 @@ class AdminGameTicketUpdateView(UpdateAPIView):
             target_type="game_ticket",
             target_id=ticket.pk,
             description="Modification des données internes du ticket via API",
+        )
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Game tickets – Admin"],
+        summary="Voir l'historique d'un ticket",
+        description=("Retourne l'historique des changements d'états d'un ticket donné."),
+    )
+)
+class AdminGameTicketHistoryView(ListAPIView):
+    serializer_class = GameTicketHistorySerializer
+    permission_classes = [CanReadTicket]
+
+    def get_queryset(self):
+        ticket_id = self.kwargs.get("pk")
+        return GameTicketHistory.objects.filter(ticket_id=ticket_id).select_related("actor").order_by("-created_at")
+
+
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Game tickets – Admin"],
+        summary="Voir les commentaires d'un ticket",
+        description=("Retourne les commentaires liés à un ticket donné."),
+    ),
+    post=extend_schema(
+        tags=["Game tickets – Admin"],
+        summary="Ajouter un commentaire à un ticket",
+        description=("Permet à un admin de poster un nouveau commentaire sur un ticket."),
+        request=GameTicketCommentSerializer,
+        responses={201: GameTicketCommentSerializer},
+    ),
+)
+class AdminGameTicketCommentListCreateView(generics.ListCreateAPIView):
+    serializer_class = GameTicketCommentSerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [CanReadTicket()]
+        return [IsAdminWithPermission()]
+
+    @property
+    def required_permission(self):
+        if self.request.method == "GET":
+            return "ticket_read"
+        return "ticket.change_data"
+
+    def get_queryset(self):
+        ticket_id = self.kwargs.get("pk")
+        return GameTicketComment.objects.filter(ticket_id=ticket_id).select_related("author").order_by("-created_at")
+
+    def perform_create(self, serializer):
+        ticket = generics.get_object_or_404(GameTicket, pk=self.kwargs.get("pk"))
+        serializer.save(ticket=ticket, author=self.request.user)
+
+        log_admin_action(
+            admin_user=self.request.user,
+            action_type="ticket.add_comment",
+            target_type="game_ticket",
+            target_id=ticket.pk,
+            description="Ajout d'un commentaire sur le ticket via API",
         )

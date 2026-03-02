@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django_fsm import TransitionNotAllowed
 
-from apps.game_tickets.models import GameTicket, GameTicketAttachment
+from apps.game_tickets.models import GameTicket, GameTicketAttachment, GameTicketComment, GameTicketHistory
 
 
 @pytest.mark.django_db
@@ -59,6 +59,35 @@ def test_game_ticket_attachment_str(user):
         ),
     )
     assert str(attachment) == f"Attachment for ticket {ticket.id}"
+
+
+@pytest.mark.django_db
+def test_game_ticket_history_str(user):
+    ticket = GameTicket.objects.create(
+        user=user,
+        game_name="Test History Game",
+    )
+    history = GameTicketHistory.objects.create(
+        ticket=ticket,
+        old_state=GameTicket.Status.PENDING,
+        new_state=GameTicket.Status.REVIEWING,
+        actor=user,
+    )
+    assert str(history) == "Test History Game: pending -> reviewing"
+
+
+@pytest.mark.django_db
+def test_game_ticket_comment_str(user):
+    ticket = GameTicket.objects.create(
+        user=user,
+        game_name="Test Comment Game",
+    )
+    comment = GameTicketComment.objects.create(
+        ticket=ticket,
+        author=user,
+        comment="Test comment",
+    )
+    assert str(comment) == f"Comment by {user} on {ticket}"
 
 
 @pytest.mark.django_db
