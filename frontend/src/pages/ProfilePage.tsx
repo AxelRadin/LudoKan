@@ -194,7 +194,6 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       let dataToSend: FormData | Record<string, string | undefined>;
-
       if (avatarFile || removeAvatar) {
         dataToSend = new FormData();
         dataToSend.append('pseudo', form.pseudo);
@@ -211,7 +210,6 @@ export default function ProfilePage() {
           description_courte: form.description_courte,
         };
       }
-
       const updated = await apiPatch('/api/me/', dataToSend);
       setUser(updated);
       setForm({
@@ -264,14 +262,14 @@ export default function ProfilePage() {
       status: ug.status,
     }));
 
-  /* ─── Shared style tokens ─── */
+  /* ─── Style tokens ─── */
 
   const labelSx = {
-    fontSize: 10,
-    fontWeight: 800,
-    letterSpacing: 2,
+    fontSize: 10.5,
+    fontWeight: 600,
+    letterSpacing: 1.2,
     textTransform: 'uppercase' as const,
-    color: profileColors.accent,
+    color: profileColors.lightMuted,
     mb: 0.75,
     display: 'block',
   };
@@ -280,12 +278,12 @@ export default function ProfilePage() {
     borderRadius: 4,
     border: `1px solid ${profileColors.softBorder}`,
     backgroundColor: profileColors.cardBg,
-    p: '24px 28px',
+    p: '22px 26px',
     height: '100%',
-    transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+    transition: 'box-shadow 0.18s ease',
     '&:hover': {
-      boxShadow: '0 16px 40px rgba(211,47,47,0.08)',
-      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 14px rgba(0,0,0,0.07)',
     },
   };
 
@@ -296,26 +294,21 @@ export default function ProfilePage() {
       fontSize: 14.5,
       '& fieldset': { borderColor: profileColors.softBorder },
       '&:hover fieldset': { borderColor: profileColors.border },
-      '&.Mui-focused fieldset': { borderColor: profileColors.accent },
+      '&.Mui-focused fieldset': { borderColor: profileColors.border },
     },
-    '& .MuiInputLabel-root.Mui-focused': { color: profileColors.accent },
+    '& .MuiInputLabel-root.Mui-focused': { color: profileColors.muted },
   };
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background: `
-          radial-gradient(ellipse 80% 60% at 10% 0%, rgba(211,47,47,0.10) 0%, transparent 60%),
-          radial-gradient(ellipse 60% 50% at 90% 100%, rgba(255,180,180,0.18) 0%, transparent 55%),
-          ${profileColors.pageBg}
-        `,
+        backgroundColor: profileColors.pageBg,
         px: { xs: 2, md: 5, lg: 8 },
         py: { xs: 3, md: 5 },
       }}
     >
       <Box component="main" sx={{ maxWidth: 1200, mx: 'auto' }}>
-        {/* ── Shell ── */}
         <Paper
           elevation={0}
           sx={{
@@ -323,47 +316,23 @@ export default function ProfilePage() {
             border: `1px solid ${profileColors.border}`,
             borderRadius: 6,
             overflow: 'hidden',
-            boxShadow:
-              '0 2px 8px rgba(211,47,47,0.04), 0 24px 64px rgba(0,0,0,0.07)',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
           }}
         >
           <Box sx={{ p: { xs: 2.5, md: 4 } }}>
-            {/* ── Wordmark ── */}
-            <Box
-              sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}
+            {/* Wordmark */}
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: 17,
+                color: profileColors.title,
+                letterSpacing: -0.3,
+                mb: 3,
+                opacity: 0.75,
+              }}
             >
-              <Box
-                sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: 2,
-                  background: `linear-gradient(135deg, ${profileColors.accent}, ${profileColors.accentDark})`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(255,255,255,0.9)',
-                  }}
-                />
-              </Box>
-              <Typography
-                sx={{
-                  fontWeight: 900,
-                  fontSize: 18,
-                  color: profileColors.title,
-                  letterSpacing: -0.5,
-                  fontFamily: "'Georgia', serif",
-                }}
-              >
-                Ludokan
-              </Typography>
-            </Box>
+              Ludokan
+            </Typography>
 
             {/* ── Hero banner ── */}
             <Box sx={{ position: 'relative', mb: { xs: 10, md: 11 } }}>
@@ -380,18 +349,17 @@ export default function ProfilePage() {
                 }}
               />
 
-              {/* Gradient scrim */}
               <Box
                 sx={{
                   position: 'absolute',
                   inset: 0,
                   borderRadius: 4,
                   background:
-                    'linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.45) 100%)',
+                    'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.30) 100%)',
                 }}
               />
 
-              {/* Profile card floating below banner */}
+              {/* Floating profile card */}
               <Paper
                 elevation={0}
                 sx={{
@@ -400,13 +368,11 @@ export default function ProfilePage() {
                   right: { xs: 12, md: 20 },
                   bottom: { xs: -88, md: -80 },
                   borderRadius: 4,
-                  backgroundColor: 'rgba(255,255,255,0.97)',
+                  backgroundColor: 'rgba(255,255,255,0.98)',
                   border: `1px solid ${profileColors.softBorder}`,
-                  boxShadow:
-                    '0 8px 32px rgba(211,47,47,0.08), 0 2px 8px rgba(0,0,0,0.06)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
                   px: { xs: 2.5, md: 3.5 },
                   py: 2.5,
-                  backdropFilter: 'blur(8px)',
                 }}
               >
                 <Box
@@ -434,13 +400,12 @@ export default function ProfilePage() {
                       onChange={handleFileChange}
                     />
 
-                    {/* Avatar */}
                     <Box
                       onClick={() => avatarInputRef.current?.click()}
                       sx={{
                         position: 'relative',
-                        width: 100,
-                        height: 100,
+                        width: 96,
+                        height: 96,
                         borderRadius: '50%',
                         cursor: 'pointer',
                         flexShrink: 0,
@@ -451,12 +416,11 @@ export default function ProfilePage() {
                         sx={{
                           width: '100%',
                           height: '100%',
-                          border: `4px solid white`,
-                          outline: `2px solid ${profileColors.softBorder}`,
-                          boxShadow: '0 8px 24px rgba(211,47,47,0.18)',
-                          fontSize: 38,
+                          border: '3px solid white',
+                          outline: `1.5px solid ${profileColors.softBorder}`,
+                          boxShadow: '0 3px 12px rgba(0,0,0,0.10)',
+                          fontSize: 36,
                           bgcolor: profileColors.accent,
-                          fontFamily: "'Georgia', serif",
                         }}
                         src={displayedAvatar}
                         alt={user?.pseudo}
@@ -470,34 +434,30 @@ export default function ProfilePage() {
                           position: 'absolute',
                           inset: 0,
                           borderRadius: '50%',
-                          backgroundColor: 'rgba(0,0,0,0.42)',
+                          backgroundColor: 'rgba(0,0,0,0.35)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: '#fff',
                           fontSize: 11,
-                          fontWeight: 700,
-                          letterSpacing: 0.3,
+                          fontWeight: 600,
                           opacity: 0,
-                          transition: 'opacity 0.18s ease',
+                          transition: 'opacity 0.15s ease',
                           textAlign: 'center',
-                          px: 1,
                         }}
                       >
                         Changer
                       </Box>
                     </Box>
 
-                    {/* User info */}
                     <Box>
                       <Typography
                         sx={{
-                          fontSize: { xs: 24, md: 30 },
-                          fontWeight: 900,
+                          fontSize: { xs: 22, md: 28 },
+                          fontWeight: 800,
                           color: profileColors.title,
-                          lineHeight: 1.1,
-                          letterSpacing: -0.5,
-                          fontFamily: "'Georgia', serif",
+                          lineHeight: 1.15,
+                          letterSpacing: -0.4,
                         }}
                       >
                         {loading ? '...' : user?.pseudo || 'Utilisateur'}
@@ -505,11 +465,10 @@ export default function ProfilePage() {
 
                       <Typography
                         sx={{
-                          mt: 0.6,
+                          mt: 0.5,
                           color: profileColors.muted,
                           fontSize: 13.5,
-                          fontWeight: 500,
-                          letterSpacing: 0.1,
+                          fontWeight: 400,
                         }}
                       >
                         {loading ? '...' : user?.email}
@@ -519,9 +478,10 @@ export default function ProfilePage() {
                         sx={{
                           mt: 1,
                           color: profileColors.text,
-                          fontSize: 14.5,
+                          fontSize: 14,
                           lineHeight: 1.65,
                           maxWidth: 500,
+                          opacity: 0.8,
                         }}
                       >
                         {loading
@@ -555,7 +515,6 @@ export default function ProfilePage() {
                 mb: 3,
               }}
             >
-              {/* Présentation */}
               <Paper sx={cardSx}>
                 <Typography component="span" sx={labelSx}>
                   Présentation
@@ -563,11 +522,10 @@ export default function ProfilePage() {
                 <Typography
                   sx={{
                     color: profileColors.title,
-                    fontWeight: 800,
-                    fontSize: 18,
+                    fontWeight: 700,
+                    fontSize: 16,
                     mb: 1.25,
-                    fontFamily: "'Georgia', serif",
-                    letterSpacing: -0.2,
+                    letterSpacing: -0.1,
                   }}
                 >
                   Profil joueur
@@ -576,7 +534,8 @@ export default function ProfilePage() {
                   sx={{
                     color: profileColors.text,
                     lineHeight: 1.75,
-                    fontSize: 14.5,
+                    fontSize: 14,
+                    opacity: 0.85,
                   }}
                 >
                   {loading
@@ -586,7 +545,6 @@ export default function ProfilePage() {
                 </Typography>
               </Paper>
 
-              {/* Identité */}
               <Paper sx={cardSx}>
                 <Typography component="span" sx={labelSx}>
                   Identité
@@ -594,11 +552,10 @@ export default function ProfilePage() {
                 <Typography
                   sx={{
                     color: profileColors.title,
-                    fontWeight: 800,
-                    fontSize: 18,
+                    fontWeight: 700,
+                    fontSize: 16,
                     mb: 1.25,
-                    fontFamily: "'Georgia', serif",
-                    letterSpacing: -0.2,
+                    letterSpacing: -0.1,
                   }}
                 >
                   {loading
@@ -606,56 +563,44 @@ export default function ProfilePage() {
                     : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() ||
                       'N/A'}
                 </Typography>
-
                 <Box
-                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}
                 >
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography
-                      sx={{
-                        color: profileColors.lightMuted,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: 1,
-                        textTransform: 'uppercase',
-                        minWidth: 52,
-                      }}
+                  {[
+                    { label: 'Pseudo', value: user?.pseudo },
+                    { label: 'Email', value: user?.email },
+                  ].map(({ label, value }) => (
+                    <Box
+                      key={label}
+                      sx={{ display: 'flex', gap: 1.5, alignItems: 'baseline' }}
                     >
-                      Pseudo
-                    </Typography>
-                    <Typography
-                      sx={{ color: profileColors.text, fontSize: 14 }}
-                    >
-                      {loading ? '...' : user?.pseudo || 'N/A'}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                    <Typography
-                      sx={{
-                        color: profileColors.lightMuted,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: 1,
-                        textTransform: 'uppercase',
-                        minWidth: 52,
-                      }}
-                    >
-                      Email
-                    </Typography>
-                    <Typography
-                      sx={{
-                        color: profileColors.text,
-                        fontSize: 14,
-                        wordBreak: 'break-all',
-                      }}
-                    >
-                      {loading ? '...' : user?.email || 'N/A'}
-                    </Typography>
-                  </Box>
+                      <Typography
+                        sx={{
+                          color: profileColors.lightMuted,
+                          fontSize: 11,
+                          fontWeight: 600,
+                          letterSpacing: 0.8,
+                          textTransform: 'uppercase',
+                          minWidth: 48,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {label}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          color: profileColors.text,
+                          fontSize: 13.5,
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {loading ? '...' : value || 'N/A'}
+                      </Typography>
+                    </Box>
+                  ))}
                 </Box>
               </Paper>
 
-              {/* Compte */}
               <Paper sx={cardSx}>
                 <Typography component="span" sx={labelSx}>
                   Compte
@@ -663,22 +608,19 @@ export default function ProfilePage() {
                 <Typography
                   sx={{
                     color: profileColors.title,
-                    fontWeight: 800,
-                    fontSize: 18,
+                    fontWeight: 700,
+                    fontSize: 16,
                     mb: 1.25,
-                    fontFamily: "'Georgia', serif",
-                    letterSpacing: -0.2,
+                    letterSpacing: -0.1,
                   }}
                 >
                   Membre depuis
                 </Typography>
                 <Typography
                   sx={{
-                    color: profileColors.accent,
-                    fontSize: 22,
-                    fontWeight: 900,
-                    fontFamily: "'Georgia', serif",
-                    letterSpacing: -0.3,
+                    color: profileColors.text,
+                    fontSize: 15,
+                    fontWeight: 600,
                   }}
                 >
                   {loading
@@ -702,10 +644,10 @@ export default function ProfilePage() {
                 <Typography
                   variant="h6"
                   sx={{
-                    fontWeight: 900,
+                    fontWeight: 700,
                     color: profileColors.title,
-                    letterSpacing: -0.3,
-                    fontFamily: "'Georgia', serif",
+                    letterSpacing: -0.2,
+                    fontSize: 16,
                   }}
                 >
                   Statistiques
@@ -741,21 +683,20 @@ export default function ProfilePage() {
                     elevation={0}
                     sx={{
                       ...cardSx,
-                      background: `linear-gradient(135deg, #ffffff 60%, rgba(211,47,47,0.03) 100%)`,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      py: 3.5,
-                      gap: 0.5,
+                      py: 3,
+                      gap: 0.75,
                     }}
                   >
                     <Typography
                       sx={{
                         color: profileColors.lightMuted,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        letterSpacing: 2,
+                        fontSize: 10.5,
+                        fontWeight: 600,
+                        letterSpacing: 1.2,
                         textTransform: 'uppercase',
                       }}
                     >
@@ -764,10 +705,9 @@ export default function ProfilePage() {
                     <Typography
                       sx={{
                         color: profileColors.title,
-                        fontSize: label === "Date d'inscription" ? 20 : 26,
-                        fontWeight: 900,
-                        letterSpacing: -0.3,
-                        fontFamily: "'Georgia', serif",
+                        fontSize: label === "Date d'inscription" ? 19 : 24,
+                        fontWeight: 800,
+                        letterSpacing: -0.2,
                       }}
                     >
                       {loading ? '...' : value || 'N/A'}
@@ -777,7 +717,7 @@ export default function ProfilePage() {
               </Box>
             </Box>
 
-            {/* ── Bibliothèque de jeux ── */}
+            {/* ── Bibliothèque ── */}
             <Paper
               sx={{
                 p: { xs: 2.5, md: 3.5 },
@@ -794,7 +734,7 @@ export default function ProfilePage() {
                   alignItems: { xs: 'flex-start', sm: 'center' },
                   justifyContent: 'space-between',
                   gap: 1,
-                  mb: 2.5,
+                  mb: 2,
                 }}
               >
                 <Box>
@@ -804,22 +744,20 @@ export default function ProfilePage() {
                   <Typography
                     variant="h6"
                     sx={{
-                      fontWeight: 900,
+                      fontWeight: 700,
                       color: profileColors.title,
-                      letterSpacing: -0.3,
-                      fontFamily: "'Georgia', serif",
+                      letterSpacing: -0.2,
+                      fontSize: 16,
                     }}
                   >
                     Jeux par statut
                   </Typography>
                 </Box>
-
                 <Typography
                   sx={{
                     color: profileColors.muted,
                     fontSize: 13.5,
-                    fontWeight: 500,
-                    fontStyle: 'italic',
+                    fontWeight: 400,
                   }}
                 >
                   Ta collection personnelle
@@ -840,7 +778,7 @@ export default function ProfilePage() {
         </Paper>
       </Box>
 
-      {/* ── Edit dialog ── */}
+      {/* ── Dialog ── */}
       <Dialog
         open={editOpen}
         onClose={handleEditClose}
@@ -849,7 +787,7 @@ export default function ProfilePage() {
         PaperProps={{
           sx: {
             borderRadius: 5,
-            boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
+            boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
             backgroundColor: profileColors.dialogBg,
             border: `1px solid ${profileColors.border}`,
           },
@@ -857,12 +795,11 @@ export default function ProfilePage() {
       >
         <DialogTitle
           sx={{
-            fontWeight: 900,
+            fontWeight: 700,
             color: profileColors.title,
             pb: 0.5,
-            letterSpacing: -0.3,
-            fontFamily: "'Georgia', serif",
-            fontSize: 22,
+            letterSpacing: -0.2,
+            fontSize: 19,
           }}
         >
           Modifier mon profil
@@ -872,7 +809,6 @@ export default function ProfilePage() {
           <Box
             sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}
           >
-            {/* Avatar picker */}
             <Box
               sx={{
                 display: 'flex',
@@ -894,8 +830,8 @@ export default function ProfilePage() {
                 onClick={() => modalAvatarInputRef.current?.click()}
                 sx={{
                   position: 'relative',
-                  width: 100,
-                  height: 100,
+                  width: 88,
+                  height: 88,
                   borderRadius: '50%',
                   cursor: 'pointer',
                   '&:hover .modal-avatar-overlay': { opacity: 1 },
@@ -907,10 +843,9 @@ export default function ProfilePage() {
                   sx={{
                     width: '100%',
                     height: '100%',
-                    fontSize: 36,
-                    boxShadow: '0 8px 24px rgba(211,47,47,0.18)',
+                    fontSize: 32,
+                    boxShadow: '0 3px 12px rgba(0,0,0,0.10)',
                     bgcolor: profileColors.accent,
-                    fontFamily: "'Georgia', serif",
                   }}
                 >
                   {form.pseudo?.[0]?.toUpperCase() || 'U'}
@@ -922,16 +857,15 @@ export default function ProfilePage() {
                     position: 'absolute',
                     inset: 0,
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(0,0,0,0.40)',
+                    backgroundColor: 'rgba(0,0,0,0.32)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#fff',
                     fontSize: 11,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     opacity: 0,
-                    transition: 'opacity 0.18s ease',
-                    textAlign: 'center',
+                    transition: 'opacity 0.15s ease',
                   }}
                 >
                   Changer
@@ -984,7 +918,6 @@ export default function ProfilePage() {
               sx={fieldSx}
             />
 
-            {/* Avatar status box */}
             <Box
               sx={{
                 p: '12px 16px',
@@ -996,12 +929,11 @@ export default function ProfilePage() {
               <Typography sx={{ color: profileColors.muted, fontSize: 12 }}>
                 Formats : JPG, PNG, WEBP — Max 2 MB
               </Typography>
-
               {avatarFile && (
                 <Typography
                   sx={{
                     mt: 0.75,
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: profileColors.title,
                     fontSize: 13,
                   }}
@@ -1021,7 +953,6 @@ export default function ProfilePage() {
               )}
             </Box>
 
-            {/* Avatar action buttons */}
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5 }}>
               <Button
                 variant="outlined"
@@ -1030,14 +961,14 @@ export default function ProfilePage() {
                   borderRadius: 999,
                   px: 2.5,
                   py: 0.8,
-                  borderColor: profileColors.accent,
-                  color: profileColors.accentDark,
-                  fontWeight: 700,
+                  borderColor: profileColors.border,
+                  color: profileColors.muted,
+                  fontWeight: 600,
                   fontSize: 13,
                   textTransform: 'none',
                   '&:hover': {
-                    borderColor: profileColors.accentDark,
-                    backgroundColor: '#fff1f1',
+                    borderColor: profileColors.border,
+                    backgroundColor: profileColors.sectionBg,
                   },
                 }}
               >
@@ -1052,9 +983,10 @@ export default function ProfilePage() {
                   borderRadius: 999,
                   px: 2.5,
                   py: 0.8,
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontSize: 13,
                   textTransform: 'none',
+                  opacity: 0.7,
                 }}
               >
                 Supprimer
@@ -1071,7 +1003,7 @@ export default function ProfilePage() {
               color: profileColors.muted,
               px: 2.5,
               py: 0.8,
-              fontWeight: 600,
+              fontWeight: 500,
               fontSize: 14,
               textTransform: 'none',
               '&:hover': { backgroundColor: profileColors.softBorder },
@@ -1086,14 +1018,14 @@ export default function ProfilePage() {
               borderRadius: 999,
               px: 3.5,
               py: 0.9,
-              fontWeight: 800,
+              fontWeight: 700,
               fontSize: 14,
               textTransform: 'none',
-              background: `linear-gradient(135deg, ${profileColors.accent}, ${profileColors.accentDark})`,
-              boxShadow: '0 4px 16px rgba(211,47,47,0.30)',
+              backgroundColor: profileColors.accent,
+              boxShadow: 'none',
               '&:hover': {
-                background: `linear-gradient(135deg, ${profileColors.accentDark}, #8b0000)`,
-                boxShadow: '0 6px 20px rgba(211,47,47,0.40)',
+                backgroundColor: profileColors.accentDark,
+                boxShadow: 'none',
               },
             }}
           >
