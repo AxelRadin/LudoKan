@@ -35,7 +35,7 @@ async function getAccessToken(): Promise<string> {
     return accessToken;
   }
 
-  // ⚠️ Ici on utilise "!" car on a déjà vérifié au-dessus que ce n’est pas undefined
+  // ⚠️ Ici on utilise "!" car on a déjà vérifié au-dessus que ce n'est pas undefined
   const bodyParams: Record<string, string> = {
     client_id: TWITCH_CLIENT_ID!,
     client_secret: TWITCH_CLIENT_SECRET!,
@@ -100,7 +100,7 @@ app.get("/api/games", async (_req: Request, res: Response) => {
 
 // ======================================================
 // 🎮 Route IGDB : rechercher des jeux
-// ====================================================== 
+// ======================================================
 
 function normalizeQuery(q: string) {
   return q.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -110,7 +110,7 @@ function escapeIgdbString(s: string) {
   return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
-function tokenize(q: string): string[]{
+function tokenize(q: string): string[] {
   return q
     .toLowerCase()
     .normalize("NFD")
@@ -173,6 +173,7 @@ function buildLooseContains(field: string, tokens: string[]): string {
     .map((t) => `${field} ~ *"${escapeIgdbString(t)}"*`)
     .join(" | ");
 }
+
 function uniq(tokens: string[]): string[] {
   return Array.from(new Set(tokens.map((t) => t.trim()).filter(Boolean)));
 }
@@ -212,21 +213,17 @@ function pickMustToken(tokens: string[]): string | null {
 }
 
 function joinOr(clauses: string[]): string {
-  // enlève les vides et join avec |
   const clean = clauses.map((c) => c.trim()).filter(Boolean);
   return clean.join(" | ");
 }
 
 function pickTopTokens(tokens: string[], n: number): string[] {
-  // prend les tokens les plus longs (souvent les plus discriminants)
   return [...tokens].sort((a, b) => b.length - a.length).slice(0, n);
 }
 
 function buildMin2Contains(field: string, tokens: string[]): string {
-  // si on a 2+ tokens, on exige que les 2 meilleurs matchent (AND)
   const top2 = pickTopTokens(tokens, 2);
   if (top2.length < 2) {
-    // pas assez de tokens -> on retombe sur loose
     return buildLooseContains(field, tokens);
   }
   return top2.map((t) => `${field} ~ *"${escapeIgdbString(t)}"*`).join(" & ");
@@ -256,7 +253,30 @@ function cacheSet(nameEn: string, value: string | null) {
   WIKIDATA_FR_CACHE.set(nameEn, { value, ts: Date.now() });
 }
 
-// Batch SPARQL : labels FR depuis labels EN exacts
+// ======================================================
+// ✅ WIKIDATA CORRIGÉ : supporte les variantes de titres
+// ======================================================
+async function fetchFrenchLabelForOne(nameEn: string): Promise<string | null> {
+  const escaped = nameEn.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+  const sparql = `
+SELECT ?frLabel WHERE {
+  ?item wdt:P31 wd:Q7889;
+        rdfs:label "${escaped}"@en.
+  OPTIONAL { ?item rdfs:label ?frLabel FILTER(LANG(?frLabel) = "fr") }
+}
+LIMIT 1
+`.trim();
+
+  const url = "https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(sparql);
+  const r = await fetch(url, {
+    headers: { Accept: "application/sparql+json", "User-Agent": "LudoKan/1.0 (contact: dev@ludokan.local)" },
+  });
+  if (!r.ok) return null;
+  const json: any = await r.json();
+  const fr = json?.results?.bindings?.[0]?.frLabel?.value;
+  return typeof fr === "string" && fr.trim() ? fr : null;
+}
+
 async function wikidataFrenchLabelsByEnglishTitles(namesEn: string[]): Promise<WdLabelMap> {
   const result: WdLabelMap = {};
   const unique = Array.from(new Set(namesEn.map((s) => s.trim()).filter(Boolean)));
@@ -269,64 +289,17 @@ async function wikidataFrenchLabelsByEnglishTitles(namesEn: string[]): Promise<W
   }
   if (toFetch.length === 0) return result;
 
-  const CHUNK = 15;
-
-  for (let i = 0; i < toFetch.length; i += CHUNK) {
-    const chunk = toFetch.slice(i, i + CHUNK);
-    const values = chunk.map((t) => `"${t.replace(/"/g, '\\"')}"`).join(" ");
-
-    const sparql = `
-PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-SELECT ?q ?frLabel WHERE {
-  VALUES ?q { ${values} }
-
-  ?item wdt:P31 wd:Q7889.
-
-  OPTIONAL { ?item rdfs:label ?enLabel FILTER(LANG(?enLabel) = "en") }
-  OPTIONAL { ?item skos:altLabel ?enAlt FILTER(LANG(?enAlt) = "en") }
-
-  FILTER(
-    (BOUND(?enLabel) && LCASE(STR(?enLabel)) = LCASE(STR(?q))) ||
-    (BOUND(?enAlt)  && LCASE(STR(?enAlt))  = LCASE(STR(?q)))
-  )
-
-  OPTIONAL { ?item rdfs:label ?frLabel FILTER(LANG(?frLabel) = "fr") }
-}
-`.trim();
-
-    const url =
-      "https://query.wikidata.org/sparql?format=json&query=" +
-      encodeURIComponent(sparql);
-
-    const r = await fetch(url, {
-      headers: {
-        Accept: "application/sparql+json",
-        "User-Agent": "LudoKan/1.0 (contact: dev@ludokan.local)",
-      },
+  // Requêtes parallèles par lots de 5 pour respecter le rate limit Wikidata
+  const CONCURRENCY = 5;
+  for (let i = 0; i < toFetch.length; i += CONCURRENCY) {
+    const batch = toFetch.slice(i, i + CONCURRENCY);
+    const results = await Promise.allSettled(batch.map(n => fetchFrenchLabelForOne(n)));
+    results.forEach((r, idx) => {
+      const name = batch[idx]!;
+      const fr = r.status === "fulfilled" ? r.value : null;
+      result[name] = fr;
+      cacheSet(name, fr);
     });
-
-    if (!r.ok) {
-      for (const n of chunk) {
-        result[n] = null;
-        cacheSet(n, null);
-      }
-      continue;
-    }
-
-    const json: any = await r.json();
-    const bindings: any[] = json?.results?.bindings ?? [];
-
-    for (const n of chunk) result[n] = null;
-
-    for (const b of bindings) {
-      const q = b?.q?.value;
-      const fr = b?.frLabel?.value ?? null;
-      if (typeof q === "string") {
-        result[q] = typeof fr === "string" && fr.trim() ? fr : null;
-      }
-    }
-
-    for (const n of chunk) cacheSet(n, result[n] ?? null);
   }
 
   return result;
@@ -349,8 +322,8 @@ async function enrichWithWikidataDisplayName(data: any[]): Promise<any[]> {
 
   let frMap: Record<string, string | null> = {};
   try {
-    // ✅ Timeout 700ms : si Wikidata rame, on ne bloque pas tes suggestions
-    frMap = await withTimeout(wikidataFrenchLabelsByEnglishTitles(namesEn), 2000);
+    // ✅ Timeout 2000ms : si Wikidata rame, on ne bloque pas les suggestions
+    frMap = await withTimeout(wikidataFrenchLabelsByEnglishTitles(namesEn), 8000);
   } catch {
     frMap = {};
   }
@@ -372,6 +345,71 @@ async function enrichWithWikidataDisplayName(data: any[]): Promise<any[]> {
 // /api/search (IGDB + Wikidata display_name)
 // -------------------------
 
+// ======================================================
+// 🎮 Route IGDB : jeux tendances par catégorie
+// ======================================================
+
+const NOW = Math.floor(Date.now() / 1000);
+const TRENDING_SORTS: Record<string, string> = {
+  popularity: "where total_rating_count > 0; sort total_rating_count desc;",
+  rating:     "where total_rating_count > 50 & total_rating != null; sort total_rating desc;",
+  recent:     `where first_release_date < ${NOW} & first_release_date > 0 & total_rating_count > 0; sort first_release_date desc;`,
+  most_rated: "where total_rating_count > 100 & total_rating != null; sort total_rating_count desc;",
+};
+
+app.get("/api/trending", async (req: Request, res: Response) => {
+  try {
+    const sort = String(req.query.sort ?? "popularity");
+    const limitRaw = Number(req.query.limit ?? 20);
+    const limit = Math.min(Math.max(limitRaw, 1), 50);
+    const genreId = req.query.genre ? Number(req.query.genre) : null;
+
+    const sortClause = TRENDING_SORTS[sort] ?? "where total_rating_count > 0; sort total_rating_count desc;";
+    const token = await getAccessToken();
+
+    const fields = "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count;";
+
+    async function igdbPost(body: string) {
+      const res = await axios.post(`${IGDB_BASE_URL}/games`, body, {
+        headers: {
+          "Client-ID": TWITCH_CLIENT_ID!,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "text/plain",
+        },
+      });
+      return Array.isArray(res.data) ? res.data : [];
+    }
+
+    let arr: any[];
+
+    if (genreId) {
+      // Récupérer plus de résultats pour pouvoir trier côté serveur
+      const genreFields = fields.replace(
+        "fields ",
+        "fields genres,"
+      );
+      const raw = await igdbPost(
+        `${genreFields} where genres = (${genreId}) & total_rating_count > 0; sort total_rating_count desc; limit 50;`
+      );
+
+      // Trier : jeux avec ce genre UNIQUEMENT en premier, puis multi-genres, par popularité dans chaque groupe
+      const pure  = raw.filter((g: any) => g.genres?.length === 1);
+      const mixed = raw.filter((g: any) => g.genres?.length !== 1);
+      arr = [...pure, ...mixed].slice(0, limit);
+    } else {
+      arr = await igdbPost(`${fields} ${sortClause} limit ${limit};`);
+    }
+
+    const enriched = await enrichWithWikidataDisplayName(arr);
+    return res.json(enriched);
+  } catch (error: any) {
+    const status = error?.response?.status ?? 500;
+    const details = error?.response?.data ?? error?.message;
+    console.error("❌ /api/trending ERROR", status, details);
+    return res.status(status).json({ error: "Erreur IGDB trending", details });
+  }
+});
+
 app.get("/api/search", async (req: Request, res: Response) => {
   try {
     const raw = String(req.query.q ?? "");
@@ -390,47 +428,66 @@ app.get("/api/search", async (req: Request, res: Response) => {
       "game_localizations.name,game_localizations.region.name," +
       "franchises.id,franchises.name,collections.id,collections.name;";
 
+    const qNorm = normalizeQuery(q);
     const qEsc = escapeIgdbString(q);
+    const qNormEsc = escapeIgdbString(qNorm);
 
-    // ✅ Pour les suggestions : on récupère plus large puis on trie “popularité” nous-mêmes
-    const fetchLimit = suggest ? Math.min(limit * 5, 50) : limit;
-
-    const igdbQuery = `${fields} search "${qEsc}"; limit ${fetchLimit};`;
-
-    let data = (
-      await axios.post(`${IGDB_BASE_URL}/games`, igdbQuery, {
+    async function igdbPost(body: string) {
+      return (await axios.post(`${IGDB_BASE_URL}/games`, body, {
         headers: {
           "Client-ID": TWITCH_CLIENT_ID!,
           Authorization: `Bearer ${token}`,
           "Content-Type": "text/plain",
         },
-      })
-    ).data;
-
-    // fallback sans accents si 0 résultats
-    if (!Array.isArray(data) || data.length === 0) {
-      const q2 = normalizeQuery(q);
-      const igdbQuery2 = `${fields} search "${escapeIgdbString(q2)}"; limit ${fetchLimit};`;
-
-      data = (
-        await axios.post(`${IGDB_BASE_URL}/games`, igdbQuery2, {
-          headers: {
-            "Client-ID": TWITCH_CLIENT_ID!,
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "text/plain",
-          },
-        })
-      ).data;
+      })).data;
     }
 
-    let arr = Array.isArray(data) ? data : [];
+    let arr: any[] = [];
 
-    // ✅ Tri popularité pour suggestions (comme “Pokemon” -> jeux connus)
     if (suggest) {
-      arr = arr
-        .slice()
-        .sort((a: any, b: any) => (b?.total_rating_count ?? 0) - (a?.total_rating_count ?? 0))
+      // Lancer en parallèle :
+      // 1. where name ~ (correspondance exacte sur nom principal, triée par popularité)
+      // 2. search (recherche full-text IGDB : couvre les noms alternatifs comme GTA, TLOU, etc.)
+      const nameQuery = (term: string) =>
+        `${fields} where name ~ *"${term}"* & total_rating_count > 0; sort total_rating_count desc; limit ${limit};`;
+      const searchQuery = (term: string) =>
+        `${fields} search "${term}"; limit 50;`;
+
+      const [nameResults, searchResults] = await Promise.all([
+        igdbPost(nameQuery(qEsc)).catch(() => []),
+        igdbPost(searchQuery(qEsc)).catch(() => []),
+      ]);
+
+      // Fusionner et dédupliquer par id, priorité aux résultats name~ (déjà triés par popularité)
+      const seen = new Set<number>();
+      const merged: any[] = [];
+      for (const g of (Array.isArray(nameResults) ? nameResults : [])) {
+        if (!seen.has(g.id)) { seen.add(g.id); merged.push(g); }
+      }
+      for (const g of (Array.isArray(searchResults) ? searchResults : [])) {
+        if (!seen.has(g.id)) { seen.add(g.id); merged.push(g); }
+      }
+
+      // Trier l'ensemble par popularité et garder les N premiers
+      arr = merged
+        .filter((g: any) => (g?.total_rating_count ?? 0) > 0)
+        .sort((a: any, b: any) => (b.total_rating_count ?? 0) - (a.total_rating_count ?? 0))
         .slice(0, limit);
+
+      // Si toujours vide, réessayer sans accents
+      if (!arr.length && qNormEsc !== qEsc) {
+        const fallback = await igdbPost(searchQuery(qNormEsc)).catch(() => []);
+        arr = (Array.isArray(fallback) ? fallback : [])
+          .sort((a: any, b: any) => (b.total_rating_count ?? 0) - (a.total_rating_count ?? 0))
+          .slice(0, limit);
+      }
+    } else {
+      // Mode recherche normale : recherche textuelle IGDB
+      arr = await igdbPost(`${fields} search "${qEsc}"; limit ${limit};`);
+
+      if (!arr.length && qNormEsc !== qEsc) {
+        arr = await igdbPost(`${fields} search "${qNormEsc}"; limit ${limit};`);
+      }
     }
 
     const enriched = await enrichWithWikidataDisplayName(arr);
@@ -443,6 +500,45 @@ app.get("/api/search", async (req: Request, res: Response) => {
       error: "Erreur IGDB search",
       details,
     });
+  }
+});
+
+app.get("/api/games/:id", async (req: Request<{ id: string }>, res: Response) => {
+  try {
+    const igdbId = Number(req.params.id);
+    if (!Number.isFinite(igdbId)) {
+      return res.status(400).json({ error: "Invalid game id" });
+    }
+
+    const token = await getAccessToken();
+
+    const query = `
+      fields name,cover.url,first_release_date,summary,platforms.name,genres.name,
+             total_rating,total_rating_count,collections.id,collections.name,franchises.id,franchises.name;
+      where id = ${igdbId};
+      limit 1;
+    `;
+
+    const igdbRes = await axios.post(`${IGDB_BASE_URL}/games`, query, {
+      headers: {
+        "Client-ID": TWITCH_CLIENT_ID!,
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "text/plain",
+      },
+    });
+
+    const arr = Array.isArray(igdbRes.data) ? igdbRes.data : [];
+    if (arr.length === 0) {
+      return res.status(404).json({ error: "Game not found" });
+    }
+
+    const enriched = await enrichWithWikidataDisplayName(arr);
+    return res.json(enriched[0]);
+  } catch (error: any) {
+    const status = error?.response?.status ?? 500;
+    const details = error?.response?.data ?? error?.message;
+    console.error("❌ /api/games/:id ERROR", status, details);
+    return res.status(status).json({ error: "Erreur IGDB", details });
   }
 });
 
@@ -488,12 +584,9 @@ app.get("/api/collection/:id/games", async (req: Request<{ id: string }>, res: R
 });
 
 
-
 // -------------------------
 // DEBUG : test Wikidata par nom EN
 // -------------------------
-
-
 
 async function wikidataFrenchLabelByEnglishTitle(nameEn: string): Promise<string | null> {
   const sparql = `
@@ -539,11 +632,11 @@ app.get("/api/wikidata-test", async (req, res) => {
   }
 });
 
-app.get("api/franchise/:id/games", async (req, res) => {
-  try{
+app.get("/api/franchise/:id/games", async (req, res) => {
+  try {
     const franchiseId = Number(req.params.id);
     if (!Number.isFinite(franchiseId)) {
-      return res.status(400).json({error: "Invalid franchise id"});
+      return res.status(400).json({ error: "Invalid franchise id" });
     }
 
     const limitRaw = Number(req.query.limit ?? 50);
@@ -555,7 +648,7 @@ app.get("api/franchise/:id/games", async (req, res) => {
     const token = await getAccessToken();
 
     const query = `
-    fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,franchises.id,franchises.name;
+      fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,franchises.id,franchises.name;
       where franchises = (${franchiseId});
       sort total_rating_count desc;
       limit ${limit};
@@ -578,20 +671,10 @@ app.get("api/franchise/:id/games", async (req, res) => {
       details: error.response?.data ?? error.message,
     });
   }
-})
+});
 
 const PORT = Number(process.env.PORT) || 3001;
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend IGDB lancé sur http://localhost:${PORT}`);
 });
-
-
-
-
-
-
-
-
-
-

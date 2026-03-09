@@ -15,15 +15,8 @@ import {
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
-import { apiGet } from '../services/api';
-
-type Game = {
-  id: number;
-  name: string;
-  cover_url?: string;
-  year?: number;
-  source?: string;
-};
+import { useNavigate } from 'react-router-dom';
+import { getCoverUrl, searchIgdbGames, type IgdbGame } from '../api/apiClient';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -76,58 +69,36 @@ const Dropdown = styled(Paper)(({ theme }) => ({
 }));
 
 const GameSearchBar: React.FC = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [localResults, setLocalResults] = useState<Game[]>([]);
-  const [igdbResults, setIgdbResults] = useState<Game[]>([]);
-  const [loadingLocal, setLoadingLocal] = useState(false);
-  const [loadingIgdb, setLoadingIgdb] = useState(false);
-  const [igdbDelay, setIgdbDelay] = useState(false);
+  const [results, setResults] = useState<IgdbGame[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const igdbTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!query) {
-      setLocalResults([]);
-      setIgdbResults([]);
-      setLoadingLocal(false);
-      setLoadingIgdb(false);
-      setIgdbDelay(false);
+    if (!query.trim()) {
+      setResults([]);
+      setLoading(false);
       setShowDropdown(false);
       return;
     }
-    setLoadingLocal(true);
+
     setShowDropdown(true);
-    apiGet(`/api/games/${encodeURIComponent(query)}`)
-      .then(res => {
-        const results = Array.isArray(res) ? res : res ? [res] : [];
-        setLocalResults(results.map((g: any) => ({ ...g, source: 'local' })));
-      })
-      .finally(() => setLoadingLocal(false));
-  }, [query]);
+    setLoading(true);
 
-  useEffect(() => {
-    if (!query) return;
-    setIgdbResults([]);
-    setIgdbDelay(true);
-    setLoadingIgdb(false);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
 
-    if (igdbTimeout.current) clearTimeout(igdbTimeout.current);
-
-    igdbTimeout.current = setTimeout(() => {
-      setIgdbDelay(false);
-      setLoadingIgdb(true);
-      apiGet(`/games/search_igdb/?q=${encodeURIComponent(query)}`)
-        .then(res =>
-          setIgdbResults(
-            (res || []).map((g: any) => ({ ...g, source: 'igdb' }))
-          )
-        )
-        .finally(() => setLoadingIgdb(false));
-    }, 1000);
+    searchTimeout.current = setTimeout(() => {
+      searchIgdbGames(query, 8, true)
+        .then(data => setResults(data))
+        .catch(() => setResults([]))
+        .finally(() => setLoading(false));
+    }, 300);
 
     return () => {
-      if (igdbTimeout.current) clearTimeout(igdbTimeout.current);
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
     };
   }, [query]);
 
@@ -140,8 +111,6 @@ const GameSearchBar: React.FC = () => {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
-
-  const allResults = [...localResults, ...igdbResults];
 
   return (
     <Box
@@ -162,7 +131,7 @@ const GameSearchBar: React.FC = () => {
           }}
           onFocus={() => query && setShowDropdown(true)}
         />
-        {(loadingLocal || igdbDelay || loadingIgdb) && (
+        {loading && (
           <Box
             sx={{
               position: 'absolute',
@@ -186,11 +155,11 @@ const GameSearchBar: React.FC = () => {
               RÉSULTATS
             </Typography>
           </Box>
-          {loadingLocal || igdbDelay || loadingIgdb ? (
+          {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
               <CircularProgress size={24} />
             </Box>
-          ) : allResults.length === 0 ? (
+          ) : results.length === 0 ? (
             <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="body2" color="text.secondary">
                 Aucun résultat
@@ -198,40 +167,51 @@ const GameSearchBar: React.FC = () => {
             </Box>
           ) : (
             <List>
-              {allResults.map(game => (
-                <React.Fragment key={`${game.source}-${game.id}`}>
-                  <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
-                    <ListItemButton>
-                      <ListItemAvatar>
-                        <Avatar
-                          variant="rounded"
-                          src={game.cover_url}
-                          alt={game.name}
-                          sx={{ width: 48, height: 64, mr: 2, bgcolor: '#eee' }}
-                        >
-                          {game.name[0]}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <span>
-                            <b>{game.name}</b>
-                            {game.year && (
-                              <span style={{ color: '#888', marginLeft: 8 }}>
-                                ({game.year})
-                              </span>
-                            )}
-                          </span>
-                        }
-                        secondary={
-                          game.source === 'local' ? 'Base locale' : 'IGDB'
-                        }
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                  <Divider component="li" />
-                </React.Fragment>
-              ))}
+              {results.map(game => {
+                const cover = getCoverUrl(game.cover);
+                const year = game.first_release_date
+                  ? new Date(game.first_release_date * 1000).getFullYear()
+                  : undefined;
+                const displayName = game.display_name ?? game.name;
+                return (
+                  <React.Fragment key={game.id}>
+                    <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
+                      <ListItemButton onClick={() => {
+                        setShowDropdown(false);
+                        setQuery('');
+                        navigate(`/game/igdb/${game.id}`);
+                      }}>
+                        <ListItemAvatar>
+                          <Avatar
+                            variant="rounded"
+                            src={cover ?? undefined}
+                            alt={displayName}
+                            sx={{ width: 48, height: 64, mr: 2, bgcolor: '#eee' }}
+                          >
+                            {displayName[0]}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <span>
+                              <b>{displayName}</b>
+                              {year && (
+                                <span style={{ color: '#888', marginLeft: 8 }}>
+                                  ({year})
+                                </span>
+                              )}
+                            </span>
+                          }
+                          secondary={
+                            game.platforms?.slice(0, 3).map(p => p.name).join(', ') || 'IGDB'
+                          }
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                    <Divider component="li" />
+                  </React.Fragment>
+                );
+              })}
             </List>
           )}
         </Dropdown>

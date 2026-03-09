@@ -95,6 +95,22 @@ export type IgdbAlternativeName = {
   language?: string;
 };
 
+export async function fetchTrendingGames(sort: string, limit = 20, genre?: number): Promise<IgdbGame[]> {
+  const params = new URLSearchParams({ sort, limit: String(limit) });
+  if (genre) params.set("genre", String(genre));
+  const res = await fetch(`${BACKEND_URL}/api/trending?${params}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function fetchIgdbGameById(igdbId: number): Promise<IgdbGame> {
+  const res = await fetch(`${BACKEND_URL}/api/games/${igdbId}`);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function fetchFranchiseGames(franchiseId: number, limit = 50, offset = 0): Promise<IgdbGame[]> {
   const res = await fetch(`${BACKEND_URL}/api/franchise/${franchiseId}/games?limit=${limit}&offset=${offset}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -151,6 +151,10 @@ frontend-install: ## Installe les dépendances frontend
 	@cd frontend && npm install
 	@echo "$(GREEN)✅ Dépendances frontend installées!$(NC)"
 
+igdb-run: ## Lance le serveur IGDB/Node.js (port 3001)
+	@echo "$(BLUE)🎮 Démarrage du serveur IGDB (Node.js)...$(NC)"
+	@cd $(shell pwd) && npx ts-node backend/src/server.ts
+
 frontend-run: ## Lance le serveur de développement frontend
 	@echo "$(BLUE)🚀 Démarrage du serveur frontend...$(NC)"
 	@cd frontend && npm run dev

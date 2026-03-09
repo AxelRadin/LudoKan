@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import GameStatsView, GameViewSet, GenreViewSet, PlatformViewSet, PublisherViewSet, RatingCreateView, RatingDetailView, RatingListView
+from .views import GameByIgdbIdView, GameStatsView, GameViewSet, GenreViewSet, PlatformViewSet, PublisherViewSet, RatingCreateView, RatingDetailView, RatingListView
 
 app_name = "games"
 
@@ -73,6 +73,7 @@ platform_detail = PlatformViewSet.as_view(
 urlpatterns = [
     path("games/", game_list, name="game-list"),
     path("games/<int:pk>/", game_detail, name="game-detail"),
+    path("games/igdb/<int:igdb_id>/", GameByIgdbIdView.as_view(), name="game-by-igdb"),
     path("publishers/", publisher_list, name="publisher-list"),
     path("publishers/<int:pk>/", publisher_detail, name="publisher-detail"),
     path("genres/", genre_list, name="genre-list"),

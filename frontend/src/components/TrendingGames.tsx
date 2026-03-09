@@ -4,7 +4,7 @@ import { Card, IconButton, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
-import { apiGet } from '../services/api';
+import { fetchTrendingGames, getCoverUrl } from '../api/apiClient';
 import GameCard from './GameCard';
 
 export interface Game {
@@ -14,17 +14,19 @@ export interface Game {
 }
 
 export interface TrendingGamesProps {
-  ordering?: string;
+  igdbSort: string;
   title?: string;
-  genre?: string;
+  genre?: number;
 }
 
 export const TrendingGames: React.FC<TrendingGamesProps> = ({
-  ordering = '',
+  igdbSort,
   title = 'Jeux tendances ➜',
   genre,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isPausedRef = useRef(false);
   const [games, setGames] = useState<Game[]>([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -32,21 +34,14 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
 
   useEffect(() => {
     setLoading(true);
-    let url = ordering ? `/api/games/?ordering=${ordering}` : '/api/games/';
-    if (genre) {
-      url +=
-        (url.includes('?') ? '&' : '?') + `genres=${encodeURIComponent(genre)}`;
-    }
-    apiGet(url)
+    fetchTrendingGames(igdbSort, 20, genre)
       .then(data => {
-        const mappedGames = (data.results || []).map((game: any) => {
-          let image = game.cover_url || game.image;
-          if (image && image.includes('t_thumb')) {
-            image = image.replace('t_thumb', 't_cover_big');
-          }
+        const mappedGames = data.map((game: any) => {
+          const coverUrl = getCoverUrl(game.cover);
+          const image = coverUrl ?? undefined;
           return {
             id: game.id,
-            title: game.name,
+            title: game.display_name ?? game.name,
             image,
           };
         });
@@ -54,7 +49,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       })
       .catch(() => setGames([]))
       .finally(() => setLoading(false));
-  }, [ordering, genre]);
+  }, [igdbSort, genre]);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -73,6 +68,31 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       ref.removeEventListener('scroll', checkScroll);
     };
   }, [games]);
+
+  // Auto-scroll
+  useEffect(() => {
+    if (games.length === 0) return;
+
+    const startAutoScroll = () => {
+      autoScrollRef.current = setInterval(() => {
+        if (isPausedRef.current || !scrollRef.current) return;
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        if (scrollLeft + clientWidth >= scrollWidth - 1) {
+          scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          scrollRef.current.scrollBy({ left: 170, behavior: 'smooth' });
+        }
+      }, 3000);
+    };
+
+    startAutoScroll();
+    return () => {
+      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
+    };
+  }, [games]);
+
+  const pauseAutoScroll = () => { isPausedRef.current = true; };
+  const resumeAutoScroll = () => { isPausedRef.current = false; };
 
   const handleScrollRight = () => {
     if (scrollRef.current) {
@@ -114,6 +134,10 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
           display="flex"
           gap={2}
           overflow="auto"
+          onMouseEnter={pauseAutoScroll}
+          onMouseLeave={resumeAutoScroll}
+          onTouchStart={pauseAutoScroll}
+          onTouchEnd={resumeAutoScroll}
           sx={{
             scrollbarWidth: 'none',
             '&::-webkit-scrollbar': { display: 'none' },
@@ -140,6 +164,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
                 id={game.id}
                 title={game.title}
                 image={game.image}
+                igdb
               />
             ))
           )}

@@ -154,6 +154,19 @@ class RatingListView(ListAPIView):
         return queryset
 
 
+class GameByIgdbIdView(APIView):
+    """
+    Retrieve a game by its IGDB ID.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, igdb_id):
+        game = get_object_or_404(Game, igdb_id=igdb_id)
+        serializer = GameReadSerializer(game)
+        return Response(serializer.data)
+
+
 class GameStatsView(APIView):
     """
     Statistiques complètes d’un jeu :

@@ -25,6 +25,7 @@ const router = createBrowserRouter([
       { path: 'home', element: <HomePage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'game/:id', element: <GamePage /> },
+      { path: 'game/igdb/:igdbId', element: <GamePage /> },
       { path: 'test', element: <TestSentry /> },
       { path: 'connector', element: <BackendConnector /> },
       { path: 'license', element: <LicensePage /> },

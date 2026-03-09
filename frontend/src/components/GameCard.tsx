@@ -5,14 +5,15 @@ interface GameCardProps {
   id: number;
   title: string;
   image: string;
+  igdb?: boolean;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({ id, title, image }) => {
+export const GameCard: React.FC<GameCardProps> = ({ id, title, image, igdb = false }) => {
   const navigate = useNavigate();
 
   return (
     <Card
-      onClick={() => navigate(`/game/${id}`)}
+      onClick={() => navigate(igdb ? `/game/igdb/${id}` : `/game/${id}`)}
       sx={{
         minWidth: 150,
         borderRadius: 2,
