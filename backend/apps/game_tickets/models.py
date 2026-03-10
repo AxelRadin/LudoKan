@@ -1,6 +1,10 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django_fsm import FSMField, transition
+from notifications.signals import notify
 
 from apps.games.models import Genre, Platform
 
@@ -85,7 +89,31 @@ class GameTicket(models.Model):
         Hook de notification / events
         """
 
-        pass
+        status_to_verb = {
+            self.Status.REVIEWING: "ticket_reviewing",
+            self.Status.APPROVED: "ticket_approved",
+            self.Status.REJECTED: "ticket_rejected",
+            self.Status.PUBLISHED: "ticket_published",
+        }
+
+        verb = status_to_verb.get(new_status)
+        if verb:
+            actor = self.reviewer if self.reviewer else self.user
+            extra_data = {
+                "game_name": self.game_name,
+                "old_status": old_status,
+                "new_status": new_status,
+            }
+            if new_status == self.Status.REJECTED and self.rejection_reason:
+                extra_data["rejection_reason"] = self.rejection_reason
+
+            notify.send(
+                sender=actor,
+                recipient=self.user,
+                verb=verb,
+                target=self,
+                **extra_data,
+            )
 
     def __str__(self):
         return f"{self.game_name} ({self.status})"
@@ -102,3 +130,21 @@ class GameTicketAttachment(models.Model):
 
     def __str__(self):
         return f"Attachment for ticket {self.ticket_id}"
+
+
+@receiver(post_save, sender=GameTicket)
+def notify_admins_on_ticket_creation(sender, instance, created, **kwargs):
+    """
+    Notifie tous les administrateurs (is_staff=True) lors de la création d'un nouveau GameTicket.
+    """
+    if created:
+        user_model = get_user_model()
+        admins = user_model.objects.filter(is_staff=True)
+        for admin in admins:
+            notify.send(
+                sender=instance.user,
+                recipient=admin,
+                verb="ticket_created",
+                target=instance,
+                game_name=instance.game_name,
+            )
