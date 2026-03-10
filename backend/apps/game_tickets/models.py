@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django_fsm import FSMField, transition
+from notifications.signals import notify
 
 from apps.games.models import Genre, Platform
 
@@ -87,7 +88,6 @@ class GameTicket(models.Model):
         """
         Hook de notification / events
         """
-        from notifications.signals import notify
 
         status_to_verb = {
             self.Status.REVIEWING: "ticket_reviewing",
@@ -138,8 +138,6 @@ def notify_admins_on_ticket_creation(sender, instance, created, **kwargs):
     Notifie tous les administrateurs (is_staff=True) lors de la création d'un nouveau GameTicket.
     """
     if created:
-        from notifications.signals import notify
-
         user_model = get_user_model()
         admins = user_model.objects.filter(is_staff=True)
         for admin in admins:
