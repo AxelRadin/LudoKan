@@ -89,6 +89,17 @@ class GameTicket(models.Model):
         Hook de notification / events
         """
 
+        actor = self.reviewer if self.reviewer else self.user
+
+        # Création de l'historique
+        GameTicketHistory.objects.create(
+            ticket=self,
+            old_state=old_status,
+            new_state=new_status,
+            actor=actor,
+            comment=self.rejection_reason if new_status == self.Status.REJECTED and self.rejection_reason else "",
+        )
+
         status_to_verb = {
             self.Status.REVIEWING: "ticket_reviewing",
             self.Status.APPROVED: "ticket_approved",
@@ -98,7 +109,6 @@ class GameTicket(models.Model):
 
         verb = status_to_verb.get(new_status)
         if verb:
-            actor = self.reviewer if self.reviewer else self.user
             extra_data = {
                 "game_name": self.game_name,
                 "old_status": old_status,
@@ -130,6 +140,55 @@ class GameTicketAttachment(models.Model):
 
     def __str__(self):
         return f"Attachment for ticket {self.ticket_id}"
+
+
+class GameTicketHistory(models.Model):
+    ticket = models.ForeignKey(
+        GameTicket,
+        on_delete=models.CASCADE,
+        related_name="history",
+    )
+    old_state = models.CharField(max_length=20, choices=GameTicket.Status.choices)
+    new_state = models.CharField(max_length=20, choices=GameTicket.Status.choices)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ticket_history_actions",
+    )
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name_plural = "Game ticket histories"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.ticket.game_name}: {self.old_state} -> {self.new_state}"
+
+
+class GameTicketComment(models.Model):
+    ticket = models.ForeignKey(
+        GameTicket,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ticket_comments",
+    )
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Comment by {self.author} on {self.ticket}"
 
 
 @receiver(post_save, sender=GameTicket)

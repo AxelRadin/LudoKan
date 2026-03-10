@@ -1,7 +1,25 @@
 from rest_framework import serializers
 
-from apps.game_tickets.models import GameTicket, GameTicketAttachment
+from apps.game_tickets.models import GameTicket, GameTicketAttachment, GameTicketComment, GameTicketHistory
 from apps.games.models import Genre, Platform
+
+
+class GameTicketHistorySerializer(serializers.ModelSerializer):
+    actor_pseudo = serializers.CharField(source="actor.pseudo", read_only=True, allow_null=True)
+
+    class Meta:
+        model = GameTicketHistory
+        fields = ["id", "old_state", "new_state", "actor_pseudo", "comment", "created_at"]
+        read_only_fields = fields
+
+
+class GameTicketCommentSerializer(serializers.ModelSerializer):
+    author_pseudo = serializers.CharField(source="author.pseudo", read_only=True, allow_null=True)
+
+    class Meta:
+        model = GameTicketComment
+        fields = ["id", "author_pseudo", "comment", "created_at"]
+        read_only_fields = ["id", "author_pseudo", "created_at"]
 
 
 class GameTicketCreateSerializer(serializers.ModelSerializer):
