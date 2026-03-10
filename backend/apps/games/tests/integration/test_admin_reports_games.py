@@ -139,3 +139,25 @@ class TestAdminReportsGamesView:
         response2 = admin_client.get(url)
         assert response2.status_code == status.HTTP_200_OK
         assert response2.data == data1
+
+    def test_moderator_cannot_export_games_csv(self, moderator_client, game):
+        """Export réservé admin/superadmin : moderator reçoit 403 sur ?export=csv."""
+        response = moderator_client.get("/api/admin/reports/games/?export=csv")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_can_export_games_csv(self, admin_client, game):
+        """Admin peut télécharger le rapport games en CSV."""
+        response = admin_client.get("/api/admin/reports/games/?export=csv")
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        body = response.content.decode("utf-8") if isinstance(response.content, bytes) else str(response.content)
+        assert "id" in body or "report" in body
+
+    def test_admin_can_export_games_pdf(self, admin_client, game):
+        """Admin peut télécharger le rapport games en PDF."""
+        response = admin_client.get("/api/admin/reports/games/?export=pdf")
+        assert response.status_code == status.HTTP_200_OK
+        assert "application/pdf" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        assert response.content[:4] == b"%PDF"

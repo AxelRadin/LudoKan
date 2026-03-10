@@ -50,13 +50,12 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "import_export.game",
         "import_export.review",
         "import_export.rating",
-        # Lecture des ressources d'administration
         "game_read",
         "ticket_read",
         "admin_action_read",
-        # Workflow des tickets
         "ticket.change_status",
         "ticket.change_data",
+        "reports.export",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".
     UserRole.Role.SUPERADMIN: {"*"},

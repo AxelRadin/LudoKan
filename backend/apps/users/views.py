@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -14,12 +15,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.chat.models import Message
+from apps.core.reports_export import build_users_csv, build_users_pdf
 from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Rating
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.users.models import AdminAction, UserRole, UserSuspension
-from apps.users.permissions import IsAdminWithPermission, IsNotSuspended
+from apps.users.permissions import IsAdminWithPermission, IsNotSuspended, has_permission
 from apps.users.serializers import AdminActionSerializer, AdminUserListSerializer, UserSuspendSerializer, UserSuspensionSerializer
 from apps.users.utils import log_admin_action
 
@@ -280,6 +282,22 @@ class AdminReportsUsersView(APIView):
 
         if use_cache:
             cache.set(cache_key, payload, timeout=cache_timeout)
+
+        export = request.query_params.get("export")
+        if export == "csv":
+            if not has_permission(request.user, "reports.export"):
+                return Response({"detail": "Export réservé aux rôles admin/superadmin."}, status=status.HTTP_403_FORBIDDEN)
+            content = build_users_csv(payload)
+            resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
+            resp["Content-Disposition"] = 'attachment; filename="report_users.csv"'
+            return resp
+        if export == "pdf":
+            if not has_permission(request.user, "reports.export"):
+                return Response({"detail": "Export réservé aux rôles admin/superadmin."}, status=status.HTTP_403_FORBIDDEN)
+            content = build_users_pdf(payload)
+            resp = HttpResponse(content, content_type="application/pdf")
+            resp["Content-Disposition"] = 'attachment; filename="report_users.pdf"'
+            return resp
 
         return Response(payload, status=status.HTTP_200_OK)
 

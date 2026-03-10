@@ -55,3 +55,6 @@ setuptools>=75.0.0,<82.0.0
 
 # transitions for state tickets
 django-fsm==3.0.1
+
+# Export PDF des rapports (BACK-021E)
+reportlab>=4.0.0

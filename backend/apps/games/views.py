@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Avg, Count, Max
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from apps.core.reports_export import build_games_csv, build_games_pdf
 from apps.games.filters import GameFilter
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
@@ -29,7 +31,7 @@ from apps.games.serializers import (
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportCreateSerializer
-from apps.users.permissions import IsAdminWithPermission
+from apps.users.permissions import IsAdminWithPermission, has_permission
 from apps.users.utils import log_admin_action
 
 
@@ -374,6 +376,28 @@ class AdminReportsGamesView(APIView):
 
         if use_cache:
             cache.set(cache_key, payload, timeout=cache_timeout)
+
+        export = request.query_params.get("export")
+        if export == "csv":
+            if not has_permission(request.user, "reports.export"):
+                return Response(
+                    {"detail": "Export réservé aux rôles admin/superadmin."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            content = build_games_csv(payload)
+            resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
+            resp["Content-Disposition"] = 'attachment; filename="report_games.csv"'
+            return resp
+        if export == "pdf":
+            if not has_permission(request.user, "reports.export"):
+                return Response(
+                    {"detail": "Export réservé aux rôles admin/superadmin."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            content = build_games_pdf(payload)
+            resp = HttpResponse(content, content_type="application/pdf")
+            resp["Content-Disposition"] = 'attachment; filename="report_games.pdf"'
+            return resp
 
         return Response(payload, status=status.HTTP_200_OK)
 

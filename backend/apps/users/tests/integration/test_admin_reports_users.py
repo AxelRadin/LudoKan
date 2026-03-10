@@ -146,3 +146,25 @@ class TestAdminReportsUsersView:
         assert response2.status_code == status.HTTP_200_OK
         assert response2.data == data1
         assert response2.data["total"] == data1["total"]
+
+    def test_moderator_cannot_export_users_csv(self, api_client, moderator_user):
+        """Export réservé admin/superadmin : moderator reçoit 403 sur ?export=csv."""
+        api_client.force_authenticate(user=moderator_user)
+        response = api_client.get("/api/admin/reports/users/?export=csv")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_can_export_users_csv(self, auth_admin_client_with_tokens):
+        """Admin peut télécharger le rapport users en CSV."""
+        response = auth_admin_client_with_tokens.get("/api/admin/reports/users/?export=csv")
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        assert b"metric" in response.content or "metric" in response.content.decode("utf-8")
+
+    def test_admin_can_export_users_pdf(self, auth_admin_client_with_tokens):
+        """Admin peut télécharger le rapport users en PDF."""
+        response = auth_admin_client_with_tokens.get("/api/admin/reports/users/?export=pdf")
+        assert response.status_code == status.HTTP_200_OK
+        assert "application/pdf" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        assert response.content[:4] == b"%PDF"
