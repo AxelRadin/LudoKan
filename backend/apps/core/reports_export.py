@@ -13,6 +13,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+PERMISSION_REPORTS_EXPORT = "reports.export"
+MSG_EXPORT_FORBIDDEN = "Export réservé aux rôles admin/superadmin."
+
 
 def build_users_csv(payload: dict) -> str:
     """Rapport utilisateurs en CSV (lignes metric,value)."""

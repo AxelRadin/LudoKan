@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.chat.models import Message
-from apps.core.reports_export import build_users_csv, build_users_pdf
+from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_users_csv, build_users_pdf
 from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Rating
 from apps.reviews.models import ContentReport, Review
@@ -219,6 +219,60 @@ class AdminStatsView(APIView):
         return Response(payload, status=status.HTTP_200_OK)
 
 
+def _build_users_report_payload():
+    """Construit le payload du rapport utilisateurs (réduit complexité cognitive de get())."""
+    now = timezone.now()
+    day_ago = now - timedelta(days=1)
+    week_ago = now - timedelta(days=7)
+    month_ago = now - timedelta(days=30)
+    user_agg = User.objects.aggregate(
+        total=Count("id"),
+        new_day=Count("id", filter=Q(created_at__gte=day_ago)),
+        new_week=Count("id", filter=Q(created_at__gte=week_ago)),
+        new_month=Count("id", filter=Q(created_at__gte=month_ago)),
+        active_day=Count("id", filter=Q(last_login__gte=day_ago)),
+        active_week=Count("id", filter=Q(last_login__gte=week_ago)),
+        active_month=Count("id", filter=Q(last_login__gte=month_ago)),
+    )
+    suspended_count = (
+        UserSuspension.objects.filter(is_active=True).filter(Q(end_date__isnull=True) | Q(end_date__gt=now)).values("user").distinct().count()
+    )
+    return {
+        "total": user_agg["total"],
+        "new": {
+            "day": user_agg["new_day"],
+            "week": user_agg["new_week"],
+            "month": user_agg["new_month"],
+        },
+        "active": {
+            "day": user_agg["active_day"],
+            "week": user_agg["active_week"],
+            "month": user_agg["active_month"],
+        },
+        "suspended": suspended_count,
+    }
+
+
+def _handle_users_export(request, data):
+    """Gère l'export CSV/PDF du rapport utilisateurs. Retourne une Response ou None si pas d'export."""
+    export = request.query_params.get("export")
+    if export == "csv":
+        if not has_permission(request.user, PERMISSION_REPORTS_EXPORT):
+            return Response({"detail": MSG_EXPORT_FORBIDDEN}, status=status.HTTP_403_FORBIDDEN)
+        content = build_users_csv(data)
+        resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
+        resp["Content-Disposition"] = 'attachment; filename="report_users.csv"'
+        return resp
+    if export == "pdf":
+        if not has_permission(request.user, PERMISSION_REPORTS_EXPORT):
+            return Response({"detail": MSG_EXPORT_FORBIDDEN}, status=status.HTTP_403_FORBIDDEN)
+        content = build_users_pdf(data)
+        resp = HttpResponse(content, content_type="application/pdf")
+        resp["Content-Disposition"] = 'attachment; filename="report_users.pdf"'
+        return resp
+    return None
+
+
 class AdminReportsUsersView(APIView):
     """
     Métriques détaillées utilisateurs pour les rapports planifiés (BACK-021B).
@@ -238,88 +292,25 @@ class AdminReportsUsersView(APIView):
     required_permission = "dashboard.view"
 
     def get(self, request):
-        now = timezone.now()
-        day_ago = now - timedelta(days=1)
-        week_ago = now - timedelta(days=7)
-        month_ago = now - timedelta(days=30)
-
         cache_timeout = getattr(settings, "ADMIN_REPORTS_USERS_CACHE_TIMEOUT", 60)
         use_cache = cache_timeout > 0
         cache_key = "admin:reports:users"
+
         if use_cache:
             cached_data = cache.get(cache_key)
             if cached_data is not None:
-                export = request.query_params.get("export")
-                if export == "csv":
-                    if not has_permission(request.user, "reports.export"):
-                        return Response(
-                            {"detail": "Export réservé aux rôles admin/superadmin."},
-                            status=status.HTTP_403_FORBIDDEN,
-                        )
-                    content = build_users_csv(cached_data)
-                    resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
-                    resp["Content-Disposition"] = 'attachment; filename="report_users.csv"'
-                    return resp
-                if export == "pdf":
-                    if not has_permission(request.user, "reports.export"):
-                        return Response(
-                            {"detail": "Export réservé aux rôles admin/superadmin."},
-                            status=status.HTTP_403_FORBIDDEN,
-                        )
-                    content = build_users_pdf(cached_data)
-                    resp = HttpResponse(content, content_type="application/pdf")
-                    resp["Content-Disposition"] = 'attachment; filename="report_users.pdf"'
-                    return resp
+                export_response = _handle_users_export(request, cached_data)
+                if export_response is not None:
+                    return export_response
                 return Response(cached_data, status=status.HTTP_200_OK)
 
-        user_agg = User.objects.aggregate(
-            total=Count("id"),
-            new_day=Count("id", filter=Q(created_at__gte=day_ago)),
-            new_week=Count("id", filter=Q(created_at__gte=week_ago)),
-            new_month=Count("id", filter=Q(created_at__gte=month_ago)),
-            active_day=Count("id", filter=Q(last_login__gte=day_ago)),
-            active_week=Count("id", filter=Q(last_login__gte=week_ago)),
-            active_month=Count("id", filter=Q(last_login__gte=month_ago)),
-        )
-
-        suspended_count = (
-            UserSuspension.objects.filter(is_active=True).filter(Q(end_date__isnull=True) | Q(end_date__gt=now)).values("user").distinct().count()
-        )
-
-        payload = {
-            "total": user_agg["total"],
-            "new": {
-                "day": user_agg["new_day"],
-                "week": user_agg["new_week"],
-                "month": user_agg["new_month"],
-            },
-            "active": {
-                "day": user_agg["active_day"],
-                "week": user_agg["active_week"],
-                "month": user_agg["active_month"],
-            },
-            "suspended": suspended_count,
-        }
-
+        payload = _build_users_report_payload()
         if use_cache:
             cache.set(cache_key, payload, timeout=cache_timeout)
 
-        export = request.query_params.get("export")
-        if export == "csv":
-            if not has_permission(request.user, "reports.export"):
-                return Response({"detail": "Export réservé aux rôles admin/superadmin."}, status=status.HTTP_403_FORBIDDEN)
-            content = build_users_csv(payload)
-            resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
-            resp["Content-Disposition"] = 'attachment; filename="report_users.csv"'
-            return resp
-        if export == "pdf":
-            if not has_permission(request.user, "reports.export"):
-                return Response({"detail": "Export réservé aux rôles admin/superadmin."}, status=status.HTTP_403_FORBIDDEN)
-            content = build_users_pdf(payload)
-            resp = HttpResponse(content, content_type="application/pdf")
-            resp["Content-Disposition"] = 'attachment; filename="report_users.pdf"'
-            return resp
-
+        export_response = _handle_users_export(request, payload)
+        if export_response is not None:
+            return export_response
         return Response(payload, status=status.HTTP_200_OK)
 
 

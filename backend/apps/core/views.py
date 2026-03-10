@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.models import ActivityLog
-from apps.core.reports_export import build_activity_csv, build_activity_pdf
+from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_activity_csv, build_activity_pdf
 from apps.core.serializers import NotificationSerializer
 from apps.users.models import AdminAction
 from apps.users.permissions import IsAdminWithPermission, has_permission
@@ -186,9 +186,9 @@ class AdminReportsActivityView(APIView):
     def _handle_export_response(self, request, payload, export):
         if export not in ("csv", "pdf"):
             return None
-        if not has_permission(request.user, "reports.export"):
+        if not has_permission(request.user, PERMISSION_REPORTS_EXPORT):
             return Response(
-                {"detail": "Export réservé aux rôles admin/superadmin."},
+                {"detail": MSG_EXPORT_FORBIDDEN},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if export == "csv":
