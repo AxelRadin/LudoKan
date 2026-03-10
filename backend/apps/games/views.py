@@ -336,6 +336,27 @@ class AdminReportsGamesView(APIView):
         if use_cache:
             cached_data = cache.get(cache_key)
             if cached_data is not None:
+                export = request.query_params.get("export")
+                if export == "csv":
+                    if not has_permission(request.user, "reports.export"):
+                        return Response(
+                            {"detail": "Export réservé aux rôles admin/superadmin."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                    content = build_games_csv(cached_data)
+                    resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
+                    resp["Content-Disposition"] = 'attachment; filename="report_games.csv"'
+                    return resp
+                if export == "pdf":
+                    if not has_permission(request.user, "reports.export"):
+                        return Response(
+                            {"detail": "Export réservé aux rôles admin/superadmin."},
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
+                    content = build_games_pdf(cached_data)
+                    resp = HttpResponse(content, content_type="application/pdf")
+                    resp["Content-Disposition"] = 'attachment; filename="report_games.pdf"'
+                    return resp
                 return Response(cached_data, status=status.HTTP_200_OK)
 
         # Top jeux par nombre d'owners (ludothèque)
