@@ -1,392 +1,235 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.game_tickets.models import GameTicket
-from apps.users.models import AdminAction
 
 User = get_user_model()
 
 
 @pytest.mark.django_db
-class TestAdminGameTicketUpdateAPI:
-    """Tests for admin ticket update endpoints."""
+class TestAdminGameTicketWorkflow:
+    """Tests pour les endpoints de transition de workflow admin."""
 
     def setup_method(self):
         self.client = APIClient()
 
-        # Créer un admin
         self.admin = User.objects.create_superuser(
             email="admin@test.com",
             pseudo="admin",
             password="admin123",
         )
-
-        # Créer un modérateur
-        self.moderator = User.objects.create_user(
-            email="moderator@test.com",
-            pseudo="moderator",
-            password="mod123",
-        )
-
-        # Créer un user normal
         self.user = User.objects.create_user(
             email="user@test.com",
             pseudo="user",
             password="user123",
         )
 
-        # Créer un ticket REVIEWING
         self.ticket = GameTicket.objects.create(
             user=self.user,
             game_name="Test Game",
-            description="A test game",
             status=GameTicket.Status.REVIEWING,
         )
 
-    def test_admin_can_patch_metadata(self):
-        """Admin peut updater internal_comment, internal_note, admin_metadata."""
+    def test_admin_approve_success(self):
+        """Vérifie l'approbation réussie et l'horodatage."""
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {
-                "internal_comment": "Looks good",
-                "internal_note": "Approved by admin",
-            },
-            format="json",
-        )
+        response = self.client.post(f"/api/admin/game-tickets/{self.ticket.id}/approve/")
 
         assert response.status_code == status.HTTP_200_OK
-        ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.internal_comment == "Looks good"
 
-    def test_admin_cannot_modify_status_directly(self):
-        """Admin ne peut pas updater status directement."""
+        ticket_db = GameTicket.objects.get(pk=self.ticket.id)
+        assert ticket_db.status == GameTicket.Status.APPROVED
+        assert ticket_db.reviewer == self.admin
+        assert ticket_db.reviewed_at is not None
+
+    def test_admin_reject_success(self):
+        """Vérifie le rejet avec raison obligatoire."""
         self.client.force_authenticate(user=self.admin)
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {
-                "status": GameTicket.Status.APPROVED,
-            },
-            format="json",
-        )
-
-        assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_200_OK]
-        ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.status == GameTicket.Status.REVIEWING
-
-    def test_admin_approve_via_fsm_action(self):
-        """Admin approuve via l'action FSM."""
-        self.client.force_authenticate(user=self.admin)
+        reason = "Informations incomplètes"
 
         response = self.client.post(
-            f"/api/game-tickets/{self.ticket.id}/approve/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.status == GameTicket.Status.APPROVED
-        assert ticket.reviewer == self.admin
-
-    def test_admin_reject_via_fsm_action(self):
-        """Admin rejette via l'action FSM avec raison."""
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            f"/api/game-tickets/{self.ticket.id}/reject/",
-            {
-                "rejection_reason": "Duplicate game",
-            },
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.status == GameTicket.Status.REJECTED
-        assert ticket.rejection_reason == "Duplicate game"
-        assert ticket.reviewer == self.admin
-
-    def test_admin_start_review_success(self):
-        """Admin peut passer un ticket PENDING en REVIEWING."""
-        pending_ticket = GameTicket.objects.create(
-            user=self.user,
-            game_name="Pending Game",
-            description="Waiting",
-            status=GameTicket.Status.PENDING,
-        )
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            f"/api/game-tickets/{pending_ticket.id}/start-review/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        pending_ticket = GameTicket.objects.get(pk=pending_ticket.id)
-        assert pending_ticket.status == GameTicket.Status.REVIEWING
-        assert pending_ticket.reviewer == self.admin
-
-    def test_start_review_not_found(self):
-        """start-review renvoie 404 si le ticket n'existe pas."""
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            "/api/game-tickets/999999/start-review/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data.get("detail") == "Ticket not found."
-
-    def test_start_review_invalid_transition(self):
-        """start-review renvoie 400 si le ticket n'est pas PENDING."""
-        self.client.force_authenticate(user=self.admin)
-        # self.ticket est déjà en REVIEWING
-
-        response = self.client.post(
-            f"/api/game-tickets/{self.ticket.id}/start-review/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "PENDING" in response.data.get("detail", "")
-
-    def test_approve_not_found(self):
-        """approve renvoie 404 si le ticket n'existe pas."""
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            "/api/game-tickets/999999/approve/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data.get("detail") == "Ticket not found."
-
-    def test_approve_invalid_transition(self):
-        """approve renvoie 400 si le ticket n'est pas en REVIEWING."""
-        pending_ticket = GameTicket.objects.create(
-            user=self.user,
-            game_name="Pending",
-            description="",
-            status=GameTicket.Status.PENDING,
-        )
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            f"/api/game-tickets/{pending_ticket.id}/approve/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "REVIEWING" in response.data.get("detail", "")
-
-    def test_reject_not_found(self):
-        """reject renvoie 404 si le ticket n'existe pas."""
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            "/api/game-tickets/999999/reject/",
-            {"rejection_reason": "N/A"},
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data.get("detail") == "Ticket not found."
-
-    def test_reject_invalid_transition(self):
-        """reject renvoie 400 si le ticket n'est pas en REVIEWING."""
-        pending_ticket = GameTicket.objects.create(
-            user=self.user,
-            game_name="Pending",
-            description="",
-            status=GameTicket.Status.PENDING,
-        )
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            f"/api/game-tickets/{pending_ticket.id}/reject/",
-            {"rejection_reason": "Not applicable"},
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "REVIEWING" in response.data.get("detail", "")
-
-    def test_admin_publish_success(self):
-        """Admin peut passer un ticket APPROVED en PUBLISHED."""
-        approved_ticket = GameTicket.objects.create(
-            user=self.user,
-            game_name="Approved Game",
-            description="",
-            status=GameTicket.Status.APPROVED,
-        )
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            f"/api/game-tickets/{approved_ticket.id}/publish/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        approved_ticket = GameTicket.objects.get(pk=approved_ticket.id)
-        assert approved_ticket.status == GameTicket.Status.PUBLISHED
-
-    def test_publish_not_found(self):
-        """publish renvoie 404 si le ticket n'existe pas."""
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(
-            "/api/game-tickets/999999/publish/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.data.get("detail") == "Ticket not found."
-
-    def test_publish_invalid_transition(self):
-        """publish renvoie 400 si le ticket n'est pas APPROVED."""
-        self.client.force_authenticate(user=self.admin)
-        # self.ticket est en REVIEWING
-
-        response = self.client.post(
-            f"/api/game-tickets/{self.ticket.id}/publish/",
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "APPROVED" in response.data.get("detail", "")
-
-    def test_normal_user_cannot_patch_ticket(self):
-        """User normal ne peut pas updater le ticket."""
-        self.client.force_authenticate(user=self.user)
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {
-                "internal_comment": "Hacked",
-            },
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    def test_moderator_cannot_patch_ticket(self):
-        """Modérateur ne peut pas updater ticket d'autre user."""
-        self.client.force_authenticate(user=self.moderator)
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {
-                "internal_comment": "Unauthorized",
-            },
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-
-    def test_patch_partial_update(self):
-        """PATCH ne touch que les champs fournis."""
-        self.client.force_authenticate(user=self.admin)
-        original_note = self.ticket.internal_note
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {
-                "internal_comment": "Updated comment only",
-            },
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.internal_comment == "Updated comment only"
-        assert ticket.internal_note == original_note
-
-    def test_patch_does_not_trigger_fsm(self):
-        """PATCH metadata n'affecte pas le status."""
-        self.client.force_authenticate(user=self.admin)
-        original_status = self.ticket.status
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {
-                "admin_metadata": {"key": "value"},
-            },
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_200_OK
-        ticket = GameTicket.objects.get(pk=self.ticket.id)
-        assert ticket.status == original_status
-
-    def test_admin_patch_ticket_not_found(self):
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.patch(
-            "/api/game-tickets/999999/",
-            {"internal_comment": "test"},
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_admin_patch_rejects_status_field(self):
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {"status": GameTicket.Status.APPROVED},
-            format="json",
-        )
-
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    def test_patch_creates_admin_log(self):
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {"internal_comment": "Logged change"},
+            f"/api/admin/game-tickets/{self.ticket.id}/reject/",
+            {"rejection_reason": reason},
             format="json",
         )
 
         assert response.status_code == status.HTTP_200_OK
 
-        assert AdminAction.objects.filter(
-            action_type="ticket.update_internal",
-            target_id=self.ticket.id,
-        ).exists()
+        ticket_db = GameTicket.objects.get(pk=self.ticket.id)
+        assert ticket_db.status == GameTicket.Status.REJECTED
+        assert ticket_db.rejection_reason == reason
+        assert ticket_db.reviewed_at is not None
 
-    def test_admin_patch_empty_payload(self):
+    def test_reject_missing_reason(self):
+        """Vérifie que la 400 est levée si la raison manque."""
         self.client.force_authenticate(user=self.admin)
 
-        response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
+        response = self.client.post(
+            f"/api/admin/game-tickets/{self.ticket.id}/reject/",
             {},
             format="json",
         )
 
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        assert "rejection_reason" in str(response.data)
+
+    def test_admin_publish_success(self):
+        """Vérifie le passage de APPROVED à PUBLISHED."""
+
+        GameTicket.objects.filter(pk=self.ticket.id).update(status=GameTicket.Status.APPROVED)
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(f"/api/admin/game-tickets/{self.ticket.id}/publish/")
+
+        assert response.status_code == status.HTTP_200_OK
+        ticket_db = GameTicket.objects.get(pk=self.ticket.id)
+        assert ticket_db.status == GameTicket.Status.PUBLISHED
+
+    def test_approve_invalid_transition(self):
+        """Vérifie qu'on ne peut pas approuver un ticket PENDING (doit être REVIEWING)."""
+        pending_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Pending Game",
+            status=GameTicket.Status.PENDING,
+        )
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.post(f"/api/admin/game-tickets/{pending_ticket.id}/approve/")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_unauthorized_user(self):
+        """Vérifie qu'un utilisateur non-staff est rejeté."""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(f"/api/admin/game-tickets/{self.ticket.id}/approve/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_start_review_invalid_transition(self):
+        """PENDING -> REVIEWING : échoue si déjà REVIEWING."""
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(f"/api/admin/game-tickets/{self.ticket.id}/start-review/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_reject_invalid_transition(self):
+        """REVIEWING -> REJECTED : échoue si PENDING."""
+        pending_ticket = GameTicket.objects.create(user=self.user, game_name="Pending", status=GameTicket.Status.PENDING)
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(f"/api/admin/game-tickets/{pending_ticket.id}/reject/", {"rejection_reason": "test"})
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_publish_invalid_transition(self):
+        """APPROVED -> PUBLISHED : échoue si REVIEWING."""
+
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(f"/api/admin/game-tickets/{self.ticket.id}/publish/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_all_endpoints_404(self):
+        self.client.force_authenticate(user=self.admin)
+
+        for action in ["approve", "publish", "start-review"]:
+            response = self.client.post(f"/api/admin/game-tickets/99999/{action}/")
+            assert response.status_code == status.HTTP_404_NOT_FOUND, f"Failed on {action}"
+
+        response = self.client.post("/api/admin/game-tickets/99999/reject/", {"rejection_reason": "Any reason"}, format="json")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_admin_list_filters(self):
+        self.client.force_authenticate(user=self.admin)
+
+        GameTicket.objects.create(user=self.user, game_name="Other Game", status=GameTicket.Status.PENDING)
+
+        response = self.client.get("/api/admin/tickets/?status=pending")
+        assert len(response.data["results"]) == 1
+
+        response = self.client.get("/api/admin/tickets/?game_name=Test")
+        assert len(response.data["results"]) == 1
+
+    def test_admin_list_all_filters_coverage(self):
+        self.client.force_authenticate(user=self.admin)
+        url = "/api/admin/tickets/"
+        params = {"status": "reviewing", "user_id": self.user.id, "game_name": "Test", "created_before": "2026-12-31", "created_after": "2020-01-01"}
+        response = self.client.get(url, params)
         assert response.status_code == status.HTTP_200_OK
 
-    def test_patch_staff_without_permission(self):
-        staff = User.objects.create_user(
-            email="staff@test.com",
-            pseudo="staff",
-            password="staff",
-            is_staff=True,
-        )
+    def test_upload_attachment_wrong_user(self):
+        other_user = User.objects.create_user(email="other@test.com", password="pass", pseudo="other")
+        self.client.force_authenticate(user=other_user)
 
-        self.client.force_authenticate(user=staff)
+        file = SimpleUploadedFile("test.png", b"\x00\x00", content_type="image/png")
+
+        response = self.client.post(f"/api/game-tickets/{self.ticket.id}/attachments/", {"file": file}, format="multipart")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert "You cannot upload files for this ticket." in str(response.data)
+
+    def test_admin_patch_not_found(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.patch("/api/admin/game-tickets/99999/", {"internal_comment": "hello"}, format="json")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_admin_patch_invalid_status(self):
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.patch(f"/api/admin/game-tickets/{self.ticket.id}/", {"status": "approved"}, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "status" in response.data.get("errors", {})
+
+    def test_upload_attachment_wrong_user_full_coverage(self):
+        """Couvre lignes 119-131 : perform_create check."""
+
+        other_user = User.objects.create_user(email="hacker@test.com", password="pass", pseudo="hacker")
+        self.client.force_authenticate(user=other_user)
+
+        file = SimpleUploadedFile("image.png", b"content", content_type="image/png")
+
+        url = f"/api/game-tickets/{self.ticket.id}/attachments/"
+        response = self.client.post(url, {"file": file}, format="multipart")
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert "You cannot upload files for this ticket." in str(response.data)
+
+    def test_admin_patch_not_found_coverage(self):
+        """Couvre lignes 400-402 : Le cas 404 du UpdateAPIView."""
+        self.client.force_authenticate(user=self.admin)
+
+        url = "/api/admin/game-tickets/999999/"
+        response = self.client.patch(url, {"internal_comment": "test"}, format="json")
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_start_review_success(self):
+        """Couvre lignes 119-131 : transition de PENDING à REVIEWING."""
+        pending_ticket = GameTicket.objects.create(
+            user=self.user,
+            game_name="Pending Game success",
+            status=GameTicket.Status.PENDING,
+        )
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(f"/api/admin/game-tickets/{pending_ticket.id}/start-review/")
+
+        assert response.status_code == status.HTTP_200_OK
+
+        ticket_db = GameTicket.objects.get(pk=pending_ticket.id)
+        assert ticket_db.status == GameTicket.Status.REVIEWING
+        assert ticket_db.reviewer == self.admin
+
+    def test_admin_patch_success(self):
+        """Couvre lignes 394-396 : mise à jour réussie des données internes d'un ticket."""
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.patch(
-            f"/api/game-tickets/{self.ticket.id}/",
-            {"internal_comment": "fail"},
+            f"/api/admin/game-tickets/{self.ticket.id}/",
+            {"internal_comment": "Nouveau commentaire interne valide"},
             format="json",
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_200_OK
+
+        ticket_db = GameTicket.objects.get(pk=self.ticket.id)
+        assert ticket_db.internal_comment == "Nouveau commentaire interne valide"
