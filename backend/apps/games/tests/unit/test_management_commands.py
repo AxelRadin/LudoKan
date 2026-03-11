@@ -8,6 +8,7 @@ Ces tests vérifient que :
 """
 
 from io import StringIO
+from unittest.mock import MagicMock, patch
 
 import pytest
 from django.core.management import call_command
@@ -16,6 +17,20 @@ from django.core.management import call_command
 @pytest.mark.django_db
 class TestCheckIndexesCommand:
     """Tests pour la commande check_indexes."""
+
+    def test_check_indexes_when_no_indexes_found(self):
+        """Quand la table n'a aucun index, la commande affiche un warning et sort proprement (lignes 32-33)."""
+        out = StringIO()
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = []
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+
+        with patch("apps.games.management.commands.check_indexes.connection") as mock_conn:
+            mock_conn.cursor.return_value = mock_cursor
+            call_command("check_indexes", stdout=out)
+        output = out.getvalue()
+        assert "No indexes found on games_game table" in output
 
     def test_check_indexes_command_runs_without_error(self):
         """La commande check_indexes doit s'exécuter sans erreur"""

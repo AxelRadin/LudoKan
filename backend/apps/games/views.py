@@ -3,6 +3,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Avg, Count, Max
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -14,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_games_csv, build_games_pdf
 from apps.games.filters import GameFilter
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
@@ -29,7 +31,7 @@ from apps.games.serializers import (
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportCreateSerializer
-from apps.users.permissions import IsAdminWithPermission
+from apps.users.permissions import IsAdminWithPermission, has_permission
 from apps.users.utils import log_admin_action
 
 
@@ -305,6 +307,55 @@ class RatingReportView(APIView):
         return Response(payload, status=status_code)
 
 
+def _build_games_report_payload():
+    """Construit le payload du rapport jeux (réduit complexité cognitive de get())."""
+    now = timezone.now()
+    month_ago = now - timedelta(days=30)
+    popular_games = list(
+        Game.objects.annotate(owners_count=Count("user_games")).order_by("-owners_count")[:10].values("id", "name", "average_rating", "owners_count")
+    )
+    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "nom_genre", "games_count"))
+    ratings_agg = Rating.objects.aggregate(
+        average=Avg("normalized_value"),
+        total_count=Count("id"),
+    )
+    ratings_summary = {
+        "average": round(float(ratings_agg["average"] or 0), 2),
+        "total_count": ratings_agg["total_count"] or 0,
+    }
+    reviews_recent = Review.objects.filter(date_created__gte=month_ago).count()
+    platforms_breakdown = list(
+        Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "nom_plateforme", "games_count")
+    )
+    return {
+        "popular_games": popular_games,
+        "top_genres": top_genres,
+        "ratings_summary": ratings_summary,
+        "reviews_recent": reviews_recent,
+        "platforms_breakdown": platforms_breakdown,
+    }
+
+
+def _handle_games_export(request, data):
+    """Gère l'export CSV/PDF du rapport jeux. Retourne une Response ou None si pas d'export."""
+    export = request.query_params.get("export")
+    if export == "csv":
+        if not has_permission(request.user, PERMISSION_REPORTS_EXPORT):
+            return Response({"detail": MSG_EXPORT_FORBIDDEN}, status=status.HTTP_403_FORBIDDEN)
+        content = build_games_csv(data)
+        resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
+        resp["Content-Disposition"] = 'attachment; filename="report_games.csv"'
+        return resp
+    if export == "pdf":
+        if not has_permission(request.user, PERMISSION_REPORTS_EXPORT):
+            return Response({"detail": MSG_EXPORT_FORBIDDEN}, status=status.HTTP_403_FORBIDDEN)
+        content = build_games_pdf(data)
+        resp = HttpResponse(content, content_type="application/pdf")
+        resp["Content-Disposition"] = 'attachment; filename="report_games.pdf"'
+        return resp
+    return None
+
+
 class AdminReportsGamesView(APIView):
     """
     Rapport détaillé jeux pour les rapports planifiés (BACK-021C).
@@ -325,56 +376,25 @@ class AdminReportsGamesView(APIView):
     required_permission = "dashboard.view"
 
     def get(self, request):
-        now = timezone.now()
-        month_ago = now - timedelta(days=30)
-
         cache_timeout = getattr(settings, "ADMIN_REPORTS_GAMES_CACHE_TIMEOUT", 60)
         use_cache = cache_timeout > 0
         cache_key = "admin:reports:games"
+
         if use_cache:
             cached_data = cache.get(cache_key)
             if cached_data is not None:
+                export_response = _handle_games_export(request, cached_data)
+                if export_response is not None:
+                    return export_response
                 return Response(cached_data, status=status.HTTP_200_OK)
 
-        # Top jeux par nombre d'owners (ludothèque)
-        popular_games = list(
-            Game.objects.annotate(owners_count=Count("user_games"))
-            .order_by("-owners_count")[:10]
-            .values("id", "name", "average_rating", "owners_count")
-        )
-
-        # Genres les plus populaires (par nombre de jeux)
-        top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "nom_genre", "games_count"))
-
-        # Résumé notes (moyenne globale, total)
-        ratings_agg = Rating.objects.aggregate(
-            average=Avg("normalized_value"),
-            total_count=Count("id"),
-        )
-        ratings_summary = {
-            "average": round(float(ratings_agg["average"] or 0), 2),
-            "total_count": ratings_agg["total_count"] or 0,
-        }
-
-        # Avis récents (30 jours)
-        reviews_recent = Review.objects.filter(date_created__gte=month_ago).count()
-
-        # Répartition plateformes
-        platforms_breakdown = list(
-            Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "nom_plateforme", "games_count")
-        )
-
-        payload = {
-            "popular_games": popular_games,
-            "top_genres": top_genres,
-            "ratings_summary": ratings_summary,
-            "reviews_recent": reviews_recent,
-            "platforms_breakdown": platforms_breakdown,
-        }
-
+        payload = _build_games_report_payload()
         if use_cache:
             cache.set(cache_key, payload, timeout=cache_timeout)
 
+        export_response = _handle_games_export(request, payload)
+        if export_response is not None:
+            return export_response
         return Response(payload, status=status.HTTP_200_OK)
 
 

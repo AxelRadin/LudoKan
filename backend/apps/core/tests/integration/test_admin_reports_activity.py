@@ -163,3 +163,34 @@ class TestAdminReportsActivityView:
         r2 = admin_client.get("/api/admin/reports/activity/")
         assert r2.status_code == status.HTTP_200_OK
         assert r1.data == r2.data
+
+    def test_moderator_cannot_export_activity_csv(self, moderator_client, user):
+        """Export réservé admin/superadmin : moderator reçoit 403 sur ?export=csv."""
+        response = moderator_client.get("/api/admin/reports/activity/?export=csv")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_can_export_activity_csv(self, admin_client, user):
+        """Admin peut télécharger le journal d'activité en CSV."""
+        ActivityLog.objects.create(user=user, action=ActivityLog.Action.LOGIN)
+        response = admin_client.get("/api/admin/reports/activity/?export=csv")
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        body = response.content.decode("utf-8") if isinstance(response.content, bytes) else str(response.content)
+        assert "user" in body and "action" in body
+
+    def test_admin_can_export_activity_pdf(self, admin_client, user):
+        """Admin peut télécharger le journal d'activité en PDF."""
+        response = admin_client.get("/api/admin/reports/activity/?export=pdf")
+        assert response.status_code == status.HTTP_200_OK
+        assert "application/pdf" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        assert response.content[:4] == b"%PDF"
+
+    def test_filter_by_invalid_user_id_ignores_filter(self, admin_client, user):
+        """?user=<non-entier> lève ValueError en interne : le filtre user est ignoré (pas de crash)."""
+        cache.clear()
+        ActivityLog.objects.create(user=user, action=ActivityLog.Action.LOGIN)
+        response = admin_client.get("/api/admin/reports/activity/?user=notanumber")
+        assert response.status_code == status.HTTP_200_OK
+        assert "activity" in response.data

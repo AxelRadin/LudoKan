@@ -139,3 +139,54 @@ class TestAdminReportsGamesView:
         response2 = admin_client.get(url)
         assert response2.status_code == status.HTTP_200_OK
         assert response2.data == data1
+
+    def test_moderator_cannot_export_games_csv(self, moderator_client, game):
+        """Export réservé admin/superadmin : moderator reçoit 403 sur ?export=csv."""
+        response = moderator_client.get("/api/admin/reports/games/?export=csv")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_moderator_cannot_export_games_pdf(self, moderator_client, game):
+        """Export PDF réservé admin/superadmin : moderator reçoit 403 sur ?export=pdf (l.351)."""
+        response = moderator_client.get("/api/admin/reports/games/?export=pdf")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_can_export_games_csv(self, admin_client, game):
+        """Admin peut télécharger le rapport games en CSV (cache vide → payload puis return export, l.397)."""
+        cache.clear()
+        response = admin_client.get("/api/admin/reports/games/?export=csv")
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        body = response.content.decode("utf-8") if isinstance(response.content, bytes) else str(response.content)
+        assert "id" in body or "report" in body
+
+    def test_admin_can_export_games_pdf(self, admin_client, game):
+        """Admin peut télécharger le rapport games en PDF."""
+        response = admin_client.get("/api/admin/reports/games/?export=pdf")
+        assert response.status_code == status.HTTP_200_OK
+        assert "application/pdf" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        assert response.content[:4] == b"%PDF"
+
+    @override_settings(ADMIN_REPORTS_GAMES_CACHE_TIMEOUT=60)
+    def test_export_csv_from_cache(self, admin_client, game):
+        """Export CSV avec cache pré-rempli : _handle_games_export avec cached_data (lignes 403-411, 352)."""
+        cache.clear()
+        url = "/api/admin/reports/games/"
+        admin_client.get(url)  # remplit le cache
+        response = admin_client.get(f"{url}?export=csv")
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response.get("Content-Type", "")
+        assert "attachment" in response.get("Content-Disposition", "")
+        assert b"report" in response.content or b"id" in response.content
+
+    @override_settings(ADMIN_REPORTS_GAMES_CACHE_TIMEOUT=60)
+    def test_export_pdf_from_cache(self, admin_client, game):
+        """Export PDF avec cache pré-rempli (lignes 403-411, 354)."""
+        cache.clear()
+        url = "/api/admin/reports/games/"
+        admin_client.get(url)
+        response = admin_client.get(f"{url}?export=pdf")
+        assert response.status_code == status.HTTP_200_OK
+        assert "application/pdf" in response.get("Content-Type", "")
+        assert response.content[:4] == b"%PDF"

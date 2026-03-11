@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.cache import cache
+from django.http import HttpResponse
 from django.utils import timezone
 from notifications.models import Notification
 from rest_framework import status
@@ -13,9 +14,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.models import ActivityLog
+from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_activity_csv, build_activity_pdf
 from apps.core.serializers import NotificationSerializer
 from apps.users.models import AdminAction
-from apps.users.permissions import IsAdminWithPermission
+from apps.users.permissions import IsAdminWithPermission, has_permission
 
 logger = logging.getLogger(__name__)
 
@@ -125,18 +127,84 @@ class AdminReportsActivityView(APIView):
 
     MAX_ITEMS = 500
 
+    @staticmethod
+    def _since_for_period(period):
+        now = timezone.now()
+        if period == "24h":
+            return now - timedelta(hours=24)
+        if period == "7d":
+            return now - timedelta(days=7)
+        return now - timedelta(days=30)
+
+    @staticmethod
+    def _activity_item(user_display, action, at_iso, target=None):
+        item = {"user": user_display, "action": action, "at": at_iso}
+        if target:
+            item["target"] = target
+        return item
+
+    def _activity_from_logs(self, since, user_id, action_filter):
+        qs = ActivityLog.objects.filter(created_at__gte=since).select_related("user")
+        if user_id:
+            try:
+                qs = qs.filter(user_id=int(user_id))
+            except ValueError:
+                pass
+        if action_filter:
+            qs = qs.filter(action=action_filter)
+        qs = qs.order_by("-created_at")[: self.MAX_ITEMS]
+        return [
+            self._activity_item(
+                log.user.pseudo if log.user else "",
+                log.action,
+                log.created_at.isoformat(),
+                f"{log.target_type}#{log.target_id}" if log.target_type and log.target_id is not None else None,
+            )
+            for log in qs
+        ]
+
+    def _activity_from_admin_actions(self, since, user_id, action_filter):
+        qs = AdminAction.objects.filter(timestamp__gte=since).select_related("admin_user")
+        if user_id:
+            try:
+                qs = qs.filter(admin_user_id=int(user_id))
+            except ValueError:
+                pass
+        if action_filter:
+            qs = qs.filter(action_type=action_filter)
+        qs = qs.order_by("-timestamp")[: self.MAX_ITEMS]
+        return [
+            self._activity_item(
+                admin_act.admin_user.pseudo if admin_act.admin_user else "",
+                admin_act.action_type,
+                admin_act.timestamp.isoformat(),
+                f"{admin_act.target_type}#{admin_act.target_id}" if admin_act.target_type and admin_act.target_id is not None else None,
+            )
+            for admin_act in qs
+        ]
+
+    def _handle_export_response(self, request, payload, export):
+        if export not in ("csv", "pdf"):
+            return None
+        if not has_permission(request.user, PERMISSION_REPORTS_EXPORT):
+            return Response(
+                {"detail": MSG_EXPORT_FORBIDDEN},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if export == "csv":
+            content = build_activity_csv(payload)
+            resp = HttpResponse(content.encode("utf-8"), content_type="text/csv; charset=utf-8")
+        else:
+            content = build_activity_pdf(payload)
+            resp = HttpResponse(content, content_type="application/pdf")
+        resp["Content-Disposition"] = 'attachment; filename="report_activity.%s"' % ("csv" if export == "csv" else "pdf")
+        return resp
+
     def get(self, request):
         period = request.query_params.get("period", "30d")
         user_id = request.query_params.get("user")
         action_filter = request.query_params.get("action")
-
-        now = timezone.now()
-        if period == "24h":
-            since = now - timedelta(hours=24)
-        elif period == "7d":
-            since = now - timedelta(days=7)
-        else:
-            since = now - timedelta(days=30)
+        since = self._since_for_period(period)
 
         cache_timeout = getattr(settings, "ADMIN_REPORTS_ACTIVITY_CACHE_TIMEOUT", 0)
         use_cache = cache_timeout > 0
@@ -146,62 +214,16 @@ class AdminReportsActivityView(APIView):
             if cached_data is not None:
                 return Response(cached_data, status=status.HTTP_200_OK)
 
-        activity = []
-
-        qs_logs = ActivityLog.objects.filter(created_at__gte=since).select_related("user")
-        if user_id:
-            try:
-                qs_logs = qs_logs.filter(user_id=int(user_id))
-            except ValueError:
-                pass
-        if action_filter:
-            qs_logs = qs_logs.filter(action=action_filter)
-        qs_logs = qs_logs.order_by("-created_at")[: self.MAX_ITEMS]
-
-        for log in qs_logs:
-            target = None
-            if log.target_type and log.target_id is not None:
-                target = f"{log.target_type}#{log.target_id}"
-            activity.append(
-                {
-                    "user": log.user.pseudo if log.user else "",
-                    "action": log.action,
-                    "at": log.created_at.isoformat(),
-                    **({"target": target} if target else {}),
-                }
-            )
-
-        # AdminAction (actions admin) — filtres avant le slice
-        qs_admin = AdminAction.objects.filter(timestamp__gte=since).select_related("admin_user")
-        if user_id:
-            try:
-                qs_admin = qs_admin.filter(admin_user_id=int(user_id))
-            except ValueError:
-                pass
-        if action_filter:
-            qs_admin = qs_admin.filter(action_type=action_filter)
-        qs_admin = qs_admin.order_by("-timestamp")[: self.MAX_ITEMS]
-
-        for admin_act in qs_admin:
-            target = None
-            if admin_act.target_type and admin_act.target_id is not None:
-                target = f"{admin_act.target_type}#{admin_act.target_id}"
-            activity.append(
-                {
-                    "user": admin_act.admin_user.pseudo if admin_act.admin_user else "",
-                    "action": admin_act.action_type,
-                    "at": admin_act.timestamp.isoformat(),
-                    **({"target": target} if target else {}),
-                }
-            )
-
-        # Tri global par date décroissante
+        activity = self._activity_from_logs(since, user_id, action_filter) + self._activity_from_admin_actions(since, user_id, action_filter)
         activity.sort(key=lambda x: x["at"], reverse=True)
         activity = activity[: self.MAX_ITEMS]
-
         payload = {"activity": activity}
 
         if use_cache:
             cache.set(cache_key, payload, timeout=cache_timeout)
 
+        export = request.query_params.get("export")
+        export_resp = self._handle_export_response(request, payload, export)
+        if export_resp is not None:
+            return export_resp
         return Response(payload, status=status.HTTP_200_OK)
