@@ -186,3 +186,11 @@ class TestAdminReportsActivityView:
         assert "application/pdf" in response.get("Content-Type", "")
         assert "attachment" in response.get("Content-Disposition", "")
         assert response.content[:4] == b"%PDF"
+
+    def test_filter_by_invalid_user_id_ignores_filter(self, admin_client, user):
+        """?user=<non-entier> lève ValueError en interne : le filtre user est ignoré (pas de crash)."""
+        cache.clear()
+        ActivityLog.objects.create(user=user, action=ActivityLog.Action.LOGIN)
+        response = admin_client.get("/api/admin/reports/activity/?user=notanumber")
+        assert response.status_code == status.HTTP_200_OK
+        assert "activity" in response.data

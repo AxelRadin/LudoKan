@@ -153,8 +153,15 @@ class TestAdminReportsUsersView:
         response = api_client.get("/api/admin/reports/users/?export=csv")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    def test_moderator_cannot_export_users_pdf(self, api_client, moderator_user):
+        """Export PDF réservé admin/superadmin : moderator reçoit 403 sur ?export=pdf (l.268)."""
+        api_client.force_authenticate(user=moderator_user)
+        response = api_client.get("/api/admin/reports/users/?export=pdf")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
     def test_admin_can_export_users_csv(self, auth_admin_client_with_tokens):
-        """Admin peut télécharger le rapport users en CSV."""
+        """Admin peut télécharger le rapport users en CSV (cache vide → payload puis return export, l.313)."""
+        cache.clear()
         response = auth_admin_client_with_tokens.get("/api/admin/reports/users/?export=csv")
         assert response.status_code == status.HTTP_200_OK
         assert "text/csv" in response.get("Content-Type", "")
@@ -167,4 +174,24 @@ class TestAdminReportsUsersView:
         assert response.status_code == status.HTTP_200_OK
         assert "application/pdf" in response.get("Content-Type", "")
         assert "attachment" in response.get("Content-Disposition", "")
+        assert response.content[:4] == b"%PDF"
+
+    @override_settings(ADMIN_REPORTS_USERS_CACHE_TIMEOUT=60)
+    def test_export_csv_from_cache(self, auth_admin_client_with_tokens):
+        """Export CSV avec cache pré-rempli : _handle_users_export avec cached_data (lignes 309-314, 265)."""
+        cache.clear()
+        auth_admin_client_with_tokens.get("/api/admin/reports/users/")  # remplit le cache
+        response = auth_admin_client_with_tokens.get("/api/admin/reports/users/?export=csv")
+        assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response.get("Content-Type", "")
+        assert b"metric" in response.content
+
+    @override_settings(ADMIN_REPORTS_USERS_CACHE_TIMEOUT=60)
+    def test_export_pdf_from_cache(self, auth_admin_client_with_tokens):
+        """Export PDF avec cache pré-rempli (lignes 309-314, 270)."""
+        cache.clear()
+        auth_admin_client_with_tokens.get("/api/admin/reports/users/")
+        response = auth_admin_client_with_tokens.get("/api/admin/reports/users/?export=pdf")
+        assert response.status_code == status.HTTP_200_OK
+        assert "application/pdf" in response.get("Content-Type", "")
         assert response.content[:4] == b"%PDF"
