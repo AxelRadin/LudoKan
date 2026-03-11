@@ -253,16 +253,16 @@ function cacheSet(nameEn: string, value: string | null) {
   WIKIDATA_FR_CACHE.set(nameEn, { value, ts: Date.now() });
 }
 
-// ======================================================
-// ✅ WIKIDATA CORRIGÉ : supporte les variantes de titres
-// ======================================================
+// ===========
+// WIKIDATA 
+// ===========
 async function fetchFrenchLabelForOne(nameEn: string): Promise<string | null> {
   const escaped = nameEn.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
   const sparql = `
 SELECT ?frLabel WHERE {
-  ?item wdt:P31 wd:Q7889;
-        rdfs:label "${escaped}"@en.
-  OPTIONAL { ?item rdfs:label ?frLabel FILTER(LANG(?frLabel) = "fr") }
+  ?item rdfs:label "${escaped}"@en;
+        rdfs:label ?frLabel.
+  FILTER(LANG(?frLabel) = "fr")
 }
 LIMIT 1
 `.trim();
@@ -298,7 +298,8 @@ async function wikidataFrenchLabelsByEnglishTitles(namesEn: string[]): Promise<W
       const name = batch[idx]!;
       const fr = r.status === "fulfilled" ? r.value : null;
       result[name] = fr;
-      cacheSet(name, fr);
+      // Ne cache que les succès — les null ne sont pas mis en cache pour pouvoir réessayer
+      if (fr !== null) cacheSet(name, fr);
     });
   }
 
@@ -591,9 +592,9 @@ app.get("/api/collection/:id/games", async (req: Request<{ id: string }>, res: R
 async function wikidataFrenchLabelByEnglishTitle(nameEn: string): Promise<string | null> {
   const sparql = `
 SELECT ?item ?frLabel WHERE {
-  ?item wdt:P31 wd:Q7889;
-        rdfs:label "${nameEn.replace(/"/g, '\\"')}"@en.
-  OPTIONAL { ?item rdfs:label ?frLabel FILTER(LANG(?frLabel) = "fr") }
+  ?item rdfs:label "${nameEn.replace(/"/g, '\\"')}"@en;
+        rdfs:label ?frLabel.
+  FILTER(LANG(?frLabel) = "fr")
 }
 LIMIT 1
 `.trim();
@@ -629,6 +630,157 @@ app.get("/api/wikidata-test", async (req, res) => {
     });
   } catch (e: any) {
     return res.status(500).json({ error: "wikidata test failed", details: e?.message ?? String(e) });
+  }
+});
+
+// ======================================================
+// 🌐 Route : traduction EN → FR via MyMemory
+// ======================================================
+
+function splitSentences(text: string, maxLen = 480): string[] {
+  const sentences = text.match(/[^.!?]+[.!?]+[\s]*/g) ?? [text];
+  const chunks: string[] = [];
+  let current = "";
+  for (const s of sentences) {
+    if ((current + s).length > maxLen) {
+      if (current.trim()) chunks.push(current.trim());
+      current = s;
+    } else {
+      current += s;
+    }
+  }
+  if (current.trim()) chunks.push(current.trim());
+  return chunks.length ? chunks : [text.slice(0, maxLen)];
+}
+
+app.post("/api/translate", async (req: Request, res: Response) => {
+  const { text } = req.body as { text?: string };
+  if (!text?.trim()) return res.status(400).json({ error: "Missing text" });
+
+  const chunks = splitSentences(text);
+  try {
+    const translations = await Promise.all(
+      chunks.map(async (chunk) => {
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(chunk)}&langpair=en|fr`;
+        const r = await fetch(url, { headers: { "User-Agent": "LudoKan/1.0" } });
+        if (!r.ok) return chunk;
+        const json: any = await r.json();
+        const translated = json?.responseData?.translatedText;
+        return typeof translated === "string" && translated.trim() ? translated : chunk;
+      })
+    );
+    return res.json({ translated: translations.join(" ") });
+  } catch (e: any) {
+    return res.status(500).json({ error: "Translation failed", details: e.message });
+  }
+});
+
+// ======================================================
+// 🔍 Route : rechercher franchises + collections par nom
+// ======================================================
+app.get("/api/franchises", async (req: Request, res: Response) => {
+  const q = String(req.query.q ?? "").trim();
+  if (!q) return res.status(400).json({ error: "Missing q" });
+
+  try {
+    const token = await getAccessToken();
+    const qEsc = escapeIgdbString(q);
+    const headers = {
+      "Client-ID": TWITCH_CLIENT_ID!,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "text/plain",
+    };
+
+    const qNormEsc = escapeIgdbString(normalizeQuery(q));
+    // IGDB franchises/collections ne supportent pas `search`, on utilise name ~
+    const nameQuery = (term: string) => `fields id, name; where name ~ *"${term}"*; limit 5;`;
+    const terms = qNormEsc !== qEsc ? [qEsc, qNormEsc] : [qEsc];
+
+    const rawResults = await Promise.all(
+      terms.flatMap(term => [
+        axios.post(`${IGDB_BASE_URL}/franchises`, nameQuery(term), { headers }).catch(() => ({ data: [] })),
+        axios.post(`${IGDB_BASE_URL}/collections`, nameQuery(term), { headers }).catch(() => ({ data: [] })),
+      ])
+    );
+
+    const seenFranchises = new Set<number>();
+    const seenCollections = new Set<number>();
+    const allFranchiseData: any[] = [];
+    const allCollectionData: any[] = [];
+
+    for (let i = 0; i < rawResults.length; i += 2) {
+      const fRes = rawResults[i];
+      const cRes = rawResults[i + 1];
+      if (fRes && Array.isArray(fRes.data)) allFranchiseData.push(...fRes.data);
+      if (cRes && Array.isArray(cRes.data)) allCollectionData.push(...cRes.data);
+    }
+
+    const franchises = allFranchiseData
+      .filter((f: any) => { if (seenFranchises.has(f.id)) return false; seenFranchises.add(f.id); return true; })
+      .map((f: any) => ({ id: f.id, name: f.name, type: "franchise" }));
+    const collections = allCollectionData
+      .filter((c: any) => { if (seenCollections.has(c.id)) return false; seenCollections.add(c.id); return true; })
+      .map((c: any) => ({ id: c.id, name: c.name, type: "collection" }));
+
+    return res.json([...franchises, ...collections]);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erreur recherche franchise", details: error.message });
+  }
+});
+
+// ======================================================
+// 📄 Route : recherche paginée par nom (fallback)
+// ======================================================
+app.get("/api/search-page", async (req: Request, res: Response) => {
+  const q = String(req.query.q ?? "").trim();
+  if (!q) return res.status(400).json({ error: "Missing q" });
+
+  const limitRaw = Number(req.query.limit ?? 24);
+  const limit = Math.min(Math.max(limitRaw, 1), 50);
+  const offsetRaw = Number(req.query.offset ?? 0);
+  const offset = Math.max(offsetRaw, 0);
+
+  try {
+    const token = await getAccessToken();
+    const qEsc = escapeIgdbString(q);
+    const qNormEsc = escapeIgdbString(normalizeQuery(q));
+    const headers = {
+      "Client-ID": TWITCH_CLIENT_ID!,
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "text/plain",
+    };
+
+    const fields = "fields name,cover.url,first_release_date,platforms.name,total_rating,total_rating_count;";
+    const makeNameBody = (term: string) =>
+      `${fields} where name ~ *"${term}"* & total_rating_count > 0; sort total_rating_count desc; limit ${limit}; offset ${offset};`;
+    // IGDB full-text search ne supporte pas offset, uniquement pour page 1
+    const makeSearchBody = (term: string) =>
+      `${fields} search "${term}"; limit 50;`;
+
+    // Essai 1 : name ~ avec accentuation originale
+    let igdbRes = await axios.post(`${IGDB_BASE_URL}/games`, makeNameBody(qEsc), { headers });
+    let arr = Array.isArray(igdbRes.data) ? igdbRes.data : [];
+
+    // Essai 2 : name ~ sans accents
+    if (arr.length === 0 && qNormEsc !== qEsc) {
+      igdbRes = await axios.post(`${IGDB_BASE_URL}/games`, makeNameBody(qNormEsc), { headers });
+      arr = Array.isArray(igdbRes.data) ? igdbRes.data : [];
+    }
+
+    // Essai 3 : full-text search IGDB (page 1 seulement, pas d'offset)
+    if (arr.length === 0 && offset === 0) {
+      const searchRes = await axios.post(`${IGDB_BASE_URL}/games`, makeSearchBody(qEsc), { headers }).catch(() => ({ data: [] }));
+      const searchArr = Array.isArray(searchRes.data) ? searchRes.data : [];
+      arr = searchArr
+        .filter((g: any) => (g?.total_rating_count ?? 0) > 0)
+        .sort((a: any, b: any) => (b.total_rating_count ?? 0) - (a.total_rating_count ?? 0))
+        .slice(0, limit);
+    }
+
+    const enriched = await enrichWithWikidataDisplayName(arr);
+    return res.json(enriched);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erreur search-page", details: error.message });
   }
 });
 

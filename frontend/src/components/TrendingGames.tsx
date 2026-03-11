@@ -11,6 +11,8 @@ export interface Game {
   id: number;
   title: string;
   image: string;
+  coverUrl?: string | null;
+  releaseDate?: string | null;
 }
 
 export interface TrendingGamesProps {
@@ -39,10 +41,15 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
         const mappedGames = data.map((game: any) => {
           const coverUrl = getCoverUrl(game.cover);
           const image = coverUrl ?? undefined;
+          const releaseDate = game.first_release_date
+            ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
+            : null;
           return {
             id: game.id,
             title: game.display_name ?? game.name,
             image,
+            coverUrl: coverUrl ?? null,
+            releaseDate,
           };
         });
         setGames(mappedGames);
@@ -164,6 +171,8 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
                 id={game.id}
                 title={game.title}
                 image={game.image}
+                coverUrl={game.coverUrl}
+                releaseDate={game.releaseDate}
                 igdb
               />
             ))

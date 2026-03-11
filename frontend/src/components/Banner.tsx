@@ -1,7 +1,6 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React from 'react';
-import SearchBar from './SearchBar';
 
 export const Banner: React.FC = () => {
   return (
@@ -13,10 +12,9 @@ export const Banner: React.FC = () => {
         textAlign: 'left',
       }}
     >
-      <Typography variant="h5" fontWeight="bold" color="black" mb={3}>
+      <Typography variant="h5" fontWeight="bold" color="black">
         Ne soyez plus perdus dans votre collection de jeux-vidéo !
       </Typography>
-      <SearchBar />
     </Box>
   );
 };

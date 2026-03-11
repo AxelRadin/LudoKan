@@ -117,4 +117,49 @@ export async function fetchFranchiseGames(franchiseId: number, limit = 50, offse
   return res.json();
 }
 
+export type FranchiseResult = {
+  id: number;
+  name: string;
+  type: 'franchise' | 'collection';
+};
+
+export async function searchFranchisesAndCollections(q: string): Promise<FranchiseResult[]> {
+  const res = await fetch(`${BACKEND_URL}/api/franchises?q=${encodeURIComponent(q)}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function searchGamesPage(q: string, limit = 24, offset = 0): Promise<IgdbGame[]> {
+  const params = new URLSearchParams({ q, limit: String(limit), offset: String(offset) });
+  const res = await fetch(`${BACKEND_URL}/api/search-page?${params}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function translateDescription(text: string): Promise<string> {
+  const res = await fetch(`${BACKEND_URL}/api/translate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.translated as string;
+}
+
+export async function importIgdbGameToDjango(
+  igdbId: number,
+  name: string,
+  coverUrl: string | null,
+  releaseDate: string | null,
+): Promise<{ id: number }> {
+  const { apiPost } = await import('../services/api');
+  return apiPost('/api/games/igdb-import/', { igdb_id: igdbId, name, cover_url: coverUrl, release_date: releaseDate });
+}
+
+export async function addGameToLibrary(djangoGameId: number): Promise<void> {
+  const { apiPost } = await import('../services/api');
+  return apiPost('/api/me/games/', { game_id: djangoGameId, status: 'EN_COURS' });
+}
+
 

@@ -19,7 +19,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import SecondaryButton from '../components/SecondaryButton';
-import { fetchIgdbGameById, getCoverUrl } from '../api/apiClient';
+import { fetchIgdbGameById, getCoverUrl, translateDescription } from '../api/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
@@ -32,6 +32,8 @@ export default function GamePage() {
   const [userRating, setUserRating] = useState<number | null>(null);
   const [userGame, setUserGame] = useState<any>(null);
   const [userReview, setUserReview] = useState<any>(null);
+  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
     if (igdbId) {
@@ -69,6 +71,16 @@ export default function GamePage() {
       }).catch(() => setGameNotFound(true));
     }
   }, [id, igdbId]);
+
+  useEffect(() => {
+    if (!game?.description) return;
+    setTranslating(true);
+    setTranslatedDescription(null);
+    translateDescription(game.description)
+      .then(setTranslatedDescription)
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  }, [game?.description]);
 
   useEffect(() => {
     if (djangoId && isAuthenticated) {
@@ -429,8 +441,10 @@ export default function GamePage() {
                   Description
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.description || 'Aucune description disponible.'}
+              <Typography variant="body1" sx={{ mb: 3, color: translating ? 'text.secondary' : 'text.primary' }}>
+                {translating
+                  ? 'Traduction en cours…'
+                  : translatedDescription ?? game.description ?? 'Aucune description disponible.'}
               </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}

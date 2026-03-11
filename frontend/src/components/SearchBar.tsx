@@ -1,9 +1,13 @@
+import AddIcon from '@mui/icons-material/Add';
+import CheckIcon from '@mui/icons-material/Check';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Avatar,
   Box,
+  Button,
   CircularProgress,
   Divider,
+  IconButton,
   InputBase,
   List,
   ListItem,
@@ -11,12 +15,14 @@ import {
   ListItemButton,
   ListItemText,
   Paper,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCoverUrl, searchIgdbGames, type IgdbGame } from '../api/apiClient';
+import { addGameToLibrary, getCoverUrl, importIgdbGameToDjango, searchIgdbGames, type IgdbGame } from '../api/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -70,10 +76,13 @@ const Dropdown = styled(Paper)(({ theme }) => ({
 
 const GameSearchBar: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<IgdbGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [addingId, setAddingId] = useState<number | null>(null);
+  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
 
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -112,6 +121,25 @@ const GameSearchBar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  const handleAddToLibrary = async (e: React.MouseEvent, game: IgdbGame) => {
+    e.stopPropagation();
+    if (addingId === game.id || addedIds.has(game.id)) return;
+    setAddingId(game.id);
+    try {
+      const cover = getCoverUrl(game.cover);
+      const releaseDate = game.first_release_date
+        ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
+        : null;
+      const { id: djangoId } = await importIgdbGameToDjango(game.id, game.name, cover, releaseDate);
+      await addGameToLibrary(djangoId);
+      setAddedIds(prev => new Set(prev).add(game.id));
+    } catch {
+      // already in library or error — ignore silently
+    } finally {
+      setAddingId(null);
+    }
+  };
+
   return (
     <Box
       sx={{ position: 'relative', minWidth: 350 }}
@@ -130,6 +158,13 @@ const GameSearchBar: React.FC = () => {
             setShowDropdown(true);
           }}
           onFocus={() => query && setShowDropdown(true)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && query.trim()) {
+              setShowDropdown(false);
+              setQuery('');
+              navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+            }
+          }}
         />
         {loading && (
           <Box
@@ -166,7 +201,7 @@ const GameSearchBar: React.FC = () => {
               </Typography>
             </Box>
           ) : (
-            <List>
+            <List sx={{ maxHeight: 400, overflowY: 'auto' }}>
               {results.map(game => {
                 const cover = getCoverUrl(game.cover);
                 const year = game.first_release_date
@@ -175,7 +210,30 @@ const GameSearchBar: React.FC = () => {
                 const displayName = game.display_name ?? game.name;
                 return (
                   <React.Fragment key={game.id}>
-                    <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
+                    <ListItem
+                      alignItems="flex-start"
+                      sx={{ py: 1.5 }}
+                      secondaryAction={
+                        <Tooltip title={addedIds.has(game.id) ? 'Ajouté !' : 'Ajouter à ma bibliothèque'}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              onClick={e => handleAddToLibrary(e, game)}
+                              disabled={addingId === game.id}
+                              color={addedIds.has(game.id) ? 'success' : 'default'}
+                            >
+                              {addingId === game.id ? (
+                                <CircularProgress size={16} />
+                              ) : addedIds.has(game.id) ? (
+                                <CheckIcon fontSize="small" />
+                              ) : (
+                                <AddIcon fontSize="small" />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      }
+                    >
                       <ListItemButton onClick={() => {
                         setShowDropdown(false);
                         setQuery('');
@@ -213,6 +271,24 @@ const GameSearchBar: React.FC = () => {
                 );
               })}
             </List>
+          )}
+          {!loading && results.length > 0 && (
+            <>
+              <Divider />
+              <Box px={1} py={1}>
+                <Button
+                  fullWidth
+                  size="small"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    setQuery('');
+                    navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+                  }}
+                >
+                  Voir plus de résultats pour « {query.trim()} »
+                </Button>
+              </Box>
+            </>
           )}
         </Dropdown>
       )}

@@ -15,6 +15,7 @@ import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
 import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
+import SearchResultsPage from './pages/SearchResultsPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
       { path: 'test', element: <TestSentry /> },
       { path: 'connector', element: <BackendConnector /> },
       { path: 'license', element: <LicensePage /> },
+      { path: 'search', element: <SearchResultsPage /> },
     ],
   },
 ]);
