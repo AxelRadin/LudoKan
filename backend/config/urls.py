@@ -59,6 +59,8 @@ urlpatterns = [
     path("api/", include("apps.matchmaking.urls")),
     # Chat
     path("api/", include("apps.chat.urls")),
+    # Game Tickets
+    path("api/", include("apps.game_tickets.urls")),
 ]
 
 if settings.DEBUG:

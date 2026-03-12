@@ -36,3 +36,46 @@ class Review(models.Model):
         """
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class ContentReport(models.Model):
+    """
+    Signalement d'un contenu utilisateur (review ou rating).
+
+    Tous les utilisateurs peuvent signaler un contenu, une seule fois
+    par cible (reporter, target_type, target_id).
+    """
+
+    class TargetType(models.TextChoices):
+        REVIEW = "review", "Review"
+        RATING = "rating", "Rating"
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="content_reports",
+    )
+    target_type = models.CharField(max_length=20, choices=TargetType.choices)
+    target_id = models.PositiveBigIntegerField()
+    reason = models.TextField()
+    handled = models.BooleanField(default=False)
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="handled_reports",
+    )
+    handled_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("reporter", "target_type", "target_id")
+        indexes = [
+            models.Index(fields=["target_type", "target_id"]),
+        ]
+        verbose_name = "Content report"
+        verbose_name_plural = "Content reports"
+
+    def __str__(self) -> str:
+        return f"Report by {self.reporter_id} on {self.target_type}#{self.target_id}"

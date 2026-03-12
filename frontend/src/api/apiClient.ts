@@ -14,6 +14,11 @@ export type IgdbGameLocalization = {
   region?: { id: number; name: string };
 };
 
+export type IgdbGenre = {
+  id: number;
+  name: string;
+};
+
 export type IgdbCollection = {
   id: number;
   name: string;
@@ -33,6 +38,7 @@ export type IgdbGame = {
   first_release_date?: number;
   cover?: IgdbCover;
   platforms?: IgdbPlatform[];
+  genres?: IgdbGenre[];
 
   // IGDB (optionnel)
   game_localizations?: IgdbGameLocalization[];
@@ -47,9 +53,7 @@ export type IgdbGame = {
   name_en?: string;
 };
 
-
-
-const BACKEND_URL = "http://localhost:3001";
+const BACKEND_URL = 'http://localhost:3001';
 
 export async function fetchIgdbGames(): Promise<IgdbGame[]> {
   const res = await fetch(`${BACKEND_URL}/api/games`);
@@ -63,9 +67,8 @@ export async function fetchIgdbGames(): Promise<IgdbGame[]> {
 export function getCoverUrl(cover?: IgdbCover): string | null {
   if (!cover?.url) return null;
   // l'API renvoie //images.igdb.com/... → on préfixe
-  if (cover.url.startsWith("//")) {
-    return `https:${cover.url}`.replace("t_thumb", "t_cover_big");
-
+  if (cover.url.startsWith('//')) {
+    return `https:${cover.url}`.replace('t_thumb', 't_cover_big');
   }
   return cover.url;
 }
@@ -77,13 +80,17 @@ export function formatReleaseDate(ts?: number): string | null {
   return date.toLocaleDateString();
 }
 
-export async function searchIgdbGames(q: string, limit = 8, suggest = false): Promise<IgdbGame[]> {
+export async function searchIgdbGames(
+  q: string,
+  limit = 8,
+  suggest = false
+): Promise<IgdbGame[]> {
   const res = await fetch(
     `${BACKEND_URL}/api/search?q=${encodeURIComponent(q)}&limit=${limit}&suggest=${suggest ? 1 : 0}`
   );
 
   if (!res.ok) {
-    const txt = await res.text().catch(() => "");
+    const txt = await res.text().catch(() => '');
     throw new Error(`API error ${res.status} ${txt}`);
   }
 
@@ -95,9 +102,13 @@ export type IgdbAlternativeName = {
   language?: string;
 };
 
-export async function fetchTrendingGames(sort: string, limit = 20, genre?: number): Promise<IgdbGame[]> {
+export async function fetchTrendingGames(
+  sort: string,
+  limit = 20,
+  genre?: number
+): Promise<IgdbGame[]> {
   const params = new URLSearchParams({ sort, limit: String(limit) });
-  if (genre) params.set("genre", String(genre));
+  if (genre) params.set('genre', String(genre));
   const res = await fetch(`${BACKEND_URL}/api/trending?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -111,8 +122,14 @@ export async function fetchIgdbGameById(igdbId: number): Promise<IgdbGame> {
   return res.json();
 }
 
-export async function fetchFranchiseGames(franchiseId: number, limit = 50, offset = 0): Promise<IgdbGame[]> {
-  const res = await fetch(`${BACKEND_URL}/api/franchise/${franchiseId}/games?limit=${limit}&offset=${offset}`);
+export async function fetchFranchiseGames(
+  franchiseId: number,
+  limit = 50,
+  offset = 0
+): Promise<IgdbGame[]> {
+  const res = await fetch(
+    `${BACKEND_URL}/api/franchise/${franchiseId}/games?limit=${limit}&offset=${offset}`
+  );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
@@ -123,14 +140,26 @@ export type FranchiseResult = {
   type: 'franchise' | 'collection';
 };
 
-export async function searchFranchisesAndCollections(q: string): Promise<FranchiseResult[]> {
-  const res = await fetch(`${BACKEND_URL}/api/franchises?q=${encodeURIComponent(q)}`);
+export async function searchFranchisesAndCollections(
+  q: string
+): Promise<FranchiseResult[]> {
+  const res = await fetch(
+    `${BACKEND_URL}/api/franchises?q=${encodeURIComponent(q)}`
+  );
   if (!res.ok) return [];
   return res.json();
 }
 
-export async function searchGamesPage(q: string, limit = 24, offset = 0): Promise<IgdbGame[]> {
-  const params = new URLSearchParams({ q, limit: String(limit), offset: String(offset) });
+export async function searchGamesPage(
+  q: string,
+  limit = 24,
+  offset = 0
+): Promise<IgdbGame[]> {
+  const params = new URLSearchParams({
+    q,
+    limit: String(limit),
+    offset: String(offset),
+  });
   const res = await fetch(`${BACKEND_URL}/api/search-page?${params}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
@@ -151,15 +180,21 @@ export async function importIgdbGameToDjango(
   igdbId: number,
   name: string,
   coverUrl: string | null,
-  releaseDate: string | null,
+  releaseDate: string | null
 ): Promise<{ id: number }> {
   const { apiPost } = await import('../services/api');
-  return apiPost('/api/games/igdb-import/', { igdb_id: igdbId, name, cover_url: coverUrl, release_date: releaseDate });
+  return apiPost('/api/games/igdb-import/', {
+    igdb_id: igdbId,
+    name,
+    cover_url: coverUrl,
+    release_date: releaseDate,
+  });
 }
 
 export async function addGameToLibrary(djangoGameId: number): Promise<void> {
   const { apiPost } = await import('../services/api');
-  return apiPost('/api/me/games/', { game_id: djangoGameId, status: 'EN_COURS' });
+  return apiPost('/api/me/games/', {
+    game_id: djangoGameId,
+    status: 'EN_COURS',
+  });
 }
-
-

@@ -53,3 +53,123 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.pseudo
+
+
+class UserRole(models.Model):
+    """
+    Rôle d'administration/modération associé à un utilisateur.
+
+    On garde la granularité fine via un mapping de permissions en code
+    plutôt que de multiplier les colonnes côté base.
+    """
+
+    class Role(models.TextChoices):
+        MODERATOR = "moderator", "Moderator"
+        ADMIN = "admin", "Admin"
+        SUPERADMIN = "superadmin", "Super admin"
+
+    user = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.CASCADE,
+        related_name="roles",
+    )
+    role = models.CharField(max_length=32, choices=Role.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "User role"
+        verbose_name_plural = "User roles"
+        unique_together = ("user", "role")
+
+    def __str__(self) -> str:
+        return f"{self.user.pseudo} - {self.get_role_display()}"
+
+
+class UserSuspension(models.Model):
+    """
+    Suspension d'un utilisateur, avec support des suspensions temporaires.
+
+    La logique métier (user banni ou non) se base sur is_active + end_date
+    plutôt que sur un simple booléen is_active.
+    """
+
+    user = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.CASCADE,
+        related_name="suspensions",
+    )
+    suspended_by = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="suspensions_made",
+    )
+    reason = models.TextField()
+    start_date = models.DateTimeField(default=timezone.now)
+    end_date = models.DateTimeField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "User suspension"
+        verbose_name_plural = "User suspensions"
+        ordering = ["-start_date"]
+        indexes = [
+            models.Index(fields=["user", "is_active", "end_date"]),
+        ]
+
+    def __str__(self) -> str:
+        base = f"Suspension de {self.user.pseudo}"
+        if self.end_date:
+            return f"{base} jusqu'au {self.end_date}"
+        return base
+
+    @property
+    def is_expired(self) -> bool:
+        if not self.is_active:
+            return True
+        if self.end_date is None:
+            return False
+        return self.end_date <= timezone.now()
+
+
+class AdminAction(models.Model):
+    """
+    Log d'actions administrateur (audit trail).
+
+    On stocke uniquement target_type / target_id pour éviter un couplage
+    fort avec les apps métiers (users, reviews, ratings, ...).
+    """
+
+    admin_user = models.ForeignKey(
+        "CustomUser",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admin_actions",
+    )
+    action_type = models.CharField(max_length=64)
+    target_type = models.CharField(
+        max_length=64,
+        help_text="Type de cible (user, review, rating, game, ...).",
+    )
+    target_id = models.PositiveBigIntegerField(
+        null=True,
+        blank=True,
+        help_text="Identifiant de la cible dans sa table.",
+    )
+    description = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Admin action"
+        verbose_name_plural = "Admin actions"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["action_type"]),
+            models.Index(fields=["target_type", "target_id"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.action_type} par {self.admin_user} sur {self.target_type}#{self.target_id}"

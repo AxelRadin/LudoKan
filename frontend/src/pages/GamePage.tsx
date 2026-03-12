@@ -6,6 +6,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
 import DevicesIcon from '@mui/icons-material/Devices';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import {
   Box,
@@ -14,12 +15,17 @@ import {
   Paper,
   Rating,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import {
+  fetchIgdbGameById,
+  getCoverUrl,
+  translateDescription,
+} from '../api/apiClient';
 import SecondaryButton from '../components/SecondaryButton';
-import { fetchIgdbGameById, getCoverUrl, translateDescription } from '../api/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
@@ -32,7 +38,9 @@ export default function GamePage() {
   const [userRating, setUserRating] = useState<number | null>(null);
   const [userGame, setUserGame] = useState<any>(null);
   const [userReview, setUserReview] = useState<any>(null);
-  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [translatedDescription, setTranslatedDescription] = useState<
+    string | null
+  >(null);
   const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
@@ -40,9 +48,12 @@ export default function GamePage() {
       fetchIgdbGameById(Number(igdbId))
         .then(data => {
           const coverUrl = getCoverUrl(data.cover);
-          const image = coverUrl?.replace('t_cover_big', 't_1080p') ?? undefined;
+          const image =
+            coverUrl?.replace('t_cover_big', 't_1080p') ?? undefined;
           const releaseDate = data.first_release_date
-            ? new Date(data.first_release_date * 1000).toLocaleDateString('fr-FR')
+            ? new Date(data.first_release_date * 1000).toLocaleDateString(
+                'fr-FR'
+              )
             : null;
           setGame({
             name: data.display_name ?? data.name,
@@ -50,7 +61,8 @@ export default function GamePage() {
             cover_url: coverUrl,
             image,
             release_date: releaseDate,
-            platforms: data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
+            platforms:
+              data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
             genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
             publisher: null,
             average_rating: 0,
@@ -59,16 +71,20 @@ export default function GamePage() {
         })
         .catch(() => setGameNotFound(true));
     } else {
-      apiGet(`/api/games/${id}/`).then(data => {
-        let image = data.cover_url;
-        if (image && image.includes('t_thumb')) {
-          image = image.replace('t_thumb', 't_1080p');
-        } else if (image && image.includes('t_cover_big')) {
-          image = image.replace('t_cover_big', 't_1080p');
-        }
-        setGame({ ...data, name: data.name_fr || data.name, image });
-        setDjangoId(String(data.id));
-      }).catch(() => setGameNotFound(true));
+      apiGet(`/api/games/${id}/`)
+        .then(data => {
+          let image = data.cover_url;
+          if (image && image.includes('t_thumb')) {
+            image = image.replace('t_thumb', 't_1080p');
+          } else if (image && image.includes('t_cover_big')) {
+            image = image.replace('t_cover_big', 't_1080p');
+          }
+          setGame({ ...data, name: data.name_fr || data.name, image });
+          setDjangoId(String(data.id));
+          setUserGame(data.user_library);
+          setUserRating(data.user_rating?.value || null);
+        })
+        .catch(() => setGameNotFound(true));
     }
   }, [id, igdbId]);
 
@@ -139,11 +155,15 @@ export default function GamePage() {
     }
   }
 
-  async function handleSetStatus(status: 'EN_COURS' | 'TERMINE') {
+  async function handleSetStatus(
+    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
+  ) {
     if (!isAuthenticated || !djangoId) return;
     try {
       if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${djangoId}/`, { status });
+        const updated = await apiPatch(`/api/me/games/${djangoId}/`, {
+          status,
+        });
         setUserGame({ ...userGame, status: updated.status });
       } else {
         const created = await apiPost('/api/me/games/', {
@@ -155,6 +175,38 @@ export default function GamePage() {
     } catch (error) {
       console.error(error);
       alert('Erreur lors de la mise à jour du statut');
+    }
+  }
+  async function handleToggleFavorite() {
+    if (!id) return;
+
+    if (!isAuthenticated) {
+      alert('Connecte-toi pour ajouter ce jeu en coup de cœur');
+      return;
+    }
+
+    const nextIsFavorite = !userGame?.is_favorite;
+
+    try {
+      if (userGame) {
+        const updated = await apiPatch(`/api/me/games/${id}/`, {
+          is_favorite: nextIsFavorite,
+        });
+        setUserGame({
+          ...userGame,
+          is_favorite: updated.is_favorite,
+        });
+      } else {
+        const created = await apiPost('/api/me/games/', {
+          game_id: id,
+          status: 'ENVIE_DE_JOUER',
+          is_favorite: true,
+        });
+        setUserGame(created);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erreur lors de la mise à jour du coup de cœur');
     }
   }
 
@@ -169,7 +221,9 @@ export default function GamePage() {
           backgroundColor: '#fff',
         }}
       >
-        <Typography variant="h5">Jeu introuvable dans notre base de données.</Typography>
+        <Typography variant="h5">
+          Jeu introuvable dans notre base de données.
+        </Typography>
       </Box>
     );
   }
@@ -312,8 +366,47 @@ export default function GamePage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   mb: 2,
+                  position: 'relative',
                 }}
               >
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    zIndex: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0,0,0,0.55)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: isAuthenticated ? 'pointer' : 'default',
+                    }}
+                    onClick={handleToggleFavorite}
+                  >
+                    <Tooltip title="Coup de cœur" arrow>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {userGame?.is_favorite ? (
+                          <FavoriteIcon sx={{ color: '#ff1744' }} />
+                        ) : (
+                          <FavoriteBorderIcon sx={{ color: '#ffffff' }} />
+                        )}
+                      </Box>
+                    </Tooltip>
+                  </Box>
+                </Box>
                 <img
                   src={game.image}
                   alt={game.name}
@@ -355,14 +448,55 @@ export default function GamePage() {
                     alignItems: 'center',
                   }}
                 >
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                    Ma note
-                  </Typography>
-                  <Rating
-                    value={userRating || 0}
-                    onChange={(_, value) => handleRatingChange(value)}
-                    sx={{ mb: 2, fontSize: 32 }}
-                  />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        Ma note
+                      </Typography>
+                      <Rating
+                        value={userRating || 0}
+                        onChange={(_, value) => handleRatingChange(value)}
+                        sx={{ mb: 2, fontSize: 32 }}
+                      />
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Tooltip title="Coup de cœur" arrow>
+                        <Box>
+                          {userGame?.is_favorite ? (
+                            <FavoriteIcon
+                              color="error"
+                              sx={{
+                                cursor: isAuthenticated ? 'pointer' : 'default',
+                              }}
+                              onClick={handleToggleFavorite}
+                            />
+                          ) : (
+                            <FavoriteBorderIcon
+                              color="action"
+                              sx={{
+                                cursor: isAuthenticated ? 'pointer' : 'default',
+                              }}
+                              onClick={handleToggleFavorite}
+                            />
+                          )}
+                        </Box>
+                      </Tooltip>
+                    </Box>
+                  </Box>
                   <Box
                     sx={{
                       display: 'flex',
@@ -382,10 +516,20 @@ export default function GamePage() {
                           isAuthenticated && handleSetStatus('TERMINE')
                         }
                       />
-                      <Typography variant="body2">Joué</Typography>
+                      <Typography variant="body2">Terminé</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <BookmarkIcon color="action" />
+                      <BookmarkIcon
+                        color={
+                          userGame?.status === 'ENVIE_DE_JOUER'
+                            ? 'warning'
+                            : 'action'
+                        }
+                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
+                        onClick={() =>
+                          isAuthenticated && handleSetStatus('ENVIE_DE_JOUER')
+                        }
+                      />
                       <Typography variant="body2">Envie d'y jouer</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -399,10 +543,6 @@ export default function GamePage() {
                         }
                       />
                       <Typography variant="body2">En cours</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <FavoriteIcon color="action" />
-                      <Typography variant="body2">Coup de cœur</Typography>
                     </Box>
                   </Box>
                 </Box>
@@ -441,10 +581,18 @@ export default function GamePage() {
                   Description
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3, color: translating ? 'text.secondary' : 'text.primary' }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 3,
+                  color: translating ? 'text.secondary' : 'text.primary',
+                }}
+              >
                 {translating
                   ? 'Traduction en cours…'
-                  : translatedDescription ?? game.description ?? 'Aucune description disponible.'}
+                  : (translatedDescription ??
+                    game.description ??
+                    'Aucune description disponible.')}
               </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}

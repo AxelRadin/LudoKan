@@ -1,13 +1,14 @@
-# Django + DRF
-Django==4.2.7
-djangorestframework==3.14.0
+Django==4.2.29
+djangorestframework==3.15.2
 django-filter==23.3
 django-notifications-hq==1.8.2
+wheel>=0.46.2
+django-import-export[all]==4.4.0
 
 # Authentification
 django-allauth==0.57.0
 dj-rest-auth==5.0.2
-djangorestframework-simplejwt==5.3.0  # JWT pour dj-rest-auth
+djangorestframework-simplejwt==5.5.1  
 dj-rest-auth[with_jwt]==5.0.2
 
 
@@ -18,10 +19,10 @@ django-cors-headers==4.3.1
 # psycopg2-binary==2.9.7
 psycopg2-binary==2.9.10
 python-decouple==3.8
-dj-database-url==2.1.0  # pratique pour DATABASE_URL
+dj-database-url==2.1.0  
 
 # Images
-Pillow==11.0.0
+Pillow==12.1.1  # Fix GHSA-cfh3-3jmp-rvhc (HIGH)
 
 # Storage (S3-compatible: Cloudflare R2)
 django-storages[s3]==1.14.2
@@ -48,5 +49,11 @@ gunicorn==23.0.0
 # Logging
 sentry-sdk[django]==2.20.0
 
-# Runtime tooling (provides pkg_resources used by some libs)
-setuptools>=75.0.0
+# Runtime tooling (pkg_resources used by rest_framework_simplejwt; removed in setuptools 82+)
+setuptools>=75.0.0,<82.0.0
+
+# transitions for state tickets
+django-fsm==3.0.1
+
+# Export PDF des rapports (BACK-021E)
+reportlab>=4.0.0

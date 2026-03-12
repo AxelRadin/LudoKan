@@ -1,6 +1,17 @@
 from django.urls import path
 
-from .views import GameByIgdbIdView, GameStatsView, GameViewSet, GenreViewSet, ImportIgdbGameView, PlatformViewSet, PublisherViewSet, RatingCreateView, RatingDetailView, RatingListView
+from .views import (
+    GameByIgdbIdView,
+    GameStatsView,
+    GameViewSet,
+    GenreViewSet,
+    ImportIgdbGameView,
+    PlatformViewSet,
+    PublisherViewSet,
+    RatingCreateView,
+    RatingDetailView,
+    RatingListView,
+)
 
 app_name = "games"
 

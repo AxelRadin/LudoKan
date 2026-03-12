@@ -3,6 +3,38 @@ import time
 from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
+from django.utils import timezone
+
+
+@shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
+def process_due_report_schedules(self):
+    """
+    Tâche périodique (Celery Beat) pour les rapports planifiés (BACK-021F).
+    Récupère les schedules actifs dont next_run <= now (ou next_run null),
+    génère le rapport, export CSV, envoi email, log system_logs, met à jour last_run/next_run.
+    """
+    from django.db.models import Q
+
+    from .models import ReportSchedule
+    from .report_schedule_service import run_schedule
+
+    now = timezone.now()
+    due = list(ReportSchedule.objects.filter(enabled=True).filter(Q(next_run__lte=now) | Q(next_run__isnull=True)).order_by("next_run"))
+    results = []
+    for schedule in due:
+        try:
+            out = run_schedule(schedule)
+            results.append({"schedule_id": schedule.pk, "report_type": schedule.report_type, **out})
+        except Exception as e:
+            results.append(
+                {
+                    "schedule_id": schedule.pk,
+                    "report_type": schedule.report_type,
+                    "success": False,
+                    "error": str(e),
+                }
+            )
+    return {"processed": len(results), "results": results}
 
 
 @shared_task

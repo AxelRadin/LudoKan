@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
-from django.conf import settings
+
+from apps.games.models import Game
+
 
 class UserGame(models.Model):
     class Status(models.TextChoices):
@@ -8,14 +10,23 @@ class UserGame(models.Model):
         FINISHED = "finished", "Finished"
         ABANDONED = "abandoned", "Abandoned"
         WISHLIST = "wishlist", "Wishlist"
+        EN_COURS = "EN_COURS", "En cours"
+        TERMINE = "TERMINE", "Terminé"
+        ABANDONNE = "ABANDONNE", "Abandonné"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="library_games",
+        related_name="library_entries",
     )
-    igdb_game_id = models.PositiveBigIntegerField()  # ID du jeu côté IGDB
-
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="user_games",
+        null=True,
+        blank=True,
+    )
+    igdb_game_id = models.PositiveBigIntegerField(null=True, blank=True, help_text="ID du jeu côté IGDB (optionnel).")
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -26,38 +37,12 @@ class UserGame(models.Model):
         blank=True,
         help_text="Nombre d'heures jouées (optionnel).",
     )
-
+    date_added = models.DateTimeField(auto_now_add=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "igdb_game_id")
-        verbose_name = "User Game"
-        verbose_name_plural = "User Games"
-
-    def __str__(self) -> str:
-        return f"{self.user} → {self.igdb_game_id} ({self.status})"
-
-
-from apps.games.models import Game
-
-
-class UserGame(models.Model):
-    class GameStatus(models.TextChoices):
-        EN_COURS = "EN_COURS", "En cours"
-        TERMINE = "TERMINE", "Terminé"
-        ABANDONNE = "ABANDONNE", "Abandonné"
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="library_entries")
-
-    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="user_games")
-
-    status = models.CharField(max_length=20, choices=GameStatus.choices, default=GameStatus.EN_COURS)
-
-    date_added = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ("user", "game")
+        unique_together = ("user", "game", "igdb_game_id")
         verbose_name = "Jeu de la ludothèque"
         verbose_name_plural = "Ludothèque utilisateurs"
         ordering = ["-date_added"]
@@ -66,7 +51,8 @@ class UserGame(models.Model):
         ]
 
     def __str__(self):
-        return f"UserGame: {self.user} - {self.game} ({self.status})"
+        game_display = self.game if self.game else self.igdb_game_id
+        return f"UserGame: {self.user} - {game_display} ({self.status})"
 
     def is_owned_by(self, user):
         return self.user == user
