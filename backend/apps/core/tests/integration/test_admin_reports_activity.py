@@ -1,5 +1,5 @@
 """
-Tests pour l'endpoint GET /api/admin/reports/activity/ (BACK-021D).
+Tests pour l'endpoint GET /api/admin/reports/activity/.
 Journal d'activité (ActivityLog + AdminAction) avec filtres.
 """
 
