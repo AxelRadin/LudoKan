@@ -1,5 +1,7 @@
 from unittest import mock
 
+import pytest
+
 from apps.core import tasks
 
 
@@ -78,3 +80,66 @@ def test_generate_user_statistics_returns_expected_message(monkeypatch):
 
     assert result == "Statistiques générées pour l'utilisateur 99"
     assert sleep_calls["seconds"] == 3
+
+
+@pytest.mark.django_db
+def test_process_due_report_schedules_returns_empty_when_no_due_schedules():
+    """process_due_report_schedules retourne processed=0 quand aucun schedule n'est échu (BACK-021F)."""
+    result = tasks.process_due_report_schedules()
+    assert result["processed"] == 0
+    assert result["results"] == []
+
+
+@pytest.mark.django_db
+def test_process_due_report_schedules_processes_due_schedule():
+    """process_due_report_schedules traite chaque schedule échu et appelle run_schedule (BACK-021F)."""
+    from django.utils import timezone
+
+    from apps.core.models import ReportSchedule
+
+    now = timezone.now()
+    schedule = ReportSchedule.objects.create(
+        report_type=ReportSchedule.ReportType.USERS,
+        frequency=ReportSchedule.Frequency.DAILY,
+        recipients=["test@example.com"],
+        enabled=True,
+        next_run=now,  # échu
+    )
+    # run_schedule est importé dans la tâche depuis report_schedule_service, il faut patcher là
+    with mock.patch("apps.core.report_schedule_service.run_schedule") as mock_run_schedule:
+        mock_run_schedule.return_value = {
+            "success": True,
+            "duration_seconds": 0.1,
+            "file_size_bytes": 50,
+            "recipients_count": 1,
+        }
+        result = tasks.process_due_report_schedules()
+    assert result["processed"] == 1
+    assert len(result["results"]) == 1
+    assert result["results"][0]["success"] is True
+    assert result["results"][0]["schedule_id"] == schedule.pk
+    mock_run_schedule.assert_called_once_with(schedule)
+
+
+@pytest.mark.django_db
+def test_process_due_report_schedules_catches_run_schedule_exception():
+    """Si run_schedule lève une exception, la tâche enregistre success=False et error dans results (lignes 32-36)."""
+    from django.utils import timezone
+
+    from apps.core.models import ReportSchedule
+
+    schedule = ReportSchedule.objects.create(
+        report_type=ReportSchedule.ReportType.USERS,
+        frequency=ReportSchedule.Frequency.DAILY,
+        recipients=["test@example.com"],
+        enabled=True,
+        next_run=timezone.now(),
+    )
+    with mock.patch("apps.core.report_schedule_service.run_schedule") as mock_run_schedule:
+        mock_run_schedule.side_effect = Exception("SMTP failed")
+        result = tasks.process_due_report_schedules()
+    assert result["processed"] == 1
+    assert len(result["results"]) == 1
+    assert result["results"][0]["success"] is False
+    assert result["results"][0]["schedule_id"] == schedule.pk
+    assert "SMTP failed" in result["results"][0]["error"]

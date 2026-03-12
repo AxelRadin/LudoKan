@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import warnings
 from datetime import timedelta
 from pathlib import Path
 
@@ -17,6 +18,9 @@ import dj_database_url
 import sentry_sdk
 from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
+
+# Réduire le bruit : avertissement django-fsm / viewflow (dépréciation connue)
+warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
 
 # -------------------------------------------------------------------
 # Base directory
@@ -355,6 +359,8 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+# Évite l'avertissement Celery 6 sur broker_connection_retry au démarrage
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 
 # -------------------------------------------------------------------
@@ -420,5 +426,3 @@ if SENTRY_DSN:
         environment=config("SENTRY_ENVIRONMENT", default=None),
         send_default_pii=True,
     )
-else:
-    print("SENTRY_DSN is not set")

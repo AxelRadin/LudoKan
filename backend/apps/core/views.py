@@ -105,6 +105,77 @@ class NotificationMarkAllReadView(APIView):
         )
 
 
+def _since_for_period(period):
+    """Retourne la date de début pour la période (24h, 7d, 30d). Utilisé par rapports activity et report_schedule_service."""
+    now = timezone.now()
+    if period == "24h":
+        return now - timedelta(hours=24)
+    if period == "7d":
+        return now - timedelta(days=7)
+    return now - timedelta(days=30)
+
+
+def _activity_item(user_display, action, at_iso, target=None):
+    item = {"user": user_display, "action": action, "at": at_iso}
+    if target:
+        item["target"] = target
+    return item
+
+
+def _activity_from_logs(since, user_id, action_filter, max_items=500):
+    qs = ActivityLog.objects.filter(created_at__gte=since).select_related("user")
+    if user_id:
+        try:
+            qs = qs.filter(user_id=int(user_id))
+        except ValueError:
+            pass
+    if action_filter:
+        qs = qs.filter(action=action_filter)
+    qs = qs.order_by("-created_at")[:max_items]
+    return [
+        _activity_item(
+            log.user.pseudo if log.user else "",
+            log.action,
+            log.created_at.isoformat(),
+            f"{log.target_type}#{log.target_id}" if log.target_type and log.target_id is not None else None,
+        )
+        for log in qs
+    ]
+
+
+def _activity_from_admin_actions(since, user_id, action_filter, max_items=500):
+    qs = AdminAction.objects.filter(timestamp__gte=since).select_related("admin_user")
+    if user_id:
+        try:
+            qs = qs.filter(admin_user_id=int(user_id))
+        except ValueError:
+            pass
+    if action_filter:
+        qs = qs.filter(action_type=action_filter)
+    qs = qs.order_by("-timestamp")[:max_items]
+    return [
+        _activity_item(
+            admin_act.admin_user.pseudo if admin_act.admin_user else "",
+            admin_act.action_type,
+            admin_act.timestamp.isoformat(),
+            f"{admin_act.target_type}#{admin_act.target_id}" if admin_act.target_type and admin_act.target_id is not None else None,
+        )
+        for admin_act in qs
+    ]
+
+
+def build_activity_report_payload(period="30d", user_id=None, action_filter=None, max_items=500):
+    """
+    Construit le payload du rapport activité (BACK-021D / BACK-021F).
+    Utilisé par AdminReportsActivityView et par le service de rapports planifiés.
+    """
+    since = _since_for_period(period)
+    activity = _activity_from_logs(since, user_id, action_filter, max_items) + _activity_from_admin_actions(since, user_id, action_filter, max_items)
+    activity.sort(key=lambda x: x["at"], reverse=True)
+    activity = activity[:max_items]
+    return {"activity": activity}
+
+
 class AdminReportsActivityView(APIView):
     """
     Journal d'activité pour les rapports planifiés (BACK-021D).
@@ -127,62 +198,6 @@ class AdminReportsActivityView(APIView):
 
     MAX_ITEMS = 500
 
-    @staticmethod
-    def _since_for_period(period):
-        now = timezone.now()
-        if period == "24h":
-            return now - timedelta(hours=24)
-        if period == "7d":
-            return now - timedelta(days=7)
-        return now - timedelta(days=30)
-
-    @staticmethod
-    def _activity_item(user_display, action, at_iso, target=None):
-        item = {"user": user_display, "action": action, "at": at_iso}
-        if target:
-            item["target"] = target
-        return item
-
-    def _activity_from_logs(self, since, user_id, action_filter):
-        qs = ActivityLog.objects.filter(created_at__gte=since).select_related("user")
-        if user_id:
-            try:
-                qs = qs.filter(user_id=int(user_id))
-            except ValueError:
-                pass
-        if action_filter:
-            qs = qs.filter(action=action_filter)
-        qs = qs.order_by("-created_at")[: self.MAX_ITEMS]
-        return [
-            self._activity_item(
-                log.user.pseudo if log.user else "",
-                log.action,
-                log.created_at.isoformat(),
-                f"{log.target_type}#{log.target_id}" if log.target_type and log.target_id is not None else None,
-            )
-            for log in qs
-        ]
-
-    def _activity_from_admin_actions(self, since, user_id, action_filter):
-        qs = AdminAction.objects.filter(timestamp__gte=since).select_related("admin_user")
-        if user_id:
-            try:
-                qs = qs.filter(admin_user_id=int(user_id))
-            except ValueError:
-                pass
-        if action_filter:
-            qs = qs.filter(action_type=action_filter)
-        qs = qs.order_by("-timestamp")[: self.MAX_ITEMS]
-        return [
-            self._activity_item(
-                admin_act.admin_user.pseudo if admin_act.admin_user else "",
-                admin_act.action_type,
-                admin_act.timestamp.isoformat(),
-                f"{admin_act.target_type}#{admin_act.target_id}" if admin_act.target_type and admin_act.target_id is not None else None,
-            )
-            for admin_act in qs
-        ]
-
     def _handle_export_response(self, request, payload, export):
         if export not in ("csv", "pdf"):
             return None
@@ -204,7 +219,6 @@ class AdminReportsActivityView(APIView):
         period = request.query_params.get("period", "30d")
         user_id = request.query_params.get("user")
         action_filter = request.query_params.get("action")
-        since = self._since_for_period(period)
 
         cache_timeout = getattr(settings, "ADMIN_REPORTS_ACTIVITY_CACHE_TIMEOUT", 0)
         use_cache = cache_timeout > 0
@@ -214,10 +228,7 @@ class AdminReportsActivityView(APIView):
             if cached_data is not None:
                 return Response(cached_data, status=status.HTTP_200_OK)
 
-        activity = self._activity_from_logs(since, user_id, action_filter) + self._activity_from_admin_actions(since, user_id, action_filter)
-        activity.sort(key=lambda x: x["at"], reverse=True)
-        activity = activity[: self.MAX_ITEMS]
-        payload = {"activity": activity}
+        payload = build_activity_report_payload(period, user_id, action_filter, self.MAX_ITEMS)
 
         if use_cache:
             cache.set(cache_key, payload, timeout=cache_timeout)

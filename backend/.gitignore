@@ -71,8 +71,10 @@ ipython_config.py
 # pyenv
 .python-version
 
-# celery beat schedule file
+# celery beat schedule file (scheduler persistant + fichiers SQLite)
 celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
 
 # SageMath parsed files
 *.sage.py
