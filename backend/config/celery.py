@@ -20,6 +20,10 @@ app.conf.beat_schedule = {
         "task": "apps.matchmaking.tasks.expire_old_matchmaking_requests",
         "schedule": crontab(minute="*/15"),  # toutes les 15 minutes
     },
+    "process-due-report-schedules": {
+        "task": "apps.core.tasks.process_due_report_schedules",
+        "schedule": crontab(minute="*/15"),  # toutes les 15 min (BACK-021F)
+    },
 }
 
 # Configuration des résultats (optionnel)
