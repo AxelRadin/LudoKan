@@ -8,13 +8,13 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { apiPost } from '../services/api';
 import theme from '../theme';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
-import { useAuth } from '../contexts/useAuth';
-import { apiPost } from '../services/api';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();

@@ -28,8 +28,8 @@ import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
-import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
+import { useAuth } from '../contexts/useAuth';
 
 export default function GamePage() {
   const { id, igdbId } = useParams();
