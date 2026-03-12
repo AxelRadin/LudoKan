@@ -50,6 +50,8 @@ export default function GamePage() {
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
   const [hasNewMatch, setHasNewMatch] = useState(false);
+  const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
+  const [currentRadius, setCurrentRadius] = useState<number>(20);
 
   useEffect(() => {
     if (igdbId) {
@@ -149,6 +151,26 @@ export default function GamePage() {
     return () => clearInterval(intervalId);
   }, [activeRequestUntil, matches.length]);
 
+  useEffect(() => {
+    if (!activeRequestId || hasNewMatch) return;
+
+    const timeoutId = setTimeout(async () => {
+      const newRadius = currentRadius * 2;
+      try {
+        await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
+          radius_km: newRadius,
+        });
+
+        setCurrentRadius(newRadius);
+        console.log(`Rayon étendu automatiquement à ${newRadius} km`);
+      } catch (error) {
+        console.error("Erreur lors de l'extension du rayon", error);
+      }
+    }, 5 * 60 * 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [activeRequestId, currentRadius, hasNewMatch]);
+
   async function handleMatchmaking(isPendingAction = false) {
     if (!isAuthenticated && !isPendingAction) {
       setPendingAction(() => () => handleMatchmaking(true));
@@ -159,65 +181,83 @@ export default function GamePage() {
     const currentDjangoId = await ensureDjangoId();
     if (!currentDjangoId) return;
 
-    if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas supportée par votre navigateur.");
-      return;
-    }
-
     setIsMatching(true);
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const defaultExpiresAt = new Date();
-          defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
+    try {
+      const { latitude, longitude } = await getUserLocation();
 
-          let startedDate = new Date();
-          let expirationDate = defaultExpiresAt;
+      const defaultExpiresAt = new Date();
+      defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
 
-          try {
-            const res = await apiPost('/api/matchmaking/requests/', {
-              game: currentDjangoId,
-              latitude,
-              longitude,
-              radius_km: 20,
-              expires_at: defaultExpiresAt.toISOString(),
-            });
-            startedDate = new Date(res.created_at);
-            expirationDate = new Date(res.expires_at);
-          } catch {
-            const activeReqs = await apiGet(`/api/matchmaking/requests/?game=${currentDjangoId}`);
-            if (activeReqs && activeReqs.length > 0) {
-              startedDate = new Date(activeReqs[0].created_at);
-              expirationDate = new Date(activeReqs[0].expires_at);
-            }
-          }
+      let reqId = null;
+      let startedDate = new Date();
+      let expirationDate = defaultExpiresAt;
+      let radius = 20;
 
-          setActiveRequestStartedAt(startedDate);
-          setActiveRequestUntil(expirationDate);
-
-          setActiveRequestUntil(expirationDate);
-
-          // 2. Récupérer les matchs initiaux
-          const matchesData = await apiGet('/api/matchmaking/matches/');
-          setMatches(matchesData);
-          setHasNewMatch(false);
-          setIsMatchmakingModalOpen(true);
-
-        } catch (error) {
-          console.error("Erreur API lors du matchmaking", error);
-          alert("Un problème est survenu lors de la recherche de joueurs.");
-        } finally {
-          setIsMatching(false);
+      try {
+        const res = await apiPost('/api/matchmaking/requests/', {
+          game: currentDjangoId,
+          latitude,
+          longitude,
+          radius_km: radius,
+          expires_at: defaultExpiresAt.toISOString(),
+        });
+        reqId = res.id;
+        startedDate = new Date(res.created_at);
+        expirationDate = new Date(res.expires_at);
+      } catch {
+        const activeReqs = await apiGet(`/api/matchmaking/requests/?game=${currentDjangoId}`);
+        if (activeReqs && activeReqs.length > 0) {
+          reqId = activeReqs[0].id;
+          radius = activeReqs[0].radius_km;
+          startedDate = new Date(activeReqs[0].created_at);
+          expirationDate = new Date(activeReqs[0].expires_at);
         }
-      },
-      (error) => {
-        console.error("Erreur géolocalisation", error);
-        alert("Vous devez autoriser la géolocalisation pour le matchmaking.");
-        setIsMatching(false);
       }
-    );
+
+      setActiveRequestId(reqId);
+      setCurrentRadius(radius);
+      setActiveRequestStartedAt(startedDate);
+      setActiveRequestUntil(expirationDate);
+
+      const matchesData = await apiGet('/api/matchmaking/matches/');
+      setMatches(matchesData);
+      setHasNewMatch(false);
+      setIsMatchmakingModalOpen(true);
+
+    } catch (error) {
+      console.error("Erreur API lors du matchmaking", error);
+      alert("Un problème est survenu lors de la recherche de joueurs.");
+    } finally {
+      setIsMatching(false);
+    }
+  }
+
+  async function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
+    return new Promise((resolve) => {
+      const fallbackToIP = async () => {
+        try {
+          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+          const data = await res.json();
+          resolve({ latitude: parseFloat(data.latitude), longitude: parseFloat(data.longitude) });
+        } catch {
+          resolve({ latitude: 48.8566, longitude: 2.3522 });
+        }
+      };
+
+      if (!navigator.geolocation) {
+        fallbackToIP();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        (_err) => {
+          console.warn('Géolocalisation refusée ou en erreur, utilisation de l\'IP...');
+          fallbackToIP();
+        }
+      );
+    });
   }
 
   async function ensureDjangoId(): Promise<string | null> {
