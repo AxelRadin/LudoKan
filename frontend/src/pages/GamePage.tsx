@@ -15,7 +15,7 @@ import {
   Paper,
   Rating,
   Tooltip,
-  Typography,
+  Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -24,6 +24,7 @@ import {
   importIgdbGameToDjango,
   translateDescription,
 } from '../api/igdb';
+import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
@@ -43,9 +44,12 @@ export default function GamePage() {
     string | null
   >(null);
   const [translating, setTranslating] = useState(false);
+  const [activeRequestStartedAt, setActiveRequestStartedAt] = useState<Date | null>(null);
+  const [activeRequestUntil, setActiveRequestUntil] = useState<Date | null>(null);
   const [isMatching, setIsMatching] = useState(false);
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
   const [matches, setMatches] = useState<any[]>([]);
+  const [hasNewMatch, setHasNewMatch] = useState(false);
 
   useEffect(() => {
     if (igdbId) {
@@ -123,6 +127,28 @@ export default function GamePage() {
     }
   }, [djangoId, isAuthenticated]);
 
+  useEffect(() => {
+    if (!activeRequestUntil) return;
+
+    const intervalId = setInterval(async () => {
+      if (new Date() > activeRequestUntil) {
+        setActiveRequestUntil(null);
+        clearInterval(intervalId);
+        return;
+      }
+
+      try {
+        const currentMatches = await apiGet('/api/matchmaking/matches/');
+        if (currentMatches.length > matches.length) {
+          setMatches(currentMatches);
+          setHasNewMatch(true);
+        }
+      } catch { console.error('Erreur lors de la vérification des nouveaux matchs'); }
+    }, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [activeRequestUntil, matches.length]);
+
   async function handleMatchmaking(isPendingAction = false) {
     if (!isAuthenticated && !isPendingAction) {
       setPendingAction(() => () => handleMatchmaking(true));
@@ -144,27 +170,39 @@ export default function GamePage() {
       async (position) => {
         try {
           const { latitude, longitude } = position.coords;
+          const defaultExpiresAt = new Date();
+          defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
 
-          const expiresAt = new Date();
-          expiresAt.setHours(expiresAt.getHours() + 1);
+          let startedDate = new Date();
+          let expirationDate = defaultExpiresAt;
 
           try {
-            await apiPost('/api/matchmaking/requests/', {
+            const res = await apiPost('/api/matchmaking/requests/', {
               game: currentDjangoId,
               latitude,
               longitude,
               radius_km: 20,
-              expires_at: expiresAt.toISOString(),
+              expires_at: defaultExpiresAt.toISOString(),
             });
+            startedDate = new Date(res.created_at);
+            expirationDate = new Date(res.expires_at);
           } catch {
-            console.log("Une demande est potentiellement déjà active pour ce jeu.");
+            const activeReqs = await apiGet(`/api/matchmaking/requests/?game=${currentDjangoId}`);
+            if (activeReqs && activeReqs.length > 0) {
+              startedDate = new Date(activeReqs[0].created_at);
+              expirationDate = new Date(activeReqs[0].expires_at);
+            }
           }
 
-          // 2. Récupérer les matchs correspondants
-          const matchesData = await apiGet('/api/matchmaking/matches/');
+          setActiveRequestStartedAt(startedDate);
+          setActiveRequestUntil(expirationDate);
 
-          // 3. Mettre à jour l'état et ouvrir la modale
+          setActiveRequestUntil(expirationDate);
+
+          // 2. Récupérer les matchs initiaux
+          const matchesData = await apiGet('/api/matchmaking/matches/');
           setMatches(matchesData);
+          setHasNewMatch(false);
           setIsMatchmakingModalOpen(true);
 
         } catch (error) {
@@ -176,7 +214,7 @@ export default function GamePage() {
       },
       (error) => {
         console.error("Erreur géolocalisation", error);
-        alert("Vous devez autoriser la géolocalisation pour rechercher des joueurs à proximité.");
+        alert("Vous devez autoriser la géolocalisation pour le matchmaking.");
         setIsMatching(false);
       }
     );
@@ -687,10 +725,21 @@ export default function GamePage() {
           </Box>
         </Paper>
       </Box>
+      {!isMatchmakingModalOpen && (
+        <FloatingMatchmakingWidget
+          startedAt={activeRequestStartedAt}
+          hasNewMatch={hasNewMatch}
+          onClick={() => {
+            setIsMatchmakingModalOpen(true);
+            setHasNewMatch(false);
+          }}
+        />
+      )}
       <MatchmakingModal
         open={isMatchmakingModalOpen}
         onClose={() => setIsMatchmakingModalOpen(false)}
         matches={matches}
+        startedAt={activeRequestStartedAt}
       />
     </Box>
   );
