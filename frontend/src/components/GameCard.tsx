@@ -2,7 +2,7 @@ import { Box, Card, CardMedia, IconButton, Tooltip } from '@mui/material';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addGameToLibrary, importIgdbGameToDjango } from '../api/igdb';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/useAuth';
 import type { UserLibraryData } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 

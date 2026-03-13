@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/useAuth';
 import { useSubmitReview } from '../hooks/useSubmitReview';
 
 type ReviewFormValues = {
