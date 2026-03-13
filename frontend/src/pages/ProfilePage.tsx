@@ -933,7 +933,13 @@ export default function ProfilePage() {
             }}
           />
 
-          <Box sx={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              gap: 3,
+            }}
+          >
             <GameList games={gamesEnCours} title="En cours" />
             <GameList games={gamesTermines} title="Terminés" />
             <GameList games={gamesEnvie} title="Envie d'y jouer" />
