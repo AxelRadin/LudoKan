@@ -2,6 +2,7 @@
 """
 Script pour créer automatiquement le fichier .env
 """
+
 import os
 import secrets
 from pathlib import Path

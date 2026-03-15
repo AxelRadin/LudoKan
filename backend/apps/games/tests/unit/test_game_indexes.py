@@ -37,13 +37,11 @@ class TestGameDatabaseIndexes:
     def test_min_age_index_exists_in_database(self):
         """L'index sur min_age doit être créé dans PostgreSQL"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game' AND indexname = 'games_min_age_idx';
-                """
-            )
+                """)
             result = cursor.fetchone()
 
         assert result is not None, "Index games_min_age_idx not found in database"
@@ -53,13 +51,11 @@ class TestGameDatabaseIndexes:
     def test_min_players_index_exists_in_database(self):
         """L'index sur min_players doit être créé dans PostgreSQL"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game' AND indexname = 'games_min_players_idx';
-                """
-            )
+                """)
             result = cursor.fetchone()
 
         assert result is not None, "Index games_min_players_idx not found in database"
@@ -69,13 +65,11 @@ class TestGameDatabaseIndexes:
     def test_max_players_index_exists_in_database(self):
         """L'index sur max_players doit être créé dans PostgreSQL"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game' AND indexname = 'games_max_players_idx';
-                """
-            )
+                """)
             result = cursor.fetchone()
 
         assert result is not None, "Index games_max_players_idx not found in database"
@@ -85,13 +79,11 @@ class TestGameDatabaseIndexes:
     def test_popularity_index_exists_in_database(self):
         """L'index sur popularity_score (DESC) doit être créé dans PostgreSQL"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game' AND indexname = 'games_popularity_idx';
-                """
-            )
+                """)
             result = cursor.fetchone()
 
         assert result is not None, "Index games_popularity_idx not found in database"
@@ -103,13 +95,11 @@ class TestGameDatabaseIndexes:
     def test_composite_age_players_index_exists_in_database(self):
         """L'index composite sur (min_age, min_players) doit être créé"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game' AND indexname = 'games_age_players_idx';
-                """
-            )
+                """)
             result = cursor.fetchone()
 
         assert result is not None, "Index games_age_players_idx not found in database"
@@ -121,14 +111,12 @@ class TestGameDatabaseIndexes:
     def test_all_custom_indexes_are_btree(self):
         """Tous les index custom doivent être de type B-tree (par défaut)"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game'
                   AND indexname LIKE 'games_%_idx';
-                """
-            )
+                """)
             results = cursor.fetchall()
 
         assert len(results) == 5, f"Expected 5 custom indexes, found {len(results)}"
@@ -140,14 +128,12 @@ class TestGameDatabaseIndexes:
     def test_foreign_key_index_exists(self):
         """Django doit créer automatiquement un index sur la FK publisher_id"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game'
                   AND indexdef ILIKE '%publisher_id%';
-                """
-            )
+                """)
             result = cursor.fetchone()
 
         assert result is not None, "Foreign key index on publisher_id should exist"
@@ -155,14 +141,12 @@ class TestGameDatabaseIndexes:
     def test_index_names_follow_naming_convention(self):
         """Les noms d'index doivent suivre la convention games_<field>_idx"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname
                 FROM pg_indexes
                 WHERE tablename = 'games_game'
                   AND indexname LIKE 'games_%_idx';
-                """
-            )
+                """)
             index_names = [row[0] for row in cursor.fetchall()]
 
         # Tous les index custom doivent commencer par 'games_' et finir par '_idx'
@@ -173,14 +157,12 @@ class TestGameDatabaseIndexes:
     def test_no_duplicate_indexes(self):
         """Il ne doit pas y avoir d'index dupliqués sur les mêmes colonnes"""
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT indexname, indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game'
                 ORDER BY indexname;
-                """
-            )
+                """)
             all_indexes = cursor.fetchall()
 
         # Extraire les définitions d'index (colonnes indexées)

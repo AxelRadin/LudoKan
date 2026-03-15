@@ -2,6 +2,7 @@
 Tests pour les vues de l'app users
 Tests complets pour tous les endpoints d'authentification
 """
+
 import io
 import os
 

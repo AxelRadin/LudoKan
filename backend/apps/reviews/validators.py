@@ -1,6 +1,7 @@
 """
 Validateurs personnalisés pour l'app reviews.
 """
+
 from django.core.exceptions import ValidationError
 
 

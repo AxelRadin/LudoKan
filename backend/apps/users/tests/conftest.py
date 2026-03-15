@@ -1,6 +1,7 @@
 """
 Fixtures pytest pour les tests de l'app users
 """
+
 import pytest
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model

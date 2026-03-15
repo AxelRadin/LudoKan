@@ -2,6 +2,7 @@
 """
 Script de test pour vérifier que Celery fonctionne correctement
 """
+
 import os
 
 import django
