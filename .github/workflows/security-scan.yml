@@ -14,6 +14,10 @@ jobs:
   grype-scan:
     name: Grype Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
 
     steps:
       - name: Checkout code
@@ -36,7 +40,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Grype SARIF report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: grype-report.sarif
