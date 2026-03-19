@@ -788,7 +788,7 @@ export default function ProfilePage() {
                 letterSpacing: -0.3,
               }}
             >
-              Statistiques
+              Informations
             </Typography>
             <Box
               sx={{
