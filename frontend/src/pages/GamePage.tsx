@@ -24,34 +24,27 @@ import {
   importIgdbGameToDjango,
   translateDescription,
 } from '../api/igdb';
-import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
-import MatchmakingModal from '../components/MatchmakingModal';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
+import { useMatchmaking } from '../contexts/MatchmakingContext'; // Ton contexte global
 
 export default function GamePage() {
   const { id, igdbId } = useParams();
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+
+  // Le hook global qui s'occupe de TOUTE la magie du matchmaking !
+  const { startMatchmaking, isMatching } = useMatchmaking();
+
   const [game, setGame] = useState<any>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
   const [djangoId, setDjangoId] = useState<string | null>(null);
   const [userGame, setUserGame] = useState<any>(null);
   const [userReview, setUserReview] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [translatedDescription, setTranslatedDescription] = useState<
-    string | null
-  >(null);
+  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
-  const [activeRequestStartedAt, setActiveRequestStartedAt] = useState<Date | null>(null);
-  const [activeRequestUntil, setActiveRequestUntil] = useState<Date | null>(null);
-  const [isMatching, setIsMatching] = useState(false);
-  const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
-  const [matches, setMatches] = useState<any[]>([]);
-  const [hasNewMatch, setHasNewMatch] = useState(false);
-  const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
-  const [currentRadius, setCurrentRadius] = useState<number>(20);
 
   useEffect(() => {
     if (igdbId) {
@@ -65,9 +58,7 @@ export default function GamePage() {
             ...normalizedData,
             image,
             display_release_date: normalizedData.release_date
-              ? new Date(normalizedData.release_date).toLocaleDateString(
-                'fr-FR'
-              )
+              ? new Date(normalizedData.release_date).toLocaleDateString('fr-FR')
               : null,
           });
 
@@ -129,137 +120,6 @@ export default function GamePage() {
     }
   }, [djangoId, isAuthenticated]);
 
-  useEffect(() => {
-    if (!activeRequestUntil) return;
-
-    const intervalId = setInterval(async () => {
-      if (new Date() > activeRequestUntil) {
-        setActiveRequestUntil(null);
-        clearInterval(intervalId);
-        return;
-      }
-
-      try {
-        const currentMatches = await apiGet('/api/matchmaking/matches/');
-        if (currentMatches.length > matches.length) {
-          setMatches(currentMatches);
-          setHasNewMatch(true);
-        }
-      } catch { console.error('Erreur lors de la vérification des nouveaux matchs'); }
-    }, 10000);
-
-    return () => clearInterval(intervalId);
-  }, [activeRequestUntil, matches.length]);
-
-  useEffect(() => {
-    if (!activeRequestId || hasNewMatch) return;
-
-    const timeoutId = setTimeout(async () => {
-      const newRadius = currentRadius * 2;
-      try {
-        await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
-          radius_km: newRadius,
-        });
-
-        setCurrentRadius(newRadius);
-        console.log(`Rayon étendu automatiquement à ${newRadius} km`);
-      } catch (error) {
-        console.error("Erreur lors de l'extension du rayon", error);
-      }
-    }, 5 * 60 * 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [activeRequestId, currentRadius, hasNewMatch]);
-
-  async function handleMatchmaking(isPendingAction = false) {
-    if (!isAuthenticated && !isPendingAction) {
-      setPendingAction(() => () => handleMatchmaking(true));
-      setAuthModalOpen(true);
-      return;
-    }
-
-    const currentDjangoId = await ensureDjangoId();
-    if (!currentDjangoId) return;
-
-    setIsMatching(true);
-
-    try {
-      const { latitude, longitude } = await getUserLocation();
-
-      const defaultExpiresAt = new Date();
-      defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
-
-      let reqId = null;
-      let startedDate = new Date();
-      let expirationDate = defaultExpiresAt;
-      let radius = 20;
-
-      try {
-        const res = await apiPost('/api/matchmaking/requests/', {
-          game: currentDjangoId,
-          latitude,
-          longitude,
-          radius_km: radius,
-          expires_at: defaultExpiresAt.toISOString(),
-        });
-        reqId = res.id;
-        startedDate = new Date(res.created_at);
-        expirationDate = new Date(res.expires_at);
-      } catch {
-        const activeReqs = await apiGet(`/api/matchmaking/requests/?game=${currentDjangoId}`);
-        if (activeReqs && activeReqs.length > 0) {
-          reqId = activeReqs[0].id;
-          radius = activeReqs[0].radius_km;
-          startedDate = new Date(activeReqs[0].created_at);
-          expirationDate = new Date(activeReqs[0].expires_at);
-        }
-      }
-
-      setActiveRequestId(reqId);
-      setCurrentRadius(radius);
-      setActiveRequestStartedAt(startedDate);
-      setActiveRequestUntil(expirationDate);
-
-      const matchesData = await apiGet('/api/matchmaking/matches/');
-      setMatches(matchesData);
-      setHasNewMatch(false);
-      setIsMatchmakingModalOpen(true);
-
-    } catch (error) {
-      console.error("Erreur API lors du matchmaking", error);
-      alert("Un problème est survenu lors de la recherche de joueurs.");
-    } finally {
-      setIsMatching(false);
-    }
-  }
-
-  async function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
-    return new Promise((resolve) => {
-      const fallbackToIP = async () => {
-        try {
-          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-          const data = await res.json();
-          resolve({ latitude: parseFloat(data.latitude), longitude: parseFloat(data.longitude) });
-        } catch {
-          resolve({ latitude: 48.8566, longitude: 2.3522 });
-        }
-      };
-
-      if (!navigator.geolocation) {
-        fallbackToIP();
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        (_err) => {
-          console.warn('Géolocalisation refusée ou en erreur, utilisation de l\'IP...');
-          fallbackToIP();
-        }
-      );
-    });
-  }
-
   async function ensureDjangoId(): Promise<string | null> {
     if (djangoId) return djangoId;
     if (igdbId && game) {
@@ -309,6 +169,7 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
+
   async function handleToggleFavorite(isPendingAction = false) {
     if (!isAuthenticated && !isPendingAction) {
       setPendingAction(() => () => handleToggleFavorite(true));
@@ -342,6 +203,21 @@ export default function GamePage() {
       console.error(error);
       alert('Erreur lors de la mise à jour du coup de cœur');
     }
+  }
+
+  // La nouvelle fonction super propre pour lancer le matchmaking
+  async function handleSetMatchmaking(isPendingAction = false) {
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleSetMatchmaking(true));
+      setAuthModalOpen(true);
+      return;
+    }
+
+    const currentDjangoId = await ensureDjangoId();
+    if (!currentDjangoId) return;
+
+    // Délègue tout le travail au Provider global
+    await startMatchmaking(currentDjangoId);
   }
 
   if (gameNotFound) {
@@ -570,7 +446,6 @@ export default function GamePage() {
                   precision={0.5}
                   sx={{ mb: 2, fontSize: 40 }}
                 />
-                {/* Statut + Coup de cœur */}
                 <Box
                   sx={{
                     width: '100%',
@@ -633,7 +508,6 @@ export default function GamePage() {
                 </Box>
               </Box>
             </Box>
-            {/* Colonne droite : infos */}
             <Box
               sx={{
                 flex: 1.2,
@@ -734,10 +608,10 @@ export default function GamePage() {
             }}
           >
             <SecondaryButton
-              onClick={() => handleMatchmaking()}
+              onClick={() => handleSetMatchmaking()}
               disabled={isMatching}
             >
-              {isMatching ? 'Recherche en cours...' : 'Matchmaking'}
+              {isMatching ? 'Recherche...' : 'Matchmaking'}
             </SecondaryButton>
             <Button
               variant="contained"
@@ -765,22 +639,6 @@ export default function GamePage() {
           </Box>
         </Paper>
       </Box>
-      {!isMatchmakingModalOpen && (
-        <FloatingMatchmakingWidget
-          startedAt={activeRequestStartedAt}
-          hasNewMatch={hasNewMatch}
-          onClick={() => {
-            setIsMatchmakingModalOpen(true);
-            setHasNewMatch(false);
-          }}
-        />
-      )}
-      <MatchmakingModal
-        open={isMatchmakingModalOpen}
-        onClose={() => setIsMatchmakingModalOpen(false)}
-        matches={matches}
-        startedAt={activeRequestStartedAt}
-      />
     </Box>
   );
 }
