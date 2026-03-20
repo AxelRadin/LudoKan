@@ -15,28 +15,35 @@ def normalize(s: str) -> str:
     return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().strip()
 
 
-def fetch_french_names(names_en: list[str]) -> dict[str, str | None]:
-    result: dict[str, str | None] = {n: None for n in names_en}
+def _sparql_escape_quoted(s: str) -> str:
+    return s.replace("\\", "\\\\").replace('"', '\\"')
 
-    for i in range(0, len(names_en), CHUNK_SIZE):
-        chunk = names_en[i : i + CHUNK_SIZE]
 
-        values_lines = []
-        for t in chunk:
-            variants = {t}
-            cleaned = t.replace("Version", "").replace("Edition", "").replace("  ", " ").strip()
-            if cleaned and cleaned != t:
-                variants.add(cleaned)
-            for v in variants:
-                safe = v.replace("\\", "\\\\").replace('"', '\\"')
-                safe_t = t.replace("\\", "\\\\").replace('"', '\\"')
-                values_lines.append(f'("{safe}" "{safe_t}")')
+def _title_search_variants(title: str) -> set[str]:
+    variants = {title}
+    cleaned = title.replace("Version", "").replace("Edition", "").replace("  ", " ").strip()
+    if cleaned and cleaned != title:
+        variants.add(cleaned)
+    return variants
 
-        sparql = f"""
+
+def _values_lines_for_chunk(chunk: list[str]) -> list[str]:
+    lines: list[str] = []
+    for t in chunk:
+        for v in _title_search_variants(t):
+            safe_v = _sparql_escape_quoted(v)
+            safe_t = _sparql_escape_quoted(t)
+            lines.append(f'("{safe_v}" "{safe_t}")')
+    return lines
+
+
+def _sparql_french_labels_query(values_lines: list[str]) -> str:
+    joined = chr(10).join(values_lines)
+    return f"""
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 SELECT ?originalName ?frLabel WHERE {{
   VALUES (?searchName ?originalName) {{
-    {chr(10).join(values_lines)}
+    {joined}
   }}
   ?item wdt:P31 wd:Q7889.
   {{
@@ -50,30 +57,42 @@ SELECT ?originalName ?frLabel WHERE {{
 }}
 """.strip()
 
+
+def _wikidata_bindings_for_query(sparql: str) -> list:
+    r = requests.get(
+        SPARQL_ENDPOINT,
+        params={"format": "json", "query": sparql},
+        headers={
+            "Accept": "application/sparql+json",
+            "User-Agent": WIKIDATA_USER_AGENT,
+        },
+        timeout=15,
+    )
+    if not r.ok:
+        return []
+    return r.json().get("results", {}).get("bindings", [])
+
+
+def _merge_french_bindings(bindings: list, out: dict[str, str | None]) -> None:
+    for b in bindings:
+        original = b.get("originalName", {}).get("value")
+        fr = b.get("frLabel", {}).get("value")
+        if original and fr and fr.strip():
+            out[original] = fr
+
+
+def fetch_french_names(names_en: list[str]) -> dict[str, str | None]:
+    result: dict[str, str | None] = {n: None for n in names_en}
+
+    for i in range(0, len(names_en), CHUNK_SIZE):
+        chunk = names_en[i : i + CHUNK_SIZE]
+        sparql = _sparql_french_labels_query(_values_lines_for_chunk(chunk))
         try:
-            r = requests.get(
-                SPARQL_ENDPOINT,
-                params={"format": "json", "query": sparql},
-                headers={
-                    "Accept": "application/sparql+json",
-                    "User-Agent": WIKIDATA_USER_AGENT,
-                },
-                timeout=15,
-            )
-            if not r.ok:
-                continue
-
-            bindings = r.json().get("results", {}).get("bindings", [])
-            for b in bindings:
-                original = b.get("originalName", {}).get("value")
-                fr = b.get("frLabel", {}).get("value")
-                if original and fr and fr.strip():
-                    result[original] = fr
-
+            bindings = _wikidata_bindings_for_query(sparql)
+            _merge_french_bindings(bindings, result)
         except Exception:
             pass
-
-        time.sleep(0.5)  # respect Wikidata rate limits
+        time.sleep(0.5)
 
     return result
 
