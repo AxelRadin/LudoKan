@@ -108,6 +108,41 @@ def _is_igdb_unavailable(exc):
     return "igdb error 401" in msg or "authorization failure" in msg or "improperlyconfigured" in msg
 
 
+def _igdb_response_as_list(data) -> list:
+    return data if isinstance(data, list) else []
+
+
+def _search_page_name_matches(q_esc: str, q_norm_esc: str, limit: int, offset: int) -> list:
+    """Requête(s) IGDB name ~ sur q_esc puis, si besoin, sur la requête normalisée."""
+    name_body = (
+        f"{FIELDS_SEARCH_PAGE} "
+        f'where name ~ *"{q_esc}"* & total_rating_count > 0; '
+        f"sort total_rating_count desc; limit {limit}; offset {offset};"
+    )
+    arr = _igdb_response_as_list(igdb_client.igdb_request("games", name_body))
+    if not arr and q_norm_esc != q_esc:
+        name_body = (
+            f"{FIELDS_SEARCH_PAGE} "
+            f'where name ~ *"{q_norm_esc}"* & total_rating_count > 0; '
+            f"sort total_rating_count desc; limit {limit}; offset {offset};"
+        )
+        arr = _igdb_response_as_list(igdb_client.igdb_request("games", name_body))
+    return arr
+
+
+def _search_page_fallback_search(q_esc: str, limit: int) -> list:
+    """Recherche search limit 50, tri par total_rating_count ; erreurs ignorées."""
+    search_body = f'{FIELDS_SEARCH_PAGE} search "{q_esc}"; limit 50;'
+    try:
+        search_arr = _igdb_response_as_list(igdb_client.igdb_request("games", search_body))
+        return sorted(
+            search_arr,
+            key=lambda g: -(g.get("total_rating_count") or 0),
+        )[:limit]
+    except Exception:
+        return []
+
+
 class IgdbGamesListView(APIView):
     """GET /api/igdb/games/ — Liste de jeux (ex. 10 derniers)."""
 
@@ -443,35 +478,9 @@ class IgdbSearchPageView(APIView):
         q_norm_esc = escape_igdb_string(normalize_query(q))
 
         try:
-            name_body = (
-                f"{FIELDS_SEARCH_PAGE} "
-                f'where name ~ *"{q_esc}"* & total_rating_count > 0; '
-                f"sort total_rating_count desc; limit {limit}; offset {offset};"
-            )
-            arr = igdb_client.igdb_request("games", name_body)
-            arr = arr if isinstance(arr, list) else []
-
-            if not arr and q_norm_esc != q_esc:
-                name_body = (
-                    f"{FIELDS_SEARCH_PAGE} "
-                    f'where name ~ *"{q_norm_esc}"* & total_rating_count > 0; '
-                    f"sort total_rating_count desc; limit {limit}; offset {offset};"
-                )
-                arr = igdb_client.igdb_request("games", name_body)
-                arr = arr if isinstance(arr, list) else []
-
+            arr = _search_page_name_matches(q_esc, q_norm_esc, limit, offset)
             if not arr and offset == 0:
-                search_body = f'{FIELDS_SEARCH_PAGE} search "{q_esc}"; limit 50;'
-                try:
-                    search_arr = igdb_client.igdb_request("games", search_body)
-                    search_arr = search_arr if isinstance(search_arr, list) else []
-                    arr = sorted(
-                        search_arr,
-                        key=lambda g: -(g.get("total_rating_count") or 0),
-                    )[:limit]
-                except Exception:
-                    pass
-
+                arr = _search_page_fallback_search(q_esc, limit)
             enriched = enrich_with_wikidata_display_name(arr)
             return Response(enriched)
         except Exception as e:
