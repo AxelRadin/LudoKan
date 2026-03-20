@@ -49,7 +49,14 @@ export const GameCard: React.FC<GameCardProps> = ({
   };
 
   const addButtonContent = useMemo(
-    () => renderAddToLibraryIcon(adding, added),
+    () =>
+      renderAddToLibraryIcon({
+        adding,
+        added,
+        iconSize: 16,
+        loaderSize: 14,
+        loaderSx: { color: '#fff' },
+      }),
     [adding, added]
   );
 

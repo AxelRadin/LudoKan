@@ -1,5 +1,3 @@
-import AddIcon from '@mui/icons-material/Add';
-import CheckIcon from '@mui/icons-material/Check';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Avatar,
@@ -29,6 +27,7 @@ import {
   type IgdbGame,
 } from '../api/igdb';
 import { useAuth } from '../hooks/useAuth';
+import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -260,13 +259,12 @@ const GameSearchBar: React.FC = () => {
                                 addedIds.has(game.id) ? 'success' : 'default'
                               }
                             >
-                              {addingId === game.id ? (
-                                <CircularProgress size={16} />
-                              ) : addedIds.has(game.id) ? (
-                                <CheckIcon fontSize="small" />
-                              ) : (
-                                <AddIcon fontSize="small" />
-                              )}
+                              {renderAddToLibraryIcon({
+                                adding: addingId === game.id,
+                                added: addedIds.has(game.id),
+                                iconSize: 20,
+                                loaderSize: 16,
+                              })}
                             </IconButton>
                           </span>
                         </Tooltip>
