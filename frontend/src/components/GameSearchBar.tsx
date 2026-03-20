@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { getCoverUrl, type IgdbGame } from '../api/igdb';
 import { useIgdbSuggestions } from '../hooks/useIgdbSuggestions';
-// import Link from "next/dist/client/link";
 import { Link } from 'react-router-dom';
 
-//
-
-type Props = {
+type Props = Readonly<{
   onSelect: (game: IgdbGame) => void;
-};
+}>;
 
 function getDisplayName(game: IgdbGame): string {
   return (game as any).display_name ?? game.name;
