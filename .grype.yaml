@@ -33,7 +33,12 @@ ignore:
     reason: "Won't fix by Debian - curl system package"
   - vulnerability: CVE-2026-2219
     reason: "Won't fix by Debian - dpkg system package"
-
+  - vulnerability: CVE-2026-3805
+    reason: "Won't fix by Debian - curl / libcurl4t64 system package"
+  - vulnerability: CVE-2026-2673
+    reason: "Won't fix by Debian - openssl / libssl3t64 system packages"
+  - vulnerability: CVE-2026-27135
+    reason: "Debian - libnghttp2-14 system package (no fix in base image)"
 # Sources de données de vulnérabilités
 db:
   auto-update: true
