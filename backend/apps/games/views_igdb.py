@@ -21,18 +21,16 @@ from apps.games.igdb_search import escape_igdb_string, normalize_query
 from apps.games.igdb_wikidata import enrich_with_wikidata_display_name, wikidata_french_label_by_english_title_debug
 
 # Champs IGDB communs pour les listes de jeux
-FIELDS_GAMES_LIST = "fields name,cover.url,first_release_date,summary,platforms.name," "total_rating,total_rating_count;"
-FIELDS_GAMES_LIST_WITH_GENRES = "fields name,cover.url,first_release_date,summary,platforms.name," "total_rating,total_rating_count,genres;"
+FIELDS_GAMES_LIST = "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count;"
+FIELDS_GAMES_LIST_WITH_GENRES = "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,genres;"
 FIELDS_GAMES_SEARCH = (
-    "fields name,cover.url,first_release_date,summary,platforms.name,"
-    "total_rating,total_rating_count,alternative_names.name,"
-    "game_localizations.name,game_localizations.region.name,"
-    "franchises.id,franchises.name,collections.id,collections.name;"
+    "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,"
+    + "alternative_names.name,game_localizations.name,game_localizations.region.name,"
+    + "franchises.id,franchises.name,collections.id,collections.name;"
 )
 FIELDS_GAME_DETAIL = (
-    "fields name,cover.url,first_release_date,summary,platforms.name,genres.name,"
-    "total_rating,total_rating_count,collections.id,collections.name,"
-    "franchises.id,franchises.name;"
+    "fields name,cover.url,first_release_date,summary,platforms.name,genres.name,total_rating,total_rating_count,"
+    + "collections.id,collections.name,franchises.id,franchises.name;"
 )
 FIELDS_SEARCH_PAGE = "fields name,cover.url,first_release_date,platforms.name,total_rating,total_rating_count;"
 
@@ -117,7 +115,7 @@ class IgdbGamesListView(APIView):
 
     def get(self, request):
         try:
-            query = "fields name,cover.url,first_release_date,summary,platforms.name;" "sort first_release_date desc;" "limit 10;"
+            query = "fields name,cover.url,first_release_date,summary,platforms.name;sort first_release_date desc;limit 10;"
             data = igdb_client.igdb_request("games", query)
             return Response(data if isinstance(data, list) else [])
         except Exception as e:
