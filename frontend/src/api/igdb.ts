@@ -1,12 +1,4 @@
-/**
- * Module IGDB : types, helpers et appels API vers Django (/api/igdb/...).
- * Toutes les requêtes passent par services/api.ts (même base URL que le reste de l'app).
- */
 import { apiGet, apiPost } from '../services/api';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 export type IgdbPlatform = {
   id: number;
@@ -68,13 +60,6 @@ export type FranchiseResult = {
   type: 'franchise' | 'collection';
 };
 
-/** Alias pour compatibilité avec useGames (ex-Giant Bomb). */
-export type GBGame = IgdbGame;
-
-// ---------------------------------------------------------------------------
-// Helpers (purs, pas d'appel réseau)
-// ---------------------------------------------------------------------------
-
 export function getCoverUrl(cover?: IgdbCover): string | null {
   if (!cover?.url) return null;
   if (cover.url.startsWith('//')) {
@@ -88,10 +73,6 @@ export function formatReleaseDate(ts?: number): string | null {
   const date = new Date(ts * 1000);
   return date.toLocaleDateString();
 }
-
-// ---------------------------------------------------------------------------
-// Appels IGDB (Django /api/igdb/...)
-// ---------------------------------------------------------------------------
 
 export async function fetchIgdbGames(): Promise<IgdbGame[]> {
   return apiGet('/api/igdb/games/');
@@ -110,7 +91,6 @@ export async function searchIgdbGames(
   return apiGet(`/api/igdb/search/?${params}`);
 }
 
-/** searchGames(q, { limit }) pour useSearchGames. */
 export async function searchGames(
   q: string,
   options?: { limit?: number; suggest?: boolean }
@@ -124,7 +104,6 @@ export async function fetchTrendingGames(
   genre?: number,
   offset = 0,
   signal?: AbortSignal,
-  /** false = réponse rapide sans appels Wikidata (noms EN uniquement). */
   enrich = true
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
@@ -216,7 +195,6 @@ export async function addGameToLibrary(djangoGameId: number): Promise<void> {
   });
 }
 
-/** fetchGames pour useGames : liste de jeux IGDB (api/igdb/games/). */
 export async function fetchGames(_options?: {
   limit?: number;
   offset?: number;

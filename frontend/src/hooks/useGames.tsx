@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { GBGame } from '../api/igdb';
+import type { IgdbGame } from '../api/igdb';
 import { fetchGames } from '../api/igdb';
 
 type UseGamesOptions = {
@@ -10,7 +10,7 @@ type UseGamesOptions = {
 };
 
 export function useGames(options?: UseGamesOptions) {
-  const [games, setGames] = useState<GBGame[]>([]);
+  const [games, setGames] = useState<IgdbGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
