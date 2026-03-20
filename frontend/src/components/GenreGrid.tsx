@@ -55,7 +55,7 @@ export const GenreGrid: React.FC<GenreGridProps> = ({ onGenreClick }) => (
       {genres.map(genre => (
         <Card
           key={genre.name}
-          onClick={() => onGenreClick && onGenreClick(genre.id, genre.name)}
+          onClick={() => onGenreClick?.(genre.id, genre.name)}
           sx={{
             backgroundColor: '#1e1e1e',
             borderRadius: 2,
