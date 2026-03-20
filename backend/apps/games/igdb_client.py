@@ -93,7 +93,7 @@ def get_igdb_headers():
     client_id = (env_config("IGDB_CLIENT_ID", default="") or env_config("TWITCH_CLIENT_ID", default="")).strip()
     token = env_config("IGDB_ACCESS_TOKEN", default="").strip()
     if not client_id or not token:
-        raise ImproperlyConfigured("Définir TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET (recommandé), " "ou IGDB_CLIENT_ID + IGDB_ACCESS_TOKEN.")
+        raise ImproperlyConfigured("Définir TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET (recommandé), ou IGDB_CLIENT_ID + IGDB_ACCESS_TOKEN.")
     return {
         "Client-ID": client_id,
         "Authorization": f"Bearer {token}",
