@@ -3,6 +3,21 @@ import { Link, useParams } from 'react-router-dom';
 import { useCollectionGames } from '../hooks/useCollectionGames';
 import { formatReleaseDate, getCoverUrl, type IgdbGame } from '../api/igdb';
 
+const LICENCE_GRID_SKELETON_KEYS = [
+  'licence-skel-a',
+  'licence-skel-b',
+  'licence-skel-c',
+  'licence-skel-d',
+  'licence-skel-e',
+  'licence-skel-f',
+  'licence-skel-g',
+  'licence-skel-h',
+  'licence-skel-i',
+  'licence-skel-j',
+  'licence-skel-k',
+  'licence-skel-l',
+] as const;
+
 function SkeletonCard() {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm">
@@ -23,7 +38,7 @@ function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
   const cover = getCoverUrl(g.cover);
   const release = formatReleaseDate(g.first_release_date);
 
-  const displayName = (g as any).display_name ?? g.name;
+  const displayName = g.display_name ?? g.name;
 
   return (
     <div className="group rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition hover:-translate-y-[1px] hover:shadow-md">
@@ -186,7 +201,7 @@ export default function LicensePage() {
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {loading
-            ? Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)
+            ? LICENCE_GRID_SKELETON_KEYS.map(key => <SkeletonCard key={key} />)
             : games.map(g => <GameCard key={g.id} g={g} />)}
         </div>
 
