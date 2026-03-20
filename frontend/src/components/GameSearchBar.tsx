@@ -20,7 +20,6 @@ export default function GameSearchBar({ onSelect }: Props) {
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Pour fermer quand qqn clique en dehors
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!containerRef.current) return;
@@ -96,7 +95,6 @@ export default function GameSearchBar({ onSelect }: Props) {
                 g.name,
                 g.game_localizations?.map(l => l.region?.name)
               );
-              //console.log("SUGG ITEM", g.id, g.name);
               return (
                 <button
                   key={g.id}
@@ -155,8 +153,8 @@ export default function GameSearchBar({ onSelect }: Props) {
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div
                       style={{
-                        color: '#111', // ✅ force la couleur
-                        fontSize: 14, // ✅ force la taille
+                        color: '#111',
+                        fontSize: 14,
                         lineHeight: '18px',
                         fontWeight: 600,
                         whiteSpace: 'nowrap',
@@ -192,7 +190,7 @@ export default function GameSearchBar({ onSelect }: Props) {
                     {g.platforms?.length ? (
                       <div
                         style={{
-                          color: '#555', // ✅ force la couleur
+                          color: '#555',
                           fontSize: 12,
                           lineHeight: '16px',
                           whiteSpace: 'nowrap',
