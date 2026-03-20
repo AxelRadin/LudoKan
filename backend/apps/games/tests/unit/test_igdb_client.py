@@ -6,8 +6,15 @@ from django.core.exceptions import ImproperlyConfigured
 from apps.games import igdb_client
 
 
+def _reset_twitch_token_cache():
+    igdb_client._twitch_token_cache["access_token"] = None
+    igdb_client._twitch_token_cache["expires_at"] = 0
+
+
 def test_get_igdb_headers_ok(monkeypatch):
     """Avec IGDB_ACCESS_TOKEN défini, on l'utilise (comportement legacy)."""
+    monkeypatch.delenv("TWITCH_CLIENT_ID", raising=False)
+    monkeypatch.delenv("TWITCH_CLIENT_SECRET", raising=False)
     monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
     monkeypatch.setenv("IGDB_ACCESS_TOKEN", "token-123")
 
@@ -15,7 +22,7 @@ def test_get_igdb_headers_ok(monkeypatch):
 
     assert headers["Client-ID"] == "client-id"
     assert headers["Authorization"] == "Bearer token-123"
-    assert headers["Accept"] == "application/json"
+    assert headers["Content-Type"] == "text/plain"
 
 
 def test_get_igdb_headers_missing_client_id(monkeypatch):
@@ -40,6 +47,7 @@ def test_get_igdb_headers_missing_access_token_falls_back_to_twitch(monkeypatch)
 
 def test_get_twitch_access_token_success(monkeypatch):
     """Token Twitch récupéré via OAuth et mis en cache."""
+    _reset_twitch_token_cache()
     monkeypatch.setenv("TWITCH_CLIENT_ID", "twitch-cid")
     monkeypatch.setenv("TWITCH_CLIENT_SECRET", "twitch-secret")
     monkeypatch.delenv("IGDB_ACCESS_TOKEN", raising=False)
@@ -80,7 +88,7 @@ def test_igdb_request_success(monkeypatch):
 
     assert called["headers_called"] is True
     assert called["url"].endswith("/games")
-    assert called["data"] == "fields *;"
+    assert called["data"] == b"fields *;"
     assert called["timeout"] == 10
     assert result == [{"id": 1, "name": "Game"}]
 
