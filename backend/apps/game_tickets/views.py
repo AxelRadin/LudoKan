@@ -24,6 +24,8 @@ from apps.game_tickets.serializers import (
 from apps.users.permissions import IsAdminWithPermission
 from apps.users.utils import log_admin_action
 
+TICKET_CHANGE_STATUS_PERMISSION = "ticket.change_status"
+
 
 @extend_schema_view(
     post=extend_schema(
@@ -110,7 +112,7 @@ class GameTicketAttachmentCreateView(generics.CreateAPIView):
 )
 class GameTicketStartReviewAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TICKET_CHANGE_STATUS_PERMISSION
 
     def post(self, request, pk):
         try:
@@ -165,7 +167,7 @@ class GameTicketStartReviewAPIView(APIView):
 )
 class GameTicketApproveAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TICKET_CHANGE_STATUS_PERMISSION
 
     def post(self, request, pk):
         try:
@@ -222,7 +224,7 @@ class GameTicketApproveAPIView(APIView):
 )
 class GameTicketRejectAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TICKET_CHANGE_STATUS_PERMISSION
 
     def post(self, request, pk):
         serializer = GameTicketStatusUpdateSerializer(data=request.data, context={"action": "reject"})
@@ -279,7 +281,7 @@ class GameTicketRejectAPIView(APIView):
 )
 class GameTicketPublishAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TICKET_CHANGE_STATUS_PERMISSION
 
     def post(self, request, pk):
         try:
