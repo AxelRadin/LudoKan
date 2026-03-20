@@ -1,17 +1,9 @@
-import AddIcon from '@mui/icons-material/Add';
-import CheckIcon from '@mui/icons-material/Check';
-import {
-  Box,
-  Card,
-  CardMedia,
-  CircularProgress,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
-import React, { useState } from 'react';
+import { Box, Card, CardMedia, IconButton, Tooltip } from '@mui/material';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addGameToLibrary, importIgdbGameToDjango } from '../api/igdb';
 import { useAuth } from '../hooks/useAuth';
+import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 
 interface GameCardProps {
   id: number;
@@ -56,6 +48,11 @@ export const GameCard: React.FC<GameCardProps> = ({
     }
   };
 
+  const addButtonContent = useMemo(
+    () => renderAddToLibraryIcon(adding, added),
+    [adding, added]
+  );
+
   return (
     <Card
       onClick={() => navigate(igdb ? `/game/igdb/${id}` : `/game/${id}`)}
@@ -92,13 +89,7 @@ export const GameCard: React.FC<GameCardProps> = ({
                   height: 28,
                 }}
               >
-                {adding ? (
-                  <CircularProgress size={14} sx={{ color: '#fff' }} />
-                ) : added ? (
-                  <CheckIcon sx={{ fontSize: 16 }} />
-                ) : (
-                  <AddIcon sx={{ fontSize: 16 }} />
-                )}
+                {addButtonContent}
               </IconButton>
             </span>
           </Tooltip>
