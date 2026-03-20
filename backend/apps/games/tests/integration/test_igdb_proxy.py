@@ -441,7 +441,7 @@ class TestIgdbProxyTranslate:
                 json=lambda: {"responseData": {"translatedText": "Bonjour q=test"}},
             )
 
-        monkeypatch.setattr("apps.games.views_igdb.requests.get", fake_get)
+        monkeypatch.setattr("apps.games.views_igdb_helpers.requests.get", fake_get)
         response = api_client.post(
             "/api/igdb/translate/",
             {"text": "Hello. World"},
@@ -454,7 +454,7 @@ class TestIgdbProxyTranslate:
         def fake_get(url, headers, timeout):
             raise ConnectionError("down")
 
-        monkeypatch.setattr("apps.games.views_igdb.requests.get", fake_get)
+        monkeypatch.setattr("apps.games.views_igdb_helpers.requests.get", fake_get)
         response = api_client.post(
             "/api/igdb/translate/",
             {"text": "Only chunk"},
@@ -732,7 +732,7 @@ class TestIgdbProxyTranslateExtra:
             captured["url"] = url
             return SimpleNamespace(ok=True, json=lambda: {"responseData": {"translatedText": "ok"}})
 
-        monkeypatch.setattr("apps.games.views_igdb.requests.get", fake_get)
+        monkeypatch.setattr("apps.games.views_igdb_helpers.requests.get", fake_get)
         long_text = "word " * (MAX_TRANSLATE_TEXT_LEN // 5 + 50)
         assert len(long_text) > MAX_TRANSLATE_TEXT_LEN
         response = api_client.post(
@@ -751,7 +751,7 @@ class TestIgdbProxyTranslateExtra:
             calls.append(1)
             return SimpleNamespace(ok=True, json=lambda: {"responseData": {"translatedText": "x"}})
 
-        monkeypatch.setattr("apps.games.views_igdb.requests.get", fake_get)
+        monkeypatch.setattr("apps.games.views_igdb_helpers.requests.get", fake_get)
         text = "Hello. " * 120
         response = api_client.post(
             "/api/igdb/translate/",
@@ -768,7 +768,7 @@ class TestIgdbProxyTranslateExtra:
                 json=lambda: {"responseData": {"translatedText": "   "}},
             )
 
-        monkeypatch.setattr("apps.games.views_igdb.requests.get", fake_get)
+        monkeypatch.setattr("apps.games.views_igdb_helpers.requests.get", fake_get)
         response = api_client.post(
             "/api/igdb/translate/",
             {"text": "Original"},
@@ -780,7 +780,7 @@ class TestIgdbProxyTranslateExtra:
     def test_translate_empty_chunks_fallback_slice(self, api_client, monkeypatch):
         """Aucune phrase → chunks vides → repli text[:480] (l. 513-514)."""
         monkeypatch.setattr(
-            "apps.games.views_igdb._split_sentences_for_translate",
+            "apps.games.views_igdb_helpers.split_sentences_for_translate",
             lambda _t: [],
         )
 
@@ -790,7 +790,7 @@ class TestIgdbProxyTranslateExtra:
                 json=lambda: {"responseData": {"translatedText": "OK"}},
             )
 
-        monkeypatch.setattr("apps.games.views_igdb.requests.get", fake_get)
+        monkeypatch.setattr("apps.games.views_igdb_helpers.requests.get", fake_get)
         response = api_client.post(
             "/api/igdb/translate/",
             {"text": "Hello"},

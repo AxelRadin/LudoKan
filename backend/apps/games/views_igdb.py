@@ -5,10 +5,7 @@ Préfixe URL : api/igdb/
 """
 
 import logging
-import time
-from urllib.parse import urlencode
 
-import requests
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from rest_framework import status
@@ -17,75 +14,21 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.games import igdb_client
+from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL, TRENDING_CACHE_TTL
 from apps.games.igdb_search import escape_igdb_string, normalize_query
 from apps.games.igdb_wikidata import enrich_with_wikidata_display_name, wikidata_french_label_by_english_title_debug
-
-# Champs IGDB communs pour les listes de jeux
-FIELDS_GAMES_LIST = "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count;"
-FIELDS_GAMES_LIST_WITH_GENRES = "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,genres;"
-FIELDS_GAMES_SEARCH = (
-    "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,"
-    + "alternative_names.name,game_localizations.name,game_localizations.region.name,"
-    + "franchises.id,franchises.name,collections.id,collections.name;"
+from apps.games.views_igdb_helpers import (
+    franchises_collections_fetch_terms,
+    franchises_search_build_payload,
+    igdb_search_non_suggest_results,
+    igdb_search_suggest_results,
+    parse_genre_id_param,
+    search_page_fallback_search,
+    search_page_name_matches,
+    translate_request_body_to_french,
+    trending_enrich_for_response,
+    trending_fetch_games_array,
 )
-FIELDS_GAME_DETAIL = (
-    "fields name,cover.url,first_release_date,summary,platforms.name,genres.name,total_rating,total_rating_count,"
-    + "collections.id,collections.name,franchises.id,franchises.name;"
-)
-FIELDS_SEARCH_PAGE = "fields name,cover.url,first_release_date,platforms.name,total_rating,total_rating_count;"
-
-NOW = int(time.time())
-TRENDING_SORTS = {
-    "popularity": "where total_rating_count > 0; sort total_rating_count desc;",
-    "rating": "where total_rating_count > 50 & total_rating != null; sort total_rating desc;",
-    "recent": f"where first_release_date < {NOW} & first_release_date > 0 & total_rating_count > 0; sort first_release_date desc;",
-    "most_rated": "where total_rating_count > 100 & total_rating != null; sort total_rating_count desc;",
-}
-MYMEMORY_URL = "https://api.mymemory.translated.net/get"
-# Limite stricte pour éviter abus API + travail CPU sur de très longues chaînes
-MAX_TRANSLATE_TEXT_LEN = 20_000
-
-
-def _split_sentences_for_translate(text: str) -> list[str]:
-    """
-    Découpe approximativement par phrases (fin sur . ! ? puis espaces).
-    Parcours O(n), sans regex sujette au ReDoS.
-    """
-    out = []
-    start = 0
-    n = len(text)
-    i = 0
-    while i < n:
-        if text[i] in ".!?":
-            i += 1
-            while i < n and text[i] in " \t\n\r\f\v":
-                i += 1
-            out.append(text[start:i])
-            start = i
-        else:
-            i += 1
-    if start < n:
-        out.append(text[start:])
-    stripped = [p for p in out if p.strip()]
-    return stripped if stripped else [text]
-
-
-def _remove_q_equals_artifact(s: str) -> str:
-    """
-    Retire les artefacts « q= » (paramètre d'URL) en début de segment ou après espace,
-    uniquement si « q= » est suivi d'un caractère non blanc (comme l'ancien (?=\\S)).
-    Implémentation linéaire, sans regex à backtracking.
-    """
-    parts: list[str] = []
-    i = 0
-    n = len(s)
-    while i < n:
-        if i + 1 < n and s[i] == "q" and s[i + 1] == "=" and (i == 0 or s[i - 1].isspace()) and i + 2 < n and not s[i + 2].isspace():
-            i += 2
-            continue
-        parts.append(s[i])
-        i += 1
-    return "".join(parts)
 
 
 def _clamp_limit(limit_raw, min_val=1, max_val=50):
@@ -108,41 +51,6 @@ def _is_igdb_unavailable(exc):
     return "igdb error 401" in msg or "authorization failure" in msg or "improperlyconfigured" in msg
 
 
-def _igdb_response_as_list(data) -> list:
-    return data if isinstance(data, list) else []
-
-
-def _search_page_name_matches(q_esc: str, q_norm_esc: str, limit: int, offset: int) -> list:
-    """Requête(s) IGDB name ~ sur q_esc puis, si besoin, sur la requête normalisée."""
-    name_body = (
-        f"{FIELDS_SEARCH_PAGE} "
-        f'where name ~ *"{q_esc}"* & total_rating_count > 0; '
-        f"sort total_rating_count desc; limit {limit}; offset {offset};"
-    )
-    arr = _igdb_response_as_list(igdb_client.igdb_request("games", name_body))
-    if not arr and q_norm_esc != q_esc:
-        name_body = (
-            f"{FIELDS_SEARCH_PAGE} "
-            f'where name ~ *"{q_norm_esc}"* & total_rating_count > 0; '
-            f"sort total_rating_count desc; limit {limit}; offset {offset};"
-        )
-        arr = _igdb_response_as_list(igdb_client.igdb_request("games", name_body))
-    return arr
-
-
-def _search_page_fallback_search(q_esc: str, limit: int) -> list:
-    """Recherche search limit 50, tri par total_rating_count ; erreurs ignorées."""
-    search_body = f'{FIELDS_SEARCH_PAGE} search "{q_esc}"; limit 50;'
-    try:
-        search_arr = _igdb_response_as_list(igdb_client.igdb_request("games", search_body))
-        return sorted(
-            search_arr,
-            key=lambda g: -(g.get("total_rating_count") or 0),
-        )[:limit]
-    except Exception:
-        return []
-
-
 class IgdbGamesListView(APIView):
     """GET /api/igdb/games/ — Liste de jeux (ex. 10 derniers)."""
 
@@ -162,9 +70,6 @@ class IgdbGamesListView(APIView):
             )
 
 
-TRENDING_CACHE_TTL = 120  # secondes (2 min)
-
-
 class IgdbTrendingView(APIView):
     """GET /api/igdb/trending/ — Jeux tendances (sort, limit, offset, genre). Cache Redis 2 min."""
 
@@ -174,11 +79,7 @@ class IgdbTrendingView(APIView):
         sort = request.query_params.get("sort", "popularity")
         limit = _clamp_limit(request.query_params.get("limit"), 1, 50)
         offset = _clamp_offset(request.query_params.get("offset"))
-        genre_id = request.query_params.get("genre")
-        try:
-            genre_id = int(genre_id) if genre_id is not None else None
-        except (TypeError, ValueError):
-            genre_id = None
+        genre_id = parse_genre_id_param(request.query_params.get("genre"))
         enrich = request.query_params.get("enrich", "1") != "0"
 
         cache_key = f"igdb:trending:{sort}:{limit}:{offset}:{genre_id or ''}:{enrich}"
@@ -186,29 +87,9 @@ class IgdbTrendingView(APIView):
         if cached is not None:
             return Response(cached)
 
-        sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
         try:
-            if genre_id is not None:
-                need = offset + limit
-                query = (
-                    f"{FIELDS_GAMES_LIST_WITH_GENRES}"
-                    f"where genres = ({genre_id}) & total_rating_count > 0; "
-                    f"sort total_rating_count desc; limit {min(need, 50)};"
-                )
-                raw = igdb_client.igdb_request("games", query)
-                raw = raw if isinstance(raw, list) else []
-                pure = [g for g in raw if (g.get("genres") or []) and len(g["genres"]) == 1]
-                mixed = [g for g in raw if (g.get("genres") or []) and len(g["genres"]) != 1]
-                arr = (pure + mixed)[offset : offset + limit]
-            else:
-                query = f"{FIELDS_GAMES_LIST} {sort_clause} limit {limit}; offset {offset};"
-                arr = igdb_client.igdb_request("games", query)
-                arr = arr if isinstance(arr, list) else []
-
-            if enrich:
-                enriched = enrich_with_wikidata_display_name(arr)
-            else:
-                enriched = [{**g, "display_name": g.get("name") or "", "name_fr": None, "name_en": (g.get("name") or "").strip()} for g in arr]
+            arr = trending_fetch_games_array(igdb_client.igdb_request, genre_id, sort, limit, offset)
+            enriched = trending_enrich_for_response(arr, enrich, enrich_with_wikidata_display_name)
             cache.set(cache_key, enriched, TRENDING_CACHE_TTL)
             return Response(enriched)
         except Exception as e:
@@ -243,59 +124,9 @@ class IgdbSearchView(APIView):
 
         try:
             if suggest:
-                name_query = (
-                    f"{FIELDS_GAMES_SEARCH} " f'where name ~ *"{q_esc}"* & total_rating_count > 0; ' f"sort total_rating_count desc; limit {limit};"
-                )
-                search_query = f'{FIELDS_GAMES_SEARCH} search "{q_esc}"; limit 50;'
-                name_results = []
-                search_results = []
-                try:
-                    name_results = igdb_client.igdb_request("games", name_query)
-                except Exception:
-                    pass
-                try:
-                    search_results = igdb_client.igdb_request("games", search_query)
-                except Exception:
-                    pass
-                name_results = name_results if isinstance(name_results, list) else []
-                search_results = search_results if isinstance(search_results, list) else []
-
-                seen = set()
-                merged = []
-                for g in name_results:
-                    gid = g.get("id")
-                    if gid is not None and gid not in seen:
-                        seen.add(gid)
-                        merged.append(g)
-                for g in search_results:
-                    gid = g.get("id")
-                    if gid is not None and gid not in seen:
-                        seen.add(gid)
-                        merged.append(g)
-                arr = sorted(
-                    [g for g in merged if (g.get("total_rating_count") or 0) > 0],
-                    key=lambda g: -(g.get("total_rating_count") or 0),
-                )[:limit]
-
-                if not arr and q_norm_esc != q_esc:
-                    fallback_query = f'{FIELDS_GAMES_SEARCH} search "{q_norm_esc}"; limit 50;'
-                    try:
-                        fallback = igdb_client.igdb_request("games", fallback_query)
-                        fallback = fallback if isinstance(fallback, list) else []
-                        arr = sorted(
-                            fallback,
-                            key=lambda g: -(g.get("total_rating_count") or 0),
-                        )[:limit]
-                    except Exception:
-                        pass
+                arr = igdb_search_suggest_results(igdb_client.igdb_request, q_esc, q_norm_esc, limit)
             else:
-                query = f'{FIELDS_GAMES_SEARCH} search "{q_esc}"; limit {limit};'
-                arr = igdb_client.igdb_request("games", query)
-                arr = arr if isinstance(arr, list) else []
-                if not arr and q_norm_esc != q_esc:
-                    query = f'{FIELDS_GAMES_SEARCH} search "{q_norm_esc}"; limit {limit};'
-                    arr = igdb_client.igdb_request("games", query)
-                    arr = arr if isinstance(arr, list) else []
+                arr = igdb_search_non_suggest_results(igdb_client.igdb_request, q_esc, q_norm_esc, limit)
 
             enriched = enrich_with_wikidata_display_name(arr)
             return Response(enriched)
@@ -428,36 +259,9 @@ class IgdbFranchisesSearchView(APIView):
         q_norm_esc = escape_igdb_string(normalize_query(q))
         terms = [q_esc] if q_norm_esc == q_esc else [q_esc, q_norm_esc]
 
-        all_franchises = []
-        all_collections = []
-        for term in terms:
-            name_query = f'fields id, name; where name ~ *"{term}"*; limit 5;'
-            try:
-                f_data = igdb_client.igdb_request("franchises", name_query)
-                all_franchises.extend(f_data if isinstance(f_data, list) else [])
-            except Exception:
-                pass
-            try:
-                c_data = igdb_client.igdb_request("collections", name_query)
-                all_collections.extend(c_data if isinstance(c_data, list) else [])
-            except Exception:
-                pass
-
-        seen_f = set()
-        seen_c = set()
-        franchises = []
-        for f in all_franchises:
-            fid = f.get("id")
-            if fid is not None and fid not in seen_f:
-                seen_f.add(fid)
-                franchises.append({"id": fid, "name": f.get("name", ""), "type": "franchise"})
-        collections = []
-        for c in all_collections:
-            cid = c.get("id")
-            if cid is not None and cid not in seen_c:
-                seen_c.add(cid)
-                collections.append({"id": cid, "name": c.get("name", ""), "type": "collection"})
-        return Response(franchises + collections)
+        all_franchises, all_collections = franchises_collections_fetch_terms(igdb_client.igdb_request, terms)
+        payload = franchises_search_build_payload(all_franchises, all_collections)
+        return Response(payload)
 
 
 class IgdbSearchPageView(APIView):
@@ -478,9 +282,9 @@ class IgdbSearchPageView(APIView):
         q_norm_esc = escape_igdb_string(normalize_query(q))
 
         try:
-            arr = _search_page_name_matches(q_esc, q_norm_esc, limit, offset)
+            arr = search_page_name_matches(igdb_client.igdb_request, q_esc, q_norm_esc, limit, offset)
             if not arr and offset == 0:
-                arr = _search_page_fallback_search(q_esc, limit)
+                arr = search_page_fallback_search(igdb_client.igdb_request, q_esc, limit)
             enriched = enrich_with_wikidata_display_name(arr)
             return Response(enriched)
         except Exception as e:
@@ -504,42 +308,8 @@ class IgdbTranslateView(APIView):
                 {"error": "Missing text"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if len(text) > MAX_TRANSLATE_TEXT_LEN:
-            text = text[:MAX_TRANSLATE_TEXT_LEN]
-        sentences = _split_sentences_for_translate(text)
-        chunks = []
-        current = ""
-        max_len = 480
-        for s in sentences:
-            if len(current + s) > max_len:
-                if current.strip():
-                    chunks.append(current.strip())
-                current = s
-            else:
-                current += s
-        if current.strip():
-            chunks.append(current.strip())
-        if not chunks:
-            chunks = [text[:max_len]]
-
-        translated_parts = []
-        for chunk in chunks:
-            try:
-                url = f"{MYMEMORY_URL}?q={urlencode({'q': chunk})}&langpair=en|fr"
-                r = requests.get(url, headers={"User-Agent": "LudoKan/1.0"}, timeout=10)
-                if r.ok:
-                    data = r.json()
-                    trans = (data or {}).get("responseData", {}).get("translatedText")
-                    if isinstance(trans, str) and trans.strip():
-                        trans = _remove_q_equals_artifact(trans).strip()
-                        translated_parts.append(trans)
-                        continue
-                translated_parts.append(chunk)
-            except Exception:
-                translated_parts.append(chunk)
-        result = " ".join(translated_parts)
-        result = _remove_q_equals_artifact(result).strip()
-        return Response({"translated": result})
+        translated = translate_request_body_to_french(text)
+        return Response({"translated": translated})
 
 
 class IgdbWikidataTestView(APIView):

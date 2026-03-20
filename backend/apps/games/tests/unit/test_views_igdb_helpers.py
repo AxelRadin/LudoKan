@@ -3,19 +3,13 @@
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 
-from apps.games.views_igdb import (
-    _clamp_limit,
-    _clamp_limit_200,
-    _clamp_offset,
-    _is_igdb_unavailable,
-    _remove_q_equals_artifact,
-    _split_sentences_for_translate,
-)
+from apps.games.views_igdb import _clamp_limit, _clamp_limit_200, _clamp_offset, _is_igdb_unavailable
+from apps.games.views_igdb_helpers import remove_q_equals_artifact, split_sentences_for_translate
 
 
 def test_split_sentences_splits_on_punctuation():
     """Les segments incluent les espaces après la ponctuation (l. 63)."""
-    assert _split_sentences_for_translate("Hello. World! Yes?") == [
+    assert split_sentences_for_translate("Hello. World! Yes?") == [
         "Hello. ",
         "World! ",
         "Yes?",
@@ -23,25 +17,25 @@ def test_split_sentences_splits_on_punctuation():
 
 
 def test_split_sentences_no_punctuation_returns_whole():
-    assert _split_sentences_for_translate("no punct here") == ["no punct here"]
+    assert split_sentences_for_translate("no punct here") == ["no punct here"]
 
 
 def test_split_sentences_strips_empty_segments():
     """Si tout est vide après strip, retourne [text] original."""
-    assert _split_sentences_for_translate("   ") == ["   "]
+    assert split_sentences_for_translate("   ") == ["   "]
 
 
 def test_remove_q_equals_artifact_start_of_string():
-    assert _remove_q_equals_artifact("q=foo") == "foo"
+    assert remove_q_equals_artifact("q=foo") == "foo"
 
 
 def test_remove_q_equals_artifact_after_space():
-    assert _remove_q_equals_artifact("hi q=bar") == "hi bar"
+    assert remove_q_equals_artifact("hi q=bar") == "hi bar"
 
 
 def test_remove_q_equals_not_removed_if_space_after_equals():
     """q= suivi d'un espace : pas de suppression (l. 83)."""
-    assert _remove_q_equals_artifact("q= foo") == "q= foo"
+    assert remove_q_equals_artifact("q= foo") == "q= foo"
 
 
 def test_clamp_limit_defaults_and_bounds():
