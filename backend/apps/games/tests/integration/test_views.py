@@ -729,3 +729,84 @@ class TestGameRatingsAverages:
         game.refresh_from_db()
         assert game.average_rating == pytest.approx(8.0)
         assert game.rating_count == 1
+
+
+# ---------------------------------------------------------------------------
+# GameByIgdbIdView & ImportIgdbGameView (views.py 185-222)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+class TestGameByIgdbIdAndImport:
+    """GET /api/games/igdb/<igdb_id>/ et POST /api/games/igdb-import/."""
+
+    def test_get_game_by_igdb_id_ok(self, api_client, game):
+        url = f"/api/games/igdb/{game.igdb_id}/"
+        response = api_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == game.id
+        assert response.data["name"] == game.name
+
+    def test_get_game_by_igdb_id_404(self, api_client):
+        response = api_client.get("/api/games/igdb/999888777/")
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_import_igdb_requires_authentication(self, api_client):
+        response = api_client.post("/api/games/igdb-import/", {}, format="json")
+        assert response.status_code in (
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        )
+
+    def test_import_igdb_missing_igdb_id(self, authenticated_api_client):
+        response = authenticated_api_client.post(
+            "/api/games/igdb-import/",
+            {"name": "No id"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data.get("error") == "igdb_id is required"
+
+    def test_import_igdb_creates_game_with_optional_fields(self, authenticated_api_client):
+        igdb_id = 77_777_777_001
+        payload = {
+            "igdb_id": igdb_id,
+            "name": "Imported IGDB Title",
+            "cover_url": "https://images.igdb.com/cover.jpg",
+            "release_date": "2020-06-01",
+        }
+        response = authenticated_api_client.post("/api/games/igdb-import/", payload, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert "id" in response.data
+        g = Game.objects.get(igdb_id=igdb_id)
+        assert g.name == "Imported IGDB Title"
+        assert g.cover_url == "https://images.igdb.com/cover.jpg"
+        assert str(g.release_date) == "2020-06-01"
+        assert g.publisher.name == "IGDB"
+
+    def test_import_igdb_get_or_create_returns_existing(self, authenticated_api_client, game):
+        response = authenticated_api_client.post(
+            "/api/games/igdb-import/",
+            {
+                "igdb_id": game.igdb_id,
+                "name": "This name is ignored if game exists",
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == game.id
+        game.refresh_from_db()
+        assert game.name == "Test Game"
+
+    def test_import_igdb_without_cover_or_release_date(self, authenticated_api_client):
+        """cover_url / release_date absents → None dans defaults (l. 201-202)."""
+        igdb_id = 77_777_777_002
+        response = authenticated_api_client.post(
+            "/api/games/igdb-import/",
+            {"igdb_id": igdb_id, "name": "Sans options"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        g = Game.objects.get(igdb_id=igdb_id)
+        assert g.cover_url in (None, "")
+        assert g.release_date is None
