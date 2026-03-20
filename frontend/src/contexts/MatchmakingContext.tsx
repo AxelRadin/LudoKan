@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { apiGet, apiPatch, apiPost } from '../services/api';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 import { useAuth } from './useAuth';
 
 interface MatchmakingContextType {
-    startMatchmaking: (gameId: string) => Promise<void>;
+    startMatchmaking: (gameId: string, gameName: string, gameImage: string) => Promise<void>;
     isMatching: boolean;
 }
 
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMatchmaking() {
     const context = useContext(MatchmakingContext);
     if (!context) {
@@ -30,6 +31,8 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
     const [activeRequestStartedAt, setActiveRequestStartedAt] = useState<Date | null>(null);
     const [currentRadius, setCurrentRadius] = useState<number>(20);
     const [hasNewMatch, setHasNewMatch] = useState(false);
+
+    const [activeGame, setActiveGame] = useState<{ name: string, image: string } | null>(null);
 
     async function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
         return new Promise((resolve) => {
@@ -65,6 +68,17 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
                     setCurrentRadius(active.radius_km);
 
                     try {
+                        const gameData = await apiGet(`/api/games/${active.game}/`);
+                        let image = gameData.cover_url;
+                        if (image && image.includes('t_thumb')) {
+                            image = image.replace('t_thumb', 't_1080p');
+                        } else if (image && image.includes('t_cover_big')) {
+                            image = image.replace('t_cover_big', 't_1080p');
+                        }
+                        setActiveGame({ name: gameData.name_fr || gameData.name, image });
+                    } catch (e) { console.error(e); }
+
+                    try {
                         const currentMatches = await apiGet('/api/matchmaking/matches/');
                         setMatches(currentMatches);
                     } catch (e) {
@@ -79,7 +93,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
         }
     }, [isAuthenticated]);
 
-    const startMatchmaking = async (gameId: string) => {
+    const startMatchmaking = async (gameId: string, gameName: string, gameImage: string) => {
         setIsMatching(true);
         try {
             const { latitude, longitude } = await getUserLocation();
@@ -112,6 +126,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
             setActiveRequestId(reqId);
             setCurrentRadius(radius);
             setActiveRequestStartedAt(startedDate);
+            setActiveGame({ name: gameName, image: gameImage });
 
             const matchesData = await apiGet('/api/matchmaking/matches/');
             setMatches(matchesData);
@@ -182,6 +197,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
                 onClose={() => setIsMatchmakingModalOpen(false)}
                 matches={matches}
                 startedAt={activeRequestStartedAt}
+                game={activeGame}
             />
         </MatchmakingContext.Provider>
     );

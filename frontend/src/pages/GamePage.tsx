@@ -26,15 +26,14 @@ import {
 } from '../api/igdb';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
-import { apiGet, apiPatch, apiPost } from '../services/api';
+import { useMatchmaking } from '../contexts/MatchmakingContext';
 import { useAuth } from '../contexts/useAuth';
-import { useMatchmaking } from '../contexts/MatchmakingContext'; // Ton contexte global
+import { apiGet, apiPatch, apiPost } from '../services/api';
 
 export default function GamePage() {
   const { id, igdbId } = useParams();
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
 
-  // Le hook global qui s'occupe de TOUTE la magie du matchmaking !
   const { startMatchmaking, isMatching } = useMatchmaking();
 
   const [game, setGame] = useState<any>(null);
@@ -205,7 +204,6 @@ export default function GamePage() {
     }
   }
 
-  // La nouvelle fonction super propre pour lancer le matchmaking
   async function handleSetMatchmaking(isPendingAction = false) {
     if (!isAuthenticated && !isPendingAction) {
       setPendingAction(() => () => handleSetMatchmaking(true));
@@ -216,8 +214,7 @@ export default function GamePage() {
     const currentDjangoId = await ensureDjangoId();
     if (!currentDjangoId) return;
 
-    // Délègue tout le travail au Provider global
-    await startMatchmaking(currentDjangoId);
+    await startMatchmaking(currentDjangoId, game.name, game.image);
   }
 
   if (gameNotFound) {

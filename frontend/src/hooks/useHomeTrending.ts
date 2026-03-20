@@ -23,7 +23,7 @@ export interface TrendingSection {
 
 function mapIgdbToGame(game: any): Game {
   return {
-    id: game.igdb_id, // On utilise igdb_id comme identifiant unique ici
+    id: game.igdb_id,
     title: game.name,
     image: game.cover_url ?? undefined,
     coverUrl: game.cover_url,
