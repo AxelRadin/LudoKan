@@ -91,7 +91,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         overwrite = options["overwrite"]
 
-        qs = Game.objects.all() if overwrite else Game.objects.filter(name_fr__isnull=True)
+        qs = Game.objects.all() if overwrite else Game.objects.filter(name_fr="")
         games = list(qs.values("id", "name"))
 
         if not games:
