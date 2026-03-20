@@ -39,6 +39,40 @@ def _escape_sparql_string(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"')
 
 
+def _unique_trimmed_names(names_en: list[str]) -> list[str]:
+    return list(dict.fromkeys((n or "").strip() for n in names_en if (n or "").strip()))
+
+
+def _partition_cache_hits(unique: list[str]) -> tuple[dict[str, str | None], list[str]]:
+    """Remplit result avec les entrées trouvées en cache ; retourne les noms à interroger."""
+    result: dict[str, str | None] = {}
+    to_fetch: list[str] = []
+    for n in unique:
+        cached = _cache_get(n)
+        if cached is not None:
+            result[n] = cached if cached else None
+        else:
+            to_fetch.append(n)
+    return result, to_fetch
+
+
+def _fetch_batch_parallel(batch: list[str], result: dict[str, str | None]) -> None:
+    """Exécute fetch_french_label_for_one en parallèle pour un lot et met à jour result + cache."""
+    if not batch:
+        return
+    with ThreadPoolExecutor(max_workers=len(batch)) as executor:
+        future_to_name = {executor.submit(fetch_french_label_for_one, name): name for name in batch}
+        for future in as_completed(future_to_name):
+            name = future_to_name[future]
+            try:
+                fr = future.result()
+            except Exception:
+                fr = None
+            result[name] = fr
+            if fr is not None:
+                _cache_set(name, fr)
+
+
 def fetch_french_label_for_one(name_en: str) -> str | None:
     """Récupère le libellé français Wikidata pour un nom anglais (SPARQL)."""
     if not name_en or not name_en.strip():
@@ -76,31 +110,10 @@ def wikidata_french_labels_by_english_titles(names_en: list[str]) -> dict[str, s
     Pour une liste de noms anglais, retourne un dict name_en -> name_fr (ou None).
     Utilise le cache et des requêtes parallèles par lots de WIKIDATA_BATCH_CONCURRENCY.
     """
-    result = {}
-    unique = list(dict.fromkeys((n or "").strip() for n in names_en if (n or "").strip()))
-
-    to_fetch = []
-    for n in unique:
-        cached = _cache_get(n)
-        if cached is not None:
-            result[n] = cached if cached else None
-        else:
-            to_fetch.append(n)
-
+    result, to_fetch = _partition_cache_hits(_unique_trimmed_names(names_en))
     for i in range(0, len(to_fetch), WIKIDATA_BATCH_CONCURRENCY):
         batch = to_fetch[i : i + WIKIDATA_BATCH_CONCURRENCY]
-        with ThreadPoolExecutor(max_workers=len(batch)) as executor:
-            future_to_name = {executor.submit(fetch_french_label_for_one, name): name for name in batch}
-            for future in as_completed(future_to_name):
-                name = future_to_name[future]
-                try:
-                    fr = future.result()
-                except Exception:
-                    fr = None
-                result[name] = fr
-                if fr is not None:
-                    _cache_set(name, fr)
-
+        _fetch_batch_parallel(batch, result)
     return result
 
 
