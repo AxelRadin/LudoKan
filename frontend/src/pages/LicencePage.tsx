@@ -23,7 +23,6 @@ function GameCard({ g }: { g: IgdbGame }) {
   const cover = getCoverUrl(g.cover);
   const release = formatReleaseDate(g.first_release_date);
 
-  // si tu enrichis avec Wikidata, on préfère display_name
   const displayName = (g as any).display_name ?? g.name;
 
   return (
@@ -98,7 +97,6 @@ export default function LicensePage() {
     pageSize
   );
 
-  // Titre “Licence” : on prend la collection de la 1ère entrée si dispo
   const title = useMemo(() => {
     const first: any = games?.[0];
     return first?.collections?.[0]?.name ?? `Licence #${licenseId}`;

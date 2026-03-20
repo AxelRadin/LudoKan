@@ -4,7 +4,7 @@ import { searchIgdbGames, type IgdbGame } from '../api/igdb';
 function normalizeQuery(q: string) {
   return q
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // enlève les accents
+    .replaceAll(/[\u0300-\u036f]/g, '') // enlève les accents
     .trim();
 }
 
