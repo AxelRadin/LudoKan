@@ -5,7 +5,6 @@ Préfixe URL : api/igdb/
 """
 
 import logging
-import re
 import time
 from urllib.parse import urlencode
 
@@ -45,6 +44,50 @@ TRENDING_SORTS = {
     "most_rated": "where total_rating_count > 100 & total_rating != null; sort total_rating_count desc;",
 }
 MYMEMORY_URL = "https://api.mymemory.translated.net/get"
+# Limite stricte pour éviter abus API + travail CPU sur de très longues chaînes
+MAX_TRANSLATE_TEXT_LEN = 20_000
+
+
+def _split_sentences_for_translate(text: str) -> list[str]:
+    """
+    Découpe approximativement par phrases (fin sur . ! ? puis espaces).
+    Parcours O(n), sans regex sujette au ReDoS.
+    """
+    out = []
+    start = 0
+    n = len(text)
+    i = 0
+    while i < n:
+        if text[i] in ".!?":
+            i += 1
+            while i < n and text[i] in " \t\n\r\f\v":
+                i += 1
+            out.append(text[start:i])
+            start = i
+        else:
+            i += 1
+    if start < n:
+        out.append(text[start:])
+    stripped = [p for p in out if p.strip()]
+    return stripped if stripped else [text]
+
+
+def _remove_q_equals_artifact(s: str) -> str:
+    """
+    Retire les artefacts « q= » (paramètre d'URL) en début de segment ou après espace,
+    uniquement si « q= » est suivi d'un caractère non blanc (comme l'ancien (?=\\S)).
+    Implémentation linéaire, sans regex à backtracking.
+    """
+    parts: list[str] = []
+    i = 0
+    n = len(s)
+    while i < n:
+        if i + 1 < n and s[i] == "q" and s[i + 1] == "=" and (i == 0 or s[i - 1].isspace()) and i + 2 < n and not s[i + 2].isspace():
+            i += 2
+            continue
+        parts.append(s[i])
+        i += 1
+    return "".join(parts)
 
 
 def _clamp_limit(limit_raw, min_val=1, max_val=50):
@@ -454,7 +497,9 @@ class IgdbTranslateView(APIView):
                 {"error": "Missing text"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        sentences = re.findall(r"[^.!?]+[.!?]+\s*", text) or [text]
+        if len(text) > MAX_TRANSLATE_TEXT_LEN:
+            text = text[:MAX_TRANSLATE_TEXT_LEN]
+        sentences = _split_sentences_for_translate(text)
         chunks = []
         current = ""
         max_len = 480
@@ -479,15 +524,14 @@ class IgdbTranslateView(APIView):
                     data = r.json()
                     trans = (data or {}).get("responseData", {}).get("translatedText")
                     if isinstance(trans, str) and trans.strip():
-                        trans = re.sub(r"(^|\s)q=(?=\S)", r"\1", trans).strip()
+                        trans = _remove_q_equals_artifact(trans).strip()
                         translated_parts.append(trans)
                         continue
                 translated_parts.append(chunk)
             except Exception:
                 translated_parts.append(chunk)
         result = " ".join(translated_parts)
-        # Nettoyage global au cas où "q=" apparaîtrait en début de phrase
-        result = re.sub(r"(^|\s)q=(?=\S)", r"\1", result).strip()
+        result = _remove_q_equals_artifact(result).strip()
         return Response({"translated": result})
 
 
