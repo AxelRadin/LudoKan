@@ -44,8 +44,8 @@ export default function FloatingMatchmakingWidget({
             onClick={onClick}
             sx={{
                 position: 'fixed',
-                top: { xs: 80, md: 24 },
-                right: 24,
+                top: { xs: 80, md: 75 },
+                right: 10,
                 zIndex: 9999,
                 px: 2,
                 py: 1.5,

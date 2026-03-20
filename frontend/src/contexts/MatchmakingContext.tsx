@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
-import { apiGet, apiPatch, apiPost } from '../services/api';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
 import { useAuth } from './useAuth';
 
 interface MatchmakingContextType {
     startMatchmaking: (gameId: string, gameName: string, gameImage: string) => Promise<void>;
+    cancelMatchmaking: () => Promise<void>;
     isMatching: boolean;
 }
-
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(undefined);
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -140,6 +140,23 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
         }
     };
 
+    const cancelMatchmaking = async () => {
+        if (activeRequestId) {
+            try {
+                await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
+            } catch (error) {
+                console.error("Erreur lors de l'annulation côté serveur", error);
+            }
+        }
+
+        setActiveRequestId(null);
+        setActiveRequestStartedAt(null);
+        setActiveGame(null);
+        setMatches([]);
+        setHasNewMatch(false);
+        setIsMatchmakingModalOpen(false);
+    };
+    
     useEffect(() => {
         if (!activeRequestId) return;
 
@@ -178,7 +195,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
     }, [activeRequestId, currentRadius, hasNewMatch]);
 
     return (
-        <MatchmakingContext.Provider value={{ startMatchmaking, isMatching }}>
+        <MatchmakingContext.Provider value={{ startMatchmaking, cancelMatchmaking, isMatching }}>
             {children}
 
             {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
@@ -195,6 +212,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
             <MatchmakingModal
                 open={isMatchmakingModalOpen}
                 onClose={() => setIsMatchmakingModalOpen(false)}
+                onCancel={cancelMatchmaking}
                 matches={matches}
                 startedAt={activeRequestStartedAt}
                 game={activeGame}

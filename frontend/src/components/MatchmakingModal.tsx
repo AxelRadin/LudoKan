@@ -32,6 +32,7 @@ interface Match {
 interface MatchmakingModalProps {
     open: boolean;
     onClose: () => void;
+    onCancel: () => void;
     matches: Match[];
     startedAt: Date | null;
     game: { name: string; image: string } | null;
@@ -40,6 +41,7 @@ interface MatchmakingModalProps {
 export default function MatchmakingModal({
     open,
     onClose,
+    onCancel,
     matches,
     startedAt,
     game,
@@ -194,10 +196,20 @@ export default function MatchmakingModal({
                 )}
             </DialogContent>
 
-            <Box sx={{ p: 2, textAlign: 'center', bgcolor: '#f8f9fa' }}>
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'center', gap: 2, bgcolor: '#f8f9fa' }}>
                 <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-                    Fermer la fenêtre
+                    Réduire en arrière-plan
                 </Button>
+                {startedAt && (
+                    <Button
+                        onClick={onCancel}
+                        color="error"
+                        variant="outlined"
+                        sx={{ fontWeight: 600 }}
+                    >
+                        Annuler la recherche
+                    </Button>
+                )}
             </Box>
         </Dialog>
     );
