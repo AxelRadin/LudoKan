@@ -1,19 +1,11 @@
 import SearchIcon from '@mui/icons-material/Search';
 import {
-  Avatar,
   Box,
   Button,
   CircularProgress,
   Divider,
-  IconButton,
   InputBase,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
   Paper,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
@@ -27,7 +19,7 @@ import {
   type IgdbGame,
 } from '../api/igdb';
 import { useAuth } from '../hooks/useAuth';
-import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
+import { SearchBarDropdownBody } from './SearchBarDropdownBody';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -219,105 +211,18 @@ const GameSearchBar: React.FC = () => {
               RÉSULTATS
             </Typography>
           </Box>
-          {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : results.length === 0 ? (
-            <Box sx={{ px: 2, py: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                Aucun résultat
-              </Typography>
-            </Box>
-          ) : (
-            <List sx={{ maxHeight: 400, overflowY: 'auto' }}>
-              {results.map(game => {
-                const cover = getCoverUrl(game.cover);
-                const year = game.first_release_date
-                  ? new Date(game.first_release_date * 1000).getFullYear()
-                  : undefined;
-                const displayName = game.display_name ?? game.name;
-                return (
-                  <React.Fragment key={game.id}>
-                    <ListItem
-                      alignItems="flex-start"
-                      sx={{ py: 1.5 }}
-                      secondaryAction={
-                        <Tooltip
-                          title={
-                            addedIds.has(game.id)
-                              ? 'Ajouté !'
-                              : 'Ajouter à ma bibliothèque'
-                          }
-                        >
-                          <span>
-                            <IconButton
-                              size="small"
-                              onClick={e => handleAddToLibrary(e, game)}
-                              disabled={addingId === game.id}
-                              color={
-                                addedIds.has(game.id) ? 'success' : 'default'
-                              }
-                            >
-                              {renderAddToLibraryIcon({
-                                adding: addingId === game.id,
-                                added: addedIds.has(game.id),
-                                iconSize: 20,
-                                loaderSize: 16,
-                              })}
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      }
-                    >
-                      <ListItemButton
-                        onClick={() => {
-                          setShowDropdown(false);
-                          setQuery('');
-                          navigate(`/game/igdb/${game.id}`);
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            variant="rounded"
-                            src={cover ?? undefined}
-                            alt={displayName}
-                            sx={{
-                              width: 48,
-                              height: 64,
-                              mr: 2,
-                              bgcolor: '#eee',
-                            }}
-                          >
-                            {displayName[0]}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <span>
-                              <b>{displayName}</b>
-                              {year && (
-                                <span style={{ color: '#888', marginLeft: 8 }}>
-                                  ({year})
-                                </span>
-                              )}
-                            </span>
-                          }
-                          secondary={
-                            game.platforms
-                              ?.slice(0, 3)
-                              .map(p => p.name)
-                              .join(', ') || 'IGDB'
-                          }
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                    <Divider component="li" />
-                  </React.Fragment>
-                );
-              })}
-            </List>
-          )}
+          <SearchBarDropdownBody
+            loading={loading}
+            results={results}
+            addedIds={addedIds}
+            addingId={addingId}
+            onAddToLibrary={handleAddToLibrary}
+            onGameClick={game => {
+              setShowDropdown(false);
+              setQuery('');
+              navigate(`/game/igdb/${game.id}`);
+            }}
+          />
           {!loading && results.length > 0 && (
             <>
               <Divider />
