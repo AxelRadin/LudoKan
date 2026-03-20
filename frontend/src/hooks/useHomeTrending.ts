@@ -1,9 +1,11 @@
-/**
- * Hook pour charger toutes les sections « tendances » de la homepage.
- * Un seul endroit pour les fetches ; les données sont passées en props à TrendingGames.
- */
-import { useCallback, useEffect, useState } from 'react';
-import { fetchTrendingGames, getCoverUrl } from '../api/igdb';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { fetchTrendingGames, getCoverUrl, type IgdbGame } from '../api/igdb';
 import type { Game } from '../components/TrendingGames';
 
 const TRENDING_SORTS = [
@@ -33,6 +35,81 @@ function mapIgdbToGame(game: any): Game {
   };
 }
 
+function applySortSuccess(
+  sort: SortKey,
+  data: IgdbGame[]
+): (
+  prev: Record<SortKey, TrendingSection>
+) => Record<SortKey, TrendingSection> {
+  return prev => ({
+    ...prev,
+    [sort]: {
+      games: data.map(mapIgdbToGame),
+      loading: false,
+    },
+  });
+}
+
+function applySortError(
+  sort: SortKey
+): (
+  prev: Record<SortKey, TrendingSection>
+) => Record<SortKey, TrendingSection> {
+  return prev => ({
+    ...prev,
+    [sort]: { games: [], loading: false },
+  });
+}
+
+async function fetchTrendingSection(
+  sort: SortKey,
+  signal: AbortSignal,
+  setSections: Dispatch<SetStateAction<Record<SortKey, TrendingSection>>>
+): Promise<void> {
+  try {
+    const data = await fetchTrendingGames(
+      sort,
+      20,
+      undefined,
+      0,
+      signal,
+      false
+    );
+    setSections(applySortSuccess(sort, data));
+  } catch (err: unknown) {
+    const e = err as { name?: string };
+    if (e?.name !== 'AbortError') {
+      setSections(applySortError(sort));
+    }
+  }
+}
+
+async function loadGenrePopularitySection(
+  genreId: number,
+  signal: AbortSignal,
+  setGenreSection: Dispatch<SetStateAction<TrendingSection | null>>
+): Promise<void> {
+  try {
+    const data = await fetchTrendingGames(
+      'popularity',
+      20,
+      genreId,
+      0,
+      signal,
+      false
+    );
+    setGenreSection({
+      games: data.map(mapIgdbToGame),
+      loading: false,
+    });
+  } catch (err: unknown) {
+    const e = err as { name?: string };
+    if (e?.name !== 'AbortError') {
+      setGenreSection({ games: [], loading: false });
+    }
+  }
+}
+
 export interface UseHomeTrendingOptions {
   selectedGenre?: { id: number; name: string } | null;
 }
@@ -59,24 +136,7 @@ export function useHomeTrending(options: UseHomeTrendingOptions = {}) {
     const { signal } = controller;
 
     TRENDING_SORTS.forEach(sort => {
-      fetchTrendingGames(sort, 20, undefined, 0, signal, false)
-        .then(data => {
-          setSections(prev => ({
-            ...prev,
-            [sort]: {
-              games: data.map(mapIgdbToGame),
-              loading: false,
-            },
-          }));
-        })
-        .catch(err => {
-          if (err?.name !== 'AbortError') {
-            setSections(prev => ({
-              ...prev,
-              [sort]: { games: [], loading: false },
-            }));
-          }
-        });
+      void fetchTrendingSection(sort, signal, setSections);
     });
 
     return () => controller.abort();
@@ -94,25 +154,11 @@ export function useHomeTrending(options: UseHomeTrendingOptions = {}) {
     }
     setGenreSection({ games: [], loading: true });
     const controller = new AbortController();
-    fetchTrendingGames(
-      'popularity',
-      20,
+    void loadGenrePopularitySection(
       selectedGenre.id,
-      0,
       controller.signal,
-      false
-    )
-      .then(data => {
-        setGenreSection({
-          games: data.map(mapIgdbToGame),
-          loading: false,
-        });
-      })
-      .catch(err => {
-        if (err?.name !== 'AbortError') {
-          setGenreSection({ games: [], loading: false });
-        }
-      });
+      setGenreSection
+    );
     return () => controller.abort();
   }, [selectedGenre]);
 
