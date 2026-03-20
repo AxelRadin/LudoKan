@@ -3,7 +3,6 @@ Tests unitaires pour apps.core.reports_export.
 Couverture de build_activity_pdf avec activité non vide (lignes 171-183).
 """
 
-
 from apps.core.reports_export import build_activity_pdf
 
 

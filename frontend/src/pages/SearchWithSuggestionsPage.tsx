@@ -1,15 +1,15 @@
-import { useState } from "react";
-import GameSearchBar from "../components/GameSearchBar";
-import { type IgdbGame } from "../api/apiClient";
+import { useState } from 'react';
+import GameSearchBar from '../components/GameSearchBar';
+import { type IgdbGame } from '../api/igdb';
 
 export default function SearchWithSuggestionsPage() {
-    const [selected, setSelected] = useState<IgdbGame | null>(null);
+  const [selected, setSelected] = useState<IgdbGame | null>(null);
 
-    return (
-        <div style={{ padding: 20 }}>
+  return (
+    <div style={{ padding: 20 }}>
       <h1>Recherche avec suggestions</h1>
 
-      <GameSearchBar onSelect={(g) => setSelected(g)} />
+      <GameSearchBar onSelect={g => setSelected(g)} />
 
       {selected && (
         <div style={{ marginTop: 20 }}>
@@ -18,5 +18,5 @@ export default function SearchWithSuggestionsPage() {
         </div>
       )}
     </div>
-    );
+  );
 }

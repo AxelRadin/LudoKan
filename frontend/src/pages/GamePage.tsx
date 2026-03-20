@@ -24,9 +24,9 @@ import {
   fetchIgdbGameById,
   getCoverUrl,
   translateDescription,
-} from '../api/apiClient';
+} from '../api/igdb';
 import SecondaryButton from '../components/SecondaryButton';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
 export default function GamePage() {

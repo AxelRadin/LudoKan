@@ -7,6 +7,7 @@ from apps.games import igdb_client
 
 
 def test_get_igdb_headers_ok(monkeypatch):
+    """Avec IGDB_ACCESS_TOKEN défini, on l'utilise (comportement legacy)."""
     monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
     monkeypatch.setenv("IGDB_ACCESS_TOKEN", "token-123")
 
@@ -19,18 +20,43 @@ def test_get_igdb_headers_ok(monkeypatch):
 
 def test_get_igdb_headers_missing_client_id(monkeypatch):
     monkeypatch.delenv("IGDB_CLIENT_ID", raising=False)
+    monkeypatch.delenv("TWITCH_CLIENT_ID", raising=False)
     monkeypatch.setenv("IGDB_ACCESS_TOKEN", "token-123")
 
     with pytest.raises(ImproperlyConfigured):
         igdb_client.get_igdb_headers()
 
 
-def test_get_igdb_headers_missing_access_token(monkeypatch):
+def test_get_igdb_headers_missing_access_token_falls_back_to_twitch(monkeypatch):
+    """Sans IGDB_ACCESS_TOKEN, get_igdb_headers appelle get_twitch_access_token qui exige client_secret."""
     monkeypatch.setenv("IGDB_CLIENT_ID", "client-id")
     monkeypatch.delenv("IGDB_ACCESS_TOKEN", raising=False)
+    monkeypatch.delenv("TWITCH_CLIENT_SECRET", raising=False)
+    monkeypatch.delenv("IGDB_CLIENT_SECRET", raising=False)
 
     with pytest.raises(ImproperlyConfigured):
         igdb_client.get_igdb_headers()
+
+
+def test_get_twitch_access_token_success(monkeypatch):
+    """Token Twitch récupéré via OAuth et mis en cache."""
+    monkeypatch.setenv("TWITCH_CLIENT_ID", "twitch-cid")
+    monkeypatch.setenv("TWITCH_CLIENT_SECRET", "twitch-secret")
+    monkeypatch.delenv("IGDB_ACCESS_TOKEN", raising=False)
+
+    def fake_post(url, data, headers, timeout):
+        assert "oauth2/token" in url
+        return SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {"access_token": "oauth-token-xyz", "expires_in": 3600},
+        )
+
+    monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+    token = igdb_client.get_twitch_access_token()
+    assert token == "oauth-token-xyz"
+    # Deuxième appel utilise le cache
+    token2 = igdb_client.get_twitch_access_token()
+    assert token2 == "oauth-token-xyz"
 
 
 def test_igdb_request_success(monkeypatch):

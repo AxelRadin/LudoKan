@@ -1,10 +1,17 @@
 import AddIcon from '@mui/icons-material/Add';
 import CheckIcon from '@mui/icons-material/Check';
-import { Box, Card, CardMedia, CircularProgress, IconButton, Tooltip } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardMedia,
+  CircularProgress,
+  IconButton,
+  Tooltip,
+} from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addGameToLibrary, importIgdbGameToDjango } from '../api/apiClient';
-import { useAuth } from '../contexts/AuthContext';
+import { addGameToLibrary, importIgdbGameToDjango } from '../api/igdb';
+import { useAuth } from '../hooks/useAuth';
 
 interface GameCardProps {
   id: number;
@@ -15,7 +22,14 @@ interface GameCardProps {
   releaseDate?: string | null;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({ id, title, image, igdb = false, coverUrl, releaseDate }) => {
+export const GameCard: React.FC<GameCardProps> = ({
+  id,
+  title,
+  image,
+  igdb = false,
+  coverUrl,
+  releaseDate,
+}) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [adding, setAdding] = useState(false);
@@ -26,7 +40,12 @@ export const GameCard: React.FC<GameCardProps> = ({ id, title, image, igdb = fal
     if (adding || added || !igdb) return;
     setAdding(true);
     try {
-      const { id: djangoId } = await importIgdbGameToDjango(id, title, coverUrl ?? null, releaseDate ?? null);
+      const { id: djangoId } = await importIgdbGameToDjango(
+        id,
+        title,
+        coverUrl ?? null,
+        releaseDate ?? null
+      );
       await addGameToLibrary(djangoId);
       setAdded(true);
     } catch {
@@ -40,7 +59,13 @@ export const GameCard: React.FC<GameCardProps> = ({ id, title, image, igdb = fal
   return (
     <Card
       onClick={() => navigate(igdb ? `/game/igdb/${id}` : `/game/${id}`)}
-      sx={{ minWidth: 150, borderRadius: 2, flexShrink: 0, cursor: 'pointer', position: 'relative' }}
+      sx={{
+        minWidth: 150,
+        borderRadius: 2,
+        flexShrink: 0,
+        cursor: 'pointer',
+        position: 'relative',
+      }}
     >
       <CardMedia
         component="img"
@@ -60,7 +85,9 @@ export const GameCard: React.FC<GameCardProps> = ({ id, title, image, igdb = fal
                 sx={{
                   bgcolor: added ? 'success.main' : 'rgba(0,0,0,0.6)',
                   color: '#fff',
-                  '&:hover': { bgcolor: added ? 'success.dark' : 'rgba(0,0,0,0.85)' },
+                  '&:hover': {
+                    bgcolor: added ? 'success.dark' : 'rgba(0,0,0,0.85)',
+                  },
                   width: 28,
                   height: 28,
                 }}

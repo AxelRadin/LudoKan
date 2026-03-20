@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { searchIgdbGames, type IgdbGame } from "../api/apiClient";
+import { useEffect, useRef, useState } from 'react';
+import { searchIgdbGames, type IgdbGame } from '../api/igdb';
 
 function normalizeQuery(q: string) {
   return q
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // enlève les accents
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // enlève les accents
     .trim();
 }
 
@@ -17,7 +17,7 @@ export function useIgdbSuggestions(query: string) {
   const requestIdRef = useRef(0);
 
   useEffect(() => {
-    const raw = query ?? "";
+    const raw = query ?? '';
     const q = raw.trim();
 
     // ✅ suggestions dès 1 caractère (au lieu de 2)
@@ -38,13 +38,13 @@ export function useIgdbSuggestions(query: string) {
       const qNormalized = normalizeQuery(q);
 
       searchIgdbGames(qNormalized, 8, true)
-        .then((data) => {
+        .then(data => {
           if (currentRequestId !== requestIdRef.current) return;
           setSuggestions(data);
-    })
-        .catch((e) => {
+        })
+        .catch(e => {
           if (currentRequestId !== requestIdRef.current) return;
-          setError(e?.message ?? "Erreur");
+          setError(e?.message ?? 'Erreur');
           setSuggestions([]);
         })
         .finally(() => {

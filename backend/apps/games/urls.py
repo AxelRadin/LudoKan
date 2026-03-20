@@ -12,6 +12,18 @@ from .views import (
     RatingDetailView,
     RatingListView,
 )
+from .views_igdb import (
+    IgdbCollectionGamesView,
+    IgdbFranchiseGamesView,
+    IgdbFranchisesSearchView,
+    IgdbGameDetailView,
+    IgdbGamesListView,
+    IgdbSearchPageView,
+    IgdbSearchView,
+    IgdbTranslateView,
+    IgdbTrendingView,
+    IgdbWikidataTestView,
+)
 
 app_name = "games"
 
@@ -82,6 +94,18 @@ platform_detail = PlatformViewSet.as_view(
 
 
 urlpatterns = [
+    # Proxy IGDB (api/igdb/...)
+    path("igdb/games/", IgdbGamesListView.as_view(), name="igdb-games-list"),
+    path("igdb/games/<int:id>/", IgdbGameDetailView.as_view(), name="igdb-game-detail"),
+    path("igdb/trending/", IgdbTrendingView.as_view(), name="igdb-trending"),
+    path("igdb/search/", IgdbSearchView.as_view(), name="igdb-search"),
+    path("igdb/collections/<int:id>/games/", IgdbCollectionGamesView.as_view(), name="igdb-collection-games"),
+    path("igdb/franchises/<int:id>/games/", IgdbFranchiseGamesView.as_view(), name="igdb-franchise-games"),
+    path("igdb/franchises/", IgdbFranchisesSearchView.as_view(), name="igdb-franchises-search"),
+    path("igdb/search-page/", IgdbSearchPageView.as_view(), name="igdb-search-page"),
+    path("igdb/translate/", IgdbTranslateView.as_view(), name="igdb-translate"),
+    path("igdb/wikidata-test/", IgdbWikidataTestView.as_view(), name="igdb-wikidata-test"),
+    # Games CRUD & library
     path("games/", game_list, name="game-list"),
     path("games/<int:pk>/", game_detail, name="game-detail"),
     path("games/igdb/<int:igdb_id>/", GameByIgdbIdView.as_view(), name="game-by-igdb"),

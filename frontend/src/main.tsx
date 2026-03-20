@@ -16,6 +16,7 @@ import TestSentry from './pages/TestSentry.tsx';
 import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
+import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -31,6 +32,8 @@ const router = createBrowserRouter([
       { path: 'connector', element: <BackendConnector /> },
       { path: 'license', element: <LicensePage /> },
       { path: 'search', element: <SearchResultsPage /> },
+      { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
+      { path: 'trending/:sort', element: <TrendingCategoryPage /> },
     ],
   },
 ]);

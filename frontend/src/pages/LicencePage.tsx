@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useCollectionGames } from "../hooks/useCollectionGames";
-import { formatReleaseDate, getCoverUrl, type IgdbGame } from "../api/apiClient";
+import { useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { useCollectionGames } from '../hooks/useCollectionGames';
+import { formatReleaseDate, getCoverUrl, type IgdbGame } from '../api/igdb';
 
 function SkeletonCard() {
   return (
@@ -45,27 +45,39 @@ function GameCard({ g }: { g: IgdbGame }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="line-clamp-2 text-sm font-semibold text-zinc-900" title={g.name}>
+          <div
+            className="line-clamp-2 text-sm font-semibold text-zinc-900"
+            title={g.name}
+          >
             {displayName}
           </div>
 
           <div className="mt-1 text-xs text-zinc-500">
-            {release ? `Sortie : ${release}` : "Date inconnue"}
+            {release ? `Sortie : ${release}` : 'Date inconnue'}
           </div>
 
           {g.platforms?.length ? (
             <div className="mt-2 line-clamp-1 text-xs text-zinc-600">
-              {g.platforms.slice(0, 3).map((p) => p.name).join(", ")}
-              {g.platforms.length > 3 ? "…" : ""}
+              {g.platforms
+                .slice(0, 3)
+                .map(p => p.name)
+                .join(', ')}
+              {g.platforms.length > 3 ? '…' : ''}
             </div>
           ) : (
-            <div className="mt-2 text-xs text-zinc-400">Plateformes inconnues</div>
+            <div className="mt-2 text-xs text-zinc-400">
+              Plateformes inconnues
+            </div>
           )}
 
           {g.summary ? (
-            <div className="mt-2 line-clamp-2 text-xs text-zinc-600">{g.summary}</div>
+            <div className="mt-2 line-clamp-2 text-xs text-zinc-600">
+              {g.summary}
+            </div>
           ) : (
-            <div className="mt-2 line-clamp-2 text-xs text-zinc-400">Pas de description.</div>
+            <div className="mt-2 line-clamp-2 text-xs text-zinc-400">
+              Pas de description.
+            </div>
           )}
         </div>
       </div>
@@ -80,7 +92,11 @@ export default function LicensePage() {
   const [page, setPage] = useState(1);
   const pageSize = 48;
 
-  const { games, loading, error } = useCollectionGames(licenseId, page, pageSize);
+  const { games, loading, error } = useCollectionGames(
+    licenseId,
+    page,
+    pageSize
+  );
 
   // Titre “Licence” : on prend la collection de la 1ère entrée si dispo
   const title = useMemo(() => {
@@ -106,8 +122,12 @@ export default function LicensePage() {
               </Link>
 
               <div className="min-w-0">
-                <h1 className="truncate text-lg font-bold text-zinc-900">{title}</h1>
-                <div className="text-xs text-zinc-500">Licence • Page {page}</div>
+                <h1 className="truncate text-lg font-bold text-zinc-900">
+                  {title}
+                </h1>
+                <div className="text-xs text-zinc-500">
+                  Licence • Page {page}
+                </div>
               </div>
             </div>
           </div>
@@ -115,7 +135,7 @@ export default function LicensePage() {
           <div className="flex items-center gap-2">
             <button
               disabled={!canPrev}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
               className="rounded-xl border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               ← Précédent
@@ -123,7 +143,7 @@ export default function LicensePage() {
 
             <button
               disabled={!canNext}
-              onClick={() => setPage((p) => p + 1)}
+              onClick={() => setPage(p => p + 1)}
               className="rounded-xl bg-zinc-900 px-3 py-1.5 text-sm text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Suivant →
@@ -138,7 +158,9 @@ export default function LicensePage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <div className="text-xs font-medium text-zinc-500">Licence</div>
-              <div className="truncate text-xl font-bold text-zinc-900">{title}</div>
+              <div className="truncate text-xl font-bold text-zinc-900">
+                {title}
+              </div>
               <div className="mt-1 text-sm text-zinc-600">
                 Parcours les jeux de la licence, triés par popularité (IGDB).
               </div>
@@ -146,7 +168,7 @@ export default function LicensePage() {
 
             <div className="flex items-center gap-2">
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-700">
-                {loading ? "…" : `${games.length} résultats`}
+                {loading ? '…' : `${games.length} résultats`}
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-700">
                 Page {page}
@@ -167,7 +189,7 @@ export default function LicensePage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {loading
             ? Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)
-            : games.map((g) => <GameCard key={g.id} g={g} />)}
+            : games.map(g => <GameCard key={g.id} g={g} />)}
         </div>
 
         {!loading && !error && games.length === 0 ? (
@@ -180,7 +202,7 @@ export default function LicensePage() {
         <div className="mt-8 flex items-center justify-center gap-2">
           <button
             disabled={!canPrev}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => setPage(p => Math.max(1, p - 1))}
             className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ← Précédent
@@ -192,7 +214,7 @@ export default function LicensePage() {
 
           <button
             disabled={!canNext}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => setPage(p => p + 1)}
             className="rounded-xl bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Suivant →

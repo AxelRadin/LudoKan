@@ -1,6 +1,7 @@
 """
 Tests pour les modèles de l'app users
 """
+
 from datetime import timedelta
 
 import pytest

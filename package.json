@@ -8,11 +8,8 @@
     "format:backend": "make format"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^24.10.1",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "husky": "^9.1.4",
+    "lint-staged": "^15.2.10"
   },
   "lint-staged": {
     "frontend/**/*.{js,jsx,ts,tsx,json,css,md}": [
@@ -23,14 +20,7 @@
     ]
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/material": "^7.3.7",
     "@sentry/react": "^10.25.0",
-    "axios": "^1.13.2",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.2.1",
     "vite": "^7.2.4"
   }
 }

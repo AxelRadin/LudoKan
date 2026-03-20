@@ -1,6 +1,7 @@
 """
 Tests pour les modèles de l'app reviews
 """
+
 import pytest
 from django.core.exceptions import ValidationError
 

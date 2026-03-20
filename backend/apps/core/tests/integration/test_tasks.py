@@ -1,6 +1,7 @@
 """
 Tests pour les tâches Celery de l'app core
 """
+
 from unittest.mock import patch
 
 import pytest

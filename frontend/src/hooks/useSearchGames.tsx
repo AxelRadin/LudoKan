@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { IgdbGame } from '../api/apiClient';
-import { searchGames } from "../api/apiClient";
+import type { IgdbGame } from '../api/igdb';
+import { searchGames } from '../api/igdb';
 
 export function useSearchGames(query: string) {
-  const [games, setGames] = useState([]);
+  const [games, setGames] = useState<IgdbGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +18,7 @@ export function useSearchGames(query: string) {
 
     searchGames(query, { limit: 20 })
       .then(setGames)
-      .catch((err) => setError(err.message))
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [query]);
 

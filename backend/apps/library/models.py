@@ -5,11 +5,8 @@ from apps.games.models import Game
 
 
 class UserGame(models.Model):
-    class Status(models.TextChoices):
-        PLAYING = "playing", "Playing"
-        FINISHED = "finished", "Finished"
-        ABANDONED = "abandoned", "Abandoned"
-        WISHLIST = "wishlist", "Wishlist"
+    class GameStatus(models.TextChoices):
+        ENVIE_DE_JOUER = "ENVIE_DE_JOUER", "Envie de jouer"
         EN_COURS = "EN_COURS", "En cours"
         TERMINE = "TERMINE", "Terminé"
         ABANDONNE = "ABANDONNE", "Abandonné"
@@ -23,36 +20,27 @@ class UserGame(models.Model):
         Game,
         on_delete=models.CASCADE,
         related_name="user_games",
-        null=True,
-        blank=True,
     )
-    igdb_game_id = models.PositiveBigIntegerField(null=True, blank=True, help_text="ID du jeu côté IGDB (optionnel).")
     status = models.CharField(
         max_length=20,
-        choices=Status.choices,
-        default=Status.PLAYING,
+        choices=GameStatus.choices,
+        default=GameStatus.EN_COURS,
     )
-    hours_played = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Nombre d'heures jouées (optionnel).",
-    )
+    is_favorite = models.BooleanField(default=False)
     date_added = models.DateTimeField(auto_now_add=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "game", "igdb_game_id")
+        unique_together = ("user", "game")
         verbose_name = "Jeu de la ludothèque"
         verbose_name_plural = "Ludothèque utilisateurs"
-        ordering = ["-date_added"]
+        ordering = ["-date_modified"]
         indexes = [
             models.Index(fields=["game", "status"]),
         ]
 
     def __str__(self):
-        game_display = self.game if self.game else self.igdb_game_id
-        return f"UserGame: {self.user} - {game_display} ({self.status})"
+        return f"UserGame: {self.user} - {self.game} ({self.status})"
 
     def is_owned_by(self, user):
         return self.user == user

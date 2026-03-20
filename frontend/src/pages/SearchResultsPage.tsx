@@ -1,36 +1,22 @@
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Grid';
 import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
+  fetchCollectionGames,
   fetchFranchiseGames,
   getCoverUrl,
   searchFranchisesAndCollections,
   searchGamesPage,
   type FranchiseResult,
   type IgdbGame,
-} from '../api/apiClient';
-import GameCard from '../components/GameCard';
+} from '../api/igdb';
+import GamesGrid from '../components/GamesGrid';
+import PageLayout from '../components/PageLayout';
 
-const BACKEND_URL = 'http://localhost:3001';
 const PAGE_SIZE = 25;
-
-async function fetchCollectionGamesPage(
-  collectionId: number,
-  limit: number,
-  offset: number,
-): Promise<IgdbGame[]> {
-  const res = await fetch(
-    `${BACKEND_URL}/api/collection/${collectionId}/games?limit=${limit}&offset=${offset}`,
-  );
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
 
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
@@ -70,7 +56,7 @@ export default function SearchResultsPage() {
     const fetcher: Promise<IgdbGame[]> = selected
       ? selected.type === 'franchise'
         ? fetchFranchiseGames(selected.id, PAGE_SIZE, offset)
-        : fetchCollectionGamesPage(selected.id, PAGE_SIZE, offset)
+        : fetchCollectionGames(selected.id, PAGE_SIZE, offset)
       : searchGamesPage(query, PAGE_SIZE, offset);
 
     fetcher
@@ -90,25 +76,25 @@ export default function SearchResultsPage() {
   }, [selected, page, query]);
 
   const handleSelect = (f: FranchiseResult) => {
-    setSelected(prev => (prev?.id === f.id && prev?.type === f.type ? null : f));
+    setSelected(prev =>
+      prev?.id === f.id && prev?.type === f.type ? null : f
+    );
     setPage(1);
   };
 
-  return (
-    <Box sx={{ px: 4, py: 4, ml: 25, mr: 25 }}>
-      {/* Header */}
-      <Box mb={3} display="flex" alignItems="center" gap={2} flexWrap="wrap">
-        <Link to="/" style={{ textDecoration: 'none' }}>
-          <Button variant="outlined" size="small">
-            ← Retour
-          </Button>
-        </Link>
-        <Typography variant="h5" fontWeight="bold">
-          Résultats pour : «&nbsp;{query}&nbsp;»
-        </Typography>
-      </Box>
+  const gridGames = games.map(game => ({
+    id: game.id,
+    title: (game as any).display_name ?? game.name,
+    image: getCoverUrl(game.cover) ?? '',
+    coverUrl: getCoverUrl(game.cover),
+    releaseDate: game.first_release_date
+      ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
+      : null,
+  }));
 
-      {/* Chips licences/collections (apparaissent en arrière-plan) */}
+  return (
+    <PageLayout title={<>Résultats pour : «&nbsp;{query}&nbsp;»</>}>
+      {/* Chips licences/collections */}
       {franchises.length > 0 && (
         <Box mb={3} display="flex" gap={1} flexWrap="wrap" alignItems="center">
           <Typography variant="body2" color="text.secondary" mr={1}>
@@ -119,7 +105,11 @@ export default function SearchResultsPage() {
               key={`${f.type}-${f.id}`}
               label={f.type === 'collection' ? `${f.name} (Série)` : f.name}
               onClick={() => handleSelect(f)}
-              color={selected?.id === f.id && selected?.type === f.type ? 'primary' : 'default'}
+              color={
+                selected?.id === f.id && selected?.type === f.type
+                  ? 'primary'
+                  : 'default'
+              }
               clickable
               size="small"
             />
@@ -127,7 +117,10 @@ export default function SearchResultsPage() {
           {selected && (
             <Chip
               label="✕ Tout afficher"
-              onClick={() => { setSelected(null); setPage(1); }}
+              onClick={() => {
+                setSelected(null);
+                setPage(1);
+              }}
               size="small"
               variant="outlined"
             />
@@ -135,7 +128,6 @@ export default function SearchResultsPage() {
         </Box>
       )}
 
-      {/* Infos contexte */}
       {selected && (
         <Typography variant="subtitle2" color="text.secondary" mb={2}>
           {selected.type === 'franchise' ? 'Licence' : 'Série'} :{' '}
@@ -143,35 +135,13 @@ export default function SearchResultsPage() {
         </Typography>
       )}
 
-      {/* Grille de jeux */}
-      {loading ? (
-        <Box display="flex" justifyContent="center" py={8}>
-          <CircularProgress />
-        </Box>
-      ) : games.length === 0 ? (
-        <Typography color="text.secondary" py={4}>
-          Aucun jeu trouvé pour « {query} ».
-        </Typography>
-      ) : (
-        <Grid container spacing={2}>
-          {games.map(game => (
-            <Grid item key={game.id} xs={6} sm={4} md={3} lg={2}>
-              <GameCard
-                id={game.id}
-                title={(game as any).display_name ?? game.name}
-                image={getCoverUrl(game.cover) ?? ''}
-                coverUrl={getCoverUrl(game.cover)}
-                releaseDate={game.first_release_date
-                  ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-                  : null}
-                igdb
-              />
-            </Grid>
-          ))}
-        </Grid>
-      )}
+      <GamesGrid
+        games={gridGames}
+        loading={loading}
+        emptyMessage={`Aucun jeu trouvé pour « ${query} ».`}
+        igdb
+      />
 
-      {/* Pagination */}
       {!loading && (page > 1 || hasMore) && (
         <Box mt={5} display="flex" justifyContent="center">
           <Pagination
@@ -183,6 +153,6 @@ export default function SearchResultsPage() {
           />
         </Box>
       )}
-    </Box>
+    </PageLayout>
   );
 }

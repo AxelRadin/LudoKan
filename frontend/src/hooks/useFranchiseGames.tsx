@@ -1,7 +1,11 @@
-import { useEffect, useState } from "react";
-import { fetchFranchiseGames, type IgdbGame } from "../api/apiClient";
+import { useEffect, useState } from 'react';
+import { fetchFranchiseGames, type IgdbGame } from '../api/igdb';
 
-export function useFranchiseGames(franchiseId: number, page: number, pageSize = 50) {
+export function useFranchiseGames(
+  franchiseId: number,
+  page: number,
+  pageSize = 50
+) {
   const [games, setGames] = useState<IgdbGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,8 +19,8 @@ export function useFranchiseGames(franchiseId: number, page: number, pageSize = 
     setError(null);
 
     fetchFranchiseGames(franchiseId, pageSize, offset)
-      .then((data) => setGames(data))
-      .catch((e) => setError(e?.message ?? "Erreur"))
+      .then(data => setGames(data))
+      .catch(e => setError(e?.message ?? 'Erreur'))
       .finally(() => setLoading(false));
   }, [franchiseId, page, pageSize]);
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { GBGame } from '../api/apiClient';
-import { fetchGames } from '../api/apiClient';
+import type { GBGame } from '../api/igdb';
+import { fetchGames } from '../api/igdb';
 
 type UseGamesOptions = {
   limit?: number;
@@ -25,7 +25,7 @@ export function useGames(options?: UseGamesOptions) {
       sort: options?.sort ?? 'original_release_date:desc',
     })
       .then(setGames)
-      .catch((err) => setError(err.message))
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [options?.limit, options?.offset, options?.platforms, options?.sort]);
 

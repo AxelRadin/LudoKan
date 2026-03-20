@@ -1,15 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { apiGet } from '../services/api';
-
-type AuthContextType = {
-  isAuthenticated: boolean;
-  setAuthenticated: (auth: boolean) => void;
-};
-
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  setAuthenticated: () => {},
-});
+import { AuthContext } from './authContext';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -46,7 +37,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     </AuthContext.Provider>
   );
 };
-
-export function useAuth() {
-  return useContext(AuthContext);
-}

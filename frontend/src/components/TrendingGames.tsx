@@ -1,62 +1,42 @@
-import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Card, IconButton, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
-import { fetchTrendingGames, getCoverUrl } from '../api/apiClient';
+import { Link } from 'react-router-dom';
 import GameCard from './GameCard';
 
 export interface Game {
   id: number;
   title: string;
-  image: string;
+  image: string | undefined;
   coverUrl?: string | null;
   releaseDate?: string | null;
 }
 
 export interface TrendingGamesProps {
-  igdbSort: string;
+  games: Game[];
+  loading?: boolean;
   title?: string;
-  genre?: number;
+  /** Si défini, le titre devient un lien vers cette URL (liste complète de la catégorie). */
+  to?: string;
+  /** State optionnel passé au navigateur (ex. nom du genre pour la page catégorie). */
+  linkState?: object;
 }
 
 export const TrendingGames: React.FC<TrendingGamesProps> = ({
-  igdbSort,
+  games,
+  loading = false,
   title = 'Jeux tendances ➜',
-  genre,
+  to,
+  linkState,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPausedRef = useRef(false);
-  const [games, setGames] = useState<Game[]>([]);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetchTrendingGames(igdbSort, 20, genre)
-      .then(data => {
-        const mappedGames = data.map((game: any) => {
-          const coverUrl = getCoverUrl(game.cover);
-          const image = coverUrl ?? undefined;
-          const releaseDate = game.first_release_date
-            ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-            : null;
-          return {
-            id: game.id,
-            title: game.display_name ?? game.name,
-            image,
-            coverUrl: coverUrl ?? null,
-            releaseDate,
-          };
-        });
-        setGames(mappedGames);
-      })
-      .catch(() => setGames([]))
-      .finally(() => setLoading(false));
-  }, [igdbSort, genre]);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -76,7 +56,6 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     };
   }, [games]);
 
-  // Auto-scroll
   useEffect(() => {
     if (games.length === 0) return;
 
@@ -98,8 +77,13 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     };
   }, [games]);
 
-  const pauseAutoScroll = () => { isPausedRef.current = true; };
-  const resumeAutoScroll = () => { isPausedRef.current = false; };
+  const pauseAutoScroll = () => {
+    isPausedRef.current = true;
+  };
+
+  const resumeAutoScroll = () => {
+    isPausedRef.current = false;
+  };
 
   const handleScrollRight = () => {
     if (scrollRef.current) {
@@ -113,29 +97,70 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     }
   };
 
+  const arrowButtonSx = (side: 'left' | 'right') => ({
+    position: 'absolute',
+    [side]: 8,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    zIndex: 3,
+    width: 42,
+    height: 42,
+    bgcolor: 'common.white',
+    color: 'text.primary',
+    border: '1px solid',
+    borderColor: 'grey.200',
+    boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
+    transition: 'all 0.2s ease',
+    '&:hover': {
+      bgcolor: 'common.white',
+      boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+      transform: 'translateY(-50%) scale(1.05)',
+      color: 'text.secondar',
+    },
+    '&:active': {
+      transform: 'translateY(-50%) scale(0.98)',
+    },
+  });
+
+  const titleText = title.endsWith('➜') ? title : `${title} ➜`;
+
   return (
     <Box px={4} py={4} position="relative">
-      <Typography variant="h6" fontWeight="bold" mb={2}>
-        {title ? `${title} ➜` : 'Jeux tendances ➜'}
-      </Typography>
+      {to ? (
+        <Typography
+          component={Link}
+          to={to}
+          state={linkState}
+          variant="h6"
+          fontWeight="bold"
+          mb={2}
+          sx={{
+            display: 'inline-block',
+            color: 'inherit',
+            textDecoration: 'none',
+            cursor: 'pointer',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
+          {titleText}
+        </Typography>
+      ) : (
+        <Typography variant="h6" fontWeight="bold" mb={2}>
+          {titleText}
+        </Typography>
+      )}
+
       <Box display="flex" alignItems="center" position="relative">
         {canScrollLeft && (
           <IconButton
             aria-label="Voir les jeux précédents"
             onClick={handleScrollLeft}
-            sx={{
-              position: 'absolute',
-              left: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'white',
-              boxShadow: 1,
-              zIndex: 2,
-            }}
+            sx={arrowButtonSx('left')}
           >
-            <ArrowBackIosIcon />
+            <ChevronLeftIcon sx={{ fontSize: 24 }} />
           </IconButton>
         )}
+
         <Box
           ref={scrollRef}
           display="flex"
@@ -149,6 +174,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             scrollbarWidth: 'none',
             '&::-webkit-scrollbar': { display: 'none' },
             flex: 1,
+            px: 1,
           }}
         >
           {loading ? (
@@ -159,8 +185,8 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
               </Box>
             ))
           ) : games.length === 0 ? (
-            <Card>
-              <Typography variant="body2" color="textSecondary">
+            <Card sx={{ p: 2 }}>
+              <Typography variant="body2" color="text.secondary">
                 Aucun jeu à afficher
               </Typography>
             </Card>
@@ -170,7 +196,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
                 key={game.id}
                 id={game.id}
                 title={game.title}
-                image={game.image}
+                image={game.image ?? ''}
                 coverUrl={game.coverUrl}
                 releaseDate={game.releaseDate}
                 igdb
@@ -178,21 +204,14 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             ))
           )}
         </Box>
+
         {canScrollRight && (
           <IconButton
             aria-label="Voir plus de jeux"
             onClick={handleScrollRight}
-            sx={{
-              position: 'absolute',
-              right: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'white',
-              boxShadow: 1,
-              zIndex: 2,
-            }}
+            sx={arrowButtonSx('right')}
           >
-            <ArrowForwardIosIcon />
+            <ChevronRightIcon sx={{ fontSize: 24 }} />
           </IconButton>
         )}
       </Box>

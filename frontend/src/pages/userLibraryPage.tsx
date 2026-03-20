@@ -1,4 +1,4 @@
-import { useUserGames } from "../hooks/useUserGames";
+import { useUserGames } from '../hooks/useUserGames';
 
 export default function UserLibraryPage() {
   const { games, loading, error, removeGame, updateGame } = useUserGames();
@@ -13,23 +13,23 @@ export default function UserLibraryPage() {
   return (
     <div style={{ padding: 20 }}>
       <h1>Ma bibliothèque de jeux</h1>
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {games.map((g) => (
+      <ul style={{ listStyle: 'none', padding: 0 }}>
+        {games.map(g => (
           <li
             key={g.id}
             style={{
               marginBottom: 12,
               padding: 10,
-              border: "1px solid #ddd",
+              border: '1px solid #ddd',
               borderRadius: 8,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
             }}
           >
             <div>
               <div>
-                <strong>IGDB ID :</strong> {g.igdb_game_id}
+                <strong>Jeu :</strong> #{g.game?.id ?? g.igdb_game_id ?? g.id}
               </div>
               <div>
                 <strong>Statut :</strong> {g.status}
@@ -40,10 +40,8 @@ export default function UserLibraryPage() {
                 </div>
               )}
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => updateGame(g.id, { status: "finished" })}
-              >
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => updateGame(g.id, { status: 'finished' })}>
                 Marquer comme terminé
               </button>
               <button onClick={() => removeGame(g.id)}>Supprimer</button>

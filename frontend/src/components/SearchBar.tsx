@@ -21,8 +21,14 @@ import {
 import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addGameToLibrary, getCoverUrl, importIgdbGameToDjango, searchIgdbGames, type IgdbGame } from '../api/apiClient';
-import { useAuth } from '../contexts/AuthContext';
+import {
+  addGameToLibrary,
+  getCoverUrl,
+  importIgdbGameToDjango,
+  searchIgdbGames,
+  type IgdbGame,
+} from '../api/igdb';
+import { useAuth } from '../hooks/useAuth';
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -76,17 +82,19 @@ const Dropdown = styled(Paper)(({ theme }) => ({
 
 const GameSearchBar: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<IgdbGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
   const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
-
+  const latestQueryRef = useRef('');
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    latestQueryRef.current = query;
+
     if (!query.trim()) {
       setResults([]);
       setLoading(false);
@@ -97,17 +105,34 @@ const GameSearchBar: React.FC = () => {
     setShowDropdown(true);
     setLoading(true);
 
-    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
 
-    searchTimeout.current = setTimeout(() => {
-      searchIgdbGames(query, 8, true)
-        .then(data => setResults(data))
-        .catch(() => setResults([]))
-        .finally(() => setLoading(false));
-    }, 300);
+    const currentQuery = query.trim();
+
+    searchTimeout.current = setTimeout(async () => {
+      try {
+        const data = await searchIgdbGames(currentQuery, 8, true);
+
+        if (latestQueryRef.current.trim() === currentQuery) {
+          setResults(data);
+        }
+      } catch {
+        if (latestQueryRef.current.trim() === currentQuery) {
+          setResults([]);
+        }
+      } finally {
+        if (latestQueryRef.current.trim() === currentQuery) {
+          setLoading(false);
+        }
+      }
+    }, 500);
 
     return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
     };
   }, [query]);
 
@@ -130,7 +155,12 @@ const GameSearchBar: React.FC = () => {
       const releaseDate = game.first_release_date
         ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
         : null;
-      const { id: djangoId } = await importIgdbGameToDjango(game.id, game.name, cover, releaseDate);
+      const { id: djangoId } = await importIgdbGameToDjango(
+        game.id,
+        game.name,
+        cover,
+        releaseDate
+      );
       await addGameToLibrary(djangoId);
       setAddedIds(prev => new Set(prev).add(game.id));
     } catch {
@@ -214,13 +244,21 @@ const GameSearchBar: React.FC = () => {
                       alignItems="flex-start"
                       sx={{ py: 1.5 }}
                       secondaryAction={
-                        <Tooltip title={addedIds.has(game.id) ? 'Ajouté !' : 'Ajouter à ma bibliothèque'}>
+                        <Tooltip
+                          title={
+                            addedIds.has(game.id)
+                              ? 'Ajouté !'
+                              : 'Ajouter à ma bibliothèque'
+                          }
+                        >
                           <span>
                             <IconButton
                               size="small"
                               onClick={e => handleAddToLibrary(e, game)}
                               disabled={addingId === game.id}
-                              color={addedIds.has(game.id) ? 'success' : 'default'}
+                              color={
+                                addedIds.has(game.id) ? 'success' : 'default'
+                              }
                             >
                               {addingId === game.id ? (
                                 <CircularProgress size={16} />
@@ -234,17 +272,24 @@ const GameSearchBar: React.FC = () => {
                         </Tooltip>
                       }
                     >
-                      <ListItemButton onClick={() => {
-                        setShowDropdown(false);
-                        setQuery('');
-                        navigate(`/game/igdb/${game.id}`);
-                      }}>
+                      <ListItemButton
+                        onClick={() => {
+                          setShowDropdown(false);
+                          setQuery('');
+                          navigate(`/game/igdb/${game.id}`);
+                        }}
+                      >
                         <ListItemAvatar>
                           <Avatar
                             variant="rounded"
                             src={cover ?? undefined}
                             alt={displayName}
-                            sx={{ width: 48, height: 64, mr: 2, bgcolor: '#eee' }}
+                            sx={{
+                              width: 48,
+                              height: 64,
+                              mr: 2,
+                              bgcolor: '#eee',
+                            }}
                           >
                             {displayName[0]}
                           </Avatar>
@@ -261,7 +306,10 @@ const GameSearchBar: React.FC = () => {
                             </span>
                           }
                           secondary={
-                            game.platforms?.slice(0, 3).map(p => p.name).join(', ') || 'IGDB'
+                            game.platforms
+                              ?.slice(0, 3)
+                              .map(p => p.name)
+                              .join(', ') || 'IGDB'
                           }
                         />
                       </ListItemButton>

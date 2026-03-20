@@ -24,9 +24,7 @@ def fetch_french_names(names_en: list[str]) -> dict[str, str | None]:
         values_lines = []
         for t in chunk:
             variants = {t}
-            cleaned = (
-                t.replace("Version", "").replace("Edition", "").replace("  ", " ").strip()
-            )
+            cleaned = t.replace("Version", "").replace("Edition", "").replace("  ", " ").strip()
             if cleaned and cleaned != t:
                 variants.add(cleaned)
             for v in variants:
