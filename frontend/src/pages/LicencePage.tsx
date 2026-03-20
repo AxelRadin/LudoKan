@@ -19,7 +19,7 @@ function SkeletonCard() {
   );
 }
 
-function GameCard({ g }: { g: IgdbGame }) {
+function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
   const cover = getCoverUrl(g.cover);
   const release = formatReleaseDate(g.first_release_date);
 
