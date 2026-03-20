@@ -87,7 +87,7 @@ export default function SearchResultsPage() {
 
   const gridGames = games.map(game => ({
     id: game.id,
-    title: (game as any).display_name ?? game.name,
+    title: game.display_name ?? game.name,
     image: getCoverUrl(game.cover) ?? '',
     coverUrl: getCoverUrl(game.cover),
     releaseDate: game.first_release_date

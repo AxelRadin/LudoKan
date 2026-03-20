@@ -8,7 +8,7 @@ type Props = Readonly<{
 }>;
 
 function getDisplayName(game: IgdbGame): string {
-  return (game as any).display_name ?? game.name;
+  return game.display_name ?? game.name;
 }
 
 export default function GameSearchBar({ onSelect }: Props) {
