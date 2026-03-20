@@ -53,11 +53,14 @@ export default function SearchResultsPage() {
     setLoading(true);
     setGames([]);
 
-    const fetcher: Promise<IgdbGame[]> = selected
-      ? selected.type === 'franchise'
-        ? fetchFranchiseGames(selected.id, PAGE_SIZE, offset)
-        : fetchCollectionGames(selected.id, PAGE_SIZE, offset)
-      : searchGamesPage(query, PAGE_SIZE, offset);
+    let fetcher: Promise<IgdbGame[]>;
+    if (!selected) {
+      fetcher = searchGamesPage(query, PAGE_SIZE, offset);
+    } else if (selected.type === 'franchise') {
+      fetcher = fetchFranchiseGames(selected.id, PAGE_SIZE, offset);
+    } else {
+      fetcher = fetchCollectionGames(selected.id, PAGE_SIZE, offset);
+    }
 
     fetcher
       .then(data => {
