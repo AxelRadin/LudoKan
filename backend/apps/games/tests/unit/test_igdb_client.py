@@ -67,6 +67,97 @@ def test_get_twitch_access_token_success(monkeypatch):
     assert token2 == "oauth-token-xyz"
 
 
+def test_get_twitch_access_token_missing_credentials(monkeypatch):
+    """Sans TWITCH_CLIENT_ID / TWITCH_CLIENT_SECRET, ImproperlyConfigured."""
+    _reset_twitch_token_cache()
+    monkeypatch.setenv("TWITCH_CLIENT_ID", "")
+    monkeypatch.setenv("TWITCH_CLIENT_SECRET", "")
+
+    with pytest.raises(ImproperlyConfigured, match="TWITCH_CLIENT_ID et TWITCH_CLIENT_SECRET"):
+        igdb_client.get_twitch_access_token()
+
+
+def test_get_twitch_access_token_empty_access_token_in_response(monkeypatch):
+    """Réponse OAuth sans access_token."""
+    _reset_twitch_token_cache()
+    monkeypatch.setenv("TWITCH_CLIENT_ID", "id")
+    monkeypatch.setenv("TWITCH_CLIENT_SECRET", "secret")
+
+    def fake_post(url, data, headers, timeout):
+        return SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {"expires_in": 3600},
+        )
+
+    monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+
+    with pytest.raises(ImproperlyConfigured, match="pas renvoyé d'access_token"):
+        igdb_client.get_twitch_access_token()
+
+
+def test_get_igdb_headers_uses_twitch_oauth(monkeypatch):
+    """Branche TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET : Bearer depuis OAuth."""
+    _reset_twitch_token_cache()
+    monkeypatch.setenv("TWITCH_CLIENT_ID", "twitch-cid")
+    monkeypatch.setenv("TWITCH_CLIENT_SECRET", "twitch-secret")
+    monkeypatch.delenv("IGDB_ACCESS_TOKEN", raising=False)
+
+    def fake_post(url, data, headers, timeout):
+        assert "oauth2/token" in url
+        return SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {"access_token": "  oauth-tok  ", "expires_in": 3600},
+        )
+
+    monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+
+    headers = igdb_client.get_igdb_headers()
+
+    assert headers["Client-ID"] == "twitch-cid"
+    assert headers["Authorization"] == "Bearer oauth-tok"
+    assert headers["Content-Type"] == "text/plain"
+
+
+def test_clear_twitch_token_cache_resets_state():
+    """Réinitialise le cache (utilisé après un 401 IGDB)."""
+    igdb_client._twitch_token_cache["access_token"] = "old"
+    igdb_client._twitch_token_cache["expires_at"] = 999_999_999_999
+    igdb_client._clear_twitch_token_cache()
+    assert igdb_client._twitch_token_cache["access_token"] is None
+    assert igdb_client._twitch_token_cache["expires_at"] == 0
+
+
+def test_igdb_request_401_retries_with_fresh_headers(monkeypatch):
+    """401 : vide le cache token Twitch, refait les headers et retente."""
+    _reset_twitch_token_cache()
+    post_calls = []
+
+    def fake_get_igdb_headers():
+        return {"Client-ID": "cid", "Authorization": "Bearer tok"}
+
+    def fake_post(url, data, headers, timeout):
+        post_calls.append((url, data, headers))
+        n = len(post_calls)
+        if n == 1:
+            return SimpleNamespace(
+                ok=False,
+                status_code=401,
+                json=lambda: {"message": "invalid"},
+                text="401",
+            )
+        return SimpleNamespace(ok=True, json=lambda: [{"id": 42, "name": "Retry"}])
+
+    monkeypatch.setattr(igdb_client, "get_igdb_headers", fake_get_igdb_headers)
+    monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+
+    result = igdb_client.igdb_request("games", "fields id;")
+
+    assert len(post_calls) == 2
+    assert post_calls[0][0].endswith("/games")
+    assert post_calls[1][0].endswith("/games")
+    assert result == [{"id": 42, "name": "Retry"}]
+
+
 def test_igdb_request_success(monkeypatch):
     called = {}
 
@@ -140,18 +231,39 @@ def test_igdb_request_failure_with_non_json_body(monkeypatch):
     assert "Bad Request" in str(exc.value)
 
 
-# def test_igdb_request_normalizes_endpoint_with_leading_slash(monkeypatch):
-#     """Vérifie que l'endpoint avec un slash initial est normalisé (lstrip)."""
-#     called = {}
+def test_igdb_request_normalizes_endpoint_with_leading_slash(monkeypatch):
+    """L'endpoint avec un slash initial est normalisé (lstrip)."""
+    called = {}
 
-#     def fake_post(url, data, headers, timeout):
-#         called["url"] = url
-#         return SimpleNamespace(ok=True, json=lambda: [])
+    def fake_get_igdb_headers():
+        return {"Client-ID": "cid", "Authorization": "Bearer t"}
 
-#     monkeypatch.setenv("IGDB_CLIENT_ID", "cid")
-#     monkeypatch.setenv("IGDB_ACCESS_TOKEN", "token")
-#     monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+    def fake_post(url, data, headers, timeout):
+        called["url"] = url
+        return SimpleNamespace(ok=True, json=lambda: [])
 
-#     igdb_client.igdb_request("/games", "fields *;")
+    monkeypatch.setattr(igdb_client, "get_igdb_headers", fake_get_igdb_headers)
+    monkeypatch.setattr(igdb_client.requests, "post", fake_post)
 
-#     assert called["url"].endswith("/games")
+    igdb_client.igdb_request("/games", "fields *;")
+
+    assert called["url"].endswith("/games")
+
+
+def test_igdb_request_accepts_bytes_query(monkeypatch):
+    """Body bytes passé tel quel (comme une chaîne encodée)."""
+    called = {}
+
+    def fake_get_igdb_headers():
+        return {"Client-ID": "cid", "Authorization": "Bearer t"}
+
+    def fake_post(url, data, headers, timeout):
+        called["data"] = data
+        return SimpleNamespace(ok=True, json=lambda: [])
+
+    monkeypatch.setattr(igdb_client, "get_igdb_headers", fake_get_igdb_headers)
+    monkeypatch.setattr(igdb_client.requests, "post", fake_post)
+
+    igdb_client.igdb_request("games", b"fields id;")
+
+    assert called["data"] == b"fields id;"
