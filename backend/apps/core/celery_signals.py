@@ -1,4 +1,3 @@
-
 from celery.signals import task_failure
 
 from .logging_utils import log_system_event
