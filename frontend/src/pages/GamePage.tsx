@@ -55,6 +55,7 @@ export default function GamePage() {
                 'fr-FR'
               )
             : null;
+
           setGame({
             name: data.display_name ?? data.name,
             description: data.summary,
@@ -62,8 +63,10 @@ export default function GamePage() {
             image,
             release_date: releaseDate,
             platforms:
-              data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
-            genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
+              data.platforms?.map((p: any) => ({ nom_plateforme: p.name })) ??
+              [],
+            genres:
+              data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
             publisher: null,
             average_rating: 0,
             rating_avg: 0,
@@ -74,11 +77,13 @@ export default function GamePage() {
       apiGet(`/api/games/${id}/`)
         .then(data => {
           let image = data.cover_url;
+
           if (image && image.includes('t_thumb')) {
             image = image.replace('t_thumb', 't_1080p');
           } else if (image && image.includes('t_cover_big')) {
             image = image.replace('t_cover_big', 't_1080p');
           }
+
           setGame({ ...data, name: data.name_fr || data.name, image });
           setDjangoId(String(data.id));
           setUserGame(data.user_library);
@@ -90,8 +95,10 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!game?.description) return;
+
     setTranslating(true);
     setTranslatedDescription(null);
+
     translateDescription(game.description)
       .then(setTranslatedDescription)
       .catch(() => {})
@@ -105,6 +112,7 @@ export default function GamePage() {
           const myReview = data.find(
             (r: any) => r.user?.id === userGame?.user?.id
           );
+
           if (myReview) {
             setUserReview(myReview);
             setUserRating(myReview.rating?.value || null);
@@ -159,6 +167,7 @@ export default function GamePage() {
     status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
   ) {
     if (!isAuthenticated || !djangoId) return;
+
     try {
       if (userGame) {
         const updated = await apiPatch(`/api/me/games/${djangoId}/`, {
@@ -177,6 +186,7 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
+
   async function handleToggleFavorite() {
     if (!id) return;
 
@@ -251,7 +261,7 @@ export default function GamePage() {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#ffd3d3',
-        px: { xs: 1, sm: 4, md: 10, lg: 25 },
+        px: { xs: 1, sm: 2, md: 4, lg: 6 },
       }}
     >
       <Box
@@ -269,7 +279,7 @@ export default function GamePage() {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            maxWidth: 1400,
+            maxWidth: '100%',
             mt: { xs: 2, md: 0 },
             mx: 'auto',
             width: '100%',
@@ -338,6 +348,7 @@ export default function GamePage() {
               </span>
             </Typography>
           </Box>
+
           <Box
             sx={{
               display: 'flex',
@@ -407,6 +418,7 @@ export default function GamePage() {
                     </Tooltip>
                   </Box>
                 </Box>
+
                 <img
                   src={game.image}
                   alt={game.name}
@@ -418,6 +430,7 @@ export default function GamePage() {
                   }}
                 />
               </Box>
+
               <Box
                 sx={{
                   width: '100%',
@@ -430,11 +443,13 @@ export default function GamePage() {
                 <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
                   Notes de la communauté
                 </Typography>
+
                 <Rating
                   value={game.average_rating || game.rating_avg || 0}
                   readOnly
                   sx={{ mb: 2, fontSize: 40 }}
                 />
+
                 <Box
                   sx={{
                     width: '100%',
@@ -467,12 +482,14 @@ export default function GamePage() {
                       <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                         Ma note
                       </Typography>
+
                       <Rating
                         value={userRating || 0}
                         onChange={(_, value) => handleRatingChange(value)}
                         sx={{ mb: 2, fontSize: 32 }}
                       />
                     </Box>
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Tooltip title="Coup de cœur" arrow>
                         <Box>
@@ -497,6 +514,7 @@ export default function GamePage() {
                       </Tooltip>
                     </Box>
                   </Box>
+
                   <Box
                     sx={{
                       display: 'flex',
@@ -518,6 +536,7 @@ export default function GamePage() {
                       />
                       <Typography variant="body2">Terminé</Typography>
                     </Box>
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <BookmarkIcon
                         color={
@@ -532,6 +551,7 @@ export default function GamePage() {
                       />
                       <Typography variant="body2">Envie d'y jouer</Typography>
                     </Box>
+
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <PlayCircleIcon
                         color={
@@ -548,7 +568,7 @@ export default function GamePage() {
                 </Box>
               </Box>
             </Box>
-            {/* Colonne droite : infos */}
+
             <Box
               sx={{
                 flex: 1.2,
@@ -568,11 +588,13 @@ export default function GamePage() {
                   Plateformes
                 </Typography>
               </Box>
+
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.platforms && game.platforms.length > 0
                   ? game.platforms.map((p: any) => p.nom_plateforme).join(', ')
                   : 'Non renseigné'}
               </Typography>
+
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -581,19 +603,37 @@ export default function GamePage() {
                   Description
                 </Typography>
               </Box>
-              <Typography
-                variant="body1"
+
+              <Box
                 sx={{
+                  borderLeft: '3px solid',
+                  borderColor: 'error.main',
+                  py: 1,
                   mb: 3,
-                  color: translating ? 'text.secondary' : 'text.primary',
+                  bgcolor: '#fff8f8',
+                  borderRadius: '0 8px 8px 0',
+                  width: '100%',
                 }}
               >
-                {translating
-                  ? 'Traduction en cours…'
-                  : (translatedDescription ??
-                    game.description ??
-                    'Aucune description disponible.')}
-              </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    color: translating ? 'text.secondary' : 'text.primary',
+                    lineHeight: 1.8,
+                    textAlign: 'left',
+                    m: 0,
+                    pl: 2,
+                    pr: 1,
+                  }}
+                >
+                  {translating
+                    ? 'Traduction en cours…'
+                    : (translatedDescription ??
+                      game.description ??
+                      'Aucune description disponible.')}
+                </Typography>
+              </Box>
+
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -602,6 +642,7 @@ export default function GamePage() {
                   Genres
                 </Typography>
               </Box>
+
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.genres && game.genres.length > 0
                   ? game.genres
@@ -609,6 +650,7 @@ export default function GamePage() {
                       .join(', ')
                   : 'Non renseigné'}
               </Typography>
+
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -617,9 +659,11 @@ export default function GamePage() {
                   Date de sortie
                 </Typography>
               </Box>
+
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.release_date || 'Non renseignée'}
               </Typography>
+
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -628,11 +672,13 @@ export default function GamePage() {
                   Éditeur
                 </Typography>
               </Box>
+
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.publisher?.name || 'Non renseigné'}
               </Typography>
             </Box>
           </Box>
+
           <Box
             sx={{
               display: 'flex',
@@ -641,7 +687,7 @@ export default function GamePage() {
               alignItems: 'center',
               gap: 2,
               mt: 3,
-              maxWidth: 1400,
+              maxWidth: '100%',
               mx: 'auto',
               width: '100%',
             }}
@@ -651,7 +697,9 @@ export default function GamePage() {
               Ajouter à la collection
             </Button>
           </Box>
+
           <Divider sx={{ my: 4 }} />
+
           <Box
             sx={{
               width: '100%',
@@ -674,6 +722,7 @@ export default function GamePage() {
             >
               Avis
             </Typography>
+
             <TextField
               label="Écrire un avis"
               multiline
@@ -688,6 +737,7 @@ export default function GamePage() {
                 alignItems: 'flex-start',
               }}
             />
+
             <Typography variant="body2" sx={{ mb: 1 }}>
               Aucun avis disponible.
             </Typography>
