@@ -11,7 +11,8 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import RequestFactory
 from rest_framework import status
 
-from apps.games.views_igdb import MAX_TRANSLATE_TEXT_LEN, IgdbCollectionGamesView, IgdbFranchiseGamesView, IgdbGameDetailView
+from apps.games.igdb_proxy_constants import MAX_TRANSLATE_TEXT_LEN
+from apps.games.views_igdb import IgdbCollectionGamesView, IgdbFranchiseGamesView, IgdbGameDetailView
 
 
 def _enrich_stub(games):
