@@ -16,16 +16,14 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("\n=== Database Indexes on games_game Table ===\n"))
 
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
+            cursor.execute("""
                 SELECT
                     indexname,
                     indexdef
                 FROM pg_indexes
                 WHERE tablename = 'games_game'
                 ORDER BY indexname;
-                """
-            )
+                """)
             indexes = cursor.fetchall()
 
             if not indexes:

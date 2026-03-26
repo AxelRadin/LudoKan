@@ -54,7 +54,7 @@ class GameTicket(models.Model):
     internal_note = models.TextField(blank=True)
     admin_metadata = models.JSONField(default=dict, blank=True)
 
-    rejection_reason = models.TextField(blank=True, null=True)
+    rejection_reason = models.TextField(blank=True)
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

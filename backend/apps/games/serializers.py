@@ -16,6 +16,7 @@ class GameReadSerializer(serializers.ModelSerializer):
             "id",
             "igdb_id",
             "name",
+            "name_fr",
             "description",
             "release_date",
             "cover_url",

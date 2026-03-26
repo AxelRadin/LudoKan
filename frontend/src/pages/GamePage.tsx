@@ -15,42 +15,92 @@ import {
   Paper,
   Rating,
   TextField,
-  Typography,
   Tooltip,
+  Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import {
+  fetchIgdbGameById,
+  getCoverUrl,
+  translateDescription,
+} from '../api/igdb';
 import SecondaryButton from '../components/SecondaryButton';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
 export default function GamePage() {
-  const { id } = useParams();
+  const { id, igdbId } = useParams();
   const { isAuthenticated } = useAuth();
   const [game, setGame] = useState<any>(null);
+  const [gameNotFound, setGameNotFound] = useState(false);
+  const [djangoId, setDjangoId] = useState<string | null>(null);
   const [userRating, setUserRating] = useState<number | null>(null);
   const [userGame, setUserGame] = useState<any>(null);
   const [userReview, setUserReview] = useState<any>(null);
+  const [translatedDescription, setTranslatedDescription] = useState<
+    string | null
+  >(null);
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      apiGet(`/api/games/${id}/`).then(data => {
-        let image = data.cover_url;
-        if (image && image.includes('t_thumb')) {
-          image = image.replace('t_thumb', 't_1080p');
-        } else if (image && image.includes('t_cover_big')) {
-          image = image.replace('t_cover_big', 't_1080p');
-        }
-        setGame({ ...data, image });
-        setUserGame(data.user_library);
-        setUserRating(data.user_rating?.value || null);
-      });
+    if (igdbId) {
+      fetchIgdbGameById(Number(igdbId))
+        .then(data => {
+          const coverUrl = getCoverUrl(data.cover);
+          const image =
+            coverUrl?.replace('t_cover_big', 't_1080p') ?? undefined;
+          const releaseDate = data.first_release_date
+            ? new Date(data.first_release_date * 1000).toLocaleDateString(
+                'fr-FR'
+              )
+            : null;
+          setGame({
+            name: data.display_name ?? data.name,
+            description: data.summary,
+            cover_url: coverUrl,
+            image,
+            release_date: releaseDate,
+            platforms:
+              data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
+            genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
+            publisher: null,
+            average_rating: 0,
+            rating_avg: 0,
+          });
+        })
+        .catch(() => setGameNotFound(true));
+    } else {
+      apiGet(`/api/games/${id}/`)
+        .then(data => {
+          let image = data.cover_url;
+          if (image && image.includes('t_thumb')) {
+            image = image.replace('t_thumb', 't_1080p');
+          } else if (image && image.includes('t_cover_big')) {
+            image = image.replace('t_cover_big', 't_1080p');
+          }
+          setGame({ ...data, name: data.name_fr || data.name, image });
+          setDjangoId(String(data.id));
+          setUserGame(data.user_library);
+          setUserRating(data.user_rating?.value || null);
+        })
+        .catch(() => setGameNotFound(true));
     }
-  }, [id]);
+  }, [id, igdbId]);
 
   useEffect(() => {
-    if (id && isAuthenticated) {
-      apiGet(`/api/reviews/?game=${id}`)
+    if (!game?.description) return;
+    setTranslating(true);
+    setTranslatedDescription(null);
+    translateDescription(game.description)
+      .then(setTranslatedDescription)
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  }, [game?.description]);
+
+  useEffect(() => {
+    if (djangoId && isAuthenticated) {
+      apiGet(`/api/reviews/?game=${djangoId}`)
         .then(data => {
           const myReview = data.find(
             (r: any) => r.user?.id === userGame?.user?.id
@@ -69,15 +119,15 @@ export default function GamePage() {
     } else {
       setUserReview(null);
     }
-  }, [id, isAuthenticated, userGame?.user?.id]);
+  }, [djangoId, isAuthenticated, userGame?.user?.id]);
 
   async function handleRatingChange(value: number | null) {
-    if (!isAuthenticated || !id || !value) return;
+    if (!isAuthenticated || !djangoId || !value) return;
     setUserRating(value);
 
     try {
-      const ratingRes = await apiPost(`/api/games/${id}/ratings/`, {
-        game: id,
+      const ratingRes = await apiPost('/api/ratings/', {
+        game: djangoId,
         value: value,
         rating_type: 'etoiles',
       });
@@ -86,14 +136,14 @@ export default function GamePage() {
 
       if (userReview) {
         const updated = await apiPatch(`/api/reviews/${userReview.id}/`, {
-          game: id,
+          game: djangoId,
           rating: ratingId,
           content: userReview.content || 'Note automatique',
         });
         setUserReview(updated);
       } else {
         const created = await apiPost('/api/reviews/', {
-          game: id,
+          game: djangoId,
           rating: ratingId,
           content: 'Note automatique',
         });
@@ -108,14 +158,16 @@ export default function GamePage() {
   async function handleSetStatus(
     status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
   ) {
-    if (!isAuthenticated || !id) return;
+    if (!isAuthenticated || !djangoId) return;
     try {
       if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${id}/`, { status });
+        const updated = await apiPatch(`/api/me/games/${djangoId}/`, {
+          status,
+        });
         setUserGame({ ...userGame, status: updated.status });
       } else {
         const created = await apiPost('/api/me/games/', {
-          game_id: id,
+          game_id: djangoId,
           status,
         });
         setUserGame(created);
@@ -125,7 +177,6 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
-
   async function handleToggleFavorite() {
     if (!id) return;
 
@@ -157,6 +208,24 @@ export default function GamePage() {
       console.error(error);
       alert('Erreur lors de la mise à jour du coup de cœur');
     }
+  }
+
+  if (gameNotFound) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#fff',
+        }}
+      >
+        <Typography variant="h5">
+          Jeu introuvable dans notre base de données.
+        </Typography>
+      </Box>
+    );
   }
 
   if (!game) {
@@ -512,8 +581,18 @@ export default function GamePage() {
                   Description
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.description || 'Aucune description disponible.'}
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 3,
+                  color: translating ? 'text.secondary' : 'text.primary',
+                }}
+              >
+                {translating
+                  ? 'Traduction en cours…'
+                  : (translatedDescription ??
+                    game.description ??
+                    'Aucune description disponible.')}
               </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}

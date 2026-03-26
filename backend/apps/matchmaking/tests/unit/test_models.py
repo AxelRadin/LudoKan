@@ -1,6 +1,7 @@
 """
 Tests pour les modèles et la logique de base de l'app matchmaking.
 """
+
 from datetime import timedelta
 
 import pytest

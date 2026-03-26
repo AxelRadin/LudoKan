@@ -18,7 +18,7 @@ export type GameListProps = {
 function getGameImage(game: GameListItem) {
   let image = game.cover_url || game.image;
 
-  if (image && image.includes('t_thumb')) {
+  if (image?.includes('t_thumb')) {
     image = image.replace('t_thumb', 't_cover_big');
   }
   return image || '/default-cover.jpg';

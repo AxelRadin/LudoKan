@@ -11,6 +11,8 @@ on:
       - "frontend/**"
       - "sonar-project.properties"
       - ".github/workflows/ci-cd.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/cloudflare-storage.yml"
   push:
     branches: ["main", "staging"]
     paths:
@@ -18,6 +20,8 @@ on:
       - "frontend/**"
       - "sonar-project.properties"
       - ".github/workflows/ci-cd.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/cloudflare-storage.yml"
 
   
 

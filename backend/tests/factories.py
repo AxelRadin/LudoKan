@@ -1,6 +1,7 @@
 """
 Factories pour créer des objets de test avec Factory Boy
 """
+
 import factory
 from django.contrib.auth import get_user_model
 from factory.django import DjangoModelFactory

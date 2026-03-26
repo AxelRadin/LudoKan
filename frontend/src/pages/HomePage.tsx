@@ -1,14 +1,29 @@
 import Box from '@mui/material/Box';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
+import { useHomeTrending } from '../hooks/useHomeTrending';
 
 export const HomePage = () => {
   const [selectedGenre, setSelectedGenre] = useState<{
     id: number;
     name: string;
   } | null>(null);
+  const genreResultRef = useRef<HTMLDivElement>(null);
+
+  const { sections, genreSection } = useHomeTrending({ selectedGenre });
+
+  const handleGenreClick = (id: number, name: string) => {
+    setSelectedGenre({ id, name });
+    setTimeout(() => {
+      genreResultRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
+  };
+
   return (
     <Box
       sx={{
@@ -24,7 +39,6 @@ export const HomePage = () => {
         component="main"
         sx={{
           flex: 1,
-          pt: 8,
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
@@ -32,26 +46,29 @@ export const HomePage = () => {
       >
         <Banner />
         <TrendingGames
-          ordering="-average_rating"
           title="Jeux les mieux notés"
+          games={sections.rating.games}
+          loading={sections.rating.loading}
+          to="/trending/rating"
         />
         <TrendingGames
-          ordering="-popularity_score"
           title="Jeux les plus populaires"
+          games={sections.popularity.games}
+          loading={sections.popularity.loading}
+          to="/trending/popularity"
         />
-        <TrendingGames ordering="-release_date" title="Jeux les plus récents" />
-        <TrendingGames ordering="-rating_count" title="Jeux les plus notés" />
         <TrendingGames
-          ordering="-rating_avg"
-          title="Jeux avec meilleure note"
+          title="Jeux les plus récents"
+          games={sections.recent.games}
+          loading={sections.recent.loading}
+          to="/trending/recent"
         />
-        {selectedGenre && (
-          <TrendingGames
-            title={selectedGenre.name}
-            genre={selectedGenre.id.toString()}
-            ordering="-popularity_score"
-          />
-        )}
+        <TrendingGames
+          title="Jeux les plus notés"
+          games={sections.most_rated.games}
+          loading={sections.most_rated.loading}
+          to="/trending/most_rated"
+        />
         <Box
           sx={{
             flex: 1,
@@ -61,10 +78,19 @@ export const HomePage = () => {
             marginTop: 5,
           }}
         >
-          <GenreGrid
-            onGenreClick={(id, name) => setSelectedGenre({ id, name })}
-          />
+          <GenreGrid onGenreClick={handleGenreClick} />
         </Box>
+        {selectedGenre && (
+          <Box ref={genreResultRef}>
+            <TrendingGames
+              title={selectedGenre.name}
+              games={genreSection?.games ?? []}
+              loading={genreSection?.loading ?? true}
+              to={`/trending/genre/${selectedGenre.id}`}
+              linkState={{ genreName: selectedGenre.name }}
+            />
+          </Box>
+        )}
       </Box>
     </Box>
   );

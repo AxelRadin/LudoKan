@@ -174,6 +174,54 @@ class RatingListView(ListAPIView):
         return queryset
 
 
+class GameByIgdbIdView(APIView):
+    """
+    Retrieve a game by its IGDB ID.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, igdb_id):
+        game = get_object_or_404(Game, igdb_id=igdb_id)
+        serializer = GameReadSerializer(game)
+        return Response(serializer.data)
+
+
+class ImportIgdbGameView(APIView):
+    """
+    Find or create a Game in Django from IGDB data.
+    Returns the Django game ID so the caller can add it to the library.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        igdb_id = request.data.get("igdb_id")
+        name = request.data.get("name", "")
+        cover_url = request.data.get("cover_url") or None
+        release_date = request.data.get("release_date") or None
+
+        if not igdb_id:
+            return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        publisher, _ = Publisher.objects.get_or_create(
+            name="IGDB",
+            defaults={"description": "Jeux importés depuis IGDB"},
+        )
+
+        game, _ = Game.objects.get_or_create(
+            igdb_id=igdb_id,
+            defaults={
+                "name": name,
+                "cover_url": cover_url,
+                "release_date": release_date,
+                "publisher": publisher,
+            },
+        )
+
+        return Response({"id": game.id}, status=status.HTTP_200_OK)
+
+
 class AdminGameListView(ListAPIView):
     """
     Endpoint admin pour lister les jeux.

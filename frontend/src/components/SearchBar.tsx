@@ -75,6 +75,23 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(1),
 }));
 
+function toArray<T>(value: T | null | undefined): T[] {
+  return value ? [value] : [];
+}
+
+function fetchIgdbResults(
+  query: string,
+  setResults: (results: Game[]) => void,
+  setLoading: (loading: boolean) => void
+) {
+  apiGet(`/games/search_igdb/?q=${encodeURIComponent(query)}`)
+    .then(res => {
+      const igdbRaw = res || [];
+      setResults(igdbRaw.map((g: any) => ({ ...g, source: 'igdb' })));
+    })
+    .finally(() => setLoading(false));
+}
+
 const GameSearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
   const [localResults, setLocalResults] = useState<Game[]>([]);
@@ -100,8 +117,10 @@ const GameSearchBar: React.FC = () => {
     setShowDropdown(true);
     apiGet(`/api/games/${encodeURIComponent(query)}`)
       .then(res => {
-        const results = Array.isArray(res) ? res : res ? [res] : [];
-        setLocalResults(results.map((g: any) => ({ ...g, source: 'local' })));
+        const rawResults = Array.isArray(res) ? res : toArray(res);
+        setLocalResults(
+          rawResults.map((g: any) => ({ ...g, source: 'local' }))
+        );
       })
       .finally(() => setLoadingLocal(false));
   }, [query]);
@@ -117,13 +136,7 @@ const GameSearchBar: React.FC = () => {
     igdbTimeout.current = setTimeout(() => {
       setIgdbDelay(false);
       setLoadingIgdb(true);
-      apiGet(`/games/search_igdb/?q=${encodeURIComponent(query)}`)
-        .then(res =>
-          setIgdbResults(
-            (res || []).map((g: any) => ({ ...g, source: 'igdb' }))
-          )
-        )
-        .finally(() => setLoadingIgdb(false));
+      fetchIgdbResults(query, setIgdbResults, setLoadingIgdb);
     }, 1000);
 
     return () => {

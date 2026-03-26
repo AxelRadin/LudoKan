@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.game_tickets.constants import TICKET_NOT_FOUND_MESSAGE, TicketPermission
 from apps.game_tickets.models import GameTicket, GameTicketComment, GameTicketHistory
 from apps.game_tickets.permissions import CanReadTicket
 from apps.game_tickets.serializers import (
@@ -110,7 +111,7 @@ class GameTicketAttachmentCreateView(generics.CreateAPIView):
 )
 class GameTicketStartReviewAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TicketPermission.CHANGE_STATUS
 
     def post(self, request, pk):
         try:
@@ -134,7 +135,7 @@ class GameTicketStartReviewAPIView(APIView):
 
         except GameTicket.DoesNotExist:
             return Response(
-                {"detail": "Ticket not found."},
+                {"detail": TICKET_NOT_FOUND_MESSAGE},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -165,7 +166,7 @@ class GameTicketStartReviewAPIView(APIView):
 )
 class GameTicketApproveAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TicketPermission.CHANGE_STATUS
 
     def post(self, request, pk):
         try:
@@ -190,7 +191,7 @@ class GameTicketApproveAPIView(APIView):
 
         except GameTicket.DoesNotExist:
             return Response(
-                {"detail": "Ticket not found."},
+                {"detail": TICKET_NOT_FOUND_MESSAGE},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -222,7 +223,7 @@ class GameTicketApproveAPIView(APIView):
 )
 class GameTicketRejectAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TicketPermission.CHANGE_STATUS
 
     def post(self, request, pk):
         serializer = GameTicketStatusUpdateSerializer(data=request.data, context={"action": "reject"})
@@ -254,7 +255,7 @@ class GameTicketRejectAPIView(APIView):
 
         except GameTicket.DoesNotExist:
             return Response(
-                {"detail": "Ticket not found."},
+                {"detail": TICKET_NOT_FOUND_MESSAGE},
                 status=status.HTTP_404_NOT_FOUND,
             )
         except TransitionNotAllowed:
@@ -279,7 +280,7 @@ class GameTicketRejectAPIView(APIView):
 )
 class GameTicketPublishAPIView(APIView):
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_status"
+    required_permission = TicketPermission.CHANGE_STATUS
 
     def post(self, request, pk):
         try:
@@ -302,7 +303,7 @@ class GameTicketPublishAPIView(APIView):
 
         except GameTicket.DoesNotExist:
             return Response(
-                {"detail": "Ticket not found."},
+                {"detail": TICKET_NOT_FOUND_MESSAGE},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -386,7 +387,7 @@ class AdminGameTicketUpdateView(UpdateAPIView):
     queryset = GameTicket.objects.all()
     serializer_class = AdminGameTicketUpdateSerializer
     permission_classes = [IsAdminWithPermission]
-    required_permission = "ticket.change_data"
+    required_permission = TicketPermission.CHANGE_DATA
 
     def patch(self, request, *args, **kwargs):
         kwargs["partial"] = True

@@ -67,7 +67,7 @@ export async function apiPost(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
+      ...options.headers,
     },
     body: JSON.stringify(body),
     ...options,
@@ -84,9 +84,14 @@ export async function apiPatch(
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
-      ...(options.headers || {}),
+      ...options.headers,
     },
     body: JSON.stringify(body),
     ...options,
   });
+}
+
+// DELETE
+export async function apiDelete(path: string, options: RequestInit = {}) {
+  return request(path, { method: 'DELETE', ...options });
 }

@@ -3,7 +3,6 @@ Tests pour l'endpoint GET /api/admin/reports/activity/.
 Journal d'activité (ActivityLog + AdminAction) avec filtres.
 """
 
-
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache

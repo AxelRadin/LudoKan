@@ -67,6 +67,35 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 CORS_ALLOW_CREDENTIALS=True
 ```
 
+### IGDB / Twitch (proxy API jeux)
+
+Pour que les endpoints **api/igdb/** (recherche, tendances, détails de jeux) fonctionnent, le backend doit pouvoir appeler l’API IGDB. Deux possibilités :
+
+1. **OAuth Twitch (recommandé)**  
+   Définir `TWITCH_CLIENT_ID` et `TWITCH_CLIENT_SECRET` (compte Twitch / développeur). Le backend récupère alors un token d’accès via `https://id.twitch.tv/oauth2/token` (grant client_credentials) et le met en cache jusqu’à expiration.
+
+2. **Token manuel**  
+   Si Twitch OAuth n’est pas configuré, définir `IGDB_ACCESS_TOKEN` et `IGDB_CLIENT_ID`. Le backend utilisera ce token sans appeler Twitch.
+
+**Priorité :** si `TWITCH_CLIENT_ID` et `TWITCH_CLIENT_SECRET` sont tous deux définis, le backend utilise toujours l’Option 1 (Twitch OAuth) et n’utilise pas `IGDB_ACCESS_TOKEN`.
+
+```bash
+# Option 1 (recommandée, prioritaire) : Twitch OAuth
+TWITCH_CLIENT_ID=your_twitch_client_id
+TWITCH_CLIENT_SECRET=your_twitch_client_secret
+
+# Option 2 : uniquement si vous n'utilisez pas Option 1
+# IGDB_CLIENT_ID=your_igdb_client_id
+# IGDB_ACCESS_TOKEN=your_app_access_token   # pas le Client Secret !
+```
+
+**En cas d’erreur 401 (Authorization Failure) avec l’Option 1 :**
+
+- Créez l’app dans le [Twitch Developer Console](https://dev.twitch.tv/console/apps) et assurez-vous que le **Client type** est **Confidential** (pour avoir un Client Secret).
+- Utilisez bien le **Client ID** et le **Client Secret** de cette app. Ne mettez **jamais** le Client Secret dans `Authorization` / `IGDB_ACCESS_TOKEN` : le token est obtenu automatiquement via Twitch OAuth.
+- Dans le `.env`, évitez les espaces ou guillemets inutiles : `TWITCH_CLIENT_ID=abc123` (sans espaces autour du `=`, pas de guillemets sauf si la valeur contient des espaces).
+- Vous pouvez tester l’auth dans [Postman](https://www.postman.com/) : `POST https://id.twitch.tv/oauth2/token` avec `client_id`, `client_secret`, `grant_type=client_credentials`, puis `POST https://api.igdb.com/v4/games` avec les headers `Client-ID` et `Authorization: Bearer <access_token>`.
+
 ## 🛠️ Configuration dans Django
 
 ### 1. Installation des dépendances

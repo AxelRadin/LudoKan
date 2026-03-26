@@ -1,6 +1,7 @@
 """
 Configuration globale des tests pytest
 """
+
 import os
 
 import django

@@ -2,6 +2,7 @@
 """
 Script pour exécuter les tests avec différentes configurations
 """
+
 import argparse
 import re
 import subprocess
