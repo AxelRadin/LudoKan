@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import logging.config
 import warnings
 from datetime import timedelta
 from pathlib import Path
@@ -101,6 +102,7 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.core.middleware.ActivityAnomalyMiddleware",
 ]
 
 
@@ -426,3 +428,48 @@ if SENTRY_DSN:
         environment=config("SENTRY_ENVIRONMENT", default=None),
         send_default_pii=True,
     )
+
+# -------------------------------------------------------------------
+# Logging (BACK-021A)
+# -------------------------------------------------------------------
+
+LOGGING_CONFIG = None
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "system_db": {
+            "level": "INFO",
+            "class": "apps.core.log_handlers.SystemLogHandler",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["console"],
+            "level": config("DJANGO_LOG_LEVEL", default="INFO"),
+        },
+        "django.request": {
+            "handlers": ["console", "system_db"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "system_logs": {
+            "handlers": ["console", "system_db"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+}
+
+logging.config.dictConfig(LOGGING)

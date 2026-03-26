@@ -24,6 +24,7 @@ import {
   fetchIgdbGameById,
   getCoverUrl,
   translateDescription,
+  importIgdbGameToDjango,
 } from '../api/igdb';
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
@@ -31,7 +32,7 @@ import { apiGet, apiPatch, apiPost } from '../services/api';
 
 export default function GamePage() {
   const { id, igdbId } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
   const [game, setGame] = useState<any>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
   const [djangoId, setDjangoId] = useState<string | null>(null);
@@ -121,13 +122,41 @@ export default function GamePage() {
     }
   }, [djangoId, isAuthenticated, userGame?.user?.id]);
 
+  async function ensureDjangoId(): Promise<string | null> {
+    if (djangoId) return djangoId;
+    if (igdbId && game) {
+      try {
+        const res = await importIgdbGameToDjango(
+          Number(igdbId),
+          game.name,
+          game.cover_url || game.image || null,
+          game.release_date || null
+        );
+        setDjangoId(String(res.id));
+        return String(res.id);
+      } catch (err) {
+        console.error('Erreur lors de l’importation IGDB', err);
+        return null;
+      }
+    }
+    return null;
+  }
+
   async function handleRatingChange(value: number | null) {
-    if (!isAuthenticated || !djangoId || !value) return;
+    if (!value) return;
+    if (!isAuthenticated) {
+      setPendingAction(() => () => handleRatingChange(value));
+      setAuthModalOpen(true);
+      return;
+    }
+    const currentDjangoId = await ensureDjangoId();
+    if (!currentDjangoId) return;
+
     setUserRating(value);
 
     try {
       const ratingRes = await apiPost('/api/ratings/', {
-        game: djangoId,
+        game: currentDjangoId,
         value: value,
         rating_type: 'etoiles',
       });
@@ -136,14 +165,14 @@ export default function GamePage() {
 
       if (userReview) {
         const updated = await apiPatch(`/api/reviews/${userReview.id}/`, {
-          game: djangoId,
+          game: currentDjangoId,
           rating: ratingId,
           content: userReview.content || 'Note automatique',
         });
         setUserReview(updated);
       } else {
         const created = await apiPost('/api/reviews/', {
-          game: djangoId,
+          game: currentDjangoId,
           rating: ratingId,
           content: 'Note automatique',
         });
@@ -158,16 +187,23 @@ export default function GamePage() {
   async function handleSetStatus(
     status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
   ) {
-    if (!isAuthenticated || !djangoId) return;
+    if (!isAuthenticated) {
+      setPendingAction(() => () => handleSetStatus(status));
+      setAuthModalOpen(true);
+      return;
+    }
+    const currentDjangoId = await ensureDjangoId();
+    if (!currentDjangoId) return;
+
     try {
       if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${djangoId}/`, {
+        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
           status,
         });
         setUserGame({ ...userGame, status: updated.status });
       } else {
         const created = await apiPost('/api/me/games/', {
-          game_id: djangoId,
+          game_id: currentDjangoId,
           status,
         });
         setUserGame(created);
@@ -178,18 +214,20 @@ export default function GamePage() {
     }
   }
   async function handleToggleFavorite() {
-    if (!id) return;
-
     if (!isAuthenticated) {
-      alert('Connecte-toi pour ajouter ce jeu en coup de cœur');
+      setPendingAction(() => () => handleToggleFavorite());
+      setAuthModalOpen(true);
       return;
     }
+
+    const currentDjangoId = await ensureDjangoId();
+    if (!currentDjangoId) return;
 
     const nextIsFavorite = !userGame?.is_favorite;
 
     try {
-      if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${id}/`, {
+      if (userGame && userGame.game_id) {
+        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
           is_favorite: nextIsFavorite,
         });
         setUserGame({
@@ -198,7 +236,7 @@ export default function GamePage() {
         });
       } else {
         const created = await apiPost('/api/me/games/', {
-          game_id: id,
+          game_id: currentDjangoId,
           status: 'ENVIE_DE_JOUER',
           is_favorite: true,
         });
@@ -386,7 +424,7 @@ export default function GamePage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: isAuthenticated ? 'pointer' : 'default',
+                      cursor: 'pointer',
                     }}
                     onClick={handleToggleFavorite}
                   >
@@ -480,7 +518,7 @@ export default function GamePage() {
                             <FavoriteIcon
                               color="error"
                               sx={{
-                                cursor: isAuthenticated ? 'pointer' : 'default',
+                                cursor: 'pointer',
                               }}
                               onClick={handleToggleFavorite}
                             />
@@ -488,7 +526,7 @@ export default function GamePage() {
                             <FavoriteBorderIcon
                               color="action"
                               sx={{
-                                cursor: isAuthenticated ? 'pointer' : 'default',
+                                cursor: 'pointer',
                               }}
                               onClick={handleToggleFavorite}
                             />
@@ -511,10 +549,8 @@ export default function GamePage() {
                         color={
                           userGame?.status === 'TERMINE' ? 'success' : 'action'
                         }
-                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
-                        onClick={() =>
-                          isAuthenticated && handleSetStatus('TERMINE')
-                        }
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => handleSetStatus('TERMINE')}
                       />
                       <Typography variant="body2">Terminé</Typography>
                     </Box>
@@ -525,10 +561,8 @@ export default function GamePage() {
                             ? 'warning'
                             : 'action'
                         }
-                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
-                        onClick={() =>
-                          isAuthenticated && handleSetStatus('ENVIE_DE_JOUER')
-                        }
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
                       />
                       <Typography variant="body2">Envie d'y jouer</Typography>
                     </Box>
@@ -537,10 +571,8 @@ export default function GamePage() {
                         color={
                           userGame?.status === 'EN_COURS' ? 'primary' : 'action'
                         }
-                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
-                        onClick={() =>
-                          isAuthenticated && handleSetStatus('EN_COURS')
-                        }
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => handleSetStatus('EN_COURS')}
                       />
                       <Typography variant="body2">En cours</Typography>
                     </Box>
