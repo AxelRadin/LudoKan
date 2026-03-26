@@ -13,7 +13,7 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
 export const Header: React.FC = () => {

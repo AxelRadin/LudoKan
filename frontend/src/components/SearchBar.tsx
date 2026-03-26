@@ -71,6 +71,23 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(1),
 }));
 
+function toArray<T>(value: T | null | undefined): T[] {
+  return value ? [value] : [];
+}
+
+function fetchIgdbResults(
+  query: string,
+  setResults: (results: Game[]) => void,
+  setLoading: (loading: boolean) => void
+) {
+  apiGet(`/games/search_igdb/?q=${encodeURIComponent(query)}`)
+    .then(res => {
+      const igdbRaw = res || [];
+      setResults(igdbRaw.map((g: any) => ({ ...g, source: 'igdb' })));
+    })
+    .finally(() => setLoading(false));
+}
+
 const GameSearchBar: React.FC = () => {
   const navigate = useNavigate();
   useAuth();
@@ -94,31 +111,29 @@ const GameSearchBar: React.FC = () => {
     }
 
     setShowDropdown(true);
-    setLoading(true);
+    apiGet(`/api/games/${encodeURIComponent(query)}`)
+      .then(res => {
+        const rawResults = Array.isArray(res) ? res : toArray(res);
+        setLocalResults(
+          rawResults.map((g: any) => ({ ...g, source: 'local' }))
+        );
+      })
+      .finally(() => setLoadingLocal(false));
+  }, [query]);
 
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
+  useEffect(() => {
+    if (!query) return;
+    setIgdbResults([]);
+    setIgdbDelay(true);
+    setLoadingIgdb(false);
 
-    const currentQuery = query.trim();
+    if (igdbTimeout.current) clearTimeout(igdbTimeout.current);
 
-    searchTimeout.current = setTimeout(async () => {
-      try {
-        const data = await searchIgdbGames(currentQuery, 8, true);
-
-        if (latestQueryRef.current.trim() === currentQuery) {
-          setResults(data);
-        }
-      } catch {
-        if (latestQueryRef.current.trim() === currentQuery) {
-          setResults([]);
-        }
-      } finally {
-        if (latestQueryRef.current.trim() === currentQuery) {
-          setLoading(false);
-        }
-      }
-    }, 500);
+    igdbTimeout.current = setTimeout(() => {
+      setIgdbDelay(false);
+      setLoadingIgdb(true);
+      fetchIgdbResults(query, setIgdbResults, setLoadingIgdb);
+    }, 1000);
 
     return () => {
       if (searchTimeout.current) {

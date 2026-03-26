@@ -26,7 +26,7 @@ import {
   translateDescription,
 } from '../api/igdb';
 import SecondaryButton from '../components/SecondaryButton';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
 export default function GamePage() {

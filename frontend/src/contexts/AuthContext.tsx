@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiGet } from '../services/api';
-import { AuthContext } from './authContext';
+import { AuthContext } from './AuthContextDef';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -31,9 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, setAuthenticated }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ isAuthenticated, setAuthenticated }),
+    [isAuthenticated, setAuthenticated]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

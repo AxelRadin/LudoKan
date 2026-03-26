@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Ajout
 import { apiPost } from '../services/api';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/useAuth';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
