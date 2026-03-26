@@ -45,10 +45,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
       // Met à jour l'état d'authentification global
       setAuthenticated(true);
-      onLoginSuccess?.();
-
-      // Redirection vers la page d'accueil (les cookies JWT sont déjà posés par le backend)
-      navigate('/', { replace: true });
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        // Redirection vers la page d'accueil (les cookies JWT sont déjà posés par le backend)
+        navigate('/', { replace: true });
+      }
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {

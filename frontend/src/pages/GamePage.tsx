@@ -142,10 +142,13 @@ export default function GamePage() {
     return null;
   }
 
-  async function handleRatingChange(value: number | null) {
+  async function handleRatingChange(
+    value: number | null,
+    isPendingAction = false
+  ) {
     if (!value) return;
-    if (!isAuthenticated) {
-      setPendingAction(() => () => handleRatingChange(value));
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleRatingChange(value, true));
       setAuthModalOpen(true);
       return;
     }
@@ -185,10 +188,11 @@ export default function GamePage() {
   }
 
   async function handleSetStatus(
-    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
+    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
+    isPendingAction = false
   ) {
-    if (!isAuthenticated) {
-      setPendingAction(() => () => handleSetStatus(status));
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleSetStatus(status, true));
       setAuthModalOpen(true);
       return;
     }
@@ -213,9 +217,9 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
-  async function handleToggleFavorite() {
-    if (!isAuthenticated) {
-      setPendingAction(() => () => handleToggleFavorite());
+  async function handleToggleFavorite(isPendingAction = false) {
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleToggleFavorite(true));
       setAuthModalOpen(true);
       return;
     }
@@ -426,7 +430,7 @@ export default function GamePage() {
                       justifyContent: 'center',
                       cursor: 'pointer',
                     }}
-                    onClick={handleToggleFavorite}
+                    onClick={() => handleToggleFavorite()}
                   >
                     <Tooltip title="Coup de cœur" arrow>
                       <Box
@@ -520,7 +524,7 @@ export default function GamePage() {
                               sx={{
                                 cursor: 'pointer',
                               }}
-                              onClick={handleToggleFavorite}
+                              onClick={() => handleToggleFavorite()}
                             />
                           ) : (
                             <FavoriteBorderIcon
@@ -528,7 +532,7 @@ export default function GamePage() {
                               sx={{
                                 cursor: 'pointer',
                               }}
-                              onClick={handleToggleFavorite}
+                              onClick={() => handleToggleFavorite()}
                             />
                           )}
                         </Box>
