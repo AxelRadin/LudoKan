@@ -110,5 +110,3 @@ npm install
 ### 📄 Licence
 
 Ce projet est sous licence MIT.
-
-Test ci

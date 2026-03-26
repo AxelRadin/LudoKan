@@ -1,110 +1,119 @@
-import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Ajout
-import { apiPost } from '../services/api';
-import { useAuth } from '../contexts/useAuth';
-import AuthFormContainer from './AuthFormContainer';
-import PrimaryButton from './PrimaryButton';
+import React, { useRef, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
+import Button from '@mui/material/Button';
 import SocialLoginButton from './SocialLoginButton';
 
-type LoginFormProps = {
-  onSwitchToRegister: () => void;
-  onLoginSuccess?: () => void;
-};
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY as string;
 
-export const LoginForm: React.FC<LoginFormProps> = ({
-  onSwitchToRegister,
-  onLoginSuccess,
-}) => {
-  const [email, setEmail] = useState('');
+export const LoginForm: React.FC = () => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate(); // Ajout
-  const { setAuthenticated } = useAuth();
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
-    if (!email || !password) {
-      setError('Veuillez remplir tous les champs.');
+    if (!captchaToken) {
+      setError('Veuillez valider le reCAPTCHA.');
       return;
     }
 
+    setError(null);
+
     try {
-      setLoading(true);
-      const data = await apiPost('/api/auth/login/', {
-        email: email,
-        password: password,
+      const response = await fetch('/api/auth/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, recaptcha_token: captchaToken }),
       });
-      console.log('User connecté', data);
 
-      // Met à jour l'état d'authentification global
-      setAuthenticated(true);
-      onLoginSuccess?.();
-
-      // Redirection vers la page d'accueil (les cookies JWT sont déjà posés par le backend)
-      navigate('/', { replace: true });
-    } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue.');
-    } finally {
-      setLoading(false);
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data?.detail ?? 'Identifiants incorrects.');
+        recaptchaRef.current?.reset();
+        setCaptchaToken(null);
+      }
+    } catch {
+      setError('Erreur réseau, veuillez réessayer.');
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     }
   };
 
   return (
-    <AuthFormContainer
-      title="Connexion"
-      switchLabel="S’inscrire"
-      onSwitch={onSwitchToRegister}
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      justifyContent="center"
+      width="100%"
+      minHeight="100vh"
+      sx={{ backgroundColor: 'white' }}
     >
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={2.5} width={320}>
-          <TextField
-            label="Email"
-            variant="outlined"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-          />
-          <TextField
-            label="Mot de passe"
-            type="password"
-            variant="outlined"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-          />
-        </Stack>
+      <Box position="absolute" top={20} left={40}>
+        <img src="/logo.png" alt="Ludokan Logo" style={{ height: 50 }} />
+      </Box>
 
+      <Typography variant="h4" fontWeight="bold" mb={3}>
+        Connexion
+      </Typography>
+
+      <Stack spacing={2} width={300}>
+        <TextField
+          label="Pseudo"
+          variant="outlined"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <TextField
+          label="Mot de passe"
+          type="password"
+          variant="outlined"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <ReCAPTCHA
+          ref={recaptchaRef}
+          sitekey={RECAPTCHA_SITE_KEY}
+          onChange={(token) => setCaptchaToken(token)}
+        />
         {error && (
-          <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
+          <Typography variant="body2" color="error">
             {error}
-          </Alert>
+          </Typography>
         )}
+      </Stack>
 
-        <Typography variant="body1" mt={5}>
-          Se connecter avec
-        </Typography>
+      <Typography variant="body1" mt={4}>
+        Se connecter avec
+      </Typography>
 
-        <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" />
-          <SocialLoginButton icon="apple" />
-          <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
-        </Stack>
+      <Stack direction="row" spacing={3} mt={1}>
+        <SocialLoginButton icon="google" />
+        <SocialLoginButton icon="apple" />
+        <SocialLoginButton icon="x" />
+        <SocialLoginButton icon="instagram" />
+      </Stack>
 
-        <PrimaryButton
-          sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
-          type="submit"
-          disabled={loading}
-        >
-          {loading ? 'Connexion...' : 'Se connecter'}
-        </PrimaryButton>
-      </form>
-    </AuthFormContainer>
+      <Button type="submit" variant="contained" sx={{ mt: 4 }}>
+        Se connecter
+      </Button>
+
+      <Typography
+        variant="body2"
+        sx={{ position: 'absolute', top: 30, right: 40 }}
+      >
+        S'inscrire
+      </Typography>
+    </Box>
   );
 };
 

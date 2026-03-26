@@ -1,8 +1,0 @@
-#!/bin/sh
-
-echo "👉 Husky pre-commit (frontend + backend)"
-
-# Charger le PATH pour trouver node/npx (nécessaire pour les commits depuis l'interface)
-export PATH="$PATH:/usr/local/bin:/opt/homebrew/bin:$HOME/.nvm/versions/node/$(ls $HOME/.nvm/versions/node 2>/dev/null | tail -1)/bin"
-
-npx lint-staged

@@ -71,10 +71,8 @@ ipython_config.py
 # pyenv
 .python-version
 
-# celery beat schedule file (scheduler persistant + fichiers SQLite)
+# celery beat schedule file
 celerybeat-schedule
-celerybeat-schedule-shm
-celerybeat-schedule-wal
 
 # SageMath parsed files
 *.sage.py
@@ -126,5 +124,3 @@ staticfiles/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-.ruff_cache/

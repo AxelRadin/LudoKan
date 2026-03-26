@@ -50,6 +50,14 @@ MEDIA_URL=/media/
 MEDIA_ROOT=/app/media
 
 # ===========================================
+# RECAPTCHA
+# ===========================================
+# Clés de test Google (toujours valides) :
+# RECAPTCHA_SECRET_KEY=6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe
+# Remplacer par les vraies clés en production :
+RECAPTCHA_SECRET_KEY=your-recaptcha-secret-key-here
+
+# ===========================================
 # SENTRY
 # ===========================================
 # Laisser vide en local si vous ne souhaitez pas envoyer d'événements

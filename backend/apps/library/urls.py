@@ -1,10 +1,8 @@
-from rest_framework.routers import DefaultRouter
+from django.urls import path
+from . import views
 
-from .views import UserGameViewSet
+app_name = 'library'
 
-app_name = "library"
-
-router = DefaultRouter()
-router.register("me/games", UserGameViewSet, basename="my-games")
-
-urlpatterns = router.urls
+urlpatterns = [
+    # URLs à développer plus tard
+]

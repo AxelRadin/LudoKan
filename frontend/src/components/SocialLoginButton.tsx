@@ -1,4 +1,7 @@
-import { FaApple, FaGoogle, FaInstagram, FaTwitter } from 'react-icons/fa';
+import AppleIcon from '@mui/icons-material/Apple';
+import GoogleIcon from '@mui/icons-material/Google';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import XIcon from '@mui/icons-material/X';
 import IconButton from '@mui/material/IconButton';
 import React, { type JSX } from 'react';
 
@@ -7,10 +10,10 @@ interface Props {
 }
 
 const iconMap: Record<Props['icon'], JSX.Element> = {
-  google: <FaGoogle size={24} />,
-  apple: <FaApple size={24} />,
-  x: <FaTwitter size={24} />,
-  instagram: <FaInstagram size={24} />,
+  google: <GoogleIcon fontSize="large" />,
+  apple: <AppleIcon fontSize="large" />,
+  x: <XIcon fontSize="large" />,
+  instagram: <InstagramIcon fontSize="large" />,
 };
 
 export const SocialLoginButton: React.FC<Props> = ({ icon }) => (

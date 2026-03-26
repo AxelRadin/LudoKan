@@ -10,176 +10,136 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import warnings
-from datetime import timedelta
 from pathlib import Path
-
-import dj_database_url
-import sentry_sdk
+import os
 from decouple import config
+import dj_database_url
+from datetime import timedelta
+
+#REST_USE_JWT = True
+#TOKEN_MODEL = None
+
+# JWT via cookies
+#JWT_AUTH_COOKIE = 'access_token'          # cookie pour l'access token
+#JWT_AUTH_REFRESH_COOKIE = 'refresh_token' # cookie pour le refresh token
+#JWT_AUTH_COOKIE_USE_CSRF = True           # protéger contre les CSRF si nécessaire
+
+REST_AUTH_SERIALIZERS = {
+    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+}
+
+# Sécurité des cookies
+SESSION_COOKIE_SECURE = True   # obligatoire si HTTPS
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+#JWT_AUTH_SAMESITE = 'Lax'      # ou 'Strict', selon front
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    config('FRONTEND_URL', default='http://localhost:3000'),
+]
+import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
-# Réduire le bruit : avertissement django-fsm / viewflow (dépréciation connue)
-warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
 
-# -------------------------------------------------------------------
-# Base directory
-# -------------------------------------------------------------------
-
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# -------------------------------------------------------------------
-# Core env / security
-# -------------------------------------------------------------------
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-SECRET_KEY = config("SECRET_KEY")
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-=o*2&qoz81)g=k*gpcsn11dsw8o35pvo(s&e4+lc-*1ypl%h=7')
 
-DEBUG = config("DEBUG", default=True, cast=bool)
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config(
-    "ALLOWED_HOSTS",
-    default="localhost,127.0.0.1,testserver",
-).split(",")
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 
-# -------------------------------------------------------------------
-# Applications
-# -------------------------------------------------------------------
+# Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "channels",
-    "django.contrib.sites",
-    "rest_framework",
-    "drf_spectacular",
-    "dj_rest_auth",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_spectacular',
+    'rest_framework.authtoken',
+    'dj_rest_auth',
     "dj_rest_auth.registration",
-    "rest_framework_simplejwt",
-    "rest_framework_simplejwt.token_blacklist",
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     "allauth",
     "allauth.account",
-    "allauth.socialaccount",
-    "corsheaders",
-    "django_filters",
-    "notifications",
-    "import_export",
-    "apps.users",
-    "apps.games",
-    "apps.core",
-    "apps.social",
-    "apps.library",
-    "apps.recommendations",
-    "apps.reviews",
-    "apps.realtime",
-    "apps.matchmaking",
-    "apps.game_tickets",
-    "apps.chat",
-    "django_fsm",
-    "api",
+    'corsheaders',
+    'apps.users',
+    'apps.games', 
+    'apps.core',
+    'apps.social',
+    'apps.library',
+    'apps.recommendations',
+    'api',
 ]
-
-
-# -------------------------------------------------------------------
-# Middleware
-# -------------------------------------------------------------------
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "apps.users.middleware.IgnoreInvalidJWTMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
+    'corsheaders.middleware.CorsMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     "allauth.account.middleware.AccountMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
 
-# -------------------------------------------------------------------
-# Auth / Users / Allauth / REST / JWT
-# -------------------------------------------------------------------
 
-AUTH_USER_MODEL = "users.CustomUser"
+CORS_ALLOW_ALL_ORIGINS = True
 
-REST_USE_JWT = True
-TOKEN_MODEL = None
-REST_AUTH_TOKEN_MODEL = None
-
-ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # Pas de username
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = "email"
-
-ACCOUNT_EMAIL_VERIFICATION = config("ACCOUNT_EMAIL_VERIFICATION", default="mandatory")
-ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_CONFIRM_EMAIL_ON_GET = True
-
-SITE_ID = 1
+#REST_FRAMEWORK = {
+  #  "DEFAULT_AUTHENTICATION_CLASSES": [
+        #'rest_framework_simplejwt.authentication.JWTAuthentication',  # simple pour démarrer
+  #      "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+   # ],
+   # "DEFAULT_PERMISSION_CLASSES": [
+   #     'rest_framework.permissions.IsAuthenticated',  # à durcir ensuite
+   # ],
+   # "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+   # "PAGE_SIZE": 10,
+#}
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        # JWT via cookies (dj-rest-auth)
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
-        # JWT via header Authorization: Bearer <token>
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # Pratique pour l'admin / browsable API
-        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        # Bloque les utilisateurs suspendus sur tous les endpoints protégés
-        "apps.users.permissions.IsNotSuspended",
         "rest_framework.permissions.IsAuthenticated",
-    ],
-    "DEFAULT_PARSER_CLASSES": [
-        "rest_framework.parsers.JSONParser",
-        "rest_framework.parsers.FormParser",
-        "rest_framework.parsers.MultiPartParser",
-    ],
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "EXCEPTION_HANDLER": "apps.users.exceptions.custom_exception_handler",
 }
 
-# Cookies JWT / Samesite
-JWT_AUTH_COOKIE = "access_token"
-JWT_AUTH_REFRESH_COOKIE = "refresh_token"
-JWT_AUTH_HTTPONLY = True
-JWT_AUTH_SECURE = not DEBUG
-JWT_AUTH_SAMESITE = "None" if not DEBUG else "Lax"
-
+REST_USE_JWT = True
+#TOKEN_MODEL = None
 REST_AUTH = {
     "USE_JWT": True,
-    "TOKEN_MODEL": None,
-    "JWT_AUTH_COOKIE": JWT_AUTH_COOKIE,
-    "JWT_AUTH_REFRESH_COOKIE": JWT_AUTH_REFRESH_COOKIE,
-    "JWT_AUTH_HTTPONLY": JWT_AUTH_HTTPONLY,
-    "JWT_AUTH_SECURE": JWT_AUTH_SECURE,
-    "JWT_AUTH_SAMESITE": JWT_AUTH_SAMESITE,
-    "REGISTER_SERIALIZER": "apps.users.serializers.CustomRegisterSerializer",
-    "USER_DETAILS_SERIALIZER": "apps.users.serializers.UserSerializer",
-    "OLD_PASSWORD_FIELD_ENABLED": True,
+    "JWT_AUTH_COOKIE": "access_token",
+    "JWT_AUTH_REFRESH_COOKIE": "refresh_token",
 }
 
-REST_AUTH_SERIALIZERS = {
-    "JWT_TOKEN_CLAIMS_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainPairSerializer",
-}
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_TOKEN_LIFETIME", default=15, cast=int)),
-    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=config("JWT_REFRESH_TOKEN_LIFETIME", default=10080, cast=int)),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -188,33 +148,19 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+JWT_AUTH_COOKIE = "access_token"
+JWT_AUTH_REFRESH_COOKIE = "refresh_token"
+JWT_AUTH_COOKIE_USE_CSRF = True
+JWT_AUTH_SAMESITE = "Lax"
 
-# -------------------------------------------------------------------
-# Security / CORS / CSRF / Cookies
-# -------------------------------------------------------------------
-
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
-# Le cookie CSRF doit être lisible par le frontend pour pouvoir être
-# renvoyé dans le header X-CSRFToken sur les requêtes POST/PATCH/DELETE.
-CSRF_COOKIE_HTTPONLY = False
-
-
-CORS_ALLOWED_ORIGINS = [o for o in config("CORS_ALLOWED_ORIGINS", default="").split(",") if o]
-
-CORS_ALLOW_CREDENTIALS = config("CORS_ALLOW_CREDENTIALS", default=True, cast=bool)
-
-#
-CSRF_TRUSTED_ORIGINS = [o for o in config("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
-
-
-# -------------------------------------------------------------------
-# URLs / WSGI / API docs
-# -------------------------------------------------------------------
-
-ROOT_URLCONF = "config.urls"
-
-ASGI_APPLICATION = "config.asgi.application"
+#SIMPLE_JWT = {
+ #   'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+  #  'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+   # 'ROTATE_REFRESH_TOKENS': False,
+    #'BLACKLIST_AFTER_ROTATION': True,
+    #'AUTH_HEADER_TYPES': ('Bearer',),
+#}
+ROOT_URLCONF = 'config.urls'
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "LudoKan API",
@@ -222,207 +168,137 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
 }
-
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# -------------------------------------------------------------------
 # Database
-# -------------------------------------------------------------------
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+# Database
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(
+    'default': dj_database_url.config(
         default=config(
-            "DATABASE_URL",
-            default=(
-                f"postgresql://{config('POSTGRES_USER', default='tesp_user')}:"
-                f"{config('POSTGRES_PASSWORD', default='tesp_password')}@"
-                f"{config('POSTGRES_HOST', default='db')}:"
-                f"{config('POSTGRES_PORT', default='5432')}/"
-                f"{config('POSTGRES_DB', default='tesp_db')}"
-            ),
+            'DATABASE_URL',
+            default=f"postgresql://{config('POSTGRES_USER', default='tesp_user')}:{config('POSTGRES_PASSWORD', default='tesp_password')}@{config('POSTGRES_HOST', default='db')}:{config('POSTGRES_PORT', default='5432')}/{config('POSTGRES_DB', default='tesp_db')}"
         ),
         conn_max_age=600,
+        # ssl_require=True  # à activer si Render nécessite SSL obligatoire
     )
 }
 
-# Mettre ssl_require=True  dans la configuration si Render nécessite SSL obligatoire
 
-# -------------------------------------------------------------------
+
 # Password validation
-# -------------------------------------------------------------------
+# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
 
 
-# -------------------------------------------------------------------
 # Internationalization
-# -------------------------------------------------------------------
+# https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = 'en-us'
 
-
-TIME_ZONE = config("TIME_ZONE", default="Europe/Paris")
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_TZ = True
 
 
-# -------------------------------------------------------------------
-# Static files
-# -------------------------------------------------------------------
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
-# -------------------------------------------------------------------
-# Media files (upload)
-# -------------------------------------------------------------------
-
-if DEBUG:
-    MEDIA_URL = "/media/"
-    MEDIA_ROOT = BASE_DIR / "media"
-else:
-    # Utilise Cloudflare R2 (compatible S3) pour le stockage des fichiers
-    INSTALLED_APPS += ["storages"]
-
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-
-    # Endpoint R2 type: https://<account_id>.r2.cloudflarestorage.com
-    AWS_S3_ENDPOINT_URL = config("CLOUDFLARE_R2_ENDPOINT")
-    AWS_ACCESS_KEY_ID = config("CLOUDFLARE_R2_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = config("CLOUDFLARE_R2_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = config("CLOUDFLARE_R2_BUCKET_NAME")
-    AWS_S3_REGION_NAME = "auto"
-    AWS_S3_FILE_OVERWRITE = False
-    AWS_S3_SIGNATURE_VERSION = "s3v4"
-
-    # Optionnel : permet d'ajouter un préfixe (ex: "prod" ou "staging")
-    # pour organiser les fichiers dans un même bucket R2.
-    # Exemple: CLOUDFLARE_R2_PREFIX=staging => clés "staging/avatars/..."
-    AWS_LOCATION = config("CLOUDFLARE_R2_PREFIX", default="").strip() or None
-
-    # Optionnel : domaine Cloudflare/Custom pour servir les fichiers
-    # (ex: cdn.ludokan.com). Si non défini, l'URL R2 par défaut est utilisée.
-    AWS_S3_CUSTOM_DOMAIN = config("CLOUDFLARE_R2_CUSTOM_DOMAIN", default=None)
+# Optionnel mais fortement recommandé avec WhiteNoise
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
-# -------------------------------------------------------------------
-# Default primary key
-# -------------------------------------------------------------------
+# Default primary key field type
+# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Celery Configuration
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://redis:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://redis:6379/1')
+CELERY_CACHE_BACKEND = config('CELERY_CACHE_BACKEND', default='redis://redis:6379/2')
 
-# -------------------------------------------------------------------
-# Celery
-# -------------------------------------------------------------------
-
-CELERY_BROKER_URL = config("CELERY_BROKER_URL", default="redis://redis:6379/0")
-CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="redis://redis:6379/1")
-CELERY_CACHE_BACKEND = config("CELERY_CACHE_BACKEND", default="redis://redis:6379/2")
-
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
+# Configuration des tâches
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
-# Évite l'avertissement Celery 6 sur broker_connection_retry au démarrage
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-
-# -------------------------------------------------------------------
-# Cache (Redis)
-# -------------------------------------------------------------------
-
+# Configuration Redis pour le cache Django
 CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": config("REDIS_URL", default="redis://redis:6379/2"),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': config('REDIS_URL', default='redis://redis:6379/2'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
     }
 }
 
+# Email Configuration
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@ludokan.com')
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 
-# -------------------------------------------------------------------
-# Channels (WebSockets via Redis)
-# -------------------------------------------------------------------
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://127.0.0.1:3000').split(',')
+CORS_ALLOW_CREDENTIALS = config('CORS_ALLOW_CREDENTIALS', default=True, cast=bool)
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            # URL Redis dédiée aux websockets (DB 3 par défaut).
-            # Surchageable via la variable d'env CHANNEL_REDIS_URL,
-            # ex: redis://127.0.0.1:6379/3 en dev hors Docker.
-            "hosts": [
-                config("CHANNEL_REDIS_URL", default="redis://redis:6379/3"),
-            ],
-        },
-    }
-}
+# CSRF Configuration (configurable via environment variable)
+CSRF_TRUSTED_ORIGINS = [o for o in config('CSRF_TRUSTED_ORIGINS', default='').split(',') if o]
 
 
-# -------------------------------------------------------------------
-# Email
-# -------------------------------------------------------------------
+# Sentry configuration
+# reCAPTCHA
+RECAPTCHA_SECRET_KEY = config('RECAPTCHA_SECRET_KEY')
 
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@ludokan.com")
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.console.EmailBackend",
-)
-
-
-# -------------------------------------------------------------------
-# Sentry
-# -------------------------------------------------------------------
-
-SENTRY_DSN = config("SENTRY_DSN", default="").strip()
-
+SENTRY_DSN = config('SENTRY_DSN', default='').strip()
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
-        traces_sample_rate=config(
-            "SENTRY_TRACES_SAMPLE_RATE",
-            default=1.0,
-            cast=float,
-        ),
-        environment=config("SENTRY_ENVIRONMENT", default=None),
+        traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=1.0, cast=float),
+        environment=config('SENTRY_ENVIRONMENT', default=None),
         send_default_pii=True,
     )
+else:
+    print("SENTRY_DSN is not set")

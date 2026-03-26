@@ -1,13 +1,7 @@
-import { Outlet } from 'react-router-dom';
-import Header from './components/Header';
+import LoginForm from './components/LoginForm';
 
-const App = () => {
-  return (
-    <>
-      <Header />
-      <Outlet />
-    </>
-  );
-};
+function App() {
+  return <LoginForm />;
+}
 
 export default App;
