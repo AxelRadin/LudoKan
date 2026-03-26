@@ -90,3 +90,8 @@ export async function apiPatch(
     ...options,
   });
 }
+
+// DELETE
+export async function apiDelete(path: string, options: RequestInit = {}) {
+  return request(path, { method: 'DELETE', ...options });
+}

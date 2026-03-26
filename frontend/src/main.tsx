@@ -14,6 +14,9 @@ import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
 import theme from './theme.ts';
+import LicensePage from './pages/LicencePage.tsx';
+import SearchResultsPage from './pages/SearchResultsPage.tsx';
+import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -24,8 +27,13 @@ const router = createBrowserRouter([
       { path: 'home', element: <HomePage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'game/:id', element: <GamePage /> },
+      { path: 'game/igdb/:igdbId', element: <GamePage /> },
       { path: 'test', element: <TestSentry /> },
       { path: 'connector', element: <BackendConnector /> },
+      { path: 'license', element: <LicensePage /> },
+      { path: 'search', element: <SearchResultsPage /> },
+      { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
+      { path: 'trending/:sort', element: <TrendingCategoryPage /> },
     ],
   },
 ]);

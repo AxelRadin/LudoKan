@@ -50,6 +50,16 @@ MEDIA_URL=/media/
 MEDIA_ROOT=/app/media
 
 # ===========================================
+# IGDB / TWITCH (proxy API jeux - endpoints /api/igdb/...)
+# ===========================================
+# Option 1 (prioritaire) : Twitch OAuth - le backend récupère le token automatiquement
+TWITCH_CLIENT_ID=
+TWITCH_CLIENT_SECRET=
+# Option 2 : token manuel (uniquement si Option 1 non utilisée)
+# IGDB_CLIENT_ID=
+# IGDB_ACCESS_TOKEN=
+
+# ===========================================
 # SENTRY
 # ===========================================
 # Laisser vide en local si vous ne souhaitez pas envoyer d'événements
