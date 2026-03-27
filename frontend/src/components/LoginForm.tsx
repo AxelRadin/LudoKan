@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Ajout
+import { useNavigate } from 'react-router-dom';
 import { apiPost } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import AuthFormContainer from './AuthFormContainer';
@@ -23,7 +23,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate(); // Ajout
+  const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,12 +43,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       });
       console.log('User connecté', data);
 
-      // Met à jour l'état d'authentification global
       setAuthenticated(true);
-      onLoginSuccess?.();
-
-      // Redirection vers la page d'accueil (les cookies JWT sont déjà posés par le backend)
-      navigate('/', { replace: true });
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {

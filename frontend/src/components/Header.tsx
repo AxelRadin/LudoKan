@@ -17,22 +17,28 @@ import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
 export const Header: React.FC = () => {
-  const { isAuthenticated, setAuthenticated } = useAuth();
-  const [openAuth, setOpenAuth] = useState(false);
+  const {
+    isAuthenticated,
+    setAuthenticated,
+    isAuthModalOpen,
+    setAuthModalOpen,
+    pendingAction,
+    setPendingAction,
+  } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   const handleLoginOpen = () => {
     setAuthMode('login');
-    setOpenAuth(true);
+    setAuthModalOpen(true);
   };
 
   const handleRegisterOpen = () => {
     setAuthMode('register');
-    setOpenAuth(true);
+    setAuthModalOpen(true);
   };
 
   const handleAuthClose = () => {
-    setOpenAuth(false);
+    setAuthModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -103,7 +109,7 @@ export const Header: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Dialog open={openAuth} onClose={handleAuthClose} keepMounted>
+      <Dialog open={isAuthModalOpen} onClose={handleAuthClose} keepMounted>
         <Box
           sx={{
             position: 'absolute',
@@ -122,7 +128,11 @@ export const Header: React.FC = () => {
             onSwitchToRegister={() => setAuthMode('register')}
             onLoginSuccess={() => {
               setAuthenticated(true);
-              setOpenAuth(false);
+              setAuthModalOpen(false);
+              if (pendingAction) {
+                pendingAction();
+                setPendingAction(null);
+              }
             }}
           />
         ) : (

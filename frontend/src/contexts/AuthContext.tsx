@@ -6,6 +6,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
+  const [isAuthModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   // Détermine l'état d'authentification au chargement de l'application
   useEffect(() => {
@@ -32,8 +34,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const value = useMemo(
-    () => ({ isAuthenticated, setAuthenticated }),
-    [isAuthenticated, setAuthenticated]
+    () => ({
+      isAuthenticated,
+      setAuthenticated,
+      isAuthModalOpen,
+      setAuthModalOpen,
+      pendingAction,
+      setPendingAction,
+    }),
+    [isAuthenticated, isAuthModalOpen, pendingAction]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
