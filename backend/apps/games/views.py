@@ -183,7 +183,8 @@ class GameByIgdbIdView(APIView):
 
     def get(self, request, igdb_id):
         game = get_object_or_404(Game, igdb_id=igdb_id)
-        serializer = GameReadSerializer(game)
+
+        serializer = GameDetailSerializer(game, context={"request": request})
         return Response(serializer.data)
 
 

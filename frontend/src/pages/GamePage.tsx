@@ -14,12 +14,12 @@ import {
   Divider,
   Paper,
   Rating,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import ReviewForm from '../components/ReviewForm';
 import {
   fetchIgdbGameById,
   getCoverUrl,
@@ -56,12 +56,18 @@ export default function GamePage() {
                 'fr-FR'
               )
             : null;
+          const isoReleaseDate = data.first_release_date
+            ? new Date(data.first_release_date * 1000)
+                .toISOString()
+                .split('T')[0]
+            : null;
           setGame({
             name: data.display_name ?? data.name,
             description: data.summary,
             cover_url: coverUrl,
             image,
             release_date: releaseDate,
+            iso_release_date: isoReleaseDate,
             platforms:
               data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
             genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
@@ -71,6 +77,20 @@ export default function GamePage() {
           });
         })
         .catch(() => setGameNotFound(true));
+
+      if (isAuthenticated) {
+        apiGet(`/api/games/igdb/${igdbId}/`)
+          .then(djangoData => {
+            setDjangoId(String(djangoData.id));
+            if (djangoData.user_library) {
+              setUserGame(djangoData.user_library);
+            }
+            if (djangoData.user_rating) {
+              setUserRating(djangoData.user_rating.value);
+            }
+          })
+          .catch(() => {});
+      }
     } else {
       apiGet(`/api/games/${id}/`)
         .then(data => {
@@ -87,7 +107,7 @@ export default function GamePage() {
         })
         .catch(() => setGameNotFound(true));
     }
-  }, [id, igdbId]);
+  }, [id, igdbId, isAuthenticated]);
 
   useEffect(() => {
     if (!game?.description) return;
@@ -101,17 +121,13 @@ export default function GamePage() {
 
   useEffect(() => {
     if (djangoId && isAuthenticated) {
-      apiGet(`/api/reviews/?game=${djangoId}`)
-        .then(data => {
-          const myReview = data.find(
-            (r: any) => r.user?.id === userGame?.user?.id
-          );
+      Promise.all([apiGet(`/api/reviews/?game=${djangoId}`), apiGet('/api/me')])
+        .then(([reviews, me]) => {
+          const myReview = reviews.find((r: any) => r.user?.id === me.id);
           if (myReview) {
             setUserReview(myReview);
-            setUserRating(myReview.rating?.value || null);
           } else {
             setUserReview(null);
-            setUserRating(null);
           }
         })
         .catch(() => {
@@ -120,7 +136,7 @@ export default function GamePage() {
     } else {
       setUserReview(null);
     }
-  }, [djangoId, isAuthenticated, userGame?.user?.id]);
+  }, [djangoId, isAuthenticated]);
 
   async function ensureDjangoId(): Promise<string | null> {
     if (djangoId) return djangoId;
@@ -130,7 +146,7 @@ export default function GamePage() {
           Number(igdbId),
           game.name,
           game.cover_url || game.image || null,
-          game.release_date || null
+          game.iso_release_date || null
         );
         setDjangoId(String(res.id));
         return String(res.id);
@@ -156,12 +172,27 @@ export default function GamePage() {
     if (!currentDjangoId) return;
     setUserRating(value);
 
+    let currentUserGame = userGame;
+    if (!currentUserGame && isAuthenticated) {
+      try {
+        currentUserGame = await apiPost('/api/me/games/', {
+          game_id: currentDjangoId,
+          status: 'EN_COURS',
+        });
+        setUserGame(currentUserGame);
+      } catch (err) {
+        console.error('Erreur ajout biblio auto', err);
+      }
+    }
+
     try {
-      const ratingRes = await apiPost('/api/ratings/', {
-        game: currentDjangoId,
-        value: value,
-        rating_type: 'etoiles',
-      });
+      const ratingRes = await apiPost(
+        `/api/games/${currentDjangoId}/ratings/`,
+        {
+          value: value,
+          rating_type: 'etoiles',
+        }
+      );
 
       const ratingId = ratingRes.id;
 
@@ -228,7 +259,7 @@ export default function GamePage() {
     const nextIsFavorite = !userGame?.is_favorite;
 
     try {
-      if (userGame?.game_id) {
+      if (userGame) {
         const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
           is_favorite: nextIsFavorite,
         });
@@ -680,8 +711,20 @@ export default function GamePage() {
               width: '100%',
             }}
           >
-            <SecondaryButton>Matchmaking</SecondaryButton>
-            <Button variant="contained" color="error">
+            <SecondaryButton
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setAuthModalOpen(true);
+                }
+              }}
+            >
+              Matchmaking
+            </SecondaryButton>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+            >
               Ajouter à la collection
             </Button>
           </Box>
@@ -708,23 +751,12 @@ export default function GamePage() {
             >
               Avis
             </Typography>
-            <TextField
-              label="Écrire un avis"
-              multiline
-              minRows={1}
-              maxRows={3}
-              fullWidth={false}
-              variant="outlined"
-              sx={{
-                mb: 3,
-                width: '350px',
-                maxWidth: '100%',
-                alignItems: 'flex-start',
-              }}
+            <ReviewForm
+              gameId={djangoId ?? ''}
+              existingReviewId={userReview?.id}
+              existingContent={userReview?.content}
+              onSuccess={review => setUserReview(review)}
             />
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Aucun avis disponible.
-            </Typography>
           </Box>
         </Paper>
       </Box>
