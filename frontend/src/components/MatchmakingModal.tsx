@@ -72,16 +72,21 @@ export default function MatchmakingModal({
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
             PaperProps={{
-                sx: { borderRadius: 4, overflow: 'hidden' }
+                sx: {
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    maxWidth: 750,
+                }
             }}
         >
             <Box
                 sx={{
                     position: 'relative',
                     height: 160,
+                    width: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -158,8 +163,16 @@ export default function MatchmakingModal({
                         })}
                     </List>
                 ) : (
-                    <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                        <Box sx={{ position: 'relative', width: 80, height: 80, mb: 4 }}>
+                    <Box
+                        sx={{
+                            py: { xs: 6, md: 10 },
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            textAlign: 'center'
+                        }}
+                    >
+                        <Box sx={{ position: 'relative', width: 100, height: 100, mb: 5 }}>
                             <Box
                                 sx={{
                                     position: 'absolute',
@@ -181,15 +194,19 @@ export default function MatchmakingModal({
                                     animationDelay: '1s',
                                 }}
                             />
-                            <Avatar sx={{ width: 80, height: 80, bgcolor: 'primary.main', zIndex: 2, position: 'relative' }}>
-                                <RadarIcon fontSize="large" />
+                            <Avatar sx={{ width: 100, height: 100, bgcolor: 'primary.main', zIndex: 2, position: 'relative' }}>
+                                <RadarIcon sx={{ fontSize: 48 }} />
                             </Avatar>
                         </Box>
 
-                        <Typography variant="h6" fontWeight={700} gutterBottom>
+                        <Typography variant="h5" fontWeight={700} gutterBottom sx={{ mb: 2 }}>
                             Analyse de la zone...
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 280 }}>
+                        <Typography
+                            variant="body1"
+                            color="text.secondary"
+                            sx={{ maxWidth: 450, lineHeight: 1.6 }}
+                        >
                             Nous élargissons le périmètre de recherche. Vous pouvez fermer cette fenêtre, nous vous avertirons dès qu'un joueur sera trouvé !
                         </Typography>
                     </Box>

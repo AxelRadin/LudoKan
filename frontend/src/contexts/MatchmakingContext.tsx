@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
@@ -33,6 +34,9 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
     const [hasNewMatch, setHasNewMatch] = useState(false);
 
     const [activeGame, setActiveGame] = useState<{ name: string, image: string } | null>(null);
+
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+    const [pendingGame, setPendingGame] = useState<{ id: string; name: string; image: string } | null>(null);
 
     async function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
         return new Promise((resolve) => {
@@ -93,7 +97,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
         }
     }, [isAuthenticated]);
 
-    const startMatchmaking = async (gameId: string, gameName: string, gameImage: string) => {
+    const executeMatchmaking = async (gameId: string, gameName: string, gameImage: string) => {
         setIsMatching(true);
         try {
             const { latitude, longitude } = await getUserLocation();
@@ -140,6 +144,26 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
         }
     };
 
+    const startMatchmaking = async (gameId: string, gameName: string, gameImage: string) => {
+        if (activeRequestId) {
+            setPendingGame({ id: gameId, name: gameName, image: gameImage });
+            setIsMatchmakingModalOpen(true);
+            setIsConfirmModalOpen(true);
+            return;
+        }
+
+        await executeMatchmaking(gameId, gameName, gameImage);
+    };
+
+    const confirmNewMatchmaking = async () => {
+        if (pendingGame) {
+            await cancelMatchmaking();
+            setIsConfirmModalOpen(false);
+            await executeMatchmaking(pendingGame.id, pendingGame.name, pendingGame.image);
+            setPendingGame(null);
+        }
+    };
+
     const cancelMatchmaking = async () => {
         if (activeRequestId) {
             try {
@@ -156,7 +180,7 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
         setHasNewMatch(false);
         setIsMatchmakingModalOpen(false);
     };
-    
+
     useEffect(() => {
         if (!activeRequestId) return;
 
@@ -216,6 +240,14 @@ export function MatchmakingProvider({ children }: { children: React.ReactNode })
                 matches={matches}
                 startedAt={activeRequestStartedAt}
                 game={activeGame}
+            />
+            <ConfirmCancelMatchmakingModal
+                open={isConfirmModalOpen}
+                onClose={() => {
+                    setIsConfirmModalOpen(false);
+                    setPendingGame(null);
+                }}
+                onConfirm={confirmNewMatchmaking}
             />
         </MatchmakingContext.Provider>
     );
