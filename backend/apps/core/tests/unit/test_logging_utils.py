@@ -1,8 +1,9 @@
 """
-Couverture des helpers log_activity et log_system_event.
+Couverture des helpers log_activity, log_system_event et log_activity_anomaly (BACK-021A, BACK-022A).
 """
 
 import pytest
+from django.contrib.auth.signals import user_login_failed
 
 from apps.core.logging_utils import log_activity, log_system_event
 from apps.core.models import ActivityLog, SystemLog
@@ -56,3 +57,54 @@ def test_log_system_event_with_user(user):
     entry = SystemLog.objects.get(event_type="export_done")
     assert entry.user_id == user.id
     assert entry.metadata == {"format": "csv"}
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+def test_log_activity_anomaly():
+    """log_activity_anomaly crée un SystemLog event_type=activity_anomaly (BACK-022A)."""
+    from apps.core.logging_utils import log_activity_anomaly
+
+    log_activity_anomaly("Pic de requêtes détecté", metadata={"count": 1000})
+    assert SystemLog.objects.filter(event_type="activity_anomaly").exists()
+    entry = SystemLog.objects.get(event_type="activity_anomaly")
+    assert "Pic" in entry.description
+    assert entry.metadata == {"count": 1000}
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+def test_login_failed_signal_creates_system_log():
+    """Le signal user_login_failed crée une entrée system_logs login_failed (BACK-022A)."""
+    from apps.core import signals  # noqa: F401 - connecte les receivers
+
+    user_login_failed.send(
+        sender=None,
+        credentials={"email": "unknown@example.com"},
+        request=None,
+    )
+    assert SystemLog.objects.filter(event_type="login_failed").exists()
+    entry = SystemLog.objects.get(event_type="login_failed")
+    assert "Échec" in entry.description or "authentification" in entry.description.lower()
+    assert entry.metadata.get("username") == "unknown@example.com"
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+def test_log_admin_action_creates_system_log(admin_user):
+    """log_admin_action crée aussi une entrée system_logs admin_action (BACK-022A)."""
+    from apps.users.utils import log_admin_action
+
+    log_admin_action(
+        admin_user=admin_user,
+        action_type="user.suspend",
+        target_type="user",
+        target_id=42,
+        description="Suspension abus",
+    )
+    assert SystemLog.objects.filter(event_type="admin_action").exists()
+    entry = SystemLog.objects.get(event_type="admin_action")
+    assert entry.description == "user.suspend"
+    assert entry.metadata.get("target_type") == "user"
+    assert entry.metadata.get("target_id") == 42
+    assert entry.user_id == admin_user.id
