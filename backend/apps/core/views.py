@@ -166,7 +166,7 @@ def _activity_from_admin_actions(since, user_id, action_filter, max_items=500):
 
 def build_activity_report_payload(period="30d", user_id=None, action_filter=None, max_items=500):
     """
-    Construit le payload du rapport activité (BACK-021D / BACK-021F).
+    Construit le payload du rapport activité.
     Utilisé par AdminReportsActivityView et par le service de rapports planifiés.
     """
     since = _since_for_period(period)
@@ -178,7 +178,7 @@ def build_activity_report_payload(period="30d", user_id=None, action_filter=None
 
 class AdminReportsActivityView(APIView):
     """
-    Journal d'activité pour les rapports planifiés (BACK-021D).
+    Journal d'activité pour les rapports planifiés.
     Fusionne ActivityLog et AdminAction avec filtres optionnels.
 
     GET /api/admin/reports/activity/

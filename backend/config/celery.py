@@ -14,6 +14,31 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 # Découverte automatique des tâches dans toutes les apps
 app.autodiscover_tasks()
 
+
+@app.on_after_configure.connect
+def _register_celery_failure_logging(sender, **kwargs):
+    """Enregistre les échecs de tâches Celery dans system_logs"""
+    from celery.signals import task_failure
+
+    def _on_task_failure(sender_task, task_id, exception, args, kwargs, traceback, einfo, **kw):
+        try:
+            from apps.core.logging_utils import log_system_event
+
+            log_system_event(
+                event_type="celery_task_failure",
+                description=str(exception)[:500],
+                metadata={
+                    "task_id": task_id,
+                    "task_name": getattr(sender_task, "name", str(sender_task)),
+                    "exception_type": type(exception).__name__,
+                },
+            )
+        except Exception:
+            pass
+
+    task_failure.connect(_on_task_failure, weak=False)
+
+
 # Configuration des tâches périodiques (optionnel)
 app.conf.beat_schedule = {
     "expire-old-matchmaking-requests": {

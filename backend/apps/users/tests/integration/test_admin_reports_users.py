@@ -1,5 +1,5 @@
 """
-Tests pour l'endpoint GET /api/admin/reports/users/ (BACK-021B).
+Tests pour l'endpoint GET /api/admin/reports/users/
 Métriques détaillées utilisateurs pour les rapports planifiés.
 """
 
