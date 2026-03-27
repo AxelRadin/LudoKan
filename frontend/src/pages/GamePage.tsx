@@ -107,7 +107,7 @@ export default function GamePage() {
         })
         .catch(() => setGameNotFound(true));
     }
-  }, [id, igdbId]);
+  }, [id, igdbId, isAuthenticated]);
 
   useEffect(() => {
     if (!game?.description) return;
