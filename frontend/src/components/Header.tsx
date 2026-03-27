@@ -7,7 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import theme from '../theme';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -17,6 +17,7 @@ import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
 export const Header: React.FC = () => {
+  const navigate = useNavigate();
   const {
     isAuthenticated,
     setAuthenticated,
@@ -49,6 +50,7 @@ export const Header: React.FC = () => {
       console.error('Erreur lors du logout', e);
     } finally {
       setAuthenticated(false);
+      navigate('/');
     }
   };
 
