@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import ludokanLogo from '../assets/logo.png';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 
 type User = {
   first_name?: string;
@@ -309,8 +310,6 @@ const PageProfile: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const token = localStorage.getItem('authToken'); // à adapter si besoin
-
   // GET /api/me
   useEffect(() => {
     const fetchMe = async () => {
@@ -318,21 +317,11 @@ const PageProfile: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const res = await fetch('/api/me', {
+        const data: User = await apiGet('/api/me', {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: token ? `Bearer ${token}` : '',
           },
         });
-
-        if (res.status === 401) {
-          throw new Error('Tu dois être connecté pour voir ton profil (401).');
-        }
-        if (!res.ok) {
-          throw new Error('Impossible de charger ton profil.');
-        }
-
-        const data: User = await res.json();
         setUser(data);
         setForm({
           first_name: data.first_name ?? '',
@@ -350,7 +339,7 @@ const PageProfile: React.FC = () => {
     };
 
     fetchMe();
-  }, [token]);
+  }, []);
 
   const fullName =
     `${form.first_name} ${form.last_name}`.trim() || 'Pseudo utilisateur';
@@ -378,31 +367,9 @@ const PageProfile: React.FC = () => {
     try {
       setSaving(true);
 
-      const res = await fetch('/api/me', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-        body: JSON.stringify(form),
+      const updated: User = await apiPatch('/api/me', form, {
+        headers: {},
       });
-
-      if (res.status === 401) {
-        throw new Error('Non autorisé : reconnecte-toi (401).');
-      }
-      if (res.status === 400) {
-        throw new Error('Données invalides (400 Bad Request).');
-      }
-      if (res.status === 403) {
-        throw new Error(
-          'Tu essaies de modifier un champ non autorisé (403 Forbidden).'
-        );
-      }
-      if (!res.ok) {
-        throw new Error('Erreur lors de la sauvegarde du profil.');
-      }
-
-      const updated: User = await res.json();
       setUser(updated);
       setMessage('Profil mis à jour ✅');
       setIsEditing(false);
@@ -431,16 +398,7 @@ const PageProfile: React.FC = () => {
     if (!ok) return;
 
     try {
-      const res = await fetch('/api/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Impossible d'envoyer l'e-mail de réinitialisation.");
-      }
-
+      await apiPost('/api/reset-password', { email: form.email });
       setMessage('E-mail de réinitialisation envoyé 📧');
     } catch (e: any) {
       setError(e.message ?? 'Erreur inattendue.');

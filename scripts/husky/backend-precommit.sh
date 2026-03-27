@@ -40,21 +40,16 @@ echo ""
 #   echo "  - $f"
 # done
 
-# Détecter docker compose / docker-compose
+# Préférer Docker si le conteneur web est up, sinon exécution locale (backend/ + venv ou PATH)
+USE_DOCKER=false
+DC=""
 if docker compose version >/dev/null 2>&1; then
   DC="docker compose"
 elif command -v docker-compose >/dev/null 2>&1; then
   DC="docker-compose"
-else
-  echo "❌ Ni 'docker compose' ni 'docker-compose' trouvés. Impossible de lancer les checks backend."
-  exit 1
 fi
-
-# Vérifier que le conteneur web est up
-if ! $DC ps | grep -q "web.*Up"; then
-  echo "❌ Le conteneur 'web' n'est pas démarré."
-  echo "   Lance d'abord : $DC up -d"
-  exit 1
+if [ -n "$DC" ] && $DC ps 2>/dev/null | grep -q "web.*Up"; then
+  USE_DOCKER=true
 fi
 
 # Construire les chemins tels qu'ils existent dans le conteneur
@@ -72,14 +67,50 @@ for rel in $BACKEND_REL_FILES; do
   CONTAINER_REL_FILES="$CONTAINER_REL_FILES $in_container"
 done
 
+run_black() {
+  if [ "$USE_DOCKER" = true ]; then
+    $DC exec -T web black $CONTAINER_REL_FILES
+  else
+    (cd "$REPO_ROOT/backend" && black $CONTAINER_REL_FILES)
+  fi
+}
+run_isort() {
+  if [ "$USE_DOCKER" = true ]; then
+    $DC exec -T web isort $CONTAINER_REL_FILES
+  else
+    (cd "$REPO_ROOT/backend" && isort $CONTAINER_REL_FILES)
+  fi
+}
+run_ruff() {
+  if [ "$USE_DOCKER" = true ]; then
+    $DC exec -T web ruff check --fix $CONTAINER_REL_FILES
+  else
+    (cd "$REPO_ROOT/backend" && ruff check --fix $CONTAINER_REL_FILES)
+  fi
+}
+run_flake8() {
+  if [ "$USE_DOCKER" = true ]; then
+    $DC exec -T web flake8 $CONTAINER_REL_FILES
+  else
+    (cd "$REPO_ROOT/backend" && flake8 $CONTAINER_REL_FILES)
+  fi
+}
+
+if [ "$USE_DOCKER" = true ]; then
+  echo "🐳 Utilisation du conteneur Docker 'web'"
+else
+  echo "💻 Docker non démarré → exécution locale (backend/ avec venv ou PATH)"
+  for cmd in black isort ruff flake8; do
+    if ! command -v $cmd >/dev/null 2>&1; then
+      echo "❌ Commande '$cmd' introuvable. Lance 'docker compose up -d' ou active le venv backend."
+      exit 1
+    fi
+  done
+fi
 echo ""
-# echo "📄 Fichiers vus dans le conteneur (relatifs à /app) :"
-# for f in $CONTAINER_REL_FILES; do
-#   echo "  - $f"
-# done
-echo ""
+
 echo "🛠  Formatage backend (black) sur fichiers stagés..."
-$DC exec -T web black $CONTAINER_REL_FILES
+run_black
 
 BLACK_COUNT=$(git diff --name-only -- $BACKEND_REL_FILES | wc -l | tr -d ' ')
 if [ "$BLACK_COUNT" -gt 0 ]; then
@@ -93,7 +124,7 @@ fi
 
 echo ""
 echo "🛠  Tri des imports (isort) sur fichiers stagés..."
-$DC exec -T web isort $CONTAINER_REL_FILES
+run_isort
 
 ISORT_COUNT=$(git diff --name-only -- $BACKEND_REL_FILES | wc -l | tr -d ' ')
 if [ "$ISORT_COUNT" -gt 0 ]; then
@@ -107,8 +138,7 @@ fi
 
 echo ""
 echo "🛠  Ruff (auto-fix) sur fichiers stagés..."
-# Ruff utilise la config de pyproject.toml (/app/pyproject.toml)
-$DC exec -T web ruff check --fix $CONTAINER_REL_FILES
+run_ruff
 
 RUFF_COUNT=$(git diff --name-only -- $BACKEND_REL_FILES | wc -l | tr -d ' ')
 if [ "$RUFF_COUNT" -gt 0 ]; then
@@ -123,7 +153,7 @@ fi
 
 echo ""
 echo "🔎 Lint backend (flake8) sur fichiers stagés..."
-if ! $DC exec -T web flake8 $CONTAINER_REL_FILES; then
+if ! run_flake8; then
   echo ""
   echo "❌ Flake8 a détecté des erreurs dans les fichiers backend ci-dessus."
   echo "   Corrige-les (regarde les messages juste au-dessus) puis refais un commit."

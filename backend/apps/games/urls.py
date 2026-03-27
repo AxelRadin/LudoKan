@@ -1,6 +1,34 @@
 from django.urls import path
 
-from .views import GameStatsView, GameViewSet, GenreViewSet, PlatformViewSet, PublisherViewSet, RatingCreateView, RatingDetailView, RatingListView
+from .views import (
+    AdminGameListView,
+    AdminRatingDetailView,
+    AdminRatingListView,
+    AdminReportsGamesView,
+    GameByIgdbIdView,
+    GameStatsView,
+    GameViewSet,
+    GenreViewSet,
+    ImportIgdbGameView,
+    PlatformViewSet,
+    PublisherViewSet,
+    RatingCreateView,
+    RatingDetailView,
+    RatingListView,
+    RatingReportView,
+)
+from .views_igdb import (
+    IgdbCollectionGamesView,
+    IgdbFranchiseGamesView,
+    IgdbFranchisesSearchView,
+    IgdbGameDetailView,
+    IgdbGamesListView,
+    IgdbSearchPageView,
+    IgdbSearchView,
+    IgdbTranslateView,
+    IgdbTrendingView,
+    IgdbWikidataTestView,
+)
 
 app_name = "games"
 
@@ -71,8 +99,22 @@ platform_detail = PlatformViewSet.as_view(
 
 
 urlpatterns = [
+    # Proxy IGDB (api/igdb/...)
+    path("igdb/games/", IgdbGamesListView.as_view(), name="igdb-games-list"),
+    path("igdb/games/<int:id>/", IgdbGameDetailView.as_view(), name="igdb-game-detail"),
+    path("igdb/trending/", IgdbTrendingView.as_view(), name="igdb-trending"),
+    path("igdb/search/", IgdbSearchView.as_view(), name="igdb-search"),
+    path("igdb/collections/<int:id>/games/", IgdbCollectionGamesView.as_view(), name="igdb-collection-games"),
+    path("igdb/franchises/<int:id>/games/", IgdbFranchiseGamesView.as_view(), name="igdb-franchise-games"),
+    path("igdb/franchises/", IgdbFranchisesSearchView.as_view(), name="igdb-franchises-search"),
+    path("igdb/search-page/", IgdbSearchPageView.as_view(), name="igdb-search-page"),
+    path("igdb/translate/", IgdbTranslateView.as_view(), name="igdb-translate"),
+    path("igdb/wikidata-test/", IgdbWikidataTestView.as_view(), name="igdb-wikidata-test"),
+    # Games CRUD & library
     path("games/", game_list, name="game-list"),
     path("games/<int:pk>/", game_detail, name="game-detail"),
+    path("games/igdb/<int:igdb_id>/", GameByIgdbIdView.as_view(), name="game-by-igdb"),
+    path("games/igdb-import/", ImportIgdbGameView.as_view(), name="game-igdb-import"),
     path("publishers/", publisher_list, name="publisher-list"),
     path("publishers/<int:pk>/", publisher_detail, name="publisher-detail"),
     path("genres/", genre_list, name="genre-list"),
@@ -81,6 +123,12 @@ urlpatterns = [
     path("platforms/<int:pk>/", platform_detail, name="platform-detail"),
     path("ratings/", RatingListView.as_view(), name="rating-list"),
     path("games/<int:game_id>/ratings/", RatingCreateView.as_view(), name="game-rating-create"),
+    path("ratings/<int:pk>/report/", RatingReportView.as_view(), name="rating-report"),
     path("ratings/<int:pk>/", RatingDetailView.as_view(), name="rating-detail"),
     path("games/<int:game_id>/stats/", GameStatsView.as_view(), name="game-stats"),
+    # Admin (api/admin/...)
+    path("admin/games/", AdminGameListView.as_view(), name="admin-game-list"),
+    path("admin/ratings/", AdminRatingListView.as_view(), name="admin-rating-list"),
+    path("admin/ratings/<int:pk>/", AdminRatingDetailView.as_view(), name="admin-rating-detail"),
+    path("admin/reports/games/", AdminReportsGamesView.as_view(), name="admin-reports-games"),
 ]

@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import warnings
 from datetime import timedelta
 from pathlib import Path
 
@@ -17,6 +18,9 @@ import dj_database_url
 import sentry_sdk
 from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
+
+# Réduire le bruit : avertissement django-fsm / viewflow (dépréciation connue)
+warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
 
 # -------------------------------------------------------------------
 # Base directory
@@ -62,6 +66,9 @@ INSTALLED_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "corsheaders",
+    "django_filters",
+    "notifications",
+    "import_export",
     "apps.users",
     "apps.games",
     "apps.core",
@@ -71,7 +78,9 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.realtime",
     "apps.matchmaking",
+    "apps.game_tickets",
     "apps.chat",
+    "django_fsm",
     "api",
 ]
 
@@ -126,12 +135,17 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
+        # Bloque les utilisateurs suspendus sur tous les endpoints protégés
+        "apps.users.permissions.IsNotSuspended",
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
         "rest_framework.parsers.FormParser",
         "rest_framework.parsers.MultiPartParser",
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
@@ -181,7 +195,9 @@ SIMPLE_JWT = {
 
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_HTTPONLY = True
+# Le cookie CSRF doit être lisible par le frontend pour pouvoir être
+# renvoyé dans le header X-CSRFToken sur les requêtes POST/PATCH/DELETE.
+CSRF_COOKIE_HTTPONLY = False
 
 
 CORS_ALLOWED_ORIGINS = [o for o in config("CORS_ALLOWED_ORIGINS", default="").split(",") if o]
@@ -274,7 +290,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+
+TIME_ZONE = config("TIME_ZONE", default="Europe/Paris")
 
 USE_I18N = True
 
@@ -342,6 +359,8 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+# Évite l'avertissement Celery 6 sur broker_connection_retry au démarrage
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 
 # -------------------------------------------------------------------
@@ -407,5 +426,3 @@ if SENTRY_DSN:
         environment=config("SENTRY_ENVIRONMENT", default=None),
         send_default_pii=True,
     )
-else:
-    print("SENTRY_DSN is not set")

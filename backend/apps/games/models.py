@@ -59,6 +59,7 @@ class Game(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255)
+    name_fr = models.CharField(max_length=255, blank=True, default="")
     description = models.TextField(blank=True, default="")
     release_date = models.DateField(blank=True, null=True)
     cover_url = models.URLField(blank=True, null=True)
@@ -83,6 +84,18 @@ class Game(models.Model):
     publisher = models.ForeignKey(Publisher, on_delete=models.CASCADE, related_name="games")
     platforms = models.ManyToManyField(Platform, related_name="games")
     genres = models.ManyToManyField(Genre, related_name="games")
+
+    class Meta:
+        indexes = [
+            # Index pour les filtres numériques fréquemment utilisés
+            models.Index(fields=["min_age"], name="games_min_age_idx"),
+            models.Index(fields=["min_players"], name="games_min_players_idx"),
+            models.Index(fields=["max_players"], name="games_max_players_idx"),
+            # Index pour le tri par popularité (utilisé dans ordering du ViewSet)
+            models.Index(fields=["-popularity_score"], name="games_popularity_idx"),
+            # Index composite pour filtres combinés courants
+            models.Index(fields=["min_age", "min_players"], name="games_age_players_idx"),
+        ]
 
     def __str__(self):
         return self.name

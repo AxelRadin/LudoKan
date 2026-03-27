@@ -11,6 +11,8 @@ on:
       - "frontend/**"
       - "sonar-project.properties"
       - ".github/workflows/ci-cd.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/cloudflare-storage.yml"
   push:
     branches: ["main", "staging"]
     paths:
@@ -18,6 +20,8 @@ on:
       - "frontend/**"
       - "sonar-project.properties"
       - ".github/workflows/ci-cd.yml"
+      - ".github/workflows/security-scan.yml"
+      - ".github/workflows/cloudflare-storage.yml"
 
   
 
@@ -55,6 +59,7 @@ jobs:
       DATABASE_URL: postgres://ludokan:ludokan@localhost:5432/ludokan
       REDIS_URL: redis://localhost:6379/0
       CELERY_BROKER_URL: redis://localhost:6379/1
+      CHANNEL_REDIS_URL: redis://localhost:6379/3
       CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
       CSRF_TRUSTED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173
 
@@ -258,6 +263,11 @@ jobs:
 
             echo "🧹 Cleanup"
             docker image prune -f
+
+            echo "🔄 Restart nginx"
+            cd /srv/ludokan/proxy
+            docker compose restart nginx
+            
           EOF
 
   deploy_prod:
@@ -298,6 +308,12 @@ jobs:
             echo "📋 Containers status"
             docker compose ps
 
+
             echo "🧹 Cleanup"
             docker image prune -f
+
+            echo "🔄 Restart nginx"
+            cd /srv/ludokan/proxy
+            docker compose restart nginx
+
           EOF

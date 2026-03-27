@@ -2,7 +2,9 @@ from dj_rest_auth.registration.serializers import RegisterSerializer
 from rest_framework import serializers
 
 from .errors import UserErrors
+from .models import AdminAction
 from .models import CustomUser as User
+from .models import UserSuspension
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -110,3 +112,72 @@ class UserSerializer(serializers.ModelSerializer):
         if user is not None and User.objects.exclude(pk=user.pk).filter(pseudo=value).exists():
             raise serializers.ValidationError(UserErrors.PSEUDO_ALREADY_EXISTS)  # pragma: no cover
         return value
+
+
+class UserSuspensionSerializer(serializers.ModelSerializer):
+    is_expired = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = UserSuspension
+        fields = [
+            "id",
+            "user",
+            "suspended_by",
+            "reason",
+            "start_date",
+            "end_date",
+            "is_active",
+            "is_expired",
+            "created_at",
+        ]
+
+
+class UserSuspendSerializer(serializers.Serializer):
+    """
+    Payload pour la suspension d'un utilisateur.
+
+    - reason : obligatoire, message libre.
+    - end_date : optionnelle, date de fin de suspension.
+    """
+
+    reason = serializers.CharField()
+    end_date = serializers.DateTimeField(required=False, allow_null=True)
+
+
+class AdminUserListSerializer(serializers.ModelSerializer):
+    roles = serializers.SlugRelatedField(many=True, read_only=True, slug_field="role")
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "pseudo",
+            "first_name",
+            "last_name",
+            "is_active",
+            "is_staff",
+            "created_at",
+            "roles",
+        ]
+        read_only_fields = fields
+
+
+class AdminActionSerializer(serializers.ModelSerializer):
+    admin_user_email = serializers.EmailField(source="admin_user.email", read_only=True)
+    admin_user_pseudo = serializers.CharField(source="admin_user.pseudo", read_only=True)
+
+    class Meta:
+        model = AdminAction
+        fields = [
+            "id",
+            "timestamp",
+            "admin_user",
+            "admin_user_email",
+            "admin_user_pseudo",
+            "action_type",
+            "target_type",
+            "target_id",
+            "description",
+        ]
+        read_only_fields = fields

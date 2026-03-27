@@ -37,6 +37,8 @@ export default [
     rules: {
       ...pluginReact.configs.recommended.rules,
       ...pluginReactHooks.configs.recommended.rules,
+      'react/prop-types': 'off',
+      'react/no-unescaped-entities': 'off',
       'react/react-in-jsx-scope': 'off',
       'react/jsx-no-target-blank': ['error', { enforceDynamicLinks: 'always' }],
       'react-refresh/only-export-components': [
@@ -44,6 +46,10 @@ export default [
         { allowConstantExport: true },
       ],
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
     },
   },
 ];

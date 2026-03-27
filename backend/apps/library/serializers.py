@@ -39,6 +39,7 @@ class GameNestedSerializer(serializers.ModelSerializer):
             "min_age",
             "rating_avg",
             "popularity_score",
+            "cover_url",
             "publisher",
             "genres",
             "platforms",
@@ -51,11 +52,11 @@ class UserGameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserGame
-        fields = ["id", "game", "game_id", "status", "date_added"]
+        fields = ["id", "game", "game_id", "status", "is_favorite", "date_added"]
         read_only_fields = ["date_added"]
 
     def validate_status(self, value):
-        allowed = ["EN_COURS", "TERMINE", "ABANDONNE"]
+        allowed = ["EN_COURS", "TERMINE", "ABANDONNE", "ENVIE_DE_JOUER"]
         if value not in allowed:
             raise serializers.ValidationError(f"Le statut doit être l’un de : {', '.join(allowed)}")
         return value
@@ -67,13 +68,11 @@ class UserGameSerializer(serializers.ModelSerializer):
         if not game_id:
             raise serializers.ValidationError({"game_id": "Ce champ est obligatoire."})
 
-        # Vérifie que le jeu existe
         try:
             game = Game.objects.get(id=game_id)
         except Game.DoesNotExist:
             raise serializers.ValidationError({"game_id": "Jeu non trouvé."})
 
-        # Vérifie que le jeu n'est pas déjà dans la collection
         if UserGame.objects.filter(user=user, game=game).exists():
             raise serializers.ValidationError({"error": "Jeu déjà ajouté."})
 
@@ -81,5 +80,6 @@ class UserGameSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.status = validated_data.get("status", instance.status)
+        instance.is_favorite = validated_data.get("is_favorite", instance.is_favorite)
         instance.save()
         return instance
