@@ -14,12 +14,12 @@ type ReviewFormValues = {
   content: string;
 };
 
-type ReviewFormProps = {
+type ReviewFormProps = Readonly<{
   gameId: string;
   existingReviewId?: number;
   existingContent?: string;
   onSuccess?: (review: { id: number; content: string }) => void;
-};
+}>;
 
 export default function ReviewForm({
   gameId,
