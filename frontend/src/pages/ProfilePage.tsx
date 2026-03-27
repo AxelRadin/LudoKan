@@ -284,7 +284,7 @@ export default function ProfilePage() {
             onChange={handleChange}
           />
           <Button variant="outlined" component="label" sx={{ mt: 2 }}>
-            Choisir un avatar
+            {'Choisir un avatar'}
             <input
               type="file"
               accept="image/*"

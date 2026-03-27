@@ -178,8 +178,8 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
           }}
         >
           {loading ? (
-            Array.from({ length: 6 }).map((_, idx) => (
-              <Box key={idx} width={160}>
+            Array.from({ length: 6 }, (_, idx) => (
+              <Box key={`skeleton-${idx}`} width={160}>
                 <Skeleton variant="rectangular" width={160} height={220} />
                 <Skeleton width="80%" />
               </Box>
