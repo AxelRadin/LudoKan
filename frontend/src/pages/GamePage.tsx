@@ -228,7 +228,7 @@ export default function GamePage() {
     const nextIsFavorite = !userGame?.is_favorite;
 
     try {
-      if (userGame && userGame.game_id) {
+      if (userGame?.game_id) {
         const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
           is_favorite: nextIsFavorite,
         });
