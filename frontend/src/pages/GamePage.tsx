@@ -14,12 +14,12 @@ import {
   Divider,
   Paper,
   Rating,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import ReviewForm from '../components/ReviewForm';
 import {
   fetchIgdbGameById,
   getCoverUrl,
@@ -739,23 +739,12 @@ export default function GamePage() {
             >
               Avis
             </Typography>
-            <TextField
-              label="Écrire un avis"
-              multiline
-              minRows={1}
-              maxRows={3}
-              fullWidth={false}
-              variant="outlined"
-              sx={{
-                mb: 3,
-                width: '350px',
-                maxWidth: '100%',
-                alignItems: 'flex-start',
-              }}
+            <ReviewForm
+              gameId={djangoId ?? ''}
+              existingReviewId={userReview?.id}
+              existingContent={userReview?.content}
+              onSuccess={review => setUserReview(review)}
             />
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Aucun avis disponible.
-            </Typography>
           </Box>
         </Paper>
       </Box>
