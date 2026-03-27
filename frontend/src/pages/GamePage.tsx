@@ -107,7 +107,7 @@ export default function GamePage() {
         })
         .catch(() => setGameNotFound(true));
     }
-  }, [id, igdbId]);
+  }, [id, igdbId, isAuthenticated]);
 
   useEffect(() => {
     if (!game?.description) return;
@@ -711,8 +711,20 @@ export default function GamePage() {
               width: '100%',
             }}
           >
-            <SecondaryButton>Matchmaking</SecondaryButton>
-            <Button variant="contained" color="error">
+            <SecondaryButton
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setAuthModalOpen(true);
+                }
+              }}
+            >
+              Matchmaking
+            </SecondaryButton>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+            >
               Ajouter à la collection
             </Button>
           </Box>
