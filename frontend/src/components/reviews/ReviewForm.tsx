@@ -34,6 +34,11 @@ type ReviewFormProps = Readonly<{
   onCancel?: () => void;
 }>;
 
+function submitLabel(loading: boolean, existingId?: number): string {
+  if (loading) return 'Envoi...';
+  return existingId ? 'Mettre à jour' : 'Publier mon avis';
+}
+
 export default function ReviewForm({
   gameId,
   initialValues,
@@ -224,11 +229,7 @@ export default function ReviewForm({
             fontWeight: 700,
           }}
         >
-          {loading
-            ? 'Envoi...'
-            : initialValues?.id
-              ? 'Mettre à jour'
-              : 'Publier mon avis'}
+          {submitLabel(loading, initialValues?.id)}
         </Button>
       </Box>
 
