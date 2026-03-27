@@ -81,21 +81,27 @@ export async function fetchIgdbGames(): Promise<IgdbGame[]> {
 export async function searchIgdbGames(
   q: string,
   limit = 8,
-  suggest = false
+  suggest = false,
+  signal?: AbortSignal
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
     q,
     limit: String(limit),
     suggest: suggest ? '1' : '0',
   });
-  return apiGet(`/api/igdb/search/?${params}`);
+  return apiGet(`/api/igdb/search/?${params}`, { signal });
 }
 
 export async function searchGames(
   q: string,
-  options?: { limit?: number; suggest?: boolean }
+  options?: { limit?: number; suggest?: boolean; signal?: AbortSignal }
 ): Promise<IgdbGame[]> {
-  return searchIgdbGames(q, options?.limit ?? 20, options?.suggest ?? false);
+  return searchIgdbGames(
+    q,
+    options?.limit ?? 20,
+    options?.suggest ?? false,
+    options?.signal
+  );
 }
 
 export async function fetchTrendingGames(
