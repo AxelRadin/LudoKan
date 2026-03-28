@@ -2,6 +2,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import {
   Avatar,
   Box,
+  Button,
   CircularProgress,
   Divider,
   InputBase,
@@ -15,6 +16,8 @@ import {
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getCoverUrl, type IgdbGame, searchIgdbGames } from '../api/igdb';
 import { apiGet } from '../services/api';
 
 type Game = {
@@ -22,7 +25,7 @@ type Game = {
   name: string;
   cover_url?: string;
   year?: number;
-  source?: string;
+  source: 'local' | 'igdb';
 };
 
 const Search = styled('div')(({ theme }) => ({
@@ -73,63 +76,123 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   boxShadow: theme.shadows[4],
   padding: theme.spacing(1, 0),
   marginTop: theme.spacing(1),
+  display: 'flex',
+  flexDirection: 'column',
+  maxHeight: 'min(420px, 55vh)',
+  overflow: 'hidden',
 }));
 
+/** Un seul debounce puis requêtes locale + IGDB en parallèle, résultats affichés ensemble */
+const SEARCH_DEBOUNCE_MS = 280;
+/** Aperçu dans le menu : la liste complète + filtres licences/collections est sur /search */
+const DROPDOWN_LOCAL_MAX = 5;
+const DROPDOWN_IGDB_MAX = 8;
+
+function mapIgdbToGame(g: IgdbGame): Game {
+  return {
+    id: g.id,
+    name: g.display_name || g.name,
+    cover_url: getCoverUrl(g.cover) || undefined,
+    year: g.first_release_date
+      ? new Date(g.first_release_date * 1000).getFullYear()
+      : undefined,
+    source: 'igdb',
+  };
+}
+
 const GameSearchBar: React.FC = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [localResults, setLocalResults] = useState<Game[]>([]);
   const [igdbResults, setIgdbResults] = useState<Game[]>([]);
-  const [loadingLocal, setLoadingLocal] = useState(false);
-  const [loadingIgdb, setLoadingIgdb] = useState(false);
-  const [igdbDelay, setIgdbDelay] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const igdbTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!query) {
+      setDebouncedQuery('');
+      return;
+    }
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [query]);
 
   useEffect(() => {
     if (!query) {
       setLocalResults([]);
       setIgdbResults([]);
-      setLoadingLocal(false);
-      setLoadingIgdb(false);
-      setIgdbDelay(false);
+      setLoading(false);
       setShowDropdown(false);
       return;
     }
-    setLoadingLocal(true);
     setShowDropdown(true);
-    apiGet(`/api/games/${encodeURIComponent(query)}`)
-      .then(res => {
-        const results = Array.isArray(res) ? res : res ? [res] : [];
-        setLocalResults(results.map((g: any) => ({ ...g, source: 'local' })));
-      })
-      .finally(() => setLoadingLocal(false));
+    setLoading(true);
   }, [query]);
 
   useEffect(() => {
-    if (!query) return;
+    if (!debouncedQuery) {
+      setLocalResults([]);
+      setIgdbResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+    setLoading(true);
+    setLocalResults([]);
     setIgdbResults([]);
-    setIgdbDelay(true);
-    setLoadingIgdb(false);
 
-    if (igdbTimeout.current) clearTimeout(igdbTimeout.current);
+    const localReq = apiGet(
+      `/api/games/?search=${encodeURIComponent(debouncedQuery)}`
+    )
+      .then(res => {
+        const rawResults = Array.isArray(res)
+          ? res
+          : ((res as { results?: unknown[] })?.results ?? []);
+        return rawResults.map((g: any) => ({
+          id: g.id,
+          name: g.name,
+          cover_url: g.cover_url,
+          source: 'local' as const,
+          year: g.release_date
+            ? new Date(g.release_date).getFullYear()
+            : undefined,
+        })) as Game[];
+      })
+      .catch(() => [] as Game[]);
 
-    igdbTimeout.current = setTimeout(() => {
-      setIgdbDelay(false);
-      setLoadingIgdb(true);
-      apiGet(`/games/search_igdb/?q=${encodeURIComponent(query)}`)
-        .then(res =>
-          setIgdbResults(
-            (res || []).map((g: any) => ({ ...g, source: 'igdb' }))
-          )
-        )
-        .finally(() => setLoadingIgdb(false));
-    }, 1000);
+    const igdbReq = searchIgdbGames(
+      debouncedQuery,
+      DROPDOWN_IGDB_MAX,
+      false,
+      controller.signal
+    )
+      .then(games => games.map(mapIgdbToGame))
+      .catch(() => [] as Game[]);
+
+    Promise.all([localReq, igdbReq])
+      .then(([local, igdb]) => {
+        if (cancelled) return;
+        setLocalResults(local.slice(0, DROPDOWN_LOCAL_MAX));
+        setIgdbResults(igdb);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
-      if (igdbTimeout.current) clearTimeout(igdbTimeout.current);
+      cancelled = true;
+      controller.abort();
     };
-  }, [query]);
+  }, [debouncedQuery]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -142,6 +205,24 @@ const GameSearchBar: React.FC = () => {
   }, []);
 
   const allResults = [...localResults, ...igdbResults];
+
+  const goToFullSearch = () => {
+    const q = query.trim();
+    if (!q) return;
+    setShowDropdown(false);
+    setQuery('');
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
+
+  const handlePickGame = (game: Game) => {
+    if (game.source === 'local') {
+      navigate(`/game/${game.id}`);
+    } else {
+      navigate(`/game/igdb/${game.id}`);
+    }
+    setShowDropdown(false);
+    setQuery('');
+  };
 
   return (
     <Box
@@ -161,8 +242,14 @@ const GameSearchBar: React.FC = () => {
             setShowDropdown(true);
           }}
           onFocus={() => query && setShowDropdown(true)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && query.trim()) {
+              e.preventDefault();
+              goToFullSearch();
+            }
+          }}
         />
-        {(loadingLocal || igdbDelay || loadingIgdb) && (
+        {loading && (
           <Box
             sx={{
               position: 'absolute',
@@ -177,7 +264,7 @@ const GameSearchBar: React.FC = () => {
       </Search>
       {showDropdown && query && (
         <Dropdown>
-          <Box px={2} pb={1}>
+          <Box px={2} pb={1} flexShrink={0}>
             <Typography
               variant="subtitle2"
               color="text.secondary"
@@ -186,22 +273,37 @@ const GameSearchBar: React.FC = () => {
               RÉSULTATS
             </Typography>
           </Box>
-          {loadingLocal || igdbDelay || loadingIgdb ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+          {loading ? (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                py: 3,
+                flexShrink: 0,
+              }}
+            >
               <CircularProgress size={24} />
             </Box>
           ) : allResults.length === 0 ? (
-            <Box sx={{ px: 2, py: 1 }}>
+            <Box sx={{ px: 2, py: 1, flexShrink: 0 }}>
               <Typography variant="body2" color="text.secondary">
                 Aucun résultat
               </Typography>
             </Box>
           ) : (
-            <List>
+            <List
+              dense
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                overflowY: 'auto',
+                py: 0,
+              }}
+            >
               {allResults.map(game => (
                 <React.Fragment key={`${game.source}-${game.id}`}>
                   <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
-                    <ListItemButton>
+                    <ListItemButton onClick={() => handlePickGame(game)}>
                       <ListItemAvatar>
                         <Avatar
                           variant="rounded"
@@ -233,6 +335,23 @@ const GameSearchBar: React.FC = () => {
                 </React.Fragment>
               ))}
             </List>
+          )}
+          {!loading && query.trim() && (
+            <>
+              <Divider sx={{ flexShrink: 0 }} />
+              <Box px={1} py={1} flexShrink={0}>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="text"
+                  onClick={goToFullSearch}
+                >
+                  {allResults.length > 0
+                    ? `Voir tous les résultats pour « ${query.trim()} »`
+                    : 'Recherche complète, filtres et pagination'}
+                </Button>
+              </Box>
+            </>
           )}
         </Dropdown>
       )}

@@ -1,20 +1,13 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { apiGet } from '../services/api';
-
-type AuthContextType = {
-  isAuthenticated: boolean;
-  setAuthenticated: (auth: boolean) => void;
-};
-
-const AuthContext = createContext<AuthContextType>({
-  isAuthenticated: false,
-  setAuthenticated: () => {},
-});
+import { AuthContext } from './AuthContextDef';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
+  const [isAuthModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   // Détermine l'état d'authentification au chargement de l'application
   useEffect(() => {
@@ -40,13 +33,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ isAuthenticated, setAuthenticated }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      isAuthenticated,
+      setAuthenticated,
+      isAuthModalOpen,
+      setAuthModalOpen,
+      pendingAction,
+      setPendingAction,
+    }),
+    [isAuthenticated, isAuthModalOpen, pendingAction]
   );
-};
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

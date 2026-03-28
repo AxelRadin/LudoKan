@@ -246,6 +246,39 @@ def test_api_endpoint(self, authenticated_api_client):
     assert response.status_code == 200
 ```
 
+## BACK-022A : Centralisation des logs (system_logs)
+
+### Ce qui est logué
+
+- **Erreurs serveur** : `django.request` (niveau ERROR) → handler `system_logs` → table `SystemLog` (event_type `server_error`).
+- **Échecs login** : signal `user_login_failed` → `log_system_event("login_failed", ...)`.
+- **Actions admin sensibles** : chaque `log_admin_action()` crée aussi une entrée `admin_action` dans system_logs.
+- **Échecs tâches Celery** : signal Celery `task_failure` → `log_system_event("celery_task_failure", ...)`.
+- **API 5xx** : `custom_exception_handler` logue avec le logger `system_logs` (event_type `api_fail`).
+- **Anomalies d’activité** : à appeler manuellement via `log_activity_anomaly(description, metadata=...)`.
+
+### Tests à lancer
+
+```bash
+docker compose exec web python -m pytest \
+  apps/core/tests/unit/test_logging_handlers.py \
+  apps/core/tests/unit/test_logging_utils.py \
+  -v
+```
+
+### Tester manuellement
+
+- **Vérifier les entrées** : Admin Django → *System log* (filtrer par `event_type` : `login_failed`, `admin_action`, `server_error`, `celery_task_failure`, `activity_anomaly`).
+- **Déclencher un login échoué** : POST `/api/auth/login/` avec un mauvais mot de passe → une entrée `login_failed` doit apparaître (si l’auth utilise `authenticate()`).
+- **Déclencher une action admin** : ex. suspendre un utilisateur → une entrée `admin_action` doit apparaître.
+- **Logger depuis le code** : `logging.getLogger("system_logs").error("Message", extra={"event_type": "custom"})` → entrée en base.
+
+### Insomnia
+
+- **Login échoué** : requête POST vers `/api/auth/login/` avec `{"email": "inconnu@example.com", "password": "wrong"}` → vérifier en base ou dans l’admin qu’une entrée `login_failed` existe (selon le chemin d’auth).
+- **Erreur API** : appeler une URL qui renvoie 500 → une entrée `server_error` ou `api_fail` doit être créée.
+- Les logs ne sont **pas** exposés par une API REST ; on les consulte via l’admin Django ou en base.
+
 
 ## 📚 Ressources
 

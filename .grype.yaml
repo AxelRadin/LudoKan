@@ -39,6 +39,12 @@ ignore:
     reason: "Won't fix by Debian - openssl / libssl3t64 system packages"
   - vulnerability: CVE-2026-27135
     reason: "Debian - libnghttp2-14 system package (no fix in base image)"
+  - vulnerability: CVE-2025-69720
+    reason: "Won't fix by Debian - ncurses system packages"
+  - vulnerability: CVE-2026-4437
+    reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
+  - vulnerability: CVE-2026-4519
+    reason: "Won't fix by Debian - python system package"
 # Sources de données de vulnérabilités
 db:
   auto-update: true

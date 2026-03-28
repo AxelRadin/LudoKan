@@ -8,7 +8,7 @@ export const Banner: React.FC = () => {
       sx={{
         background: 'linear-gradient(90deg, #ffd3d3 0%, #ff6464 100%)',
         py: 6,
-        px: 4,
+        px: 2,
         textAlign: 'left',
       }}
     >

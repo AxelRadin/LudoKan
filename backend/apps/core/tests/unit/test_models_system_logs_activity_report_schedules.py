@@ -1,5 +1,5 @@
 """
-Tests unitaires des modèles system_logs, activity_logs et report_schedules (BACK-021A).
+Tests unitaires des modèles system_logs, activity_logs et report_schedules
 Vérifient la création en base et les champs essentiels.
 """
 

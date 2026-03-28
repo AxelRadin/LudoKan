@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { apiPost } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
@@ -45,9 +45,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       console.log('User connecté', data);
 
       setAuthenticated(true);
-      onLoginSuccess?.();
-
-      navigate('/', { replace: true });
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {

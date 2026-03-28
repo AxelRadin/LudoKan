@@ -1,12 +1,12 @@
 # 🎮 LudoKan - Fullstack Complete
 
-**Plateforme de gestion de jeux de société avec fonctionnalités sociales et recommandations**
+**Plateforme de gestion de jeux de vidéo avec fonctionnalités sociales et recommandations**
 
 📍 **Branche:** `fullstack-complete` - Version complète avec frontend et backend
 
 ## 📋 Vue d'ensemble
 
-LudoKan est une application web moderne permettant aux passionnés de jeux de société de :
+LudoKan est une application web moderne permettant aux passionnés de jeux de vidéo de :
 - Gérer leur bibliothèque de jeux
 - Organiser des sessions de jeu
 - Découvrir de nouveaux jeux grâce aux recommandations
@@ -236,6 +236,4 @@ Pour toute question ou problème :
 
 ---
 
-**LudoKan** - *Votre compagnon pour les jeux de société* 🎲
-
-
+**LudoKan** - *Votre bibliothèque de jeu vidéo*

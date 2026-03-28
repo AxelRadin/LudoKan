@@ -19,9 +19,6 @@ import sentry_sdk
 from decouple import config
 from sentry_sdk.integrations.django import DjangoIntegration
 
-# Réduire le bruit : avertissement django-fsm / viewflow (dépréciation connue)
-warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
-
 # -------------------------------------------------------------------
 # Base directory
 # -------------------------------------------------------------------
@@ -409,6 +406,34 @@ EMAIL_BACKEND = config(
 
 
 # -------------------------------------------------------------------
+# Logging centralisé -> system_logs
+# -------------------------------------------------------------------
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "system_logs": {
+            "class": "apps.core.logging_handlers.SystemLogHandler",
+            "level": "INFO",
+        },
+    },
+    "loggers": {
+        "system_logs": {
+            "level": "INFO",
+            "handlers": ["system_logs"],
+            "propagate": False,
+        },
+        "django.request": {
+            "level": "ERROR",
+            "handlers": ["system_logs"],
+            "propagate": True,
+        },
+    },
+}
+
+
+# -------------------------------------------------------------------
 # Sentry
 # -------------------------------------------------------------------
 
@@ -426,3 +451,6 @@ if SENTRY_DSN:
         environment=config("SENTRY_ENVIRONMENT", default=None),
         send_default_pii=True,
     )
+
+# Réduire le bruit : avertissement django-fsm / viewflow (en fin de fichier pour Ruff E402)
+warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
