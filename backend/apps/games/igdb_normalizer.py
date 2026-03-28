@@ -2,6 +2,38 @@ from datetime import datetime
 from typing import Any
 
 
+def _extract_release_date(first_release_date: Any) -> str | None:
+    if first_release_date is not None:
+        try:
+            # first_release_date est un timestamp UNIX
+            return datetime.fromtimestamp(first_release_date).strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    return None
+
+
+def _extract_cover_url(cover: Any) -> str | None:
+    if isinstance(cover, dict):
+        url = cover.get("url")
+        if isinstance(url, str):
+            if url.startswith("//"):
+                url = "https:" + url
+            # Par défaut, IGDB renvoie t_thumb, on peut exposer directement le grand format
+            return url.replace("t_thumb", "t_cover_big")
+    return None
+
+
+def _extract_entities(entities: Any) -> list[dict]:
+    out = []
+    for item in entities or []:
+        if isinstance(item, dict):
+            item_id = item.get("id")
+            item_name = item.get("name")
+            if item_name:
+                out.append({"id": item_id, "name": item_name})
+    return out
+
+
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     """
     Transforme une réponse IGDB brute vers le contrat NormalizedGame.
@@ -21,61 +53,18 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     if igdb_id is None:
         igdb_id = 0
 
-    django_id = None
-
     # Normalisation du nom (g.get("display_name") provient éventuellement de l'enrichissement Wikidata)
     name = g.get("display_name") or g.get("name") or "Unknown"
 
-    summary = g.get("summary")
-
-    # Conversion de first_release_date
-    release_date = None
-    first_release_date = g.get("first_release_date")
-    if first_release_date is not None:
-        try:
-            # first_release_date est un timestamp UNIX
-            release_date = datetime.fromtimestamp(first_release_date).strftime("%Y-%m-%d")
-        except Exception:
-            pass
-
-    # Reconstruction de cover_url
-    cover_url = None
-    cover = g.get("cover")
-    if isinstance(cover, dict):
-        url = cover.get("url")
-        if isinstance(url, str):
-            if url.startswith("//"):
-                url = "https:" + url
-            # Par défaut, IGDB renvoie t_thumb, on peut exposer directement le grand format
-            cover_url = url.replace("t_thumb", "t_cover_big")
-
-    # Mapping platforms
-    platforms = []
-    for p in g.get("platforms") or []:
-        if isinstance(p, dict):
-            pid = p.get("id")
-            pname = p.get("name")
-            if pname:
-                platforms.append({"id": pid, "name": pname})
-
-    # Mapping genres
-    genres = []
-    for gen in g.get("genres") or []:
-        if isinstance(gen, dict):
-            gid = gen.get("id")
-            gname = gen.get("name")
-            if gname:
-                genres.append({"id": gid, "name": gname})
-
     return {
         "igdb_id": igdb_id,
-        "django_id": django_id,
+        "django_id": None,
         "name": name,
-        "summary": summary,
-        "cover_url": cover_url,
-        "release_date": release_date,
-        "platforms": platforms,
-        "genres": genres,
+        "summary": g.get("summary"),
+        "cover_url": _extract_cover_url(g.get("cover")),
+        "release_date": _extract_release_date(g.get("first_release_date")),
+        "platforms": _extract_entities(g.get("platforms")),
+        "genres": _extract_entities(g.get("genres")),
         "user_library": None,
         "user_rating": None,
     }
