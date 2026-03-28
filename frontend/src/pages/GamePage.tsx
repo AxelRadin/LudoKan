@@ -52,7 +52,7 @@ export default function GamePage() {
           // Adaptation des données IGDB normalisées (suite au ticket de normalisation backend)
           // ou fallback sur l'ancien format si non normalisé.
           const isNormalized =
-            typeof data.cover_url !== 'undefined' || !!data.release_date;
+            data.cover_url !== undefined || !!data.release_date;
           const coverUrl = isNormalized
             ? data.cover_url
             : getCoverUrl(data.cover);
