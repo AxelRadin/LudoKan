@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 
 import requests
 
+from apps.games.igdb_normalizer import normalize_igdb_game
 from apps.games.igdb_proxy_constants import (
     FIELDS_GAMES_LIST,
     FIELDS_GAMES_LIST_WITH_GENRES,
@@ -105,12 +106,14 @@ def trending_enrich_for_response(arr: list, enrich: bool, enrich_fn) -> list:
     if enrich:
         return enrich_fn(arr)
     return [
-        {
-            **g,
-            "display_name": g.get("name") or "",
-            "name_fr": None,
-            "name_en": (g.get("name") or "").strip(),
-        }
+        normalize_igdb_game(
+            {
+                **g,
+                "display_name": g.get("name") or "",
+                "name_fr": None,
+                "name_en": (g.get("name") or "").strip(),
+            }
+        )
         for g in arr
     ]
 

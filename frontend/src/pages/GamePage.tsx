@@ -47,20 +47,33 @@ export default function GamePage() {
   useEffect(() => {
     if (igdbId) {
       fetchIgdbGameById(Number(igdbId))
-        .then(data => {
-          const coverUrl = getCoverUrl(data.cover);
+        .then(rawData => {
+          const data = rawData as any;
+          // Adaptation des données IGDB normalisées (suite au ticket de normalisation backend)
+          // ou fallback sur l'ancien format si non normalisé.
+          const isNormalized =
+            typeof data.cover_url !== 'undefined' || !!data.release_date;
+          const coverUrl = isNormalized
+            ? data.cover_url
+            : getCoverUrl(data.cover);
           const image =
             coverUrl?.replace('t_cover_big', 't_1080p') ?? undefined;
-          const releaseDate = data.first_release_date
-            ? new Date(data.first_release_date * 1000).toLocaleDateString(
-                'fr-FR'
-              )
-            : null;
-          const isoReleaseDate = data.first_release_date
-            ? new Date(data.first_release_date * 1000)
-                .toISOString()
-                .split('T')[0]
-            : null;
+
+          let releaseDate = null;
+          let isoReleaseDate = null;
+          if (isNormalized && data.release_date) {
+            isoReleaseDate = data.release_date;
+            releaseDate = new Date(data.release_date).toLocaleDateString(
+              'fr-FR'
+            );
+          } else if (data.first_release_date) {
+            releaseDate = new Date(
+              data.first_release_date * 1000
+            ).toLocaleDateString('fr-FR');
+            isoReleaseDate = new Date(data.first_release_date * 1000)
+              .toISOString()
+              .split('T')[0];
+          }
           setGame({
             name: data.display_name ?? data.name,
             description: data.summary,
@@ -69,7 +82,8 @@ export default function GamePage() {
             release_date: releaseDate,
             iso_release_date: isoReleaseDate,
             platforms:
-              data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
+              data.platforms?.map((p: any) => ({ nom_plateforme: p.name })) ??
+              [],
             genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
             publisher: null,
             average_rating: 0,
