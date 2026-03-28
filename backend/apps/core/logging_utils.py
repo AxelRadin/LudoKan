@@ -1,5 +1,5 @@
 """
-Helpers pour créer des entrées dans system_logs et activity_logs (BACK-021A).
+Helpers pour créer des entrées dans system_logs et activity_logs.
 
 Utilisation :
 - log_activity(user, action, target_type=..., target_id=..., metadata=...)
@@ -63,3 +63,11 @@ def log_system_event(
         user=user,
         metadata=metadata or {},
     )
+
+
+def log_activity_anomaly(description: str, *, metadata: dict | None = None):
+    """
+    Log une anomalie d'activité (pic, spam, etc.) dans system_logs.
+    À appeler depuis un middleware, une tâche ou une vue qui détecte un comportement anormal.
+    """
+    log_system_event("activity_anomaly", description, metadata=metadata or {})

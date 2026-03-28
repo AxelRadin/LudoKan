@@ -59,6 +59,7 @@ class Game(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255)
+    name_fr = models.CharField(max_length=255, blank=True, default="")
     description = models.TextField(blank=True, default="")
     release_date = models.DateField(blank=True, null=True)
     cover_url = models.URLField(blank=True, null=True)

@@ -275,7 +275,7 @@ def _handle_users_export(request, data):
 
 class AdminReportsUsersView(APIView):
     """
-    Métriques détaillées utilisateurs pour les rapports planifiés (BACK-021B).
+    Métriques détaillées utilisateurs pour les rapports planifiés
 
     GET /api/admin/reports/users/
 

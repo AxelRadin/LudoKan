@@ -11,16 +11,23 @@ class UserGame(models.Model):
         TERMINE = "TERMINE", "Terminé"
         ABANDONNE = "ABANDONNE", "Abandonné"
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="library_entries")
-
-    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="user_games")
-
-    status = models.CharField(max_length=20, choices=GameStatus.choices, default=GameStatus.EN_COURS)
-
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="library_entries",
+    )
+    game = models.ForeignKey(
+        Game,
+        on_delete=models.CASCADE,
+        related_name="user_games",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=GameStatus.choices,
+        default=GameStatus.EN_COURS,
+    )
     is_favorite = models.BooleanField(default=False)
-
     date_added = models.DateTimeField(auto_now_add=True)
-
     date_modified = models.DateTimeField(auto_now=True)
 
     class Meta:

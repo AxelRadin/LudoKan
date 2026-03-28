@@ -1,17 +1,18 @@
 """
-Signaux pour alimenter activity_logs et system_logs (BACK-021A).
+Signaux pour alimenter activity_logs et system_logs.
 
 - user_logged_in (Django) → ActivityLog(action=login)
+- user_login_failed → system_logs (login_failed)
 - post_save Review (création) → ActivityLog(action=review_posted)
 
 log_activity() depuis les vues/serializers ou ajouter un receiver ici.
 """
 
-from django.contrib.auth.signals import user_logged_in
+from django.contrib.auth.signals import user_logged_in, user_login_failed
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .logging_utils import log_activity
+from .logging_utils import log_activity, log_system_event
 from .models import ActivityLog
 
 
@@ -19,6 +20,18 @@ from .models import ActivityLog
 def on_user_logged_in(sender, request, user, **kwargs):
     """Enregistre un login dans activity_logs."""
     log_activity(user, ActivityLog.Action.LOGIN, metadata={})
+
+
+@receiver(user_login_failed)
+def on_user_login_failed(sender, credentials, request, **kwargs):
+    """Enregistre un échec de login dans system_logs"""
+    meta = {}
+    if request:
+        meta["path"] = getattr(request, "path", None)
+        meta["method"] = getattr(request, "method", None)
+    if credentials:
+        meta["username"] = credentials.get("username") or credentials.get("email")
+    log_system_event("login_failed", "Échec d’authentification", metadata=meta)
 
 
 def _on_review_created(sender, instance, created, **kwargs):
