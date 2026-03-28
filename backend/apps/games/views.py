@@ -28,6 +28,7 @@ from apps.games.serializers import (
     PublisherCRUDSerializer,
     RatingSerializer,
 )
+from apps.games.services import get_or_create_game_from_igdb
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportCreateSerializer
@@ -205,19 +206,11 @@ class ImportIgdbGameView(APIView):
         if not igdb_id:
             return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        publisher, _ = Publisher.objects.get_or_create(
-            name="IGDB",
-            defaults={"description": "Jeux importés depuis IGDB"},
-        )
-
-        game, _ = Game.objects.get_or_create(
+        game = get_or_create_game_from_igdb(
             igdb_id=igdb_id,
-            defaults={
-                "name": name,
-                "cover_url": cover_url,
-                "release_date": release_date,
-                "publisher": publisher,
-            },
+            name=name,
+            cover_url=cover_url,
+            release_date=release_date,
         )
 
         return Response({"id": game.id}, status=status.HTTP_200_OK)
