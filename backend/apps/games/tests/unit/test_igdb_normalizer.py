@@ -1,4 +1,3 @@
-
 from apps.games.igdb_normalizer import normalize_igdb_game
 
 
