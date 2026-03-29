@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from '../services/api';
+import type { NormalizedGame } from '../types/game';
 
 export type IgdbPlatform = {
   id: number;
@@ -31,23 +32,7 @@ export type IgdbFranchise = {
   name: string;
 };
 
-export type IgdbGame = {
-  id: number;
-  name: string;
-  summary?: string;
-  first_release_date?: number;
-  cover?: IgdbCover;
-  platforms?: IgdbPlatform[];
-  genres?: IgdbGenre[];
-  game_localizations?: IgdbGameLocalization[];
-  franchises?: IgdbFranchise[];
-  collections?: IgdbCollection[];
-  display_name?: string;
-  name_fr?: string | null;
-  name_en?: string;
-  total_rating?: number;
-  total_rating_count?: number;
-};
+export type IgdbGame = NormalizedGame;
 
 export type IgdbAlternativeName = {
   name: string;

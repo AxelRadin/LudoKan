@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.games import igdb_client
-from apps.games.igdb_normalizer import normalize_igdb_game
+from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
 from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL, TRENDING_CACHE_TTL
 from apps.games.igdb_search import escape_igdb_string, normalize_query
 from apps.games.igdb_wikidata import enrich_with_wikidata_display_name, wikidata_french_label_by_english_title_debug
@@ -62,7 +62,7 @@ class IgdbGamesListView(APIView):
             query = "fields name,cover.url,first_release_date,summary,platforms.name;sort first_release_date desc;limit 10;"
             data = igdb_client.igdb_request("games", query)
             arr = [normalize_igdb_game(g) for g in data] if isinstance(data, list) else []
-            return Response(arr)
+            return Response(enrich_normalized_games(arr, request.user))
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])
@@ -91,7 +91,7 @@ class IgdbTrendingView(APIView):
 
         try:
             arr = trending_fetch_games_array(igdb_client.igdb_request, genre_id, sort, limit, offset)
-            enriched = trending_enrich_for_response(arr, enrich, enrich_with_wikidata_display_name)
+            enriched = trending_enrich_for_response(arr, enrich, enrich_with_wikidata_display_name, request.user)
             cache.set(cache_key, enriched, TRENDING_CACHE_TTL)
             return Response(enriched)
         except Exception as e:
@@ -131,7 +131,7 @@ class IgdbSearchView(APIView):
                 arr = igdb_search_non_suggest_results(igdb_client.igdb_request, q_esc, q_norm_esc, limit)
 
             enriched = enrich_with_wikidata_display_name(arr)
-            return Response(enriched)
+            return Response(enrich_normalized_games(enriched, request.user))
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])
@@ -164,7 +164,8 @@ class IgdbGameDetailView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
             enriched = enrich_with_wikidata_display_name(arr)
-            return Response(enriched[0])
+            final_arr = enrich_normalized_games(enriched, request.user)
+            return Response(final_arr[0])
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response(
@@ -202,7 +203,7 @@ class IgdbCollectionGamesView(APIView):
             )
             data = igdb_client.igdb_request("games", query)
             arr = [normalize_igdb_game(g) for g in data] if isinstance(data, list) else []
-            return Response(arr)
+            return Response(enrich_normalized_games(arr, request.user))
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])
@@ -237,7 +238,7 @@ class IgdbFranchiseGamesView(APIView):
             )
             data = igdb_client.igdb_request("games", query)
             arr = [normalize_igdb_game(g) for g in data] if isinstance(data, list) else []
-            return Response(arr)
+            return Response(enrich_normalized_games(arr, request.user))
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])
@@ -290,7 +291,7 @@ class IgdbSearchPageView(APIView):
             if not arr and offset == 0:
                 arr = search_page_fallback_search(igdb_client.igdb_request, q_esc, limit)
             enriched = enrich_with_wikidata_display_name(arr)
-            return Response(enriched)
+            return Response(enrich_normalized_games(enriched, request.user))
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])

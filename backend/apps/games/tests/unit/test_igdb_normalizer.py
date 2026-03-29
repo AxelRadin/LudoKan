@@ -1,4 +1,8 @@
-from apps.games.igdb_normalizer import normalize_igdb_game
+import pytest
+
+from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
+from apps.games.models import Rating
+from apps.library.models import UserGame
 
 
 def test_normalize_igdb_game_basic():
@@ -50,7 +54,10 @@ def test_normalize_igdb_game_malformed_url():
     norm1 = normalize_igdb_game(raw_game_1)
     assert norm1["cover_url"] == "http://example.com/image.jpg"  # pas de "t_thumb" à remplacer mais ça marche
 
-    raw_game_2 = {"id": 100, "cover": "this is a string, which happens if fields cover without cover.url is queried"}
+    raw_game_2 = {
+        "id": 100,
+        "cover": "this is a string, which happens if fields cover without cover.url is queried",
+    }
     norm2 = normalize_igdb_game(raw_game_2)
     assert norm2["cover_url"] is None  # Ne tente pas d'extraire url d'une string
 
@@ -60,3 +67,38 @@ def test_normalize_igdb_game_malformed_timestamp():
     raw_game = {"id": 5, "first_release_date": "Not a number timestamp"}
     normalized = normalize_igdb_game(raw_game)
     assert normalized["release_date"] is None
+
+
+@pytest.mark.django_db
+def test_enrich_normalized_games_anonymous(game):
+    """Vérifie que pour un utilisateur anonyme, seul le django_id est injecté."""
+    normalized_list = [
+        {"igdb_id": game.igdb_id, "django_id": None, "user_library": None, "user_rating": None},
+        {"igdb_id": 99999, "django_id": None, "user_library": None, "user_rating": None},
+    ]
+
+    enrich_normalized_games(normalized_list, user=None)
+
+    # Premier jeu : trouvé en base
+    assert normalized_list[0]["django_id"] == game.id
+    assert normalized_list[0]["user_library"] is None
+    assert normalized_list[0]["user_rating"] is None
+
+    # Deuxième jeu : inconnu
+    assert normalized_list[1]["django_id"] is None
+
+
+@pytest.mark.django_db
+def test_enrich_normalized_games_authenticated(user, game):
+    """Vérifie l'injection des données bibliothèque et notes pour un user connecté."""
+    # On ajoute le jeu à la bibliothèque et on le note
+    UserGame.objects.create(user=user, game=game, status="playing", is_favorite=True)
+    Rating.objects.create(user=user, game=game, value=90, rating_type=Rating.RATING_TYPE_SUR_100)
+
+    normalized_list = [{"igdb_id": game.igdb_id, "django_id": None, "user_library": None, "user_rating": None}]
+
+    enrich_normalized_games(normalized_list, user=user)
+
+    assert normalized_list[0]["django_id"] == game.id
+    assert normalized_list[0]["user_library"] == {"status": "playing", "is_favorite": True}
+    assert normalized_list[0]["user_rating"] == {"value": 90.0, "rating_type": "sur_100"}

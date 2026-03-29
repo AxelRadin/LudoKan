@@ -3,15 +3,17 @@ import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addGameToLibrary, importIgdbGameToDjango } from '../api/igdb';
 import { useAuth } from '../hooks/useAuth';
+import type { UserLibraryData } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 
 interface GameCardProps {
   id: number;
   title: string;
-  image: string;
+  image?: string; // Gardé pour compatibilité temporaire
   igdb?: boolean;
   coverUrl?: string | null;
   releaseDate?: string | null;
+  user_library?: UserLibraryData | null;
 }
 
 export const GameCard: React.FC<GameCardProps> = ({
@@ -21,11 +23,13 @@ export const GameCard: React.FC<GameCardProps> = ({
   igdb = false,
   coverUrl,
   releaseDate,
+  user_library,
 }) => {
+  const displayImage = coverUrl || image || '';
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = useState(!!user_library);
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,7 +78,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       <CardMedia
         component="img"
         height="200"
-        image={image}
+        image={displayImage}
         alt={title}
         sx={{ objectFit: 'cover' }}
       />

@@ -7,12 +7,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GameCard from './GameCard';
 
+import type { UserLibraryData, UserRatingData } from '../types/game';
+
 export interface Game {
   id: number;
   title: string;
-  image: string | undefined;
+  image?: string | undefined;
   coverUrl?: string | null;
   releaseDate?: string | null;
+  user_library?: UserLibraryData | null;
+  user_rating?: UserRatingData | null;
 }
 
 export interface TrendingGamesProps {
@@ -199,6 +203,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
                 image={game.image ?? ''}
                 coverUrl={game.coverUrl}
                 releaseDate={game.releaseDate}
+                user_library={game.user_library}
                 igdb
               />
             ))

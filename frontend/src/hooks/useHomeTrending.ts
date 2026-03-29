@@ -5,7 +5,7 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { fetchTrendingGames, getCoverUrl, type IgdbGame } from '../api/igdb';
+import { fetchTrendingGames, type IgdbGame } from '../api/igdb';
 import type { Game } from '../components/TrendingGames';
 
 const TRENDING_SORTS = [
@@ -22,16 +22,14 @@ export interface TrendingSection {
 }
 
 function mapIgdbToGame(game: any): Game {
-  const coverUrl = getCoverUrl(game.cover);
-  const releaseDate = game.first_release_date
-    ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-    : null;
   return {
-    id: game.id,
-    title: game.display_name ?? game.name,
-    image: coverUrl ?? undefined,
-    coverUrl: coverUrl ?? null,
-    releaseDate,
+    id: game.igdb_id, // On utilise igdb_id comme identifiant unique ici
+    title: game.name,
+    image: game.cover_url ?? undefined,
+    coverUrl: game.cover_url,
+    releaseDate: game.release_date,
+    user_library: game.user_library,
+    user_rating: game.user_rating,
   };
 }
 
