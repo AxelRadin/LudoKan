@@ -117,7 +117,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             Créer un compte
           </Link>
         </Typography>
-
         <Typography
           variant="body2"
           mt={2}
