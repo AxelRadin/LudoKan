@@ -65,4 +65,14 @@ export interface NormalizedGame {
   genres: BaseGenre[];
   user_library: UserLibraryData | null;
   user_rating: UserRatingData | null;
+
+  // Django specific fields (Optional)
+  id?: number;
+  min_players?: number | null;
+  max_players?: number | null;
+  min_age?: number | null;
+  rating_avg?: number;
+  average_rating?: number;
+  rating_count?: number;
+  popularity_score?: number;
 }
