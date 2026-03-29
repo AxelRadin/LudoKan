@@ -1,68 +1,51 @@
-import {
-  SiAndroid,
-  SiApple,
-  SiEpicgames,
-  SiItchdotio,
-  SiNintendo3Ds,
-  SiNintendoswitch,
-  SiPlaystation,
-  SiSega,
-  SiSteam,
-} from 'react-icons/si';
-import { Tooltip, Box, Typography } from '@mui/material';
-import { IconType } from 'react-icons';
+import { Chip, Box, Typography } from '@mui/material';
 
-function XboxIcon({ size, color }: { size: number; color: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M4.102 18.306C5.577 20.02 7.67 21.138 10.02 21.4c-1.828-.9-3.967-2.98-5.918-3.094zm15.796 0c-1.95.114-4.09 2.194-5.918 3.094 2.35-.262 4.443-1.38 5.918-3.094zM12 2C6.477 2 2 6.477 2 12c0 2.304.78 4.43 2.082 6.131.424-1.732 2.122-4.76 5.116-6.302C7.696 10.54 6.13 9.21 5.727 8.27 7.22 6.605 9.49 5.5 12 5.5s4.78 1.105 6.273 2.77c-.403.94-1.97 2.27-3.471 3.559 2.994 1.542 4.692 4.57 5.116 6.302C21.22 16.43 22 14.304 22 12c0-5.523-4.477-10-10-10z" />
-    </svg>
-  );
+interface PlatformStyle {
+  label: string;
+  bg: string;
+  color: string;
 }
 
-type PlatformEntry =
-  | { type: 'si'; icon: IconType; color: string; label: string }
-  | { type: 'custom'; icon: React.FC<{ size: number; color: string }>; color: string; label: string };
-
-import React from 'react';
-
-const PLATFORM_MAP: Record<string, PlatformEntry> = {
+const PLATFORM_MAP: Record<string, PlatformStyle> = {
   // PlayStation
-  'PlayStation': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PlayStation' },
-  'PlayStation 2': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PS2' },
-  'PlayStation 3': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PS3' },
-  'PlayStation 4': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PS4' },
-  'PlayStation 5': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PS5' },
-  'PlayStation Portable': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PSP' },
-  'PlayStation Vita': { type: 'si', icon: SiPlaystation, color: '#003087', label: 'PS Vita' },
+  'PlayStation':           { label: 'PS1',        bg: '#003087', color: '#fff' },
+  'PlayStation 2':         { label: 'PS2',         bg: '#003087', color: '#fff' },
+  'PlayStation 3':         { label: 'PS3',         bg: '#003087', color: '#fff' },
+  'PlayStation 4':         { label: 'PS4',         bg: '#003791', color: '#fff' },
+  'PlayStation 5':         { label: 'PS5',         bg: '#00439C', color: '#fff' },
+  'PlayStation Portable':  { label: 'PSP',         bg: '#003087', color: '#fff' },
+  'PlayStation Vita':      { label: 'PS Vita',     bg: '#003087', color: '#fff' },
   // Xbox
-  'Xbox': { type: 'custom', icon: XboxIcon, color: '#107C10', label: 'Xbox' },
-  'Xbox 360': { type: 'custom', icon: XboxIcon, color: '#107C10', label: 'Xbox 360' },
-  'Xbox One': { type: 'custom', icon: XboxIcon, color: '#107C10', label: 'Xbox One' },
-  'Xbox Series X|S': { type: 'custom', icon: XboxIcon, color: '#107C10', label: 'Xbox Series' },
-  'Xbox Series X': { type: 'custom', icon: XboxIcon, color: '#107C10', label: 'Xbox Series X' },
+  'Xbox':                  { label: 'Xbox',        bg: '#107C10', color: '#fff' },
+  'Xbox 360':              { label: 'Xbox 360',    bg: '#107C10', color: '#fff' },
+  'Xbox One':              { label: 'Xbox One',    bg: '#107C10', color: '#fff' },
+  'Xbox Series X|S':       { label: 'Series X|S', bg: '#107C10', color: '#fff' },
+  'Xbox Series X':         { label: 'Series X',   bg: '#107C10', color: '#fff' },
   // Nintendo
-  'Nintendo Switch': { type: 'si', icon: SiNintendoswitch, color: '#E4000F', label: 'Switch' },
-  'Nintendo Switch 2': { type: 'si', icon: SiNintendoswitch, color: '#E4000F', label: 'Switch 2' },
-  'Nintendo 3DS': { type: 'si', icon: SiNintendo3Ds, color: '#CC0000', label: '3DS' },
-  'New Nintendo 3DS': { type: 'si', icon: SiNintendo3Ds, color: '#CC0000', label: 'New 3DS' },
-  'Wii': { type: 'si', icon: SiNintendo3Ds, color: '#009AC7', label: 'Wii' },
-  'Wii U': { type: 'si', icon: SiNintendo3Ds, color: '#009AC7', label: 'Wii U' },
+  'Nintendo Switch':       { label: 'Switch',      bg: '#E4000F', color: '#fff' },
+  'Nintendo Switch 2':     { label: 'Switch 2',    bg: '#E4000F', color: '#fff' },
+  'Nintendo 3DS':          { label: '3DS',          bg: '#CC0000', color: '#fff' },
+  'New Nintendo 3DS':      { label: 'New 3DS',     bg: '#CC0000', color: '#fff' },
+  'Wii':                   { label: 'Wii',          bg: '#009AC7', color: '#fff' },
+  'Wii U':                 { label: 'Wii U',        bg: '#009AC7', color: '#fff' },
+  'Game Boy Advance':      { label: 'GBA',          bg: '#8B0000', color: '#fff' },
+  'Nintendo DS':           { label: 'DS',           bg: '#CC0000', color: '#fff' },
   // PC
-  'PC (Microsoft Windows)': { type: 'si', icon: SiSteam, color: '#1b2838', label: 'PC' },
-  'Steam': { type: 'si', icon: SiSteam, color: '#1b2838', label: 'Steam' },
+  'PC (Microsoft Windows)': { label: 'PC',         bg: '#1b2838', color: '#fff' },
+  'Steam':                  { label: 'Steam',      bg: '#1b2838', color: '#fff' },
+  'Mac':                    { label: 'Mac',        bg: '#555555', color: '#fff' },
+  'Linux':                  { label: 'Linux',      bg: '#333333', color: '#fff' },
   // Mobile
-  'Android': { type: 'si', icon: SiAndroid, color: '#3DDC84', label: 'Android' },
-  'iOS': { type: 'si', icon: SiApple, color: '#555555', label: 'iOS' },
-  'iPhone': { type: 'si', icon: SiApple, color: '#555555', label: 'iPhone' },
-  'iPad': { type: 'si', icon: SiApple, color: '#555555', label: 'iPad' },
-  'Mac': { type: 'si', icon: SiApple, color: '#555555', label: 'Mac' },
+  'Android':               { label: 'Android',    bg: '#3DDC84', color: '#000' },
+  'iOS':                   { label: 'iOS',         bg: '#555555', color: '#fff' },
+  'iPhone':                { label: 'iPhone',      bg: '#555555', color: '#fff' },
+  'iPad':                  { label: 'iPad',        bg: '#555555', color: '#fff' },
   // Autres
-  'Sega Mega Drive/Genesis': { type: 'si', icon: SiSega, color: '#17569C', label: 'Mega Drive' },
-  'Sega Saturn': { type: 'si', icon: SiSega, color: '#17569C', label: 'Saturn' },
-  'Sega Dreamcast': { type: 'si', icon: SiSega, color: '#17569C', label: 'Dreamcast' },
-  'Epic Games Store': { type: 'si', icon: SiEpicgames, color: '#2F2F2F', label: 'Epic' },
-  'itch.io': { type: 'si', icon: SiItchdotio, color: '#fa5c5c', label: 'itch.io' },
+  'Sega Mega Drive/Genesis': { label: 'Mega Drive', bg: '#17569C', color: '#fff' },
+  'Sega Saturn':           { label: 'Saturn',      bg: '#17569C', color: '#fff' },
+  'Sega Dreamcast':        { label: 'Dreamcast',   bg: '#17569C', color: '#fff' },
+  'Epic Games Store':      { label: 'Epic',        bg: '#2F2F2F', color: '#fff' },
+  'itch.io':               { label: 'itch.io',     bg: '#fa5c5c', color: '#fff' },
 };
 
 interface PlatformLogosProps {
@@ -74,35 +57,25 @@ export default function PlatformLogos({ platforms }: PlatformLogosProps) {
     return <Typography variant="body1">Non renseigné</Typography>;
   }
 
-  const known: { entry: PlatformEntry; name: string }[] = [];
-  const unknown: string[] = [];
-
-  for (const p of platforms) {
-    const entry = PLATFORM_MAP[p.nom_plateforme];
-    if (entry) {
-      known.push({ entry, name: p.nom_plateforme });
-    } else {
-      unknown.push(p.nom_plateforme);
-    }
-  }
-
   return (
-    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, alignItems: 'center' }}>
-      {known.map(({ entry, name }) => {
-        const Icon = entry.icon;
+    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+      {platforms.map(p => {
+        const style = PLATFORM_MAP[p.nom_plateforme];
         return (
-          <Tooltip key={name} title={entry.label} arrow>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Icon size={28} color={entry.color} />
-            </Box>
-          </Tooltip>
+          <Chip
+            key={p.nom_plateforme}
+            label={style?.label ?? p.nom_plateforme}
+            size="small"
+            sx={{
+              bgcolor: style?.bg ?? '#888',
+              color: style?.color ?? '#fff',
+              fontWeight: 700,
+              fontSize: '0.7rem',
+              letterSpacing: 0.5,
+            }}
+          />
         );
       })}
-      {unknown.length > 0 && (
-        <Typography variant="body2" color="text.secondary">
-          {unknown.join(', ')}
-        </Typography>
-      )}
     </Box>
   );
 }
