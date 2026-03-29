@@ -102,3 +102,16 @@ def test_enrich_normalized_games_authenticated(user, game):
     assert normalized_list[0]["django_id"] == game.id
     assert normalized_list[0]["user_library"] == {"status": "playing", "is_favorite": True}
     assert normalized_list[0]["user_rating"] == {"value": 90.0, "rating_type": "sur_100"}
+
+
+def test_enrich_normalized_games_empty_list():
+    """Vérifie le retour immédiat si la liste est vide."""
+    assert enrich_normalized_games([]) == []
+
+
+def test_enrich_normalized_games_no_igdb_ids():
+    """Vérifie le retour immédiat si aucun igdb_id n'est présent ou exploitable."""
+    normalized_list = [{"name": "No ID"}, {"igdb_id": 0, "name": "Zero ID"}]
+    # igdb_id=0 est considéré comme faux dans 'if g.get("igdb_id")'
+    result = enrich_normalized_games(normalized_list)
+    assert result == normalized_list
