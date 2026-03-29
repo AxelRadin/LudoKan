@@ -33,7 +33,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   linkState,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const autoScrollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -59,21 +59,23 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   useEffect(() => {
     if (games.length === 0) return;
 
-    const startAutoScroll = () => {
-      autoScrollRef.current = setInterval(() => {
-        if (isPausedRef.current || !scrollRef.current) return;
+    const SCROLL_SPEED = 0.5; // px par frame (~30px/s à 60fps)
+
+    const animate = () => {
+      if (!isPausedRef.current && scrollRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
         if (scrollLeft + clientWidth >= scrollWidth - 1) {
-          scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+          scrollRef.current.scrollLeft = 0;
         } else {
-          scrollRef.current.scrollBy({ left: 170, behavior: 'smooth' });
+          scrollRef.current.scrollLeft += SCROLL_SPEED;
         }
-      }, 3000);
+      }
+      rafRef.current = requestAnimationFrame(animate);
     };
 
-    startAutoScroll();
+    rafRef.current = requestAnimationFrame(animate);
     return () => {
-      if (autoScrollRef.current) clearInterval(autoScrollRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [games]);
 
