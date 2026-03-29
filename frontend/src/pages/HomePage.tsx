@@ -63,13 +63,7 @@ export const HomePage = () => {
           loading={sections.recent.loading}
           to="/trending/recent"
         />
-        <TrendingGames
-          title="Jeux les plus notés"
-          games={sections.most_rated.games}
-          loading={sections.most_rated.loading}
-          to="/trending/most_rated"
-        />
-        <Box
+<Box
           sx={{
             flex: 1,
             minHeight: 0,
