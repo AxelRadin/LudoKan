@@ -24,6 +24,7 @@ from apps.games.serializers import (
     GameReadSerializer,
     GameWriteSerializer,
     GenreCRUDSerializer,
+    IgdbResolveSerializer,
     PlatformCRUDSerializer,
     PublisherCRUDSerializer,
     RatingSerializer,
@@ -225,7 +226,7 @@ class ImportIgdbGameView(APIView):
         if not igdb_id:
             return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        game = get_or_create_game_from_igdb(
+        game, _ = get_or_create_game_from_igdb(
             igdb_id=igdb_id,
             name=name,
             cover_url=cover_url,
@@ -233,6 +234,39 @@ class ImportIgdbGameView(APIView):
         )
 
         return Response({"id": game.id}, status=status.HTTP_200_OK)
+
+
+class IgdbResolveView(APIView):
+    """
+    Resolves a game from an IGDB ID, creating it if it doesn't exist.
+    Returns the Django ID and the NormalizedGame structure.
+    Used for preparing actions like library addition or rating.
+    """
+
+    permission_classes = [AllowAny]  # Allow unauthenticated resolution to prepare login-then-act flow
+
+    def post(self, request):
+        serializer = IgdbResolveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        game, created = get_or_create_game_from_igdb(
+            igdb_id=serializer.validated_data["igdb_id"],
+            name=serializer.validated_data.get("name"),
+            cover_url=serializer.validated_data.get("cover_url"),
+            release_date=serializer.validated_data.get("release_date"),
+        )
+
+        # Build normalized response
+        read_serializer = GameReadSerializer(game, context={"request": request})
+
+        return Response(
+            {
+                "game_id": game.id,
+                "normalized_game": read_serializer.data,
+                "created": created,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AdminGameListView(ListAPIView):

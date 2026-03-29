@@ -221,3 +221,10 @@ class RatingSerializer(serializers.ModelSerializer):
         tmp.clean()
 
         return attrs
+
+
+class IgdbResolveSerializer(serializers.Serializer):
+    igdb_id = serializers.IntegerField(required=True)
+    name = serializers.CharField(required=False, allow_blank=True)
+    cover_url = serializers.URLField(required=False, allow_null=True)
+    release_date = serializers.DateField(required=False, allow_null=True)
