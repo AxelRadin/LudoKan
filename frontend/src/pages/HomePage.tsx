@@ -46,6 +46,12 @@ export const HomePage = () => {
       >
         <Banner />
         <TrendingGames
+          title="Jeux les plus récents"
+          games={sections.recent.games}
+          loading={sections.recent.loading}
+          to="/trending/recent"
+        />
+        <TrendingGames
           title="Jeux les mieux notés"
           games={sections.rating.games}
           loading={sections.rating.loading}
@@ -56,12 +62,6 @@ export const HomePage = () => {
           games={sections.popularity.games}
           loading={sections.popularity.loading}
           to="/trending/popularity"
-        />
-        <TrendingGames
-          title="Jeux les plus récents"
-          games={sections.recent.games}
-          loading={sections.recent.loading}
-          to="/trending/recent"
         />
 <Box
           sx={{
