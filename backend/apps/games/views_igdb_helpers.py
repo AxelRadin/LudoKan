@@ -12,7 +12,7 @@ from urllib.parse import urlencode
 
 import requests
 
-from apps.games.igdb_normalizer import normalize_igdb_game
+from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
 from apps.games.igdb_proxy_constants import (
     FIELDS_GAMES_LIST,
     FIELDS_GAMES_LIST_WITH_GENRES,
@@ -101,11 +101,13 @@ def trending_fetch_games_array(
     return igdb_response_as_list(igdb_request("games", query))
 
 
-def trending_enrich_for_response(arr: list, enrich: bool, enrich_fn) -> list:
+def trending_enrich_for_response(arr: list, enrich: bool, enrich_fn, user=None) -> list:
     """`enrich_fn` est passé par la vue (pour que les monkeypatch sur views_igdb s'appliquent)."""
     if enrich:
-        return enrich_fn(arr)
-    return [
+        enriched = enrich_fn(arr)
+        return enrich_normalized_games(enriched, user)
+
+    normalized = [
         normalize_igdb_game(
             {
                 **g,
@@ -116,6 +118,7 @@ def trending_enrich_for_response(arr: list, enrich: bool, enrich_fn) -> list:
         )
         for g in arr
     ]
+    return enrich_normalized_games(normalized, user)
 
 
 # --- IgdbSearchView ---

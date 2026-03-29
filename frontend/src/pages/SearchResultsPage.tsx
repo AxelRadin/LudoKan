@@ -7,7 +7,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   fetchCollectionGames,
   fetchFranchiseGames,
-  getCoverUrl,
   searchFranchisesAndCollections,
   searchGamesPage,
   type FranchiseResult,
@@ -86,13 +85,12 @@ export default function SearchResultsPage() {
   };
 
   const gridGames = games.map(game => ({
-    id: game.id,
-    title: game.display_name ?? game.name,
-    image: getCoverUrl(game.cover) ?? '',
-    coverUrl: getCoverUrl(game.cover),
-    releaseDate: game.first_release_date
-      ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-      : null,
+    id: game.igdb_id,
+    title: game.name,
+    image: game.cover_url ?? '',
+    coverUrl: game.cover_url,
+    releaseDate: game.release_date,
+    user_library: game.user_library,
   }));
 
   return (

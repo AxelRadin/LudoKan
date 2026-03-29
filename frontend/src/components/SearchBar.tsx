@@ -17,7 +17,7 @@ import {
 import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCoverUrl, type IgdbGame, searchIgdbGames } from '../api/igdb';
+import { type IgdbGame, searchIgdbGames } from '../api/igdb';
 import { apiGet } from '../services/api';
 
 type Game = {
@@ -90,12 +90,10 @@ const DROPDOWN_IGDB_MAX = 8;
 
 function mapIgdbToGame(g: IgdbGame): Game {
   return {
-    id: g.id,
-    name: g.display_name || g.name,
-    cover_url: getCoverUrl(g.cover) || undefined,
-    year: g.first_release_date
-      ? new Date(g.first_release_date * 1000).getFullYear()
-      : undefined,
+    id: g.igdb_id,
+    name: g.name,
+    cover_url: g.cover_url || undefined,
+    year: g.release_date ? new Date(g.release_date).getFullYear() : undefined,
     source: 'igdb',
   };
 }

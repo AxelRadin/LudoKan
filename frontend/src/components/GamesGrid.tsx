@@ -4,12 +4,15 @@ import Typography from '@mui/material/Typography';
 import React from 'react';
 import GameCard from './GameCard';
 
+import type { UserLibraryData } from '../types/game';
+
 export interface GameForCard {
   id: number;
   title: string;
   image: string;
   coverUrl?: string | null;
   releaseDate?: string | null;
+  user_library?: UserLibraryData | null;
 }
 
 export interface GamesGridProps {
@@ -60,6 +63,7 @@ export const GamesGrid: React.FC<GamesGridProps> = ({
           image={game.image}
           coverUrl={game.coverUrl}
           releaseDate={game.releaseDate}
+          user_library={game.user_library}
           igdb={igdb}
         />
       ))}

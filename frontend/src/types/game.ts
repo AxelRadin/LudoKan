@@ -65,6 +65,8 @@ export interface NormalizedGame {
   genres: BaseGenre[];
   user_library: UserLibraryData | null;
   user_rating: UserRatingData | null;
+  collections?: BasePlatform[];
+  franchises?: BasePlatform[];
 
   // Django specific fields (Optional)
   id?: number;

@@ -22,7 +22,6 @@ import { useParams } from 'react-router-dom';
 import ReviewSection from '../components/reviews/ReviewSection';
 import {
   fetchIgdbGameById,
-  getCoverUrl,
   translateDescription,
   importIgdbGameToDjango,
 } from '../api/igdb';
@@ -47,61 +46,29 @@ export default function GamePage() {
   useEffect(() => {
     if (igdbId) {
       fetchIgdbGameById(Number(igdbId))
-        .then(rawData => {
-          const data = rawData as any;
-          // Adaptation des données IGDB normalisées (suite au ticket de normalisation backend)
-          // ou fallback sur l'ancien format si non normalisé.
-          const isNormalized =
-            data.cover_url !== undefined || !!data.release_date;
-          const coverUrl = isNormalized
-            ? data.cover_url
-            : getCoverUrl(data.cover);
+        .then(normalizedData => {
           const image =
-            coverUrl?.replace('t_cover_big', 't_1080p') ?? undefined;
+            normalizedData.cover_url?.replace('t_cover_big', 't_1080p') ??
+            undefined;
 
-          let releaseDate = null;
-          let isoReleaseDate = null;
-          if (isNormalized && data.release_date) {
-            isoReleaseDate = data.release_date;
-            releaseDate = new Date(data.release_date).toLocaleDateString(
-              'fr-FR'
-            );
-          } else if (data.first_release_date) {
-            releaseDate = new Date(
-              data.first_release_date * 1000
-            ).toLocaleDateString('fr-FR');
-            isoReleaseDate = new Date(data.first_release_date * 1000)
-              .toISOString()
-              .split('T')[0];
-          }
           setGame({
-            name: data.display_name ?? data.name,
-            description: data.summary,
-            cover_url: coverUrl,
+            ...normalizedData,
             image,
-            release_date: releaseDate,
-            iso_release_date: isoReleaseDate,
-            platforms:
-              data.platforms?.map((p: any) => ({ nom_plateforme: p.name })) ??
-              [],
-            genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
-            publisher: null,
-            average_rating: 0,
-            rating_avg: 0,
+            display_release_date: normalizedData.release_date
+              ? new Date(normalizedData.release_date).toLocaleDateString(
+                  'fr-FR'
+                )
+              : null,
           });
+
+          if (normalizedData.django_id) {
+            setDjangoId(String(normalizedData.django_id));
+          }
+          if (normalizedData.user_library) {
+            setUserGame(normalizedData.user_library);
+          }
         })
         .catch(() => setGameNotFound(true));
-
-      if (isAuthenticated) {
-        apiGet(`/api/games/igdb/${igdbId}/`)
-          .then(djangoData => {
-            setDjangoId(String(djangoData.id));
-            if (djangoData.user_library) {
-              setUserGame(djangoData.user_library);
-            }
-          })
-          .catch(() => {});
-      }
     } else {
       apiGet(`/api/games/${id}/`)
         .then(data => {
@@ -111,7 +78,14 @@ export default function GamePage() {
           } else if (image && image.includes('t_cover_big')) {
             image = image.replace('t_cover_big', 't_1080p');
           }
-          setGame({ ...data, name: data.name_fr || data.name, image });
+          setGame({
+            ...data,
+            name: data.name_fr || data.name,
+            image,
+            display_release_date: data.release_date
+              ? new Date(data.release_date).toLocaleDateString('fr-FR')
+              : null,
+          });
           setDjangoId(String(data.id));
           setUserGame(data.user_library);
         })
@@ -120,14 +94,14 @@ export default function GamePage() {
   }, [id, igdbId, isAuthenticated]);
 
   useEffect(() => {
-    if (!game?.description) return;
+    if (!game?.summary) return;
     setTranslating(true);
     setTranslatedDescription(null);
-    translateDescription(game.description)
+    translateDescription(game.summary)
       .then(setTranslatedDescription)
       .catch(() => {})
       .finally(() => setTranslating(false));
-  }, [game?.description]);
+  }, [game?.summary]);
 
   useEffect(() => {
     if (djangoId && isAuthenticated) {
@@ -540,7 +514,9 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.platforms && game.platforms.length > 0
-                  ? game.platforms.map((p: any) => p.nom_plateforme).join(', ')
+                  ? game.platforms
+                      .map((p: any) => p.name || p.nom_plateforme)
+                      .join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -561,7 +537,7 @@ export default function GamePage() {
                 {translating
                   ? 'Traduction en cours…'
                   : (translatedDescription ??
-                    game.description ??
+                    game.summary ??
                     'Aucune description disponible.')}
               </Typography>
               <Box
@@ -588,7 +564,7 @@ export default function GamePage() {
                 </Typography>
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.release_date || 'Non renseignée'}
+                {game.display_release_date || 'Non renseignée'}
               </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
