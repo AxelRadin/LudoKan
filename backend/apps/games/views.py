@@ -62,12 +62,12 @@ class GameViewSet(ModelViewSet):
             # On prefetch les données utilisateur pour éviter le N+1 dans le serializer
             qs = qs.prefetch_related(
                 Prefetch(
-                    "usergame_set",
+                    "user_games",
                     queryset=UserGame.objects.filter(user=user),
                     to_attr="prefetched_user_games",
                 ),
                 Prefetch(
-                    "rating_set",
+                    "ratings",
                     queryset=Rating.objects.filter(user=user),
                     to_attr="prefetched_user_ratings",
                 ),
