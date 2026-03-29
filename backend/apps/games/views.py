@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db.models import Avg, Count, Max
+from django.db.models import Avg, Count, Max, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -54,6 +54,25 @@ class GameViewSet(ModelViewSet):
         "popularity_score",
     ]
     ordering = ["-popularity_score"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.is_authenticated:
+            # On prefetch les données utilisateur pour éviter le N+1 dans le serializer
+            qs = qs.prefetch_related(
+                Prefetch(
+                    "user_games",
+                    queryset=UserGame.objects.filter(user=user),
+                    to_attr="prefetched_user_games",
+                ),
+                Prefetch(
+                    "ratings",
+                    queryset=Rating.objects.filter(user=user),
+                    to_attr="prefetched_user_ratings",
+                ),
+            )
+        return qs
 
     def get_serializer_class(self):
         if self.action == "list":

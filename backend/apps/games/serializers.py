@@ -6,17 +6,24 @@ from apps.library.serializers import GenreSerializer, PlatformSerializer, Publis
 
 
 class GameReadSerializer(serializers.ModelSerializer):
+    django_id = serializers.ReadOnlyField(source="id")
+    summary = serializers.ReadOnlyField(source="description")
+    name = serializers.SerializerMethodField()
     publisher = PublisherSerializer()
     genres = GenreSerializer(many=True)
     platforms = PlatformSerializer(many=True)
+    user_library = serializers.SerializerMethodField()
+    user_rating = serializers.SerializerMethodField()
 
     class Meta:
         model = Game
         fields = [
             "id",
+            "django_id",
             "igdb_id",
             "name",
             "name_fr",
+            "summary",
             "description",
             "release_date",
             "cover_url",
@@ -31,29 +38,16 @@ class GameReadSerializer(serializers.ModelSerializer):
             "publisher",
             "genres",
             "platforms",
+            "user_library",
+            "user_rating",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
 
-
-class GameDetailSerializer(GameReadSerializer):
-    """
-    Serializer pour le détail d'un jeu.
-
-    Ajoute les informations personnalisées pour l'utilisateur authentifié :
-    - son entrée de bibliothèque (status, is_favorite)
-    - sa note (rating) pour ce jeu
-    """
-
-    user_library = serializers.SerializerMethodField()
-    user_rating = serializers.SerializerMethodField()
-
-    class Meta(GameReadSerializer.Meta):
-        fields = GameReadSerializer.Meta.fields + [
-            "user_library",
-            "user_rating",
-        ]
+    def get_name(self, obj: Game) -> str:
+        """Retourne name_fr en priorité, sinon name."""
+        return obj.name_fr or obj.name or "Unknown"
 
     def _get_request_user(self):
         request = self.context.get("request")
@@ -65,21 +59,18 @@ class GameDetailSerializer(GameReadSerializer):
         return user
 
     def get_user_library(self, obj: Game):
-        """
-        Retourne les infos de bibliothèque de l'utilisateur pour ce jeu :
-        {
-            "status": "EN_COURS" | "TERMINE" | "ABANDONNE" | "ENVIE_DE_JOUER",
-            "is_favorite": bool
-        }
-        ou None si l'utilisateur n'est pas authentifié ou n'a pas ajouté le jeu.
-        """
         user = self._get_request_user()
         if user is None:
             return None
 
-        try:
-            user_game = UserGame.objects.get(user=user, game=obj)
-        except UserGame.DoesNotExist:
+        # On essaie d'abord via l'attribut pré-chargé (prefetch_related)
+        user_games = getattr(obj, "prefetched_user_games", None)
+        if user_games is not None:
+            user_game = next((ug for ug in user_games if ug.user_id == user.id), None)
+        else:
+            user_game = UserGame.objects.filter(user=user, game=obj).first()
+
+        if user_game is None:
             return None
 
         return {
@@ -88,19 +79,17 @@ class GameDetailSerializer(GameReadSerializer):
         }
 
     def get_user_rating(self, obj: Game):
-        """
-        Retourne la note de l'utilisateur pour ce jeu :
-        {
-            "value": float,
-            "rating_type": str
-        }
-        ou None si aucune note ou utilisateur non authentifié.
-        """
         user = self._get_request_user()
         if user is None:
             return None
 
-        rating = Rating.objects.filter(user=user, game=obj).first()
+        # On essaie d'abord via l'attribut pré-chargé (prefetch_related)
+        user_ratings = getattr(obj, "prefetched_user_ratings", None)
+        if user_ratings is not None:
+            rating = next((r for r in user_ratings if r.user_id == user.id), None)
+        else:
+            rating = Rating.objects.filter(user=user, game=obj).first()
+
         if rating is None:
             return None
 
@@ -108,6 +97,15 @@ class GameDetailSerializer(GameReadSerializer):
             "value": float(rating.value),
             "rating_type": rating.rating_type,
         }
+
+
+class GameDetailSerializer(GameReadSerializer):
+    """
+    Désormais identique à GameReadSerializer pour l'unification,
+    mais conservé pour compatibilité avec le code existant qui y fait référence.
+    """
+
+    pass
 
 
 class GameWriteSerializer(serializers.ModelSerializer):

@@ -445,7 +445,7 @@ class TestGameFilterSearch:
 
         assert response.status_code == status.HTTP_200_OK
         names = {g["name"] for g in response.data["results"]}
-        assert "Obscure English Title" in names
+        assert "Aventure magique" in names
 
     def test_filter_search_whitespace_only_behaves_like_no_filter(
         self,
