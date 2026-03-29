@@ -31,6 +31,11 @@ export type IgdbFranchise = {
   name: string;
 };
 
+export type IgdbInvolvedCompany = {
+  publisher: boolean;
+  company: { name: string };
+};
+
 export type IgdbGame = {
   id: number;
   name: string;
@@ -42,6 +47,7 @@ export type IgdbGame = {
   game_localizations?: IgdbGameLocalization[];
   franchises?: IgdbFranchise[];
   collections?: IgdbCollection[];
+  involved_companies?: IgdbInvolvedCompany[];
   display_name?: string;
   name_fr?: string | null;
   name_en?: string;

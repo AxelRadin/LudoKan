@@ -64,7 +64,7 @@ export default function GamePage() {
             platforms:
               data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
             genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
-            publisher: null,
+            publisher: data.involved_companies?.find((c: any) => c.publisher)?.company ?? null,
             average_rating: 0,
             rating_avg: 0,
           });

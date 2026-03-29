@@ -12,7 +12,8 @@ FIELDS_GAMES_SEARCH = (
 )
 FIELDS_GAME_DETAIL = (
     "fields name,cover.url,first_release_date,summary,platforms.name,genres.name,total_rating,total_rating_count,"
-    + "collections.id,collections.name,franchises.id,franchises.name;"
+    + "collections.id,collections.name,franchises.id,franchises.name,"
+    + "involved_companies.company.name,involved_companies.publisher;"
 )
 FIELDS_SEARCH_PAGE = "fields name,cover.url,first_release_date,platforms.name,total_rating,total_rating_count;"
 
