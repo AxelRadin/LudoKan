@@ -63,17 +63,6 @@ export const HomePage = () => {
           loading={sections.popularity.loading}
           to="/trending/popularity"
         />
-<Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            marginTop: 5,
-          }}
-        >
-          <GenreGrid onGenreClick={handleGenreClick} />
-        </Box>
         {selectedGenre && (
           <Box ref={genreResultRef}>
             <TrendingGames
@@ -85,6 +74,17 @@ export const HomePage = () => {
             />
           </Box>
         )}
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            marginTop: 5,
+          }}
+        >
+          <GenreGrid onGenreClick={handleGenreClick} />
+        </Box>
       </Box>
     </Box>
   );
