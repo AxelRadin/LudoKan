@@ -35,13 +35,15 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
+  const positionRef = useRef(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const checkScroll = () => {
     if (scrollRef.current) {
-      setCanScrollLeft(scrollRef.current.scrollLeft > 0);
       const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      positionRef.current = scrollLeft;
+      setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
     }
   };
@@ -59,16 +61,17 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   useEffect(() => {
     if (games.length === 0) return;
 
-    const SCROLL_SPEED = 0.5; // px par frame (~30px/s à 60fps)
+    const SCROLL_SPEED = 0.18; // px par frame (~11px/s à 60fps)
 
     const animate = () => {
       if (!isPausedRef.current && scrollRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 1) {
-          scrollRef.current.scrollLeft = 0;
+        const { scrollWidth, clientWidth } = scrollRef.current;
+        if (positionRef.current + clientWidth >= scrollWidth - 1) {
+          positionRef.current = 0;
         } else {
-          scrollRef.current.scrollLeft += SCROLL_SPEED;
+          positionRef.current += SCROLL_SPEED;
         }
+        scrollRef.current.scrollLeft = positionRef.current;
       }
       rafRef.current = requestAnimationFrame(animate);
     };
@@ -89,13 +92,16 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
 
   const handleScrollRight = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+      const { scrollWidth, clientWidth } = scrollRef.current;
+      positionRef.current = Math.min(positionRef.current + 200, scrollWidth - clientWidth);
+      scrollRef.current.scrollLeft = positionRef.current;
     }
   };
 
   const handleScrollLeft = () => {
     if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+      positionRef.current = Math.max(positionRef.current - 200, 0);
+      scrollRef.current.scrollLeft = positionRef.current;
     }
   };
 
