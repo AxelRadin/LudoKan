@@ -89,3 +89,46 @@ def test_send_email_guarded_send_raises_logs_failed():
     log = SystemLog.objects.get(event_type="email_send_failed")
     assert log.metadata["mail_type"] == "unit_fail"
     assert "OSError" in log.metadata["exception"]
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+@override_settings(EMAIL_QUOTA_ENABLED=False)
+def test_send_email_guarded_html_body_and_attachments():
+    with patch("apps.core.emailing.EmailMultiAlternatives") as mock_cls:
+        mock_msg = MagicMock()
+        mock_msg.send.return_value = 1
+        mock_cls.return_value = mock_msg
+        with patch("apps.core.emailing.increment_email_quota"):
+            send_email_guarded(
+                subject="S",
+                to=["u@example.com"],
+                text_body="plain",
+                html_body="<p>hi</p>",
+                attachments=[("f.csv", b"x,y", "text/csv")],
+                mail_type="unit_rich",
+            )
+    mock_msg.attach_alternative.assert_called_once_with("<p>hi</p>", "text/html")
+    mock_msg.attach.assert_called_once_with("f.csv", b"x,y", "text/csv")
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+@override_settings(EMAIL_QUOTA_ENABLED=False)
+def test_send_email_guarded_send_returns_zero_logs_failed():
+    with patch("apps.core.emailing.EmailMultiAlternatives") as mock_cls:
+        mock_msg = MagicMock()
+        mock_msg.send.return_value = 0
+        mock_cls.return_value = mock_msg
+        out = send_email_guarded(
+            subject="S",
+            to=["u@example.com"],
+            text_body="x",
+            mail_type="unit_zero",
+        )
+    assert out == 0
+    log = SystemLog.objects.get(
+        event_type="email_send_failed",
+        metadata__reason="send_returned_zero",
+    )
+    assert log.metadata["mail_type"] == "unit_zero"
