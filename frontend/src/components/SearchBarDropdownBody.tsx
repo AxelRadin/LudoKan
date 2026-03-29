@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { getCoverUrl, type IgdbGame } from '../api/igdb';
+import { type IgdbGame } from '../api/igdb';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 
 export type SearchBarDropdownBodyProps = Readonly<{
@@ -54,20 +54,20 @@ export function SearchBarDropdownBody({
   return (
     <List sx={{ maxHeight: 400, overflowY: 'auto' }}>
       {results.map(game => {
-        const cover = getCoverUrl(game.cover);
-        const year = game.first_release_date
-          ? new Date(game.first_release_date * 1000).getFullYear()
+        const cover = game.cover_url;
+        const year = game.release_date
+          ? game.release_date.slice(0, 4)
           : undefined;
-        const displayName = game.display_name ?? game.name;
+        const displayName = game.name;
         return (
-          <React.Fragment key={game.id}>
+          <React.Fragment key={game.igdb_id}>
             <ListItem
               alignItems="flex-start"
               sx={{ py: 1.5 }}
               secondaryAction={
                 <Tooltip
                   title={
-                    addedIds.has(game.id)
+                    addedIds.has(game.igdb_id)
                       ? 'Ajouté !'
                       : 'Ajouter à ma bibliothèque'
                   }
@@ -76,12 +76,12 @@ export function SearchBarDropdownBody({
                     <IconButton
                       size="small"
                       onClick={e => onAddToLibrary(e, game)}
-                      disabled={addingId === game.id}
-                      color={addedIds.has(game.id) ? 'success' : 'default'}
+                      disabled={addingId === game.igdb_id}
+                      color={addedIds.has(game.igdb_id) ? 'success' : 'default'}
                     >
                       {renderAddToLibraryIcon({
-                        adding: addingId === game.id,
-                        added: addedIds.has(game.id),
+                        adding: addingId === game.igdb_id,
+                        added: addedIds.has(game.igdb_id),
                         iconSize: 20,
                         loaderSize: 16,
                       })}

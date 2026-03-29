@@ -57,6 +57,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "release_date": _extract_release_date(g.get("first_release_date")),
         "platforms": _extract_entities(g.get("platforms")),
         "genres": _extract_entities(g.get("genres")),
+        "collections": _extract_entities(g.get("collections")),
+        "franchises": _extract_entities(g.get("franchises")),
         "user_library": None,
         "user_rating": None,
     }
