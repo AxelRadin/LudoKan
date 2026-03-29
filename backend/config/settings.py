@@ -393,12 +393,16 @@ CHANNEL_LAYERS = {
     }
 }
 
+# -------------------------------------------------------------------
+# Environment
+# -------------------------------------------------------------------
+
+ENVIRONMENT = config("ENVIRONMENT", default="local")
+
 
 # -------------------------------------------------------------------
 # Email
 # -------------------------------------------------------------------
-
-ENVIRONMENT = config("ENVIRONMENT", default="local")
 
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@ludokan.com")
 SERVER_EMAIL = config("SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
@@ -410,12 +414,18 @@ EMAIL_BACKEND = config(
 )
 
 EMAIL_HOST = config("EMAIL_HOST", default="")
-EMAIL_PORT = config("EMAIL_PORT", default=25, cast=int)
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
 EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=False, cast=bool)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
 EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=False, cast=bool)
 EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=10, cast=int)
+
+EMAIL_QUOTA_ENABLED = config("EMAIL_QUOTA_ENABLED", default=True, cast=bool)
+EMAIL_DAILY_LIMIT = config("EMAIL_DAILY_LIMIT", default=80, cast=int)
+EMAIL_MONTHLY_LIMIT = config("EMAIL_MONTHLY_LIMIT", default=2500, cast=int)
+EMAIL_ALLOWLIST_ENABLED = config("EMAIL_ALLOWLIST_ENABLED", default=False, cast=bool)
+EMAIL_ALLOWLIST = [e.strip() for e in config("EMAIL_ALLOWLIST", default="").split(",") if e.strip()]
 
 # -------------------------------------------------------------------
 # Logging centralisé -> system_logs
