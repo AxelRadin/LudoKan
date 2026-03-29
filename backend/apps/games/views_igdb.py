@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.games import igdb_client
+from apps.games.igdb_normalizer import normalize_igdb_game
 from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL, TRENDING_CACHE_TTL
 from apps.games.igdb_search import escape_igdb_string, normalize_query
 from apps.games.igdb_wikidata import enrich_with_wikidata_display_name, wikidata_french_label_by_english_title_debug
@@ -60,7 +61,8 @@ class IgdbGamesListView(APIView):
         try:
             query = "fields name,cover.url,first_release_date,summary,platforms.name;sort first_release_date desc;limit 10;"
             data = igdb_client.igdb_request("games", query)
-            return Response(data if isinstance(data, list) else [])
+            arr = [normalize_igdb_game(g) for g in data] if isinstance(data, list) else []
+            return Response(arr)
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])
@@ -199,7 +201,8 @@ class IgdbCollectionGamesView(APIView):
                 f"limit {limit}; offset {offset};"
             )
             data = igdb_client.igdb_request("games", query)
-            return Response(data if isinstance(data, list) else [])
+            arr = [normalize_igdb_game(g) for g in data] if isinstance(data, list) else []
+            return Response(arr)
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])
@@ -233,7 +236,8 @@ class IgdbFranchiseGamesView(APIView):
                 f"limit {limit}; offset {offset};"
             )
             data = igdb_client.igdb_request("games", query)
-            return Response(data if isinstance(data, list) else [])
+            arr = [normalize_igdb_game(g) for g in data] if isinstance(data, list) else []
+            return Response(arr)
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])

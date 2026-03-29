@@ -233,15 +233,13 @@ def test_enrich_with_wikidata_display_name_maps_fr(monkeypatch):
     monkeypatch.setattr(
         wd,
         "wikidata_french_labels_by_english_titles",
-        lambda names: {"Halo": "Halo"},
+        lambda names: {"Halo": "HaloFR"},
     )
     games = [{"id": 1, "name": "Halo", "x": 1}]
     out = wd.enrich_with_wikidata_display_name(games)
     assert len(out) == 1
-    assert out[0]["display_name"] == "Halo"
-    assert out[0]["name_fr"] == "Halo"
-    assert out[0]["name_en"] == "Halo"
-    assert out[0]["x"] == 1
+    assert out[0]["igdb_id"] == 1
+    assert out[0]["name"] == "HaloFR"
 
 
 def test_enrich_with_wikidata_display_name_fallback_on_exception(monkeypatch):
@@ -249,18 +247,18 @@ def test_enrich_with_wikidata_display_name_fallback_on_exception(monkeypatch):
         raise RuntimeError("wikidata down")
 
     monkeypatch.setattr(wd, "wikidata_french_labels_by_english_titles", boom)
-    games = [{"name": "Solo"}]
+    games = [{"id": 2, "name": "Solo"}]
     out = wd.enrich_with_wikidata_display_name(games)
-    assert out[0]["name_fr"] is None
-    assert out[0]["display_name"] == "Solo"
+    assert out[0]["igdb_id"] == 2
+    assert out[0]["name"] == "Solo"
 
 
 def test_enrich_name_not_in_fr_map(monkeypatch):
     monkeypatch.setattr(wd, "wikidata_french_labels_by_english_titles", lambda n: {})
-    games = [{"name": "OnlyEn"}]
+    games = [{"id": 3, "name": "OnlyEn"}]
     out = wd.enrich_with_wikidata_display_name(games)
-    assert out[0]["name_fr"] is None
-    assert out[0]["display_name"] == "OnlyEn"
+    assert out[0]["igdb_id"] == 3
+    assert out[0]["name"] == "OnlyEn"
 
 
 def test_wikidata_french_label_by_english_title_debug(monkeypatch):
