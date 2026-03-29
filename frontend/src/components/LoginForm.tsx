@@ -4,7 +4,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { apiPost } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import AuthFormContainer from './AuthFormContainer';
@@ -116,6 +116,31 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           >
             Créer un compte
           </Link>
+        </Typography>
+        <Typography
+          variant="body2"
+          mt={2}
+          sx={{ width: 320, textAlign: 'center' }}
+        >
+          En vous connectant, vous acceptez nos{' '}
+          <Link
+            component={RouterLink}
+            to="/conditions"
+            underline="hover"
+            sx={{ fontWeight: 600 }}
+          >
+            Conditions d&apos;utilisation
+          </Link>{' '}
+          et notre{' '}
+          <Link
+            component={RouterLink}
+            to="/politique"
+            underline="hover"
+            sx={{ fontWeight: 600 }}
+          >
+            Politique de confidentialité
+          </Link>
+          .
         </Typography>
       </form>
     </AuthFormContainer>
