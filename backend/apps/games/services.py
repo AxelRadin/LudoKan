@@ -10,7 +10,7 @@ def get_or_create_game_from_igdb(
     name: Optional[str] = None,
     cover_url: Optional[str] = None,
     release_date: Optional[date] = None,
-) -> Game:
+) -> tuple[Game, bool]:
     """
     Centralized logic to dynamically resolve or create an IGDB game in the local database.
     This aims to be the single source of truth for converting IGDB games to Django Games.
@@ -38,9 +38,9 @@ def get_or_create_game_from_igdb(
     if "name" not in defaults:
         defaults["name"] = f"Unknown Game ({igdb_id})"
 
-    game, _ = Game.objects.get_or_create(
+    game, created = Game.objects.get_or_create(
         igdb_id=igdb_id,
         defaults=defaults,
     )
 
-    return game
+    return game, created
