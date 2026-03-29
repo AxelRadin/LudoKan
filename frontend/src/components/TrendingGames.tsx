@@ -12,7 +12,7 @@ import type { UserLibraryData, UserRatingData } from '../types/game';
 export interface Game {
   id: number;
   title: string;
-  image?: string | undefined;
+  image?: string;
   coverUrl?: string | null;
   releaseDate?: string | null;
   user_library?: UserLibraryData | null;
@@ -119,7 +119,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       bgcolor: 'common.white',
       boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
       transform: 'translateY(-50%) scale(1.05)',
-      color: 'text.secondar',
+      color: 'text.secondary',
     },
     '&:active': {
       transform: 'translateY(-50%) scale(0.98)',
