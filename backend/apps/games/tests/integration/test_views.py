@@ -767,6 +767,18 @@ class TestGameByIgdbIdAndImport:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data.get("error") == "igdb_id is required"
 
+    def test_import_igdb_validation_error_generic(self, authenticated_api_client):
+        """Vérifie le cas où une erreur de validation autre que igdb_id survient."""
+        response = authenticated_api_client.post(
+            "/api/games/igdb-import/",
+            {"igdb_id": 123, "release_date": "not-a-date"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # Ici on doit avoir le format standard du serializer (puisqu'on n'est pas dans le cas igdb_id)
+        # Mais notre projet semble injecter 'success': False et 'errors': ...
+        assert "release_date" in str(response.data)
+
     def test_import_igdb_creates_game_with_optional_fields(self, authenticated_api_client):
         igdb_id = 77_777_777_001
         payload = {

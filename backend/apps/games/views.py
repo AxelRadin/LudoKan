@@ -218,19 +218,18 @@ class ImportIgdbGameView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        igdb_id = request.data.get("igdb_id")
-        name = request.data.get("name", "")
-        cover_url = request.data.get("cover_url") or None
-        release_date = request.data.get("release_date") or None
-
-        if not igdb_id:
-            return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = IgdbResolveSerializer(data=request.data)
+        if not serializer.is_valid():
+            # Maintain backward compatibility with legacy error format for this endpoint
+            if "igdb_id" in serializer.errors:
+                return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         game, _ = get_or_create_game_from_igdb(
-            igdb_id=igdb_id,
-            name=name,
-            cover_url=cover_url,
-            release_date=release_date,
+            igdb_id=serializer.validated_data["igdb_id"],
+            name=serializer.validated_data.get("name"),
+            cover_url=serializer.validated_data.get("cover_url"),
+            release_date=serializer.validated_data.get("release_date"),
         )
 
         return Response({"id": game.id}, status=status.HTTP_200_OK)
