@@ -1,9 +1,9 @@
 import time
 
 from celery import shared_task
-from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
+
+from .emailing import send_email_guarded
 
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
@@ -43,12 +43,11 @@ def send_welcome_email(user_email, username):
     Tâche pour envoyer un email de bienvenue
     """
     try:
-        send_mail(
-            "Bienvenue sur LudoKan!",
-            f"Bonjour {username}, bienvenue sur notre plateforme!",
-            settings.DEFAULT_FROM_EMAIL,
-            [user_email],
-            fail_silently=False,
+        send_email_guarded(
+            subject="Bienvenue sur LudoKan!",
+            text_body=f"Bonjour {username}, bienvenue sur notre plateforme!",
+            to=[user_email],
+            mail_type="welcome",
         )
         return f"Email envoyé à {user_email}"
     except Exception as e:

@@ -8,10 +8,9 @@ import calendar
 import time
 from datetime import timedelta
 
-from django.conf import settings
-from django.core.mail import EmailMessage
 from django.utils import timezone
 
+from .emailing import send_email_guarded
 from .logging_utils import log_system_event
 from .models import ReportSchedule
 from .reports_export import build_activity_csv, build_games_csv, build_users_csv
@@ -98,14 +97,13 @@ def run_schedule(schedule: ReportSchedule) -> dict:
             content = content.encode("utf-8")
         file_size = len(content)
 
-        email = EmailMessage(
+        send_email_guarded(
             subject=f"LudoKan – Rapport {report_type} ({schedule.get_frequency_display()})",
-            body=f"Rapport {report_type} généré automatiquement. Pièce jointe: {filename}",
-            from_email=settings.DEFAULT_FROM_EMAIL,
             to=recipients,
+            text_body=f"Rapport {report_type} généré automatiquement. Pièce jointe: {filename}",
+            attachments=[(filename, content, "text/csv; charset=utf-8")],
+            mail_type="scheduled_report",
         )
-        email.attach(filename, content, "text/csv; charset=utf-8")
-        email.send(fail_silently=False)
 
         duration_seconds = time.monotonic() - started
         schedule.last_run = timezone.now()

@@ -107,15 +107,17 @@ def test_run_schedule_users_sends_email_and_logs(user):
         enabled=True,
         next_run=timezone.now(),
     )
-    with patch("apps.core.report_schedule_service.EmailMessage") as mock_email_cls:
-        mock_email = mock_email_cls.return_value
+    with patch("apps.core.report_schedule_service.send_email_guarded", return_value=1) as mock_send:
         out = run_schedule(schedule)
     assert out["success"] is True
     assert "duration_seconds" in out
     assert out["file_size_bytes"] > 0
     assert out["recipients_count"] == 1
-    mock_email.attach.assert_called_once()
-    mock_email.send.assert_called_once_with(fail_silently=False)
+    mock_send.assert_called_once()
+    call_kw = mock_send.call_args.kwargs
+    assert call_kw["mail_type"] == "scheduled_report"
+    assert call_kw["to"] == ["recipient@example.com"]
+    assert "report_users.csv" in str(call_kw.get("attachments"))
     schedule.refresh_from_db()
     assert schedule.last_run is not None
     assert schedule.next_run is not None
@@ -137,8 +139,7 @@ def test_run_schedule_email_failure_logs_error():
         enabled=True,
         next_run=timezone.now(),
     )
-    with patch("apps.core.report_schedule_service.EmailMessage") as mock_email_cls:
-        mock_email_cls.return_value.send.side_effect = Exception("SMTP refused")
+    with patch("apps.core.report_schedule_service.send_email_guarded", side_effect=Exception("SMTP refused")):
         out = run_schedule(schedule)
     assert out["success"] is False
     assert "SMTP" in out["error"]
@@ -159,13 +160,11 @@ def test_run_schedule_activity_type_sends_csv_and_logs():
         enabled=True,
         next_run=timezone.now(),
     )
-    with patch("apps.core.report_schedule_service.EmailMessage") as mock_email_cls:
-        mock_email = mock_email_cls.return_value
+    with patch("apps.core.report_schedule_service.send_email_guarded", return_value=1) as mock_send:
         out = run_schedule(schedule)
     assert out["success"] is True
     assert out["file_size_bytes"] > 0
-    mock_email.attach.assert_called_once()
-    assert "report_activity.csv" in str(mock_email.attach.call_args[0][0])
+    assert "report_activity.csv" in str(mock_send.call_args.kwargs.get("attachments"))
     assert SystemLog.objects.filter(event_type="report_generated", metadata__report_type="activity").exists()
 
 
@@ -180,11 +179,9 @@ def test_run_schedule_games_type_sends_csv_and_logs():
         enabled=True,
         next_run=timezone.now(),
     )
-    with patch("apps.core.report_schedule_service.EmailMessage") as mock_email_cls:
-        mock_email = mock_email_cls.return_value
+    with patch("apps.core.report_schedule_service.send_email_guarded", return_value=1) as mock_send:
         out = run_schedule(schedule)
     assert out["success"] is True
     assert out["file_size_bytes"] > 0
-    mock_email.attach.assert_called_once()
-    assert "report_games.csv" in str(mock_email.attach.call_args[0][0])
+    assert "report_games.csv" in str(mock_send.call_args.kwargs.get("attachments"))
     assert SystemLog.objects.filter(event_type="report_generated", metadata__report_type="games").exists()

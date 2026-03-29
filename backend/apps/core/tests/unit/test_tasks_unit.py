@@ -5,34 +5,29 @@ import pytest
 from apps.core import tasks
 
 
-def test_send_welcome_email_success(monkeypatch, settings):
+def test_send_welcome_email_success(monkeypatch):
     sent_calls = {}
 
-    def fake_send_mail(subject, message, from_email, recipient_list, fail_silently):
-        sent_calls["subject"] = subject
-        sent_calls["message"] = message
-        sent_calls["from_email"] = from_email
-        sent_calls["recipient_list"] = recipient_list
-        sent_calls["fail_silently"] = fail_silently
+    def fake_guarded(**kwargs):
+        sent_calls.update(kwargs)
         return 1
 
-    monkeypatch.setattr(tasks, "send_mail", fake_send_mail)
+    monkeypatch.setattr(tasks, "send_email_guarded", fake_guarded)
 
     result = tasks.send_welcome_email("user@example.com", "TestUser")
 
     assert result == "Email envoyé à user@example.com"
     assert sent_calls["subject"] == "Bienvenue sur LudoKan!"
-    assert "Bonjour TestUser" in sent_calls["message"]
-    assert sent_calls["from_email"] == settings.DEFAULT_FROM_EMAIL
-    assert sent_calls["recipient_list"] == ["user@example.com"]
-    assert sent_calls["fail_silently"] is False
+    assert "Bonjour TestUser" in sent_calls["text_body"]
+    assert sent_calls["to"] == ["user@example.com"]
+    assert sent_calls["mail_type"] == "welcome"
 
 
 def test_send_welcome_email_failure(monkeypatch):
-    def fake_send_mail(*args, **kwargs):
+    def fake_guarded(**kwargs):
         raise Exception("SMTP Error")
 
-    monkeypatch.setattr(tasks, "send_mail", fake_send_mail)
+    monkeypatch.setattr(tasks, "send_email_guarded", fake_guarded)
 
     result = tasks.send_welcome_email("user@example.com", "TestUser")
 
