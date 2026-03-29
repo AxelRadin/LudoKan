@@ -243,7 +243,7 @@ class IgdbResolveView(APIView):
     Used for preparing actions like library addition or rating.
     """
 
-    permission_classes = [AllowAny]  # Allow unauthenticated resolution to prepare login-then-act flow
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         serializer = IgdbResolveSerializer(data=request.data)
