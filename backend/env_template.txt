@@ -19,9 +19,12 @@ DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 
 # ===========================================
-# EMAIL (pour les tâches Celery)
+# EMAIL (allauth, Celery, rapports)
 # ===========================================
 DEFAULT_FROM_EMAIL=noreply@ludokan.com
+EMAIL_SUBJECT_PREFIX="[LudoKan] "
+# Préfixe sujets allauth (confirmation). Ex. local: "[LOCAL] "  staging: "[LudoKan Staging] "  prod: "[LudoKan] "
+ACCOUNT_EMAIL_SUBJECT_PREFIX="[LOCAL] "
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 
 # ===========================================

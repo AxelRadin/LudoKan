@@ -56,6 +56,10 @@ ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 # Email
 DEFAULT_FROM_EMAIL=noreply@ludokan.com
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+# Préfixe sujets (Django ; espace final recommandé). Si ACCOUNT_* absent, allauth réutilise cette valeur par défaut.
+EMAIL_SUBJECT_PREFIX="[LudoKan] "
+# Préfixe explicite allauth (confirmation, etc.) — à différencier par environnement si besoin
+ACCOUNT_EMAIL_SUBJECT_PREFIX="[LudoKan] "
 
 # Redis & Celery
 REDIS_URL=redis://redis:6379/0
