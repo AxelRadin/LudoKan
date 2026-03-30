@@ -601,6 +601,7 @@ export default function GamePage() {
                       sx={{
                         mb: isTruncatable ? 1 : 3,
                         color: translating ? 'text.secondary' : 'text.primary',
+                        textAlign: 'justify',
                       }}
                     >
                       {displayText}
