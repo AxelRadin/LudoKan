@@ -31,8 +31,8 @@ export const HomePage = () => {
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: '#ffffff',
-        ml: 25,
-        mr: 25,
+        ml: 10,
+        mr: 10,
       }}
     >
       <Box
