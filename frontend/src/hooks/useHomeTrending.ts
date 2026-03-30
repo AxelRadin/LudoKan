@@ -5,8 +5,8 @@ import {
   useEffect,
   useState,
 } from 'react';
-import { fetchTrendingGames, type IgdbGame } from '../api/igdb';
-import type { Game } from '../components/TrendingGames';
+import { fetchTrendingGames } from '../api/igdb';
+import type { NormalizedGame } from '../types/game';
 
 const TRENDING_SORTS = [
   'rating',
@@ -17,32 +17,20 @@ const TRENDING_SORTS = [
 type SortKey = (typeof TRENDING_SORTS)[number];
 
 export interface TrendingSection {
-  games: Game[];
+  games: NormalizedGame[];
   loading: boolean;
-}
-
-function mapIgdbToGame(game: any): Game {
-  return {
-    id: game.igdb_id, // On utilise igdb_id comme identifiant unique ici
-    title: game.name,
-    image: game.cover_url ?? undefined,
-    coverUrl: game.cover_url,
-    releaseDate: game.release_date,
-    user_library: game.user_library,
-    user_rating: game.user_rating,
-  };
 }
 
 function applySortSuccess(
   sort: SortKey,
-  data: IgdbGame[]
+  data: NormalizedGame[]
 ): (
   prev: Record<SortKey, TrendingSection>
 ) => Record<SortKey, TrendingSection> {
   return prev => ({
     ...prev,
     [sort]: {
-      games: data.map(mapIgdbToGame),
+      games: data,
       loading: false,
     },
   });
@@ -97,7 +85,7 @@ async function loadGenrePopularitySection(
       false
     );
     setGenreSection({
-      games: data.map(mapIgdbToGame),
+      games: data,
       loading: false,
     });
   } catch (err: unknown) {
