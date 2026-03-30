@@ -43,6 +43,8 @@ export default function GamePage() {
     string | null
   >(null);
   const [translating, setTranslating] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const DESCRIPTION_LIMIT = 300;
 
   useEffect(() => {
     if (igdbId) {
@@ -580,19 +582,43 @@ export default function GamePage() {
                   Description
                 </Typography>
               </Box>
-              <Typography
-                variant="body1"
-                sx={{
-                  mb: 3,
-                  color: translating ? 'text.secondary' : 'text.primary',
-                }}
-              >
-                {translating
+              {(() => {
+                const fullText = translating
                   ? 'Traduction en cours…'
                   : (translatedDescription ??
                     game.description ??
-                    'Aucune description disponible.')}
-              </Typography>
+                    'Aucune description disponible.');
+                const isTruncatable =
+                  !translating && fullText.length > DESCRIPTION_LIMIT;
+                const displayText =
+                  isTruncatable && !descriptionExpanded
+                    ? fullText.slice(0, DESCRIPTION_LIMIT) + '…'
+                    : fullText;
+                return (
+                  <>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: isTruncatable ? 1 : 3,
+                        color: translating ? 'text.secondary' : 'text.primary',
+                      }}
+                    >
+                      {displayText}
+                    </Typography>
+                    {isTruncatable && (
+                      <Button
+                        size="small"
+                        onClick={() =>
+                          setDescriptionExpanded(prev => !prev)
+                        }
+                        sx={{ mb: 3, p: 0, textTransform: 'none' }}
+                      >
+                        {descriptionExpanded ? 'Voir moins' : 'Voir plus'}
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
