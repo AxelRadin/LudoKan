@@ -428,6 +428,13 @@ EMAIL_ALLOWLIST_ENABLED = config("EMAIL_ALLOWLIST_ENABLED", default=False, cast=
 EMAIL_ALLOWLIST = [e.strip() for e in config("EMAIL_ALLOWLIST", default="").split(",") if e.strip()]
 
 # -------------------------------------------------------------------
+# SITE ID & DOMAIN
+# -------------------------------------------------------------------
+SITE_ID = config("SITE_ID", default=1, cast=int)
+SITE_DOMAIN = config("SITE_DOMAIN", default="ludokan-local.fr")
+SITE_NAME = config("SITE_NAME", default="Ludokane Local")
+
+# -------------------------------------------------------------------
 # Logging centralisé -> system_logs
 # -------------------------------------------------------------------
 
