@@ -66,11 +66,8 @@ export const Header: React.FC = () => {
               <img
                 src="/logo.png"
                 alt="Ludokan Logo"
-                style={{ height: 40, marginRight: 8 }}
+                style={{ height: 40 }}
               />
-              <Typography variant="h6" sx={{ fontFamily: 'Lobster, cursive' }}>
-                Ludokan
-              </Typography>
             </Box>
           </Link>
 
