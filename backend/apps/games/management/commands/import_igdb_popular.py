@@ -65,7 +65,7 @@ class Command(BaseCommand):
                 Genre.objects.update_or_create(
                     igdb_id=g["id"],
                     defaults={
-                        "nom_genre": g["name"].strip(),
+                        "name": g["name"].strip(),
                         "description": "",
                     },
                 )
@@ -107,7 +107,7 @@ class Command(BaseCommand):
                 Platform.objects.update_or_create(
                     igdb_id=p["id"],
                     defaults={
-                        "nom_plateforme": p["name"].strip(),
+                        "name": p["name"].strip(),
                         "description": "",
                     },
                 )

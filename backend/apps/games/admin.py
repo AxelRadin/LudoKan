@@ -16,14 +16,14 @@ class PublisherAdmin(admin.ModelAdmin):
 
 @admin.register(Platform)
 class PlatformAdmin(admin.ModelAdmin):
-    list_display = ("nom_plateforme",)
-    search_fields = ("nom_plateforme",)
+    list_display = ("name",)
+    search_fields = ("name",)
 
 
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
-    list_display = ("nom_genre",)
-    search_fields = ("nom_genre",)
+    list_display = ("name",)
+    search_fields = ("name",)
 
 
 class GameResource(resources.ModelResource):

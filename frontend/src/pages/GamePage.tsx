@@ -514,9 +514,7 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.platforms && game.platforms.length > 0
-                  ? game.platforms
-                      .map((p: any) => p.name || p.nom_plateforme)
-                      .join(', ')
+                  ? game.platforms.map((p: any) => p.name).join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -550,9 +548,7 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.genres && game.genres.length > 0
-                  ? game.genres
-                      .map((g: any) => g.nom_genre || g.name)
-                      .join(', ')
+                  ? game.genres.map((g: any) => g.name).join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box

@@ -49,27 +49,27 @@ class TestGenreModel:
     def test_create_genre(self):
         genre = Genre.objects.create(
             igdb_id=2001,
-            nom_genre="Adventure",
+            name="Adventure",
             description="Jeux d'aventure",
         )
 
         assert genre.id is not None
-        assert genre.nom_genre == "Adventure"
+        assert genre.name == "Adventure"
 
     def test_genre_str(self, genre):
         """__str__ doit renvoyer le nom de genre"""
-        assert str(genre) == genre.nom_genre
+        assert str(genre) == genre.name
 
     def test_genre_igdb_id_unique(self):
         Genre.objects.create(
             igdb_id=7777,
-            nom_genre="Genre 1",
+            name="Genre 1",
         )
 
         with pytest.raises(IntegrityError):
             Genre.objects.create(
                 igdb_id=7777,
-                nom_genre="Genre 2",
+                name="Genre 2",
             )
 
 
@@ -80,27 +80,27 @@ class TestPlatformModel:
     def test_create_platform(self):
         platform = Platform.objects.create(
             igdb_id=3001,
-            nom_plateforme="PC",
+            name="PC",
             description="Ordinateur personnel",
         )
 
         assert platform.id is not None
-        assert platform.nom_plateforme == "PC"
+        assert platform.name == "PC"
 
     def test_platform_str(self, platform):
         """__str__ doit renvoyer le nom de la plateforme"""
-        assert str(platform) == platform.nom_plateforme
+        assert str(platform) == platform.name
 
     def test_platform_igdb_id_unique(self):
         Platform.objects.create(
             igdb_id=8888,
-            nom_plateforme="Platform 1",
+            name="Platform 1",
         )
 
         with pytest.raises(IntegrityError):
             Platform.objects.create(
                 igdb_id=8888,
-                nom_plateforme="Platform 2",
+                name="Platform 2",
             )
 
 
