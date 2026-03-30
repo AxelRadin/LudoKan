@@ -44,7 +44,7 @@ export default function GamePage() {
   >(null);
   const [translating, setTranslating] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const DESCRIPTION_LIMIT = 300;
+  const DESCRIPTION_LIMIT = 150;
 
   useEffect(() => {
     if (igdbId) {
