@@ -13,13 +13,13 @@ class PublisherSerializer(serializers.ModelSerializer):
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
-        fields = ["id", "nom_genre"]
+        fields = ["id", "name"]
 
 
 class PlatformSerializer(serializers.ModelSerializer):
     class Meta:
         model = Platform
-        fields = ["id", "nom_plateforme"]
+        fields = ["id", "name"]
 
 
 class GameNestedSerializer(serializers.ModelSerializer):

@@ -90,13 +90,13 @@ class PublisherViewSet(ModelViewSet):
 
 
 class GenreViewSet(ModelViewSet):
-    queryset = Genre.objects.order_by("nom_genre")
+    queryset = Genre.objects.order_by("name")
     serializer_class = GenreCRUDSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class PlatformViewSet(ModelViewSet):
-    queryset = Platform.objects.order_by("nom_plateforme")
+    queryset = Platform.objects.order_by("name")
     serializer_class = PlatformCRUDSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -408,7 +408,7 @@ def _build_games_report_payload():
     popular_games = list(
         Game.objects.annotate(owners_count=Count("user_games")).order_by("-owners_count")[:10].values("id", "name", "average_rating", "owners_count")
     )
-    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "nom_genre", "games_count"))
+    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "name", "games_count"))
     ratings_agg = Rating.objects.aggregate(
         average=Avg("normalized_value"),
         total_count=Count("id"),
@@ -418,9 +418,7 @@ def _build_games_report_payload():
         "total_count": ratings_agg["total_count"] or 0,
     }
     reviews_recent = Review.objects.filter(date_created__gte=month_ago).count()
-    platforms_breakdown = list(
-        Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "nom_plateforme", "games_count")
-    )
+    platforms_breakdown = list(Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "name", "games_count"))
     return {
         "popular_games": popular_games,
         "top_genres": top_genres,
@@ -459,10 +457,10 @@ class AdminReportsGamesView(APIView):
     Réponse :
     {
       "popular_games": [ { "id", "name", "owners_count", "average_rating" }, ... ],
-      "top_genres": [ { "id", "nom_genre", "games_count" }, ... ],
+      "top_genres": [ { "id", "name", "games_count" }, ... ],
       "ratings_summary": { "average": 7.2, "total_count": 500 },
       "reviews_recent": 120,
-      "platforms_breakdown": [ { "id", "nom_plateforme", "games_count" }, ... ]
+      "platforms_breakdown": [ { "id", "name", "games_count" }, ... ]
     }
     """
 

@@ -12,6 +12,8 @@ class GameReadSerializer(serializers.ModelSerializer):
     publisher = PublisherSerializer()
     genres = GenreSerializer(many=True)
     platforms = PlatformSerializer(many=True)
+    collections = serializers.ReadOnlyField(default=[])
+    franchises = serializers.ReadOnlyField(default=[])
     user_library = serializers.SerializerMethodField()
     user_rating = serializers.SerializerMethodField()
 
@@ -22,11 +24,16 @@ class GameReadSerializer(serializers.ModelSerializer):
             "django_id",
             "igdb_id",
             "name",
-            "name_fr",
             "summary",
-            "description",
-            "release_date",
             "cover_url",
+            "release_date",
+            "platforms",
+            "genres",
+            "collections",
+            "franchises",
+            "publisher",
+            "user_library",
+            "user_rating",
             "status",
             "min_players",
             "max_players",
@@ -35,11 +42,6 @@ class GameReadSerializer(serializers.ModelSerializer):
             "average_rating",
             "rating_count",
             "popularity_score",
-            "publisher",
-            "genres",
-            "platforms",
-            "user_library",
-            "user_rating",
             "created_at",
             "updated_at",
         ]
@@ -174,7 +176,7 @@ class GenreCRUDSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "igdb_id",
-            "nom_genre",
+            "name",
             "description",
         ]
 
@@ -185,7 +187,7 @@ class PlatformCRUDSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "igdb_id",
-            "nom_plateforme",
+            "name",
             "description",
         ]
 

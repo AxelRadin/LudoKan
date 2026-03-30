@@ -16,7 +16,7 @@ def genre_action(db):
     """Genre Action"""
     return Genre.objects.create(
         igdb_id=5001,
-        nom_genre="Action",
+        name="Action",
         description="Genre Action",
     )
 
@@ -26,7 +26,7 @@ def genre_rpg(db):
     """Genre RPG"""
     return Genre.objects.create(
         igdb_id=5002,
-        nom_genre="RPG",
+        name="RPG",
         description="Genre RPG",
     )
 
@@ -36,7 +36,7 @@ def genre_strategy(db):
     """Genre Strategy"""
     return Genre.objects.create(
         igdb_id=5003,
-        nom_genre="Strategy",
+        name="Strategy",
         description="Genre Strategy",
     )
 
@@ -46,7 +46,7 @@ def platform_ps5(db):
     """Plateforme PlayStation 5"""
     return Platform.objects.create(
         igdb_id=6001,
-        nom_plateforme="PlayStation 5",
+        name="PlayStation 5",
         description="Sony PlayStation 5",
     )
 
@@ -56,7 +56,7 @@ def platform_xbox(db):
     """Plateforme Xbox Series X"""
     return Platform.objects.create(
         igdb_id=6002,
-        nom_plateforme="Xbox Series X",
+        name="Xbox Series X",
         description="Microsoft Xbox Series X",
     )
 
@@ -66,7 +66,7 @@ def platform_pc(db):
     """Plateforme PC"""
     return Platform.objects.create(
         igdb_id=6003,
-        nom_plateforme="PC",
+        name="PC",
         description="Personal Computer",
     )
 

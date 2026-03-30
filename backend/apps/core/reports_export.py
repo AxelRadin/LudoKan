@@ -48,13 +48,13 @@ def build_games_csv(payload: dict) -> str:
     w.writerow(["total_count", payload.get("ratings_summary", {}).get("total_count")])
     w.writerow(["reviews_recent", payload.get("reviews_recent")])
     w.writerow([])
-    w.writerow(["id", "nom_genre", "games_count"])
+    w.writerow(["id", "name", "games_count"])
     for row in payload.get("top_genres", []):
-        w.writerow([row.get("id"), row.get("nom_genre"), row.get("games_count")])
+        w.writerow([row.get("id"), row.get("name"), row.get("games_count")])
     w.writerow([])
-    w.writerow(["id", "nom_plateforme", "games_count"])
+    w.writerow(["id", "name", "games_count"])
     for row in payload.get("platforms_breakdown", []):
-        w.writerow([row.get("id"), row.get("nom_plateforme"), row.get("games_count")])
+        w.writerow([row.get("id"), row.get("name"), row.get("games_count")])
     return out.getvalue()
 
 
@@ -150,7 +150,7 @@ def build_games_pdf(payload: dict) -> bytes:
     story.append(Spacer(1, 0.5 * cm))
     story.append(Paragraph("Top genres", styles["Heading2"]))
     story.append(Spacer(1, 0.2 * cm))
-    rows = [[str(r.get("id")), r.get("nom_genre", ""), str(r.get("games_count", ""))] for r in payload.get("top_genres", [])]
+    rows = [[str(r.get("id")), r.get("name", ""), str(r.get("games_count", ""))] for r in payload.get("top_genres", [])]
     if rows:
         story.append(Table([["ID", "Genre", "Nb jeux"]] + rows))
     doc.build(story)
