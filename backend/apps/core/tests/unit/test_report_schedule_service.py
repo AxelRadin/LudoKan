@@ -98,6 +98,29 @@ def test_run_schedule_no_recipients_skips_and_updates_next_run():
 
 @pytest.mark.django_db
 @pytest.mark.unit
+def test_run_schedule_generation_failure_logs_and_returns():
+    """Échec lors de get_payload/build_export : log report_schedule_error, dict success=False (pas d'envoi)."""
+    schedule = ReportSchedule.objects.create(
+        report_type=ReportSchedule.ReportType.USERS,
+        frequency=ReportSchedule.Frequency.DAILY,
+        recipients=["genfail@example.com"],
+        enabled=True,
+        next_run=timezone.now(),
+    )
+    with patch("apps.users.views._build_users_report_payload", side_effect=RuntimeError("payload boom")):
+        out = run_schedule(schedule)
+    assert out["success"] is False
+    assert "payload boom" in out["error"]
+    assert "duration_seconds" in out
+    err_log = SystemLog.objects.filter(event_type="report_schedule_error").first()
+    assert err_log is not None
+    assert "génération" in err_log.description.lower()
+    schedule.refresh_from_db()
+    assert schedule.last_run is None
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
 def test_run_schedule_users_sends_email_and_logs(user):
     """run_schedule type users génère rapport, envoie email, log system_logs, met à jour last_run/next_run."""
     schedule = ReportSchedule.objects.create(
@@ -130,8 +153,8 @@ def test_run_schedule_users_sends_email_and_logs(user):
 
 @pytest.mark.django_db
 @pytest.mark.unit
-def test_run_schedule_email_failure_logs_error():
-    """En cas d'échec d'envoi email, un system_log report_schedule_error est créé."""
+def test_run_schedule_email_failure_logs_error_and_raises():
+    """En cas d'échec d'envoi email, un system_log report_schedule_error est créé puis l'exception est propagée."""
     schedule = ReportSchedule.objects.create(
         report_type=ReportSchedule.ReportType.USERS,
         frequency=ReportSchedule.Frequency.WEEKLY,
@@ -139,12 +162,14 @@ def test_run_schedule_email_failure_logs_error():
         enabled=True,
         next_run=timezone.now(),
     )
-    with patch("apps.core.report_schedule_service.send_email_guarded", side_effect=Exception("SMTP refused")):
-        out = run_schedule(schedule)
-    assert out["success"] is False
-    assert "SMTP" in out["error"]
+    with (
+        patch("apps.core.report_schedule_service.send_email_guarded", side_effect=Exception("SMTP refused")),
+        pytest.raises(Exception, match="SMTP refused"),
+    ):
+        run_schedule(schedule)
     assert SystemLog.objects.filter(event_type="report_schedule_error").exists()
-    # last_run / next_run ne doivent pas être mis à jour en cas d'erreur
+    log = SystemLog.objects.get(event_type="report_schedule_error")
+    assert "envoi email" in log.description.lower() or "SMTP" in log.description
     schedule.refresh_from_db()
     assert schedule.last_run is None
 

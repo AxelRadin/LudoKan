@@ -96,43 +96,11 @@ def run_schedule(schedule: ReportSchedule) -> dict:
         if isinstance(content, str):
             content = content.encode("utf-8")
         file_size = len(content)
-
-        send_email_guarded(
-            subject=f"LudoKan – Rapport {report_type} ({schedule.get_frequency_display()})",
-            to=recipients,
-            text_body=f"Rapport {report_type} généré automatiquement. Pièce jointe: {filename}",
-            attachments=[(filename, content, "text/csv; charset=utf-8")],
-            mail_type="scheduled_report",
-        )
-
-        duration_seconds = time.monotonic() - started
-        schedule.last_run = timezone.now()
-        schedule.next_run = get_next_run(schedule.frequency, schedule.last_run)
-        schedule.save(update_fields=["last_run", "next_run", "updated_at"])
-
-        log_system_event(
-            "report_generated",
-            f"Rapport {report_type} envoyé à {len(recipients)} destinataire(s)",
-            metadata={
-                "schedule_id": schedule.pk,
-                "report_type": report_type,
-                "frequency": schedule.frequency,
-                "duration_seconds": round(duration_seconds, 2),
-                "file_size_bytes": file_size,
-                "recipients_count": len(recipients),
-            },
-        )
-        return {
-            "success": True,
-            "duration_seconds": duration_seconds,
-            "file_size_bytes": file_size,
-            "recipients_count": len(recipients),
-        }
     except Exception as e:
         duration_seconds = time.monotonic() - started
         log_system_event(
             "report_schedule_error",
-            f"Échec génération/envoi rapport {report_type}: {e!s}",
+            f"Échec génération rapport {report_type}: {e!s}",
             metadata={
                 "schedule_id": schedule.pk,
                 "report_type": report_type,
@@ -141,3 +109,49 @@ def run_schedule(schedule: ReportSchedule) -> dict:
             },
         )
         return {"success": False, "error": str(e), "duration_seconds": duration_seconds}
+
+    try:
+        send_email_guarded(
+            subject=f"LudoKan – Rapport {report_type} ({schedule.get_frequency_display()})",
+            to=recipients,
+            text_body=f"Rapport {report_type} généré automatiquement. Pièce jointe: {filename}",
+            attachments=[(filename, content, "text/csv; charset=utf-8")],
+            mail_type="scheduled_report",
+        )
+    except Exception as e:
+        duration_seconds = time.monotonic() - started
+        log_system_event(
+            "report_schedule_error",
+            f"Échec envoi email rapport {report_type}: {e!s}",
+            metadata={
+                "schedule_id": schedule.pk,
+                "report_type": report_type,
+                "duration_seconds": round(duration_seconds, 2),
+                "error": str(e),
+            },
+        )
+        raise
+
+    duration_seconds = time.monotonic() - started
+    schedule.last_run = timezone.now()
+    schedule.next_run = get_next_run(schedule.frequency, schedule.last_run)
+    schedule.save(update_fields=["last_run", "next_run", "updated_at"])
+
+    log_system_event(
+        "report_generated",
+        f"Rapport {report_type} envoyé à {len(recipients)} destinataire(s)",
+        metadata={
+            "schedule_id": schedule.pk,
+            "report_type": report_type,
+            "frequency": schedule.frequency,
+            "duration_seconds": round(duration_seconds, 2),
+            "file_size_bytes": file_size,
+            "recipients_count": len(recipients),
+        },
+    )
+    return {
+        "success": True,
+        "duration_seconds": duration_seconds,
+        "file_size_bytes": file_size,
+        "recipients_count": len(recipients),
+    }

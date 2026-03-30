@@ -30,13 +30,14 @@ class TestSendWelcomeEmailTask:
             )
 
     def test_send_welcome_email_failure(self, mock_celery_task):
-        """Test d'envoi d'email en cas d'erreur"""
+        """Test d'envoi d'email en cas d'erreur (la tâche propage l'exception pour retry Celery)."""
         with patch("apps.core.tasks.send_email_guarded") as mock_send:
             mock_send.side_effect = Exception("SMTP Error")
 
             result = send_welcome_email.delay("test@example.com", "TestUser")
 
-            assert "Erreur lors de l'envoi" in result.get()
+            with pytest.raises(Exception, match="SMTP Error"):
+                result.get()
 
 
 @pytest.mark.celery

@@ -29,9 +29,8 @@ def test_send_welcome_email_failure(monkeypatch):
 
     monkeypatch.setattr(tasks, "send_email_guarded", fake_guarded)
 
-    result = tasks.send_welcome_email("user@example.com", "TestUser")
-
-    assert "Erreur lors de l'envoi" in result
+    with pytest.raises(Exception, match="SMTP Error"):
+        tasks.send_welcome_email("user@example.com", "TestUser")
 
 
 def test_process_game_data_returns_expected_message(monkeypatch):
@@ -117,13 +116,13 @@ def test_process_due_report_schedules_processes_due_schedule():
 
 
 @pytest.mark.django_db
-def test_process_due_report_schedules_catches_run_schedule_exception():
-    """Si run_schedule lève une exception, la tâche enregistre success=False et error dans results (lignes 32-36)."""
+def test_process_due_report_schedules_propagates_run_schedule_exception():
+    """Si run_schedule lève (ex. échec SMTP), l’exception remonte pour permettre le retry Celery."""
     from django.utils import timezone
 
     from apps.core.models import ReportSchedule
 
-    schedule = ReportSchedule.objects.create(
+    ReportSchedule.objects.create(
         report_type=ReportSchedule.ReportType.USERS,
         frequency=ReportSchedule.Frequency.DAILY,
         recipients=["test@example.com"],
@@ -132,9 +131,5 @@ def test_process_due_report_schedules_catches_run_schedule_exception():
     )
     with mock.patch("apps.core.report_schedule_service.run_schedule") as mock_run_schedule:
         mock_run_schedule.side_effect = Exception("SMTP failed")
-        result = tasks.process_due_report_schedules()
-    assert result["processed"] == 1
-    assert len(result["results"]) == 1
-    assert result["results"][0]["success"] is False
-    assert result["results"][0]["schedule_id"] == schedule.pk
-    assert "SMTP failed" in result["results"][0]["error"]
+        with pytest.raises(Exception, match="SMTP failed"):
+            tasks.process_due_report_schedules()
