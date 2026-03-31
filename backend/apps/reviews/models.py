@@ -17,7 +17,8 @@ class Review(models.Model):
 
     rating = models.ForeignKey(Rating, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviews")
 
-    content = models.TextField(validators=[validate_review_content_length])
+    title = models.CharField(max_length=25, blank=True, default="")
+    content = models.TextField(blank=True, default="", validators=[validate_review_content_length])
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
