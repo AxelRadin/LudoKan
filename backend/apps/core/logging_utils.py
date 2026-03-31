@@ -3,6 +3,7 @@ Helpers pour créer des entrées dans system_logs et activity_logs.
 
 Utilisation :
 - log_activity(user, action, target_type=..., target_id=..., metadata=...)
+- log_email_event(event_type, mail_type=..., recipients=..., exception=..., extra_metadata=...)
 - log_system_event(event_type, description, user=..., metadata=...)
 
 Les logs peuvent aussi être créés via les signaux (login, création de review, etc.)
@@ -39,6 +40,40 @@ def log_activity(
         target_type=target_type or "",
         target_id=target_id,
         metadata=metadata or {},
+    )
+
+
+def log_email_event(
+    event_type: str,
+    *,
+    mail_type: str,
+    recipients: list[str],
+    description: str = "",
+    exception: BaseException | None = None,
+    extra_metadata: dict | None = None,
+):
+    """
+    Enregistre un événement lié à l’envoi d’e-mail dans system_logs.
+
+    event_type attendus : email_send_requested, email_send_succeeded,
+    email_send_failed, email_quota_blocked.
+    """
+    from django.conf import settings
+
+    metadata = {
+        "environment": getattr(settings, "ENVIRONMENT", "unknown"),
+        "mail_type": mail_type,
+        "recipients": list(recipients),
+        "recipient_count": len(recipients),
+    }
+    if exception is not None:
+        metadata["exception"] = f"{type(exception).__name__}: {exception}"
+    if extra_metadata:
+        metadata.update(extra_metadata)
+    log_system_event(
+        event_type,
+        description or event_type,
+        metadata=metadata,
     )
 
 

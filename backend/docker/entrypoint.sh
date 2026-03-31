@@ -2,6 +2,7 @@
 set -e
 
 # Attendre que la DB soit prête
+echo "🔍 Attente de la base de données..."
 python - <<'PY'
 import time, os
 import psycopg2
@@ -21,9 +22,14 @@ else:
     raise SystemExit("Database not ready")
 PY
 
+echo "🗄️ Mise en place des migrations..."
 python manage.py migrate --noinput
 # Optionnel: python manage.py collectstatic --noinput
 
+echo "🌐 Synchronisation du site..."
+python manage.py sync_site
+
 # Lancer le serveur ASGI (Daphne) pour supporter HTTP + WebSockets.
 # On pointe sur config.asgi:application, qui contient ProtocolTypeRouter.
+echo "🚀 Démarrage du serveur..."
 watchfiles "daphne -b 0.0.0.0 -p 8000 config.asgi:application" .

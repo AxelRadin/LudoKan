@@ -16,22 +16,26 @@ python3 setup_env.py
 
 ### Option 2 : Création manuelle
 ```bash
-# Copier le template
-cp env_template.txt ../.env
+# À la racine du dépôt — au choix :
+# • .env.example : liste complète avec placeholders et commentaires (local / staging / prod, Mailpit, Resend)
+cp .env.example .env
 
-# Éditer le fichier
-nano ../.env
+# • env_template.txt : valeurs prêtes pour Docker Compose (db, redis, comptes tesp_*)
+cp backend/env_template.txt .env
+
+nano .env
 ```
 
 ## 📁 Structure des fichiers
 
 ```
 LudoKan/
-├── .env                    # ← Fichier de configuration (à créer)
+├── .env                    # ← Fichier de configuration (à créer, non versionné)
+├── .env.example            # ← Référence complète (email, SITE_*, quotas, multi-env)
 ├── docker-compose.yml
 ├── backend/
-│   ├── env_template.txt    # ← Template des variables
-│   ├── setup_env.py        # ← Script de génération
+│   ├── env_template.txt    # ← Template Docker / dev (aligné sur .env.example)
+│   ├── setup_env.py        # ← Script de génération (jeu minimal de variables)
 │   └── config/
 │       └── settings.py     # ← Configuration Django
 ```
@@ -52,20 +56,48 @@ ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 ```
 
 ### Variables optionnelles
+
+**Référence détaillée :** le fichier [`.env.example`](../../.env.example) à la racine du dépôt décrit toutes les variables (SMTP, `ENVIRONMENT`, `SERVER_EMAIL`, quotas, allowlist, `SITE_ID` / `SITE_DOMAIN` / `SITE_NAME`, préfixes allauth, Mailpit, Resend) avec des commentaires par environnement. Le fichier [`backend/env_template.txt`](../../backend/env_template.txt) reprend la même structure avec des valeurs par défaut pour Docker.
+
 ```bash
+# Multi-environnement (quotas email, logs) : local | staging | production
+ENVIRONMENT=local
+
+# Site Django (liens dans les e-mails allauth) — puis : docker compose exec web python manage.py sync_site
+SITE_ID=1
+SITE_DOMAIN=ludokan-local.fr
+SITE_NAME=LudoKan Local
+
 # Email
 DEFAULT_FROM_EMAIL=noreply@ludokan.com
+SERVER_EMAIL=noreply@ludokan.com
+EMAIL_SUBJECT_PREFIX="[LudoKan] "
+ACCOUNT_EMAIL_SUBJECT_PREFIX="[LudoKan] "
+ACCOUNT_EMAIL_VERIFICATION=mandatory
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+EMAIL_HOST=
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_TIMEOUT=10
+EMAIL_QUOTA_ENABLED=False
+EMAIL_DAILY_LIMIT=80
+EMAIL_MONTHLY_LIMIT=2500
+EMAIL_ALLOWLIST_ENABLED=False
+EMAIL_ALLOWLIST=
 
-# Redis & Celery
+# Redis & Celery (ex. Docker)
+REDIS_HOST=redis
 REDIS_URL=redis://redis:6379/0
 CELERY_BROKER_URL=redis://redis:6379/0
 CELERY_RESULT_BACKEND=redis://redis:6379/1
 
-# CORS
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+# CORS (ex. Vite)
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 CORS_ALLOW_CREDENTIALS=True
 ```
+
+**Local :** backend `console` ou SMTP vers [Mailpit](https://github.com/axllent/mailpit) (`mailpit:1025` dans Compose). **Staging / production :** SMTP fournisseur (ex. [Resend](https://resend.com/docs/send-with-django-smtp) : `smtp.resend.com`, utilisateur `resend`, mot de passe = clé API).
 
 ### IGDB / Twitch (proxy API jeux)
 
@@ -175,7 +207,7 @@ docker compose logs web
 ### Variables sensibles
 - `SECRET_KEY` : Clé secrète Django (générée automatiquement)
 - `POSTGRES_PASSWORD` : Mot de passe de la base de données
-- `EMAIL_HOST_PASSWORD` : Mot de passe email (production)
+- `EMAIL_HOST_PASSWORD` : Mot de passe ou clé API SMTP (ex. clé API Resend si `EMAIL_HOST_USER=resend`)
 
 ### Bonnes pratiques
 1. **Ne jamais commiter le fichier .env**
