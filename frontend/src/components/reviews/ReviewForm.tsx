@@ -32,7 +32,6 @@ type ReviewFormProps = Readonly<{
   initialValues?: Partial<ReviewFormValues> & { id?: number };
   onSuccess?: (review: { id: number; title?: string; content: string }) => void;
   onCancel?: () => void;
-  onBeforeSubmit?: () => Promise<string | null>;
 }>;
 
 function submitLabel(loading: boolean, existingId?: number): string {
@@ -45,7 +44,6 @@ export default function ReviewForm({
   initialValues,
   onSuccess,
   onCancel,
-  onBeforeSubmit,
 }: ReviewFormProps) {
   const { isAuthenticated } = useAuth();
   const { loading, success, error, submitReview } = useSubmitReview();
@@ -77,10 +75,8 @@ export default function ReviewForm({
   }, [success, reset, initialValues?.id]);
 
   async function onSubmit(data: ReviewFormValues) {
-    const resolvedGameId = onBeforeSubmit ? await onBeforeSubmit() : gameId;
-    if (!resolvedGameId) return;
     const result = await submitReview(
-      resolvedGameId,
+      gameId,
       data.content,
       initialValues?.id,
       data.title,
