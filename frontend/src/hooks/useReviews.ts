@@ -18,6 +18,9 @@ type UseReviewsReturn = {
   reviews: ReviewItem[];
   isLoading: boolean;
   error: string | null;
+  addReview: (review: ReviewItem) => void;
+  updateReview: (review: ReviewItem) => void;
+  removeReview: (reviewId: number) => void;
 };
 
 export function useReviews(gameId: string | null): UseReviewsReturn {
@@ -37,5 +40,17 @@ export function useReviews(gameId: string | null): UseReviewsReturn {
       .finally(() => setIsLoading(false));
   }, [gameId]);
 
-  return { reviews, isLoading, error };
+  function addReview(review: ReviewItem) {
+    setReviews(prev => [review, ...prev]);
+  }
+
+  function updateReview(review: ReviewItem) {
+    setReviews(prev => prev.map(r => (r.id === review.id ? review : r)));
+  }
+
+  function removeReview(reviewId: number) {
+    setReviews(prev => prev.filter(r => r.id !== reviewId));
+  }
+
+  return { reviews, isLoading, error, addReview, updateReview, removeReview };
 }
