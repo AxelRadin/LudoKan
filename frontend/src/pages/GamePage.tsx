@@ -28,7 +28,7 @@ import {
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
-import { NormalizedGame, UserLibraryData } from '../types/game';
+import type { NormalizedGame, UserLibraryData } from '../types/game';
 
 function getHighResImage(url: string | null) {
   if (!url) return '';

@@ -5,38 +5,32 @@ import pytest
 from apps.core import tasks
 
 
-def test_send_welcome_email_success(monkeypatch, settings):
+def test_send_welcome_email_success(monkeypatch):
     sent_calls = {}
 
-    def fake_send_mail(subject, message, from_email, recipient_list, fail_silently):
-        sent_calls["subject"] = subject
-        sent_calls["message"] = message
-        sent_calls["from_email"] = from_email
-        sent_calls["recipient_list"] = recipient_list
-        sent_calls["fail_silently"] = fail_silently
+    def fake_guarded(**kwargs):
+        sent_calls.update(kwargs)
         return 1
 
-    monkeypatch.setattr(tasks, "send_mail", fake_send_mail)
+    monkeypatch.setattr(tasks, "send_email_guarded", fake_guarded)
 
     result = tasks.send_welcome_email("user@example.com", "TestUser")
 
     assert result == "Email envoyé à user@example.com"
     assert sent_calls["subject"] == "Bienvenue sur LudoKan!"
-    assert "Bonjour TestUser" in sent_calls["message"]
-    assert sent_calls["from_email"] == settings.DEFAULT_FROM_EMAIL
-    assert sent_calls["recipient_list"] == ["user@example.com"]
-    assert sent_calls["fail_silently"] is False
+    assert "Bonjour TestUser" in sent_calls["text_body"]
+    assert sent_calls["to"] == ["user@example.com"]
+    assert sent_calls["mail_type"] == "welcome"
 
 
 def test_send_welcome_email_failure(monkeypatch):
-    def fake_send_mail(*args, **kwargs):
+    def fake_guarded(**kwargs):
         raise Exception("SMTP Error")
 
-    monkeypatch.setattr(tasks, "send_mail", fake_send_mail)
+    monkeypatch.setattr(tasks, "send_email_guarded", fake_guarded)
 
-    result = tasks.send_welcome_email("user@example.com", "TestUser")
-
-    assert "Erreur lors de l'envoi" in result
+    with pytest.raises(Exception, match="SMTP Error"):
+        tasks.send_welcome_email("user@example.com", "TestUser")
 
 
 def test_process_game_data_returns_expected_message(monkeypatch):
@@ -122,13 +116,13 @@ def test_process_due_report_schedules_processes_due_schedule():
 
 
 @pytest.mark.django_db
-def test_process_due_report_schedules_catches_run_schedule_exception():
-    """Si run_schedule lève une exception, la tâche enregistre success=False et error dans results (lignes 32-36)."""
+def test_process_due_report_schedules_propagates_run_schedule_exception():
+    """Si run_schedule lève (ex. échec SMTP), l’exception remonte pour permettre le retry Celery."""
     from django.utils import timezone
 
     from apps.core.models import ReportSchedule
 
-    schedule = ReportSchedule.objects.create(
+    ReportSchedule.objects.create(
         report_type=ReportSchedule.ReportType.USERS,
         frequency=ReportSchedule.Frequency.DAILY,
         recipients=["test@example.com"],
@@ -137,9 +131,5 @@ def test_process_due_report_schedules_catches_run_schedule_exception():
     )
     with mock.patch("apps.core.report_schedule_service.run_schedule") as mock_run_schedule:
         mock_run_schedule.side_effect = Exception("SMTP failed")
-        result = tasks.process_due_report_schedules()
-    assert result["processed"] == 1
-    assert len(result["results"]) == 1
-    assert result["results"][0]["success"] is False
-    assert result["results"][0]["schedule_id"] == schedule.pk
-    assert "SMTP failed" in result["results"][0]["error"]
+        with pytest.raises(Exception, match="SMTP failed"):
+            tasks.process_due_report_schedules()

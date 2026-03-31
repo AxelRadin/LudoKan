@@ -19,6 +19,15 @@ export interface BaseGenre {
 }
 
 /**
+ * Publisher attached to a game when loaded from the Django API.
+ * Omitted for pure IGDB-normalized payloads.
+ */
+export interface BasePublisher {
+  id?: number;
+  name: string;
+}
+
+/**
  * Information regarding the game's status in the authenticated user's library.
  * `status` represents the current generic state of the game for the user ("ENVIE_DE_JOUER", "EN_COURS", "TERMINE", "ABANDONNE").
  * `is_favorite` is a boolean flag indicating if the user has marked the game as a favorite (coup de cœur).
@@ -53,6 +62,7 @@ export interface UserRatingData {
  * - `genres`: A list of the genres the game is categorized under. Empty array if none is known.
  * - `user_library`: User-specific library tracking information. `null` if the user is unauthenticated or the game is not in their library.
  * - `user_rating`: User-specific rating data. `null` if the user has not rated the game or is unauthenticated.
+ * - `publisher`: Present when the payload comes from Django; omitted for IGDB-only responses.
  */
 export interface NormalizedGame {
   igdb_id: number;
@@ -65,6 +75,7 @@ export interface NormalizedGame {
   genres: BaseGenre[];
   user_library: UserLibraryData | null;
   user_rating: UserRatingData | null;
+  publisher?: BasePublisher | null;
   collections?: BasePlatform[];
   franchises?: BasePlatform[];
 
