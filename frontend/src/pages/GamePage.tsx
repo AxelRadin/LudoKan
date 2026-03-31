@@ -70,6 +70,12 @@ export default function GamePage() {
             publisher: data.involved_companies?.find((c: any) => c.publisher)?.company ?? null,
             average_rating: 0,
             rating_avg: 0,
+            screenshots: data.screenshots?.map((s: any) => ({
+              url: s.url.startsWith('//')
+                ? `https:${s.url}`.replace('t_thumb', 't_screenshot_big')
+                : s.url.replace('t_thumb', 't_screenshot_big'),
+            })) ?? [],
+            videos: data.videos ?? [],
           });
         })
         .catch(() => setGameNotFound(true));
@@ -677,6 +683,78 @@ export default function GamePage() {
               Ajouter à la collection
             </Button>
           </Box>
+          {((game.screenshots && game.screenshots.length > 0) || (game.videos && game.videos.length > 0)) && (
+            <>
+              <Divider sx={{ my: 4 }} />
+              <Box sx={{ width: '100%' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
+                  Médias
+                </Typography>
+                {game.videos && game.videos.length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                      Trailer
+                    </Typography>
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        width: '100%',
+                        maxWidth: 800,
+                        mx: 'auto',
+                        aspectRatio: '16/9',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        boxShadow: 3,
+                      }}
+                    >
+                      <iframe
+                        src={`https://www.youtube.com/embed/${game.videos[0].video_id}`}
+                        title={game.videos[0].name || 'Trailer'}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+                {game.screenshots && game.screenshots.length > 0 && (
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+                      Screenshots
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 2,
+                        overflowX: 'auto',
+                        pb: 1,
+                        '&::-webkit-scrollbar': { height: 6 },
+                        '&::-webkit-scrollbar-thumb': { borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' },
+                      }}
+                    >
+                      {game.screenshots.map((s: any, i: number) => (
+                        <Box
+                          key={i}
+                          component="img"
+                          src={s.url}
+                          alt={`Screenshot ${i + 1}`}
+                          sx={{
+                            height: { xs: 140, sm: 200 },
+                            minWidth: { xs: 220, sm: 320 },
+                            objectFit: 'cover',
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            flexShrink: 0,
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </>
+          )}
           <Divider sx={{ my: 4 }} />
           <Box
             sx={{

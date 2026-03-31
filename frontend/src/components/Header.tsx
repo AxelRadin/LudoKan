@@ -66,7 +66,7 @@ export const Header: React.FC = () => {
               <img
                 src="/logo.png"
                 alt="Ludokan Logo"
-                style={{ height: 40 }}
+                style={{ height: 75 }}
               />
             </Box>
           </Link>

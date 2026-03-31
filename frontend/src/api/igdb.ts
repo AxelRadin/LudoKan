@@ -36,6 +36,17 @@ export type IgdbInvolvedCompany = {
   company: { name: string };
 };
 
+export type IgdbScreenshot = {
+  id: number;
+  url: string;
+};
+
+export type IgdbVideo = {
+  id: number;
+  video_id: string;
+  name?: string;
+};
+
 export type IgdbGame = {
   id: number;
   name: string;
@@ -53,6 +64,8 @@ export type IgdbGame = {
   name_en?: string;
   total_rating?: number;
   total_rating_count?: number;
+  screenshots?: IgdbScreenshot[];
+  videos?: IgdbVideo[];
 };
 
 export type IgdbAlternativeName = {
