@@ -23,7 +23,7 @@ import ReviewSection from '../components/reviews/ReviewSection';
 import {
   fetchIgdbGameById,
   translateDescription,
-  importIgdbGameToDjango,
+  resolveIgdbGame,
 } from '../api/igdb';
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
@@ -110,16 +110,20 @@ export default function GamePage() {
     if (djangoId) return djangoId;
     if (igdbId && game) {
       try {
-        const res = await importIgdbGameToDjango(
+        const res = await resolveIgdbGame(
           Number(igdbId),
           game.name,
           game.cover_url || null,
           game.release_date || null
         );
-        setDjangoId(res.id);
-        return res.id;
+        setDjangoId(res.game_id);
+        setGame(res.normalized_game);
+        if (res.normalized_game.user_library) {
+          setUserGame(res.normalized_game.user_library);
+        }
+        return res.game_id;
       } catch (err) {
-        console.error('Erreur lors de l’importation IGDB', err);
+        console.error('Erreur lors de la résolution IGDB', err);
         return null;
       }
     }

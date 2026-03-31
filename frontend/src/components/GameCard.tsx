@@ -1,7 +1,7 @@
 import { Box, Card, CardMedia, IconButton, Tooltip } from '@mui/material';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addGameToLibrary, importIgdbGameToDjango } from '../api/igdb';
+import { addGameToLibrary, resolveIgdbGame } from '../api/igdb';
 import { useAuth } from '../hooks/useAuth';
 import type { NormalizedGame } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
@@ -32,13 +32,13 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
     if (adding || added || !isIgdbOnly) return;
     setAdding(true);
     try {
-      const { id: djangoId } = await importIgdbGameToDjango(
+      const { game_id } = await resolveIgdbGame(
         game.igdb_id,
         game.name,
         game.cover_url ?? null,
         game.release_date ?? null
       );
-      await addGameToLibrary(djangoId);
+      await addGameToLibrary(game_id);
       setAdded(true);
     } catch {
       // already in library or error

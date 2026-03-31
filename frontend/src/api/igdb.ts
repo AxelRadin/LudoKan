@@ -162,16 +162,20 @@ export async function translateDescription(text: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Django : import jeu IGDB + ajout à la ludothèque (api/games/..., api/me/...)
+// Django : résolution/import jeu IGDB + ajout à la ludothèque
 // ---------------------------------------------------------------------------
 
-export async function importIgdbGameToDjango(
+export async function resolveIgdbGame(
   igdbId: number,
-  name: string,
-  coverUrl: string | null,
-  releaseDate: string | null
-): Promise<{ id: number }> {
-  return apiPost('/api/games/igdb-import/', {
+  name?: string,
+  coverUrl?: string | null,
+  releaseDate?: string | null
+): Promise<{
+  game_id: number;
+  normalized_game: NormalizedGame;
+  created: boolean;
+}> {
+  return apiPost('/api/games/resolve-from-igdb/', {
     igdb_id: igdbId,
     name,
     cover_url: coverUrl,
