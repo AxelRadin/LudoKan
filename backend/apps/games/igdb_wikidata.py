@@ -9,6 +9,8 @@ from urllib.parse import quote
 
 import requests
 
+from apps.games.igdb_normalizer import normalize_igdb_game
+
 WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
 WIKIDATA_TTL_SECONDS = 7 * 24 * 60 * 60  # 7 jours
 WIKIDATA_BATCH_CONCURRENCY = 10  # plus de requêtes en parallèle pour réduire le temps total
@@ -134,14 +136,14 @@ def enrich_with_wikidata_display_name(games: list[dict]) -> list[dict]:
     for g in games:
         name_en = str(g.get("name") or "").strip()
         name_fr = fr_map.get(name_en) if name_en in fr_map else None
-        out.append(
-            {
-                **g,
-                "display_name": name_fr or name_en,
-                "name_fr": name_fr,
-                "name_en": name_en,
-            }
-        )
+
+        g_updated = {
+            **g,
+            "display_name": name_fr or name_en,
+            "name_fr": name_fr,
+            "name_en": name_en,
+        }
+        out.append(normalize_igdb_game(g_updated))
     return out
 
 

@@ -7,7 +7,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
   fetchCollectionGames,
   fetchFranchiseGames,
-  getCoverUrl,
   searchFranchisesAndCollections,
   searchGamesPage,
   type FranchiseResult,
@@ -85,16 +84,6 @@ export default function SearchResultsPage() {
     setPage(1);
   };
 
-  const gridGames = games.map(game => ({
-    id: game.id,
-    title: game.display_name ?? game.name,
-    image: getCoverUrl(game.cover) ?? '',
-    coverUrl: getCoverUrl(game.cover),
-    releaseDate: game.first_release_date
-      ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-      : null,
-  }));
-
   return (
     <PageLayout title={<>Résultats pour : «&nbsp;{query}&nbsp;»</>}>
       {/* Chips licences/collections */}
@@ -139,10 +128,9 @@ export default function SearchResultsPage() {
       )}
 
       <GamesGrid
-        games={gridGames}
+        games={games}
         loading={loading}
         emptyMessage={`Aucun jeu trouvé pour « ${query} ».`}
-        igdb
       />
 
       {!loading && (page > 1 || hasMore) && (

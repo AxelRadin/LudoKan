@@ -36,12 +36,12 @@ jobs:
 
       - name: Run Grype vulnerability scanner
         run: |
-          grype ludokan-web:latest --config .grype.yaml -o sarif > grype-report.sarif
+          grype ludokan-web:latest --config .grype.yaml -o sarif > grype-report.sarif || touch grype-report.sarif
         continue-on-error: true
 
       - name: Upload Grype SARIF report
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('grype-report.sarif') != ''
         with:
           sarif_file: grype-report.sarif
 

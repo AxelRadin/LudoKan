@@ -293,8 +293,8 @@ def test_ensure_publishers_counts_updates():
 def test_sync_game_relations_clears_when_no_ids():
     cmd = make_command()
 
-    genre = Genre.objects.create(igdb_id=1, nom_genre="Action", description="")
-    platform = Platform.objects.create(igdb_id=2, nom_plateforme="PC", description="")
+    genre = Genre.objects.create(igdb_id=1, name="Action", description="")
+    platform = Platform.objects.create(igdb_id=2, name="PC", description="")
     publisher = Publisher.objects.create(name="Pub", description="")
 
     game = Game.objects.create(
@@ -319,10 +319,10 @@ def test_sync_game_relations_clears_when_no_ids():
 #     """Couvre la branche où on fait .set() sur les M2M (genres et plateformes)."""
 #     cmd = make_command()
 
-#     genre1 = Genre.objects.create(igdb_id=10, nom_genre="Action", description="")
-#     genre2 = Genre.objects.create(igdb_id=11, nom_genre="RPG", description="")
-#     platform1 = Platform.objects.create(igdb_id=20, nom_plateforme="PC", description="")
-#     platform2 = Platform.objects.create(igdb_id=21, nom_plateforme="PS5", description="")
+#     genre1 = Genre.objects.create(igdb_id=10, name="Action", description="")
+#     genre2 = Genre.objects.create(igdb_id=11, name="RPG", description="")
+#     platform1 = Platform.objects.create(igdb_id=20, name="PC", description="")
+#     platform2 = Platform.objects.create(igdb_id=21, name="PS5", description="")
 #     publisher = Publisher.objects.create(name="Pub", description="")
 
 #     game = Game.objects.create(

@@ -3,6 +3,7 @@ import { apiPatch, apiPost } from '../services/api';
 
 type ReviewResult = {
   id: number;
+  title?: string;
   content: string;
   [key: string]: unknown;
 };
@@ -14,7 +15,9 @@ type UseSubmitReviewReturn = {
   submitReview: (
     gameId: string,
     content: string,
-    existingReviewId?: number
+    existingReviewId?: number,
+    title?: string,
+    rating?: number
   ) => Promise<ReviewResult | null>;
 };
 
@@ -26,21 +29,24 @@ export function useSubmitReview(): UseSubmitReviewReturn {
   async function submitReview(
     gameId: string,
     content: string,
-    existingReviewId?: number
+    existingReviewId?: number,
+    title?: string,
+    rating?: number
   ): Promise<ReviewResult | null> {
     setLoading(true);
     setSuccess(false);
     setError(null);
 
+    const payload: Record<string, unknown> = { game: gameId, content };
+    if (title) payload.title = title;
+    if (rating) payload.rating_value = rating;
+
     try {
       let result: ReviewResult;
       if (existingReviewId) {
-        result = await apiPatch(`/api/reviews/${existingReviewId}/`, {
-          game: gameId,
-          content,
-        });
+        result = await apiPatch(`/api/reviews/${existingReviewId}/`, payload);
       } else {
-        result = await apiPost('/api/reviews/', { game: gameId, content });
+        result = await apiPost('/api/reviews/', payload);
       }
       setSuccess(true);
       return result;

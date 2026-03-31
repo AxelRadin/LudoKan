@@ -200,7 +200,7 @@ class TestGenreCRUD:
     def test_create_genre_requires_authentication(self, api_client):
         payload = {
             "igdb_id": 7777,
-            "nom_genre": "Unauthorized Genre",
+            "name": "Unauthorized Genre",
         }
 
         response = api_client.post("/api/genres/", payload, format="json")
@@ -213,20 +213,20 @@ class TestGenreCRUD:
     def test_create_genre_authenticated(self, authenticated_api_client):
         payload = {
             "igdb_id": 8888,
-            "nom_genre": "Auth Genre",
+            "name": "Auth Genre",
             "description": "Genre créé via l'API.",
         }
 
         response = authenticated_api_client.post("/api/genres/", payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Genre.objects.filter(nom_genre="Auth Genre").exists()
+        assert Genre.objects.filter(name="Auth Genre").exists()
 
     def test_update_genre(self, authenticated_api_client, genre):
         url = f"/api/genres/{genre.id}/"
         payload = {
             "igdb_id": genre.igdb_id,
-            "nom_genre": "Updated Genre",
+            "name": "Updated Genre",
             "description": "Description mise à jour.",
         }
 
@@ -234,7 +234,7 @@ class TestGenreCRUD:
 
         assert response.status_code == status.HTTP_200_OK
         genre.refresh_from_db()
-        assert genre.nom_genre == "Updated Genre"
+        assert genre.name == "Updated Genre"
 
     def test_delete_genre(self, authenticated_api_client, genre):
         url = f"/api/genres/{genre.id}/"
@@ -263,7 +263,7 @@ class TestPlatformCRUD:
     def test_create_platform_requires_authentication(self, api_client):
         payload = {
             "igdb_id": 9999,
-            "nom_plateforme": "Unauthorized Platform",
+            "name": "Unauthorized Platform",
         }
 
         response = api_client.post("/api/platforms/", payload, format="json")
@@ -276,20 +276,20 @@ class TestPlatformCRUD:
     def test_create_platform_authenticated(self, authenticated_api_client):
         payload = {
             "igdb_id": 1010,
-            "nom_plateforme": "Auth Platform",
+            "name": "Auth Platform",
             "description": "Plateforme créée via l'API.",
         }
 
         response = authenticated_api_client.post("/api/platforms/", payload, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert Platform.objects.filter(nom_plateforme="Auth Platform").exists()
+        assert Platform.objects.filter(name="Auth Platform").exists()
 
     def test_update_platform(self, authenticated_api_client, platform):
         url = f"/api/platforms/{platform.id}/"
         payload = {
             "igdb_id": platform.igdb_id,
-            "nom_plateforme": "Updated Platform",
+            "name": "Updated Platform",
             "description": "Description mise à jour.",
         }
 
@@ -297,7 +297,7 @@ class TestPlatformCRUD:
 
         assert response.status_code == status.HTTP_200_OK
         platform.refresh_from_db()
-        assert platform.nom_plateforme == "Updated Platform"
+        assert platform.name == "Updated Platform"
 
     def test_delete_platform(self, authenticated_api_client, platform):
         url = f"/api/platforms/{platform.id}/"
@@ -766,6 +766,18 @@ class TestGameByIgdbIdAndImport:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.data.get("error") == "igdb_id is required"
+
+    def test_import_igdb_validation_error_generic(self, authenticated_api_client):
+        """Vérifie le cas où une erreur de validation autre que igdb_id survient."""
+        response = authenticated_api_client.post(
+            "/api/games/igdb-import/",
+            {"igdb_id": 123, "release_date": "not-a-date"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        # Ici on doit avoir le format standard du serializer (puisqu'on n'est pas dans le cas igdb_id)
+        # Mais notre projet semble injecter 'success': False et 'errors': ...
+        assert "release_date" in str(response.data)
 
     def test_import_igdb_creates_game_with_optional_fields(self, authenticated_api_client):
         igdb_id = 77_777_777_001

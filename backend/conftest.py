@@ -134,7 +134,7 @@ def genre(db):
     """Genre de test générique."""
     return Genre.objects.create(
         igdb_id=2001,
-        nom_genre="Test Genre",
+        name="Test Genre",
         description="Genre de test.",
     )
 
@@ -144,7 +144,7 @@ def platform(db):
     """Plateforme de test générique."""
     return Platform.objects.create(
         igdb_id=3001,
-        nom_plateforme="Test Platform",
+        name="Test Platform",
         description="Plateforme de test.",
     )
 
