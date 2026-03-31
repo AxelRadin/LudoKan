@@ -76,6 +76,12 @@ services:
       redis:
         condition: service_started
 
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
 volumes:
   postgres_data:
   redis_data:

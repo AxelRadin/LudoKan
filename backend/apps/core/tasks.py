@@ -1,9 +1,9 @@
 import time
 
 from celery import shared_task
-from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
+
+from .emailing import EmailQuotaExceeded, send_email_guarded
 
 
 @shared_task(bind=True, autoretry_for=(Exception,), retry_backoff=True, retry_kwargs={"max_retries": 3})
@@ -22,37 +22,27 @@ def process_due_report_schedules(self):
     due = list(ReportSchedule.objects.filter(enabled=True).filter(Q(next_run__lte=now) | Q(next_run__isnull=True)).order_by("next_run"))
     results = []
     for schedule in due:
-        try:
-            out = run_schedule(schedule)
-            results.append({"schedule_id": schedule.pk, "report_type": schedule.report_type, **out})
-        except Exception as e:
-            results.append(
-                {
-                    "schedule_id": schedule.pk,
-                    "report_type": schedule.report_type,
-                    "success": False,
-                    "error": str(e),
-                }
-            )
+        out = run_schedule(schedule)
+        results.append({"schedule_id": schedule.pk, "report_type": schedule.report_type, **out})
     return {"processed": len(results), "results": results}
 
 
-@shared_task
-def send_welcome_email(user_email, username):
-    """
-    Tâche pour envoyer un email de bienvenue
-    """
-    try:
-        send_mail(
-            "Bienvenue sur LudoKan!",
-            f"Bonjour {username}, bienvenue sur notre plateforme!",
-            settings.DEFAULT_FROM_EMAIL,
-            [user_email],
-            fail_silently=False,
-        )
-        return f"Email envoyé à {user_email}"
-    except Exception as e:
-        return f"Erreur lors de l'envoi: {str(e)}"
+@shared_task(
+    bind=True,
+    autoretry_for=(Exception,),
+    dont_autoretry_for=(EmailQuotaExceeded, ValueError),
+    retry_backoff=True,
+    retry_kwargs={"max_retries": 3},
+)
+def send_welcome_email(self, user_email, username):
+    """Envoie l’email de bienvenue via le service centralisé (hors thread HTTP)."""
+    send_email_guarded(
+        subject="Bienvenue sur LudoKan!",
+        text_body=f"Bonjour {username}, bienvenue sur notre plateforme!",
+        to=[user_email],
+        mail_type="welcome",
+    )
+    return f"Email envoyé à {user_email}"
 
 
 @shared_task
@@ -62,12 +52,6 @@ def process_game_data(game_id):
     """
     # Simulation d'un traitement long
     time.sleep(5)
-
-    # Ici vous pourriez faire des opérations comme:
-    # - Analyser des données de jeu
-    # - Générer des statistiques
-    # - Envoyer des notifications
-    # - etc.
 
     return f"Données du jeu {game_id} traitées avec succès"
 
