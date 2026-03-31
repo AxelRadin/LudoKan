@@ -89,13 +89,13 @@ def send_email_guarded(
             description="Échec à l’envoi (aucun message accepté par le backend)",
             extra_metadata={"reason": "send_returned_zero"},
         )
-        return sent
+    else:
+        increment_email_quota(recipient_count=recipient_count)
+        log_email_event(
+            "email_send_succeeded",
+            mail_type=mail_type,
+            recipients=recipients,
+            description=f"Envoi réussi : {subject[:120]}",
+        )
 
-    increment_email_quota(recipient_count=recipient_count)
-    log_email_event(
-        "email_send_succeeded",
-        mail_type=mail_type,
-        recipients=recipients,
-        description=f"Envoi réussi : {subject[:120]}",
-    )
     return sent
