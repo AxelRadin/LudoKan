@@ -43,6 +43,8 @@ ignore:
     reason: "Won't fix by Debian - ncurses system packages"
   - vulnerability: CVE-2026-4437
     reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
+  - vulnerability: CVE-2026-4046
+    reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
   - vulnerability: CVE-2026-4519
     reason: "Won't fix by Debian - python system package"
 # Sources de données de vulnérabilités
