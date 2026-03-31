@@ -611,6 +611,10 @@ export default function GamePage() {
               userReview={userReview}
               currentUserId={currentUserId}
               onReviewChange={review => setUserReview(review)}
+              onBeforeSubmit={async () => {
+                const resolvedId = await ensureDjangoId();
+                return resolvedId !== null ? String(resolvedId) : null;
+              }}
             />
           </Box>
         </Paper>

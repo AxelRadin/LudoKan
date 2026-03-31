@@ -17,6 +17,7 @@ type ReviewSectionProps = Readonly<{
   userReview: Review | null;
   currentUserId: number | null;
   onReviewChange: (review: Review | null) => void;
+  onBeforeSubmit?: () => Promise<string | null>;
 }>;
 
 export default function ReviewSection({
@@ -24,6 +25,7 @@ export default function ReviewSection({
   userReview,
   currentUserId,
   onReviewChange,
+  onBeforeSubmit,
 }: ReviewSectionProps) {
   const [editingReview, setEditingReview] = useState<Review | null>(null);
 
@@ -65,6 +67,7 @@ export default function ReviewSection({
               ? { ...editingReview, rating: editingReview.rating?.value }
               : undefined
           }
+          onBeforeSubmit={onBeforeSubmit}
           onSuccess={review => {
             if (editingReview) {
               handleEditSuccess(review);
