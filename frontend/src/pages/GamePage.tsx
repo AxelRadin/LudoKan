@@ -19,13 +19,14 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import ReviewSection from '../components/reviews/ReviewSection';
 import {
   fetchIgdbGameById,
   resolveGameIdIfNeeded,
   translateDescription,
 } from '../api/igdb';
+import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
+import { useMatchmaking } from '../contexts/MatchmakingContext';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame, UserLibraryData } from '../types/game';
@@ -44,6 +45,9 @@ function formatDate(isoDate: string | null) {
 export default function GamePage() {
   const { id, igdbId } = useParams();
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+
+  const { startMatchmaking, isMatching } = useMatchmaking();
+
   const [game, setGame] = useState<NormalizedGame | null>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
   const [djangoId, setDjangoId] = useState<number | null>(null);
@@ -168,6 +172,7 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
+
   async function handleToggleFavorite(isPendingAction = false) {
     if (!isAuthenticated && !isPendingAction) {
       setPendingAction(() => () => handleToggleFavorite(true));
@@ -187,6 +192,20 @@ export default function GamePage() {
       console.error(error);
       alert('Erreur lors de la mise à jour du coup de cœur');
     }
+  }
+
+  async function handleSetMatchmaking(isPendingAction = false) {
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleSetMatchmaking(true));
+      setAuthModalOpen(true);
+      return;
+    }
+
+    const currentDjangoId = await ensureDjangoId();
+    if (currentDjangoId === null || !game) return;
+
+    const gameImage = getHighResImage(game.cover_url);
+    await startMatchmaking(String(currentDjangoId), game.name, gameImage);
   }
 
   if (gameNotFound) {
@@ -417,7 +436,6 @@ export default function GamePage() {
                   precision={0.5}
                   sx={{ mb: 2, fontSize: 40 }}
                 />
-                {/* Statut + Coup de cœur */}
                 <Box
                   sx={{
                     width: '100%',
@@ -480,7 +498,6 @@ export default function GamePage() {
                 </Box>
               </Box>
             </Box>
-            {/* Colonne droite : infos */}
             <Box
               sx={{
                 flex: 1.2,
@@ -577,13 +594,10 @@ export default function GamePage() {
             }}
           >
             <SecondaryButton
-              onClick={() => {
-                if (!isAuthenticated) {
-                  setAuthModalOpen(true);
-                }
-              }}
+              onClick={() => handleSetMatchmaking()}
+              disabled={isMatching}
             >
-              Matchmaking
+              {isMatching ? 'Recherche...' : 'Matchmaking'}
             </SecondaryButton>
             <Button
               variant="contained"
