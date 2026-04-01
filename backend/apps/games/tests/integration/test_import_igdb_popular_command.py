@@ -154,10 +154,10 @@ def test_import_igdb_popular_creates_games_and_relations(monkeypatch):
 
     # Vérifier la création / mise à jour des entités de base
     genre = Genre.objects.get(igdb_id=10)
-    assert genre.nom_genre == "Action"
+    assert genre.name == "Action"
 
     platform = Platform.objects.get(igdb_id=20)
-    assert platform.nom_plateforme == "PC"
+    assert platform.name == "PC"
 
     publisher = Publisher.objects.get(igdb_id=500)
     assert publisher.name == "Fake Publisher"

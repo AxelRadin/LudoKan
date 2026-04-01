@@ -5,7 +5,7 @@ Couverture des helpers log_activity, log_system_event et log_activity_anomaly (B
 import pytest
 from django.contrib.auth.signals import user_login_failed
 
-from apps.core.logging_utils import log_activity, log_system_event
+from apps.core.logging_utils import log_activity, log_email_event, log_system_event
 from apps.core.models import ActivityLog, SystemLog
 
 
@@ -30,6 +30,24 @@ def test_log_activity_with_none_metadata(user):
     log_activity(user, "logout", metadata=None)
     entry = ActivityLog.objects.get(user=user, action="logout")
     assert entry.metadata == {}
+
+
+@pytest.mark.django_db
+@pytest.mark.unit
+def test_log_email_event_merges_extra_metadata():
+    """log_email_event avec extra_metadata non vide exécute metadata.update (couverture ligne merge)."""
+    log_email_event(
+        "email_send_failed",
+        mail_type="test",
+        recipients=["a@b.com"],
+        description="desc",
+        extra_metadata={"reason": "send_returned_zero", "detail": "x"},
+    )
+    entry = SystemLog.objects.get(event_type="email_send_failed")
+    assert entry.metadata["mail_type"] == "test"
+    assert entry.metadata["reason"] == "send_returned_zero"
+    assert entry.metadata["detail"] == "x"
+    assert entry.metadata["recipient_count"] == 1
 
 
 @pytest.mark.django_db

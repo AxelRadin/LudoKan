@@ -7,20 +7,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GameCard from './GameCard';
 
-import type { UserLibraryData, UserRatingData } from '../types/game';
-
-export interface Game {
-  id: number;
-  title: string;
-  image?: string;
-  coverUrl?: string | null;
-  releaseDate?: string | null;
-  user_library?: UserLibraryData | null;
-  user_rating?: UserRatingData | null;
-}
+import type { NormalizedGame } from '../types/game';
 
 export interface TrendingGamesProps {
-  games: Game[];
+  games: NormalizedGame[];
   loading?: boolean;
   title?: string;
   /** Si défini, le titre devient un lien vers cette URL (liste complète de la catégorie). */
@@ -195,18 +185,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
               </Typography>
             </Card>
           ) : (
-            games.map(game => (
-              <GameCard
-                key={game.id}
-                id={game.id}
-                title={game.title}
-                image={game.image ?? ''}
-                coverUrl={game.coverUrl}
-                releaseDate={game.releaseDate}
-                user_library={game.user_library}
-                igdb
-              />
-            ))
+            games.map(game => <GameCard key={game.igdb_id} game={game} />)
           )}
         </Box>
 

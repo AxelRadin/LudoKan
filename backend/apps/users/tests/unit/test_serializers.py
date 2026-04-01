@@ -2,6 +2,8 @@
 Tests pour les serializers de l'app users
 """
 
+from unittest import mock
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -16,7 +18,15 @@ User = get_user_model()
 class TestCustomRegisterSerializer:
     """Tests pour le serializer d'inscription CustomRegisterSerializer"""
 
-    def test_valid_registration_data_creates_user(self):
+    @pytest.fixture(autouse=True)
+    def welcome_email_delay_mock(self, monkeypatch):
+        mock_delay = mock.Mock(return_value=mock.Mock(id="task-id"))
+        fake_task = mock.Mock()
+        fake_task.delay = mock_delay
+        monkeypatch.setattr("apps.users.serializers.send_welcome_email", fake_task)
+        yield mock_delay
+
+    def test_valid_registration_data_creates_user(self, welcome_email_delay_mock):
         data = {
             "email": "newuser@example.com",
             "password1": "StrongPass123!",
@@ -37,6 +47,7 @@ class TestCustomRegisterSerializer:
         assert user.last_name == data["last_name"]
         assert user.description_courte == data["description_courte"]
         assert user.check_password(data["password1"])
+        welcome_email_delay_mock.assert_called_once_with(data["email"], data["pseudo"])
 
     def test_email_already_exists_raises_error(self, user):
         data = {
@@ -90,7 +101,7 @@ class TestCustomRegisterSerializer:
         assert "password1" in serializer.errors
         assert UserErrors.PASSWORD_MISMATCH in serializer.errors["password1"]
 
-    def test_pseudo_generated_when_not_provided(self):
+    def test_pseudo_generated_when_not_provided(self, welcome_email_delay_mock):
         data = {
             "email": "auto@example.com",
             "password1": "StrongPass123!",
@@ -104,6 +115,7 @@ class TestCustomRegisterSerializer:
         # Le manager CustomUserManager génère un pseudo basé sur l'email
         assert user.pseudo is not None
         assert user.pseudo != ""
+        welcome_email_delay_mock.assert_called_once_with(data["email"], user.pseudo)
 
     def test_get_cleaned_data_includes_extra_fields(self):
         data = {

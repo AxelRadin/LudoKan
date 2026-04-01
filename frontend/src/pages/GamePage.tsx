@@ -21,14 +21,26 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   fetchIgdbGameById,
-  importIgdbGameToDjango,
   translateDescription,
+  resolveIgdbGame,
 } from '../api/igdb';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
 import { useMatchmaking } from '../contexts/MatchmakingContext';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
+import type { NormalizedGame, UserLibraryData } from '../types/game';
+
+function getHighResImage(url: string | null) {
+  if (!url) return '';
+  return url.replace('t_thumb', 't_1080p').replace('t_cover_big', 't_1080p');
+}
+
+function formatDate(isoDate: string | null) {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('fr-FR');
+}
 
 export default function GamePage() {
   const { id, igdbId } = useParams();
@@ -36,61 +48,38 @@ export default function GamePage() {
 
   const { startMatchmaking, isMatching } = useMatchmaking();
 
-  const [game, setGame] = useState<any>(null);
+  const [game, setGame] = useState<NormalizedGame | null>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
-  const [djangoId, setDjangoId] = useState<string | null>(null);
-  const [userGame, setUserGame] = useState<any>(null);
+  const [djangoId, setDjangoId] = useState<number | null>(null);
+  const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
   const [userReview, setUserReview] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
-    if (igdbId) {
-      fetchIgdbGameById(Number(igdbId))
-        .then(normalizedData => {
-          const image =
-            normalizedData.cover_url?.replace('t_cover_big', 't_1080p') ??
-            undefined;
+    const fetchGameData = async () => {
+      try {
+        let data: NormalizedGame;
+        if (igdbId) {
+          data = await fetchIgdbGameById(Number(igdbId));
+        } else {
+          data = await apiGet(`/api/games/${id}/`);
+        }
 
-          setGame({
-            ...normalizedData,
-            image,
-            display_release_date: normalizedData.release_date
-              ? new Date(normalizedData.release_date).toLocaleDateString('fr-FR')
-              : null,
-          });
-
-          if (normalizedData.django_id) {
-            setDjangoId(String(normalizedData.django_id));
-          }
-          if (normalizedData.user_library) {
-            setUserGame(normalizedData.user_library);
-          }
-        })
-        .catch(() => setGameNotFound(true));
-    } else {
-      apiGet(`/api/games/${id}/`)
-        .then(data => {
-          let image = data.cover_url;
-          if (image && image.includes('t_thumb')) {
-            image = image.replace('t_thumb', 't_1080p');
-          } else if (image && image.includes('t_cover_big')) {
-            image = image.replace('t_cover_big', 't_1080p');
-          }
-          setGame({
-            ...data,
-            name: data.name_fr || data.name,
-            image,
-            display_release_date: data.release_date
-              ? new Date(data.release_date).toLocaleDateString('fr-FR')
-              : null,
-          });
-          setDjangoId(String(data.id));
+        setGame(data);
+        if (data.django_id) {
+          setDjangoId(data.django_id);
+        }
+        if (data.user_library) {
           setUserGame(data.user_library);
-        })
-        .catch(() => setGameNotFound(true));
-    }
+        }
+      } catch {
+        setGameNotFound(true);
+      }
+    };
+
+    fetchGameData();
   }, [id, igdbId, isAuthenticated]);
 
   useEffect(() => {
@@ -119,20 +108,24 @@ export default function GamePage() {
     }
   }, [djangoId, isAuthenticated]);
 
-  async function ensureDjangoId(): Promise<string | null> {
+  async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;
     if (igdbId && game) {
       try {
-        const res = await importIgdbGameToDjango(
+        const res = await resolveIgdbGame(
           Number(igdbId),
           game.name,
-          game.cover_url || game.image || null,
-          game.iso_release_date || null
+          game.cover_url || null,
+          game.release_date || null
         );
-        setDjangoId(String(res.id));
-        return String(res.id);
+        setDjangoId(res.game_id);
+        setGame(res.normalized_game);
+        if (res.normalized_game.user_library) {
+          setUserGame(res.normalized_game.user_library);
+        }
+        return res.game_id;
       } catch (err) {
-        console.error('Erreur lors de l’importation IGDB', err);
+        console.error('Erreur lors de la résolution IGDB', err);
         return null;
       }
     }
@@ -149,7 +142,7 @@ export default function GamePage() {
       return;
     }
     const currentDjangoId = await ensureDjangoId();
-    if (!currentDjangoId) return;
+    if (currentDjangoId === null) return;
     try {
       if (userGame) {
         const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
@@ -177,8 +170,7 @@ export default function GamePage() {
     }
 
     const currentDjangoId = await ensureDjangoId();
-    if (!currentDjangoId) return;
-
+    if (currentDjangoId === null) return;
     const nextIsFavorite = !userGame?.is_favorite;
 
     try {
@@ -212,9 +204,10 @@ export default function GamePage() {
     }
 
     const currentDjangoId = await ensureDjangoId();
-    if (!currentDjangoId) return;
+    if (currentDjangoId === null || !game) return;
 
-    await startMatchmaking(currentDjangoId, game.name, game.image);
+    const gameImage = getHighResImage(game.cover_url);
+    await startMatchmaking(String(currentDjangoId), game.name, gameImage);
   }
 
   if (gameNotFound) {
@@ -307,7 +300,9 @@ export default function GamePage() {
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                backgroundImage: `linear-gradient(to right, black 20%, transparent 30%, transparent 70%, black 80%),url(${game.image})`,
+                backgroundImage: `linear-gradient(to right, black 20%, transparent 30%, transparent 70%, black 80%),url(${getHighResImage(
+                  game.cover_url
+                )})`,
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
                 backgroundColor: 'black',
@@ -415,7 +410,7 @@ export default function GamePage() {
                   </Box>
                 </Box>
                 <img
-                  src={game.image}
+                  src={getHighResImage(game.cover_url)}
                   alt={game.name}
                   style={{
                     width: '100%',
@@ -526,9 +521,7 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.platforms && game.platforms.length > 0
-                  ? game.platforms
-                    .map((p: any) => p.name || p.nom_plateforme)
-                    .join(', ')
+                  ? game.platforms.map((p: any) => p.name).join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -562,9 +555,7 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.genres && game.genres.length > 0
-                  ? game.genres
-                    .map((g: any) => g.nom_genre || g.name)
-                    .join(', ')
+                  ? game.genres.map((g: any) => g.name).join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -576,7 +567,7 @@ export default function GamePage() {
                 </Typography>
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.display_release_date || 'Non renseignée'}
+                {formatDate(game.release_date) || 'Non renseignée'}
               </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
@@ -628,7 +619,7 @@ export default function GamePage() {
             }}
           >
             <ReviewSection
-              gameId={djangoId ?? ''}
+              gameId={djangoId ? String(djangoId) : ''}
               userReview={userReview}
               currentUserId={currentUserId}
               onReviewChange={review => setUserReview(review)}

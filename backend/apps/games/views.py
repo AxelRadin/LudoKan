@@ -16,7 +16,10 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_games_csv, build_games_pdf
+from apps.games import igdb_client
 from apps.games.filters import GameFilter
+from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
+from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
 from apps.games.serializers import (
@@ -90,13 +93,13 @@ class PublisherViewSet(ModelViewSet):
 
 
 class GenreViewSet(ModelViewSet):
-    queryset = Genre.objects.order_by("nom_genre")
+    queryset = Genre.objects.order_by("name")
     serializer_class = GenreCRUDSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class PlatformViewSet(ModelViewSet):
-    queryset = Platform.objects.order_by("nom_plateforme")
+    queryset = Platform.objects.order_by("name")
     serializer_class = PlatformCRUDSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -138,6 +141,13 @@ class RatingCreateView(APIView):
                 "rating_type": rating_type,
                 "value": value,
             },
+        )
+
+        # Auto-create UserGame with TERMINE status on first persistent action
+        UserGame.objects.get_or_create(
+            user=request.user,
+            game=game,
+            defaults={"status": UserGame.GameStatus.TERMINE},
         )
 
         output = RatingSerializer(rating).data
@@ -197,16 +207,39 @@ class RatingListView(ListAPIView):
 
 class GameByIgdbIdView(APIView):
     """
-    Retrieve a game by its IGDB ID.
+    GET /api/games/igdb/<igdb_id>/
+
+    Lecture pure d'un jeu par son IGDB ID. Retourne toujours un NormalizedGame.
+    Ne crée jamais de Game, ne déclenche aucune persistance.
+
+    Stratégie en cascade :
+      1. Si le jeu existe en base → GameReadSerializer (NormalizedGame complet avec django_id).
+      2. Sinon → appel IGDB, normalisation, enrichissement (django_id=null).
+      3. Introuvable partout → 404.
     """
 
     permission_classes = [AllowAny]
 
     def get(self, request, igdb_id):
-        game = get_object_or_404(Game, igdb_id=igdb_id)
+        # --- 1. Lookup in local DB ---
+        game = Game.objects.filter(igdb_id=igdb_id).select_related("publisher").prefetch_related("genres", "platforms").first()
+        if game is not None:
+            serializer = GameReadSerializer(game, context={"request": request})
+            return Response(serializer.data)
 
-        serializer = GameDetailSerializer(game, context={"request": request})
-        return Response(serializer.data)
+        # --- 2. Fallback: fetch from IGDB ---
+        try:
+            query = f"{FIELDS_GAME_DETAIL} where id = {igdb_id}; limit 1;"
+            data = igdb_client.igdb_request("games", query)
+            arr = data if isinstance(data, list) else []
+            if not arr:
+                return Response({"error": "Game not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            normalized = [normalize_igdb_game(arr[0])]
+            enriched = enrich_normalized_games(normalized, request.user)
+            return Response(enriched[0])
+        except Exception:
+            return Response({"error": "Game not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ImportIgdbGameView(APIView):
@@ -408,7 +441,7 @@ def _build_games_report_payload():
     popular_games = list(
         Game.objects.annotate(owners_count=Count("user_games")).order_by("-owners_count")[:10].values("id", "name", "average_rating", "owners_count")
     )
-    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "nom_genre", "games_count"))
+    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "name", "games_count"))
     ratings_agg = Rating.objects.aggregate(
         average=Avg("normalized_value"),
         total_count=Count("id"),
@@ -418,9 +451,7 @@ def _build_games_report_payload():
         "total_count": ratings_agg["total_count"] or 0,
     }
     reviews_recent = Review.objects.filter(date_created__gte=month_ago).count()
-    platforms_breakdown = list(
-        Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "nom_plateforme", "games_count")
-    )
+    platforms_breakdown = list(Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "name", "games_count"))
     return {
         "popular_games": popular_games,
         "top_genres": top_genres,
@@ -459,10 +490,10 @@ class AdminReportsGamesView(APIView):
     Réponse :
     {
       "popular_games": [ { "id", "name", "owners_count", "average_rating" }, ... ],
-      "top_genres": [ { "id", "nom_genre", "games_count" }, ... ],
+      "top_genres": [ { "id", "name", "games_count" }, ... ],
       "ratings_summary": { "average": 7.2, "total_count": 500 },
       "reviews_recent": 120,
-      "platforms_breakdown": [ { "id", "nom_plateforme", "games_count" }, ... ]
+      "platforms_breakdown": [ { "id", "name", "games_count" }, ... ]
     }
     """
 
