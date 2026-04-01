@@ -322,7 +322,7 @@ class GameByIgdbIdView(APIView):
                     return Response(GameReadSerializer(game, context={"request": request}).data)
                 return Response(
                     {"error": "IGDB connection not configured"},
-                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    status=status.HTTP_404_NOT_FOUND,
                 )
 
             if game:
