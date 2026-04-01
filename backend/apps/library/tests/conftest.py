@@ -23,12 +23,12 @@ def publisher(db):
 
 @pytest.fixture
 def genre(db):
-    return Genre.objects.create(nom_genre="Test Genre")
+    return Genre.objects.create(name="Test Genre")
 
 
 @pytest.fixture
 def platform(db):
-    return Platform.objects.create(nom_plateforme="PC")
+    return Platform.objects.create(name="PC")
 
 
 @pytest.fixture

@@ -16,7 +16,7 @@ def genre_action(db):
     """Genre Action"""
     return Genre.objects.create(
         igdb_id=5001,
-        nom_genre="Action",
+        name="Action",
         description="Genre Action",
     )
 
@@ -26,7 +26,7 @@ def genre_rpg(db):
     """Genre RPG"""
     return Genre.objects.create(
         igdb_id=5002,
-        nom_genre="RPG",
+        name="RPG",
         description="Genre RPG",
     )
 
@@ -36,7 +36,7 @@ def genre_strategy(db):
     """Genre Strategy"""
     return Genre.objects.create(
         igdb_id=5003,
-        nom_genre="Strategy",
+        name="Strategy",
         description="Genre Strategy",
     )
 
@@ -46,7 +46,7 @@ def platform_ps5(db):
     """Plateforme PlayStation 5"""
     return Platform.objects.create(
         igdb_id=6001,
-        nom_plateforme="PlayStation 5",
+        name="PlayStation 5",
         description="Sony PlayStation 5",
     )
 
@@ -56,7 +56,7 @@ def platform_xbox(db):
     """Plateforme Xbox Series X"""
     return Platform.objects.create(
         igdb_id=6002,
-        nom_plateforme="Xbox Series X",
+        name="Xbox Series X",
         description="Microsoft Xbox Series X",
     )
 
@@ -66,7 +66,7 @@ def platform_pc(db):
     """Plateforme PC"""
     return Platform.objects.create(
         igdb_id=6003,
-        nom_plateforme="PC",
+        name="PC",
         description="Personal Computer",
     )
 
@@ -402,3 +402,61 @@ class TestGameFilterEmptyParams:
         # C'est le comportement attendu - l'API s'attend à des entiers
         with pytest.raises(ValueError, match="Field 'id' expected a number"):
             api_client.get("/api/games/?genre=invalid")
+
+
+@pytest.mark.django_db
+class TestGameFilterSearch:
+    """Tests du filtre search (name / name_fr, icontains)."""
+
+    def test_filter_search_matches_name(
+        self,
+        api_client,
+        game_action_ps5,
+        game_rpg_multiplatform,
+        publisher_test,
+    ):
+        """Sous-chaîne sur le nom anglais."""
+        response = api_client.get("/api/games/?search=Multiplatform")
+
+        assert response.status_code == status.HTTP_200_OK
+        names = {g["name"] for g in response.data["results"]}
+        assert "RPG Multiplatform" in names
+        assert "Action Game PS5" not in names
+
+    def test_filter_search_matches_name_fr(
+        self,
+        api_client,
+        publisher_test,
+        genre_action,
+        platform_pc,
+    ):
+        """Sous-chaîne sur name_fr lorsque le nom anglais ne matche pas."""
+        game = Game.objects.create(
+            igdb_id=8100,
+            name="Obscure English Title",
+            name_fr="Aventure magique",
+            description="",
+            publisher=publisher_test,
+        )
+        game.genres.add(genre_action)
+        game.platforms.add(platform_pc)
+
+        response = api_client.get("/api/games/?search=magique")
+
+        assert response.status_code == status.HTTP_200_OK
+        names = {g["name"] for g in response.data["results"]}
+        assert "Aventure magique" in names
+
+    def test_filter_search_whitespace_only_behaves_like_no_filter(
+        self,
+        api_client,
+        game_action_ps5,
+        game_rpg_multiplatform,
+        game_action_rpg_pc,
+        game_strategy_xbox,
+    ):
+        """search vide ou uniquement des espaces → pas de filtre (retourne tout)."""
+        response = api_client.get("/api/games/", {"search": "   "})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 4

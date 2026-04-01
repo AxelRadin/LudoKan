@@ -3,6 +3,7 @@ Filtres personnalisés pour l'application Games.
 """
 
 import django_filters
+from django.db.models import Q
 
 from apps.games.models import Game
 
@@ -52,6 +53,14 @@ class GameFilter(django_filters.FilterSet):
         field_name="max_players", lookup_expr="gte", help_text="Nombre maximum de joueurs (ex: 4 → jeux acceptant 4+ joueurs)"
     )
 
+    search = django_filters.CharFilter(method="filter_search", label="Recherche par nom (sous-chaîne)")
+
+    def filter_search(self, queryset, name, value):
+        if not value or not str(value).strip():
+            return queryset
+        v = str(value).strip()
+        return queryset.filter(Q(name__icontains=v) | Q(name_fr__icontains=v))
+
     class Meta:
         model = Game
-        fields = ["genre", "platform", "min_age", "min_players", "max_players"]
+        fields = ["genre", "platform", "min_age", "min_players", "max_players", "search"]

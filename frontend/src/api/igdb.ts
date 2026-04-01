@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from '../services/api';
+import type { NormalizedGame } from '../types/game';
 
 export type IgdbPlatform = {
   id: number;
@@ -47,26 +48,7 @@ export type IgdbVideo = {
   name?: string;
 };
 
-export type IgdbGame = {
-  id: number;
-  name: string;
-  summary?: string;
-  first_release_date?: number;
-  cover?: IgdbCover;
-  platforms?: IgdbPlatform[];
-  genres?: IgdbGenre[];
-  game_localizations?: IgdbGameLocalization[];
-  franchises?: IgdbFranchise[];
-  collections?: IgdbCollection[];
-  involved_companies?: IgdbInvolvedCompany[];
-  display_name?: string;
-  name_fr?: string | null;
-  name_en?: string;
-  total_rating?: number;
-  total_rating_count?: number;
-  screenshots?: IgdbScreenshot[];
-  videos?: IgdbVideo[];
-};
+export type IgdbGame = NormalizedGame;
 
 export type IgdbAlternativeName = {
   name: string;
@@ -100,21 +82,27 @@ export async function fetchIgdbGames(): Promise<IgdbGame[]> {
 export async function searchIgdbGames(
   q: string,
   limit = 8,
-  suggest = false
+  suggest = false,
+  signal?: AbortSignal
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
     q,
     limit: String(limit),
     suggest: suggest ? '1' : '0',
   });
-  return apiGet(`/api/igdb/search/?${params}`);
+  return apiGet(`/api/igdb/search/?${params}`, { signal });
 }
 
 export async function searchGames(
   q: string,
-  options?: { limit?: number; suggest?: boolean }
+  options?: { limit?: number; suggest?: boolean; signal?: AbortSignal }
 ): Promise<IgdbGame[]> {
-  return searchIgdbGames(q, options?.limit ?? 20, options?.suggest ?? false);
+  return searchIgdbGames(
+    q,
+    options?.limit ?? 20,
+    options?.suggest ?? false,
+    options?.signal
+  );
 }
 
 export async function fetchTrendingGames(
@@ -190,16 +178,20 @@ export async function translateDescription(text: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Django : import jeu IGDB + ajout à la ludothèque (api/games/..., api/me/...)
+// Django : résolution/import jeu IGDB + ajout à la ludothèque
 // ---------------------------------------------------------------------------
 
-export async function importIgdbGameToDjango(
+export async function resolveIgdbGame(
   igdbId: number,
-  name: string,
-  coverUrl: string | null,
-  releaseDate: string | null
-): Promise<{ id: number }> {
-  return apiPost('/api/games/igdb-import/', {
+  name?: string,
+  coverUrl?: string | null,
+  releaseDate?: string | null
+): Promise<{
+  game_id: number;
+  normalized_game: NormalizedGame;
+  created: boolean;
+}> {
+  return apiPost('/api/games/resolve-from-igdb/', {
     igdb_id: igdbId,
     name,
     cover_url: coverUrl,

@@ -14,31 +14,43 @@ import {
   Divider,
   Paper,
   Rating,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import ReviewSection from '../components/reviews/ReviewSection';
 import {
   fetchIgdbGameById,
-  getCoverUrl,
   translateDescription,
+  resolveIgdbGame,
 } from '../api/igdb';
 import PlatformLogos from '../components/PlatformLogos';
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
+import type { NormalizedGame, UserLibraryData } from '../types/game';
+
+function getHighResImage(url: string | null) {
+  if (!url) return '';
+  return url.replace('t_thumb', 't_1080p').replace('t_cover_big', 't_1080p');
+}
+
+function formatDate(isoDate: string | null) {
+  if (!isoDate) return '';
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('fr-FR');
+}
 
 export default function GamePage() {
   const { id, igdbId } = useParams();
-  const { isAuthenticated } = useAuth();
-  const [game, setGame] = useState<any>(null);
+  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+  const [game, setGame] = useState<NormalizedGame | null>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
-  const [djangoId, setDjangoId] = useState<string | null>(null);
-  const [userRating, setUserRating] = useState<number | null>(null);
-  const [userGame, setUserGame] = useState<any>(null);
+  const [djangoId, setDjangoId] = useState<number | null>(null);
+  const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
   const [userReview, setUserReview] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [translatedDescription, setTranslatedDescription] = useState<
     string | null
   >(null);
@@ -49,78 +61,36 @@ export default function GamePage() {
   useEffect(() => {
     if (igdbId) {
       fetchIgdbGameById(Number(igdbId))
-        .then(data => {
-          const coverUrl = getCoverUrl(data.cover);
-          const image =
-            coverUrl?.replace('t_cover_big', 't_1080p') ?? undefined;
-          const releaseDate = data.first_release_date
-            ? new Date(data.first_release_date * 1000).toLocaleDateString(
-                'fr-FR'
-              )
-            : null;
-          setGame({
-            name: data.display_name ?? data.name,
-            description: data.summary,
-            cover_url: coverUrl,
-            image,
-            release_date: releaseDate,
-            platforms:
-              data.platforms?.map(p => ({ nom_plateforme: p.name })) ?? [],
-            genres: data.genres?.map((g: any) => ({ nom_genre: g.name })) ?? [],
-            publisher: data.involved_companies?.find((c: any) => c.publisher)?.company ?? null,
-            average_rating: 0,
-            rating_avg: 0,
-            screenshots: data.screenshots?.map((s: any) => ({
-              url: s.url.startsWith('//')
-                ? `https:${s.url}`.replace('t_thumb', 't_screenshot_big')
-                : s.url.replace('t_thumb', 't_screenshot_big'),
-            })) ?? [],
-            videos: data.videos ?? [],
-          });
-        })
+        .then(data => setGame(data))
         .catch(() => setGameNotFound(true));
     } else {
       apiGet(`/api/games/${id}/`)
         .then(data => {
-          let image = data.cover_url;
-          if (image && image.includes('t_thumb')) {
-            image = image.replace('t_thumb', 't_1080p');
-          } else if (image && image.includes('t_cover_big')) {
-            image = image.replace('t_cover_big', 't_1080p');
-          }
-          setGame({ ...data, name: data.name_fr || data.name, image });
-          setDjangoId(String(data.id));
+          setGame({ ...data, name: data.name_fr || data.name });
+          setDjangoId(data.id);
           setUserGame(data.user_library);
-          setUserRating(data.user_rating?.value || null);
         })
         .catch(() => setGameNotFound(true));
     }
-  }, [id, igdbId]);
+  }, [id, igdbId, isAuthenticated]);
 
   useEffect(() => {
-    if (!game?.description) return;
+    if (!game?.summary) return;
     setTranslating(true);
     setTranslatedDescription(null);
-    translateDescription(game.description)
+    translateDescription(game.summary)
       .then(setTranslatedDescription)
       .catch(() => {})
       .finally(() => setTranslating(false));
-  }, [game?.description]);
+  }, [game?.summary]);
 
   useEffect(() => {
     if (djangoId && isAuthenticated) {
-      apiGet(`/api/reviews/?game=${djangoId}`)
-        .then(data => {
-          const myReview = data.find(
-            (r: any) => r.user?.id === userGame?.user?.id
-          );
-          if (myReview) {
-            setUserReview(myReview);
-            setUserRating(myReview.rating?.value || null);
-          } else {
-            setUserReview(null);
-            setUserRating(null);
-          }
+      Promise.all([apiGet(`/api/reviews/?game=${djangoId}`), apiGet('/api/me')])
+        .then(([reviews, me]) => {
+          setCurrentUserId(me.id);
+          const myReview = reviews.find((r: any) => r.user?.id === me.id);
+          setUserReview(myReview || null);
         })
         .catch(() => {
           setUserReview(null);
@@ -128,55 +98,52 @@ export default function GamePage() {
     } else {
       setUserReview(null);
     }
-  }, [djangoId, isAuthenticated, userGame?.user?.id]);
+  }, [djangoId, isAuthenticated]);
 
-  async function handleRatingChange(value: number | null) {
-    if (!isAuthenticated || !djangoId || !value) return;
-    setUserRating(value);
-
-    try {
-      const ratingRes = await apiPost('/api/ratings/', {
-        game: djangoId,
-        value: value,
-        rating_type: 'etoiles',
-      });
-
-      const ratingId = ratingRes.id;
-
-      if (userReview) {
-        const updated = await apiPatch(`/api/reviews/${userReview.id}/`, {
-          game: djangoId,
-          rating: ratingId,
-          content: userReview.content || 'Note automatique',
-        });
-        setUserReview(updated);
-      } else {
-        const created = await apiPost('/api/reviews/', {
-          game: djangoId,
-          rating: ratingId,
-          content: 'Note automatique',
-        });
-        setUserReview(created);
+  async function ensureDjangoId(): Promise<number | null> {
+    if (djangoId) return djangoId;
+    if (igdbId && game) {
+      try {
+        const res = await resolveIgdbGame(
+          Number(igdbId),
+          game.name,
+          game.cover_url || null,
+          game.release_date || null
+        );
+        setDjangoId(res.game_id);
+        setGame(res.normalized_game);
+        if (res.normalized_game.user_library) {
+          setUserGame(res.normalized_game.user_library);
+        }
+        return res.game_id;
+      } catch (err) {
+        console.error('Erreur lors de la résolution IGDB', err);
+        return null;
       }
-    } catch (error) {
-      console.error(error);
-      alert("Erreur lors de l'envoi de la note");
     }
+    return null;
   }
 
   async function handleSetStatus(
-    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER'
+    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
+    isPendingAction = false
   ) {
-    if (!isAuthenticated || !djangoId) return;
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleSetStatus(status, true));
+      setAuthModalOpen(true);
+      return;
+    }
+    const currentDjangoId = await ensureDjangoId();
+    if (currentDjangoId === null) return;
     try {
       if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${djangoId}/`, {
+        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
           status,
         });
         setUserGame({ ...userGame, status: updated.status });
       } else {
         const created = await apiPost('/api/me/games/', {
-          game_id: djangoId,
+          game_id: currentDjangoId,
           status,
         });
         setUserGame(created);
@@ -186,19 +153,20 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
-  async function handleToggleFavorite() {
-    if (!id) return;
-
-    if (!isAuthenticated) {
-      alert('Connecte-toi pour ajouter ce jeu en coup de cœur');
+  async function handleToggleFavorite(isPendingAction = false) {
+    if (!isAuthenticated && !isPendingAction) {
+      setPendingAction(() => () => handleToggleFavorite(true));
+      setAuthModalOpen(true);
       return;
     }
 
+    const currentDjangoId = await ensureDjangoId();
+    if (currentDjangoId === null) return;
     const nextIsFavorite = !userGame?.is_favorite;
 
     try {
       if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${id}/`, {
+        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
           is_favorite: nextIsFavorite,
         });
         setUserGame({
@@ -207,7 +175,7 @@ export default function GamePage() {
         });
       } else {
         const created = await apiPost('/api/me/games/', {
-          game_id: id,
+          game_id: currentDjangoId,
           status: 'ENVIE_DE_JOUER',
           is_favorite: true,
         });
@@ -309,7 +277,9 @@ export default function GamePage() {
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
-                backgroundImage: `linear-gradient(to right, black 20%, transparent 30%, transparent 70%, black 80%),url(${game.image})`,
+                backgroundImage: `linear-gradient(to right, black 20%, transparent 30%, transparent 70%, black 80%),url(${getHighResImage(
+                  game.cover_url
+                )})`,
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
                 backgroundColor: 'black',
@@ -395,9 +365,9 @@ export default function GamePage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: isAuthenticated ? 'pointer' : 'default',
+                      cursor: 'pointer',
                     }}
-                    onClick={handleToggleFavorite}
+                    onClick={() => handleToggleFavorite()}
                   >
                     <Tooltip title="Coup de cœur" arrow>
                       <Box
@@ -417,7 +387,7 @@ export default function GamePage() {
                   </Box>
                 </Box>
                 <img
-                  src={game.image}
+                  src={getHighResImage(game.cover_url)}
                   alt={game.name}
                   style={{
                     width: '100%',
@@ -440,120 +410,71 @@ export default function GamePage() {
                   Notes de la communauté
                 </Typography>
                 <Rating
-                  value={game.average_rating || game.rating_avg || 0}
+                  value={(game.average_rating || game.rating_avg || 0) / 2}
                   readOnly
+                  precision={0.5}
                   sx={{ mb: 2, fontSize: 40 }}
                 />
+                {/* Statut + Coup de cœur */}
                 <Box
                   sx={{
                     width: '100%',
-                    bgcolor: '#f5f6fa',
-                    borderRadius: 2,
-                    mt: 3,
-                    p: 2,
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                    mt: 2,
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
+                    gap: 1,
                   }}
                 >
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CheckCircleIcon
+                      color={
+                        userGame?.status === 'TERMINE' ? 'success' : 'action'
+                      }
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => handleSetStatus('TERMINE')}
+                    />
+                    <Typography variant="body2">Terminé</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <BookmarkIcon
+                      color={
+                        userGame?.status === 'ENVIE_DE_JOUER'
+                          ? 'warning'
+                          : 'action'
+                      }
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+                    />
+                    <Typography variant="body2">Envie d'y jouer</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PlayCircleIcon
+                      color={
+                        userGame?.status === 'EN_COURS' ? 'primary' : 'action'
+                      }
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => handleSetStatus('EN_COURS')}
+                    />
+                    <Typography variant="body2">En cours</Typography>
+                  </Box>
+                  <Tooltip title="Coup de cœur" arrow>
                     <Box
                       sx={{
                         display: 'flex',
-                        flexDirection: 'column',
                         alignItems: 'center',
                         gap: 1,
+                        cursor: 'pointer',
                       }}
+                      onClick={() => handleToggleFavorite()}
                     >
-                      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                        Ma note
-                      </Typography>
-                      <Rating
-                        value={userRating || 0}
-                        onChange={(_, value) => handleRatingChange(value)}
-                        sx={{ mb: 2, fontSize: 32 }}
-                      />
+                      {userGame?.is_favorite ? (
+                        <FavoriteIcon color="error" />
+                      ) : (
+                        <FavoriteBorderIcon color="action" />
+                      )}
+                      <Typography variant="body2">Coup de cœur</Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Tooltip title="Coup de cœur" arrow>
-                        <Box>
-                          {userGame?.is_favorite ? (
-                            <FavoriteIcon
-                              color="error"
-                              sx={{
-                                cursor: isAuthenticated ? 'pointer' : 'default',
-                              }}
-                              onClick={handleToggleFavorite}
-                            />
-                          ) : (
-                            <FavoriteBorderIcon
-                              color="action"
-                              sx={{
-                                cursor: isAuthenticated ? 'pointer' : 'default',
-                              }}
-                              onClick={handleToggleFavorite}
-                            />
-                          )}
-                        </Box>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1,
-                      width: '100%',
-                      mt: 1,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <CheckCircleIcon
-                        color={
-                          userGame?.status === 'TERMINE' ? 'success' : 'action'
-                        }
-                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
-                        onClick={() =>
-                          isAuthenticated && handleSetStatus('TERMINE')
-                        }
-                      />
-                      <Typography variant="body2">Terminé</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <BookmarkIcon
-                        color={
-                          userGame?.status === 'ENVIE_DE_JOUER'
-                            ? 'warning'
-                            : 'action'
-                        }
-                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
-                        onClick={() =>
-                          isAuthenticated && handleSetStatus('ENVIE_DE_JOUER')
-                        }
-                      />
-                      <Typography variant="body2">Envie d'y jouer</Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PlayCircleIcon
-                        color={
-                          userGame?.status === 'EN_COURS' ? 'primary' : 'action'
-                        }
-                        sx={{ cursor: isAuthenticated ? 'pointer' : 'default' }}
-                        onClick={() =>
-                          isAuthenticated && handleSetStatus('EN_COURS')
-                        }
-                      />
-                      <Typography variant="body2">En cours</Typography>
-                    </Box>
-                  </Box>
+                  </Tooltip>
                 </Box>
               </Box>
             </Box>
@@ -577,9 +498,11 @@ export default function GamePage() {
                   Plateformes
                 </Typography>
               </Box>
-              <Box sx={{ mb: 3 }}>
-                <PlatformLogos platforms={game.platforms ?? []} />
-              </Box>
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                {game.platforms && game.platforms.length > 0
+                  ? game.platforms.map((p: any) => p.name).join(', ')
+                  : 'Non renseigné'}
+              </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -592,7 +515,7 @@ export default function GamePage() {
                 const fullText = translating
                   ? 'Traduction en cours…'
                   : (translatedDescription ??
-                    game.description ??
+                    game.summary ??
                     'Aucune description disponible.');
                 const isTruncatable =
                   !translating && fullText.length > DESCRIPTION_LIMIT;
@@ -615,9 +538,7 @@ export default function GamePage() {
                     {isTruncatable && (
                       <Button
                         size="small"
-                        onClick={() =>
-                          setDescriptionExpanded(prev => !prev)
-                        }
+                        onClick={() => setDescriptionExpanded(prev => !prev)}
                         sx={{ mb: 3, p: 0, textTransform: 'none' }}
                       >
                         {descriptionExpanded ? 'Voir moins' : 'Voir plus'}
@@ -636,9 +557,7 @@ export default function GamePage() {
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
                 {game.genres && game.genres.length > 0
-                  ? game.genres
-                      .map((g: any) => g.nom_genre || g.name)
-                      .join(', ')
+                  ? game.genres.map((g: any) => g.name).join(', ')
                   : 'Non renseigné'}
               </Typography>
               <Box
@@ -650,7 +569,7 @@ export default function GamePage() {
                 </Typography>
               </Box>
               <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.release_date || 'Non renseignée'}
+                {formatDate(game.release_date) || 'Non renseignée'}
               </Typography>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
@@ -678,8 +597,20 @@ export default function GamePage() {
               width: '100%',
             }}
           >
-            <SecondaryButton>Matchmaking</SecondaryButton>
-            <Button variant="contained" color="error">
+            <SecondaryButton
+              onClick={() => {
+                if (!isAuthenticated) {
+                  setAuthModalOpen(true);
+                }
+              }}
+            >
+              Matchmaking
+            </SecondaryButton>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+            >
               Ajouter à la collection
             </Button>
           </Box>
@@ -759,42 +690,17 @@ export default function GamePage() {
           <Box
             sx={{
               width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
               bgcolor: '#fff',
               borderRadius: 4,
               p: { xs: 2, sm: 4 },
             }}
           >
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                mb: 2,
-                textAlign: 'center',
-                width: '100%',
-              }}
-            >
-              Avis
-            </Typography>
-            <TextField
-              label="Écrire un avis"
-              multiline
-              minRows={1}
-              maxRows={3}
-              fullWidth={false}
-              variant="outlined"
-              sx={{
-                mb: 3,
-                width: '350px',
-                maxWidth: '100%',
-                alignItems: 'flex-start',
-              }}
+            <ReviewSection
+              gameId={djangoId ? String(djangoId) : ''}
+              userReview={userReview}
+              currentUserId={currentUserId}
+              onReviewChange={review => setUserReview(review)}
             />
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Aucun avis disponible.
-            </Typography>
           </Box>
         </Paper>
       </Box>

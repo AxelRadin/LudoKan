@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useCollectionGames } from '../hooks/useCollectionGames';
-import { formatReleaseDate, getCoverUrl, type IgdbGame } from '../api/igdb';
+import { type IgdbGame } from '../api/igdb';
 
 const LICENCE_GRID_SKELETON_KEYS = [
   'licence-skel-a',
@@ -35,10 +35,10 @@ function SkeletonCard() {
 }
 
 function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
-  const cover = getCoverUrl(g.cover);
-  const release = formatReleaseDate(g.first_release_date);
+  const cover = g.cover_url;
+  const release = g.release_date;
 
-  const displayName = g.display_name ?? g.name;
+  const displayName = g.name;
 
   return (
     <div className="group rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition hover:-translate-y-[1px] hover:shadow-md">
@@ -113,7 +113,7 @@ export default function LicensePage() {
   );
 
   const title = useMemo(() => {
-    const first: any = games?.[0];
+    const first = games?.[0];
     return first?.collections?.[0]?.name ?? `Licence #${licenseId}`;
   }, [games, licenseId]);
 
@@ -202,7 +202,7 @@ export default function LicensePage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {loading
             ? LICENCE_GRID_SKELETON_KEYS.map(key => <SkeletonCard key={key} />)
-            : games.map(g => <GameCard key={g.id} g={g} />)}
+            : games.map(g => <GameCard key={g.igdb_id} g={g} />)}
         </div>
 
         {!loading && !error && games.length === 0 ? (

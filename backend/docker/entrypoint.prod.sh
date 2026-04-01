@@ -7,6 +7,9 @@ python manage.py migrate --noinput
 echo "🎨 Collect static..."
 python manage.py collectstatic --noinput
 
+echo "🌐 Synchronise site..."
+python manage.py sync_site
+
 echo "🚀 Gunicorn..."
 exec gunicorn config.wsgi:application \
   --bind 0.0.0.0:8000 \

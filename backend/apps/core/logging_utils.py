@@ -1,8 +1,9 @@
 """
-Helpers pour créer des entrées dans system_logs et activity_logs (BACK-021A).
+Helpers pour créer des entrées dans system_logs et activity_logs.
 
 Utilisation :
 - log_activity(user, action, target_type=..., target_id=..., metadata=...)
+- log_email_event(event_type, mail_type=..., recipients=..., exception=..., extra_metadata=...)
 - log_system_event(event_type, description, user=..., metadata=...)
 
 Les logs peuvent aussi être créés via les signaux (login, création de review, etc.)
@@ -42,6 +43,40 @@ def log_activity(
     )
 
 
+def log_email_event(
+    event_type: str,
+    *,
+    mail_type: str,
+    recipients: list[str],
+    description: str = "",
+    exception: BaseException | None = None,
+    extra_metadata: dict | None = None,
+):
+    """
+    Enregistre un événement lié à l’envoi d’e-mail dans system_logs.
+
+    event_type attendus : email_send_requested, email_send_succeeded,
+    email_send_failed, email_quota_blocked.
+    """
+    from django.conf import settings
+
+    metadata = {
+        "environment": getattr(settings, "ENVIRONMENT", "unknown"),
+        "mail_type": mail_type,
+        "recipients": list(recipients),
+        "recipient_count": len(recipients),
+    }
+    if exception is not None:
+        metadata["exception"] = f"{type(exception).__name__}: {exception}"
+    if extra_metadata:
+        metadata.update(extra_metadata)
+    log_system_event(
+        event_type,
+        description or event_type,
+        metadata=metadata,
+    )
+
+
 def log_system_event(
     event_type: str,
     description: str = "",
@@ -63,3 +98,11 @@ def log_system_event(
         user=user,
         metadata=metadata or {},
     )
+
+
+def log_activity_anomaly(description: str, *, metadata: dict | None = None):
+    """
+    Log une anomalie d'activité (pic, spam, etc.) dans system_logs.
+    À appeler depuis un middleware, une tâche ou une vue qui détecte un comportement anormal.
+    """
+    log_system_event("activity_anomaly", description, metadata=metadata or {})

@@ -5,6 +5,7 @@ Tests complets pour tous les endpoints d'authentification
 
 import io
 import os
+from unittest.mock import patch
 
 import pytest
 from django.conf import settings
@@ -35,7 +36,8 @@ def get_errors_payload(response):
 class TestRegistrationView:
     """Tests pour l'endpoint d'inscription"""
 
-    def test_register_success_with_all_fields(self, api_client):
+    @patch("apps.users.serializers.send_welcome_email.delay")
+    def test_register_success_with_all_fields(self, mock_welcome_delay, api_client):
         """Test inscription réussie avec tous les champs"""
         url = "/api/auth/registration/"
         data = {
@@ -57,8 +59,10 @@ class TestRegistrationView:
         user = CustomUser.objects.get(email=data["email"])
         assert user.pseudo == data["pseudo"]
         assert user.first_name == data["first_name"]
+        mock_welcome_delay.assert_called_once_with(data["email"], data["pseudo"])
 
-    def test_register_success_minimal_fields(self, api_client):
+    @patch("apps.users.serializers.send_welcome_email.delay")
+    def test_register_success_minimal_fields(self, mock_welcome_delay, api_client):
         """Test inscription avec champs minimaux (email + passwords)"""
         url = "/api/auth/registration/"
         data = {
@@ -73,6 +77,7 @@ class TestRegistrationView:
         # Vérifier que le pseudo a été généré automatiquement
         assert user.pseudo != ""
         assert user.pseudo is not None
+        mock_welcome_delay.assert_called_once_with(data["email"], user.pseudo)
 
     def test_register_duplicate_email(self, api_client, user):
         """Test inscription avec email déjà utilisé"""

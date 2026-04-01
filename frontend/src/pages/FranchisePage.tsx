@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useFranchiseGames } from '../hooks/useFranchiseGames';
-import { getCoverUrl, formatReleaseDate, type IgdbGame } from '../api/igdb';
+import { type IgdbGame } from '../api/igdb';
 
 export default function FranchisePage() {
   const params = useParams();
@@ -17,7 +17,7 @@ export default function FranchisePage() {
   );
 
   const title = useMemo(() => {
-    const g = games?.[0] as any;
+    const g = games?.[0];
     return g?.franchises?.[0]?.name ?? `Franchise #${franchiseId}`;
   }, [games, franchiseId]);
 
@@ -56,11 +56,11 @@ export default function FranchisePage() {
         }}
       >
         {games.map((g: IgdbGame) => {
-          const cover = getCoverUrl(g.cover);
-          const release = formatReleaseDate(g.first_release_date);
+          const cover = g.cover_url;
+          const release = g.release_date;
           return (
             <div
-              key={g.id}
+              key={g.igdb_id}
               style={{
                 border: '1px solid #eee',
                 borderRadius: 12,
@@ -108,7 +108,7 @@ export default function FranchisePage() {
                     textOverflow: 'ellipsis',
                   }}
                 >
-                  {(g as any).display_name ?? g.name}
+                  {g.name}
                 </div>
 
                 {release ? (
