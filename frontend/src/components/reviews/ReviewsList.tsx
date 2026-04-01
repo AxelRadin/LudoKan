@@ -1,24 +1,24 @@
 import { Box, CircularProgress, Divider, Typography } from '@mui/material';
-import { useReviews } from '../../hooks/useReviews';
+import { ReviewItem } from '../../hooks/useReviews';
 import ReviewCard from './ReviewCard';
 
 type ReviewsListProps = Readonly<{
-  gameId: string | null;
+  otherReviews: ReviewItem[];
+  isLoading: boolean;
+  error: string | null;
   currentUserId: number | null;
-  userReviewId: number | null;
-  onEditReview: (review: any) => void;
+  onEditReview: (review: ReviewItem) => void;
   onDeleteReview: (reviewId: number) => void;
 }>;
 
 export default function ReviewsList({
-  gameId,
+  otherReviews,
+  isLoading,
+  error,
   currentUserId,
-  userReviewId,
   onEditReview,
   onDeleteReview,
 }: ReviewsListProps) {
-  const { reviews, isLoading, error } = useReviews(gameId);
-
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -38,20 +38,6 @@ export default function ReviewsList({
       </Typography>
     );
   }
-
-  if (reviews.length === 0) {
-    return (
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ textAlign: 'center', py: 2 }}
-      >
-        Soyez le premier à donner votre avis !
-      </Typography>
-    );
-  }
-
-  const otherReviews = reviews.filter(r => r.id !== userReviewId);
 
   if (otherReviews.length === 0) return null;
 
