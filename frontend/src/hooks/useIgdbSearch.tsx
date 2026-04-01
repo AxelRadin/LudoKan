@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { searchIgdbGames, type IgdbGame } from '../api/igdb';
 
 export function useIgdbSearch(query: string) {
