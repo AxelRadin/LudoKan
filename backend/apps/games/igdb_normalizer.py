@@ -26,6 +26,18 @@ def _extract_cover_url(cover: Any) -> str | None:
     return None
 
 
+def _extract_screenshots(screenshots: Any) -> list[dict]:
+    out = []
+    for s in screenshots or []:
+        if isinstance(s, dict):
+            url = s.get("url", "")
+            if url.startswith("//"):
+                url = "https:" + url
+            url = url.replace("t_thumb", "t_screenshot_big")
+            out.append({"url": url})
+    return out
+
+
 def _extract_entities(entities: Any) -> list[dict]:
     out = []
     for item in entities or []:
@@ -61,6 +73,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "franchises": _extract_entities(g.get("franchises")),
         "user_library": None,
         "user_rating": None,
+        "screenshots": _extract_screenshots(g.get("screenshots")),
+        "videos": g.get("videos") or [],
     }
 
 
