@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
-from apps.games.models import Game
+from apps.games.models import Game, Publisher
 
 
 @pytest.mark.django_db
@@ -19,12 +19,19 @@ class TestIgdbResolveView:
     def test_resolve_new_game_creates_record(self, authenticated_api_client):
         """First call creates a new Game record."""
         igdb_id = 12345
-        data = {"igdb_id": igdb_id, "name": "New IGDB Game", "cover_url": "https://example.com/cover.jpg", "release_date": "2023-01-01"}
+        data = {
+            "igdb_id": igdb_id,
+            "name": "New IGDB Game",
+            "cover_url": "https://example.com/cover.jpg",
+            "release_date": "2023-01-01",
+            "summary": "Full game description.",
+            "platforms": [{"id": 6, "name": "PC"}],
+            "genres": [{"id": 5, "name": "Shooter"}],
+        }
 
         assert not Game.objects.filter(igdb_id=igdb_id).exists()
 
-        response = authenticated_api_client.post(self.url, data)
-
+        response = authenticated_api_client.post(self.url, data, format="json")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["created"] is True
         assert response.data["game_id"] is not None
@@ -32,6 +39,9 @@ class TestIgdbResolveView:
         # Verify DB
         game = Game.objects.get(igdb_id=igdb_id)
         assert game.name == "New IGDB Game"
+        assert game.description == "Full game description."
+        assert game.platforms.filter(igdb_id=6).exists()
+        assert game.genres.filter(igdb_id=5).exists()
         assert str(game.release_date) == "2023-01-01"
         assert response.data["game_id"] == game.id
 
@@ -58,6 +68,24 @@ class TestIgdbResolveView:
         response = authenticated_api_client.post(self.url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "igdb_id" in response.data["errors"]
+
+    def test_resolve_existing_stub_is_healed(self, authenticated_api_client):
+        """If a game exists as a stub, resolving it with data should heal it."""
+        igdb_id = 99999
+        publisher, _ = Publisher.objects.get_or_create(name="IGDB")
+        game = Game.objects.create(igdb_id=igdb_id, name=f"Unknown Game ({igdb_id})", publisher=publisher)
+        assert not game.description
+        assert game.platforms.count() == 0
+
+        data = {"igdb_id": igdb_id, "name": "Healed Game Name", "summary": "This game is now healed.", "platforms": [{"id": 12, "name": "Xbox"}]}
+
+        response = authenticated_api_client.post(self.url, data, format="json")
+        assert response.status_code == status.HTTP_200_OK
+
+        game.refresh_from_db()
+        assert game.name == "Healed Game Name"
+        assert game.description == "This game is now healed."
+        assert game.platforms.filter(igdb_id=12).exists()
 
     def test_resolve_response_structure(self, authenticated_api_client):
         """Verify the full NormalizedGame structure is returned."""

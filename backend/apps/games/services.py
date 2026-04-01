@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from apps.games.models import Game, Publisher
+from apps.games.models import Game, Genre, Platform, Publisher
 
 
 def get_or_create_game_from_igdb(
@@ -10,6 +10,9 @@ def get_or_create_game_from_igdb(
     name: Optional[str] = None,
     cover_url: Optional[str] = None,
     release_date: Optional[date] = None,
+    summary: Optional[str] = None,
+    platforms: Optional[list[dict]] = None,
+    genres: Optional[list[dict]] = None,
 ) -> tuple[Game, bool]:
     """
     Centralized logic to dynamically resolve or create an IGDB game in the local database.
@@ -20,9 +23,6 @@ def get_or_create_game_from_igdb(
         defaults={"description": "Jeux importés depuis IGDB"},
     )
 
-    # Use defaults so we don't accidentally overwrite data if the game already exists
-    # If the game exists but missing fields, a different update logic might be needed later,
-    # but for resolution with get_or_create, this is idempotent.
     defaults = {"publisher": publisher}
 
     if name is not None:
@@ -31,10 +31,9 @@ def get_or_create_game_from_igdb(
         defaults["cover_url"] = cover_url
     if release_date is not None:
         defaults["release_date"] = release_date
+    if summary is not None:
+        defaults["description"] = summary
 
-    # If the user doesn't provide a name and the game is created for the first time,
-    # name will be empty string as fallback to satisfy the DB constraint.
-    # Usually `name` string is mandatory in the model if not null=True.
     if "name" not in defaults:
         defaults["name"] = f"Unknown Game ({igdb_id})"
 
@@ -42,5 +41,48 @@ def get_or_create_game_from_igdb(
         igdb_id=igdb_id,
         defaults=defaults,
     )
+
+    if not created:
+        # Healing Strategy: If the game already exists but is a "stub" (missing metadata),
+        # update it with the provided info.
+        update_fields = []
+        if not game.description and summary:
+            game.description = summary
+            update_fields.append("description")
+        if not game.cover_url and cover_url:
+            game.cover_url = cover_url
+            update_fields.append("cover_url")
+        if not game.release_date and release_date:
+            game.release_date = release_date
+            update_fields.append("release_date")
+        if name and (not game.name or game.name.startswith("Unknown Game")):
+            game.name = name
+            update_fields.append("name")
+
+        if update_fields:
+            game.save(update_fields=update_fields)
+
+    # If platforms or genres are provided, ensure they are linked
+    if platforms:
+        for p_data in platforms:
+            p_id = p_data.get("id")
+            p_name = p_data.get("name")
+            if p_name:
+                p_obj, _ = Platform.objects.get_or_create(
+                    igdb_id=p_id,
+                    defaults={"name": p_name},
+                )
+                game.platforms.add(p_obj)
+
+    if genres:
+        for g_data in genres:
+            g_id = g_data.get("id")
+            g_name = g_data.get("name")
+            if g_name:
+                g_obj, _ = Genre.objects.get_or_create(
+                    igdb_id=g_id,
+                    defaults={"name": g_name},
+                )
+                game.genres.add(g_obj)
 
     return game, created
