@@ -39,38 +39,21 @@ interface MatchmakingProviderProps {
   readonly children: React.ReactNode;
 }
 
+/** Approximate coordinates for matchmaking radius (IP-based; avoids sensitive Geolocation API). */
 async function getUserLocation(): Promise<{
   latitude: number;
   longitude: number;
 }> {
-  return new Promise(resolve => {
-    const fallbackToIP = async () => {
-      try {
-        const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-        const data = await res.json();
-        resolve({
-          latitude: Number.parseFloat(data.latitude),
-          longitude: Number.parseFloat(data.longitude),
-        });
-      } catch {
-        resolve({ latitude: 48.8566, longitude: 2.3522 });
-      }
+  try {
+    const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+    const data = await res.json();
+    return {
+      latitude: Number.parseFloat(data.latitude),
+      longitude: Number.parseFloat(data.longitude),
     };
-
-    if (!navigator.geolocation) {
-      fallbackToIP();
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      pos =>
-        resolve({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        }),
-      () => fallbackToIP()
-    );
-  });
+  } catch {
+    return { latitude: 48.8566, longitude: 2.3522 };
+  }
 }
 
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
