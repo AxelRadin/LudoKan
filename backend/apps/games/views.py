@@ -143,6 +143,13 @@ class RatingCreateView(APIView):
             },
         )
 
+        # Auto-create UserGame with TERMINE status on first persistent action
+        UserGame.objects.get_or_create(
+            user=request.user,
+            game=game,
+            defaults={"status": UserGame.GameStatus.TERMINE},
+        )
+
         output = RatingSerializer(rating).data
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
 
