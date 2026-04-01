@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
@@ -14,6 +21,7 @@ interface MatchmakingContextType {
   cancelMatchmaking: () => Promise<void>;
   isMatching: boolean;
 }
+
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(
   undefined
 );
@@ -27,11 +35,45 @@ export function useMatchmaking() {
   return context;
 }
 
-export function MatchmakingProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+interface MatchmakingProviderProps {
+  readonly children: React.ReactNode;
+}
+
+async function getUserLocation(): Promise<{
+  latitude: number;
+  longitude: number;
+}> {
+  return new Promise(resolve => {
+    const fallbackToIP = async () => {
+      try {
+        const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+        const data = await res.json();
+        resolve({
+          latitude: Number.parseFloat(data.latitude),
+          longitude: Number.parseFloat(data.longitude),
+        });
+      } catch {
+        resolve({ latitude: 48.8566, longitude: 2.3522 });
+      }
+    };
+
+    if (!navigator.geolocation) {
+      fallbackToIP();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos =>
+        resolve({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+        }),
+      () => fallbackToIP()
+    );
+  });
+}
+
+export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
 
   const [isMatching, setIsMatching] = useState(false);
@@ -56,45 +98,11 @@ export function MatchmakingProvider({
     image: string;
   } | null>(null);
 
-  async function getUserLocation(): Promise<{
-    latitude: number;
-    longitude: number;
-  }> {
-    return new Promise(resolve => {
-      const fallbackToIP = async () => {
-        try {
-          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-          const data = await res.json();
-          resolve({
-            latitude: parseFloat(data.latitude),
-            longitude: parseFloat(data.longitude),
-          });
-        } catch {
-          resolve({ latitude: 48.8566, longitude: 2.3522 });
-        }
-      };
-
-      if (!navigator.geolocation) {
-        fallbackToIP();
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        pos =>
-          resolve({
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-          }),
-        () => fallbackToIP()
-      );
-    });
-  }
-
   useEffect(() => {
     if (isAuthenticated) {
       apiGet('/api/matchmaking/requests/')
         .then(async reqs => {
-          if (reqs && reqs.length > 0) {
+          if (reqs?.length > 0) {
             const active = reqs[0];
             setActiveRequestId(active.id);
             setActiveRequestStartedAt(new Date(active.created_at));
@@ -103,9 +111,10 @@ export function MatchmakingProvider({
             try {
               const gameData = await apiGet(`/api/games/${active.game}/`);
               let image = gameData.cover_url;
-              if (image && image.includes('t_thumb')) {
+
+              if (image?.includes('t_thumb')) {
                 image = image.replace('t_thumb', 't_1080p');
-              } else if (image && image.includes('t_cover_big')) {
+              } else if (image?.includes('t_cover_big')) {
                 image = image.replace('t_cover_big', 't_1080p');
               }
               setActiveGame({ name: gameData.name_fr || gameData.name, image });
@@ -121,7 +130,7 @@ export function MatchmakingProvider({
             }
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     } else {
       setActiveRequestId(null);
       setActiveRequestStartedAt(null);
@@ -129,88 +138,73 @@ export function MatchmakingProvider({
     }
   }, [isAuthenticated]);
 
-  const executeMatchmaking = async (
-    gameId: string,
-    gameName: string,
-    gameImage: string
-  ) => {
-    setIsMatching(true);
-    try {
-      const { latitude, longitude } = await getUserLocation();
-      const defaultExpiresAt = new Date();
-      defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
-
-      let reqId = null;
-      let startedDate = new Date();
-      let radius = 20;
-
+  const executeMatchmaking = useCallback(
+    async (gameId: string, gameName: string, gameImage: string) => {
+      setIsMatching(true);
       try {
-        const res = await apiPost('/api/matchmaking/requests/', {
-          game: gameId,
-          latitude,
-          longitude,
-          radius_km: radius,
-          expires_at: defaultExpiresAt.toISOString(),
-        });
-        reqId = res.id;
-        startedDate = new Date(res.created_at);
-      } catch {
-        const activeReqs = await apiGet(
-          `/api/matchmaking/requests/?game=${gameId}`
-        );
-        if (activeReqs && activeReqs.length > 0) {
-          reqId = activeReqs[0].id;
-          radius = activeReqs[0].radius_km;
-          startedDate = new Date(activeReqs[0].created_at);
+        const { latitude, longitude } = await getUserLocation();
+        const defaultExpiresAt = new Date();
+        defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
+
+        let reqId = null;
+        let startedDate = new Date();
+        let radius = 20;
+
+        try {
+          const res = await apiPost('/api/matchmaking/requests/', {
+            game: gameId,
+            latitude,
+            longitude,
+            radius_km: radius,
+            expires_at: defaultExpiresAt.toISOString(),
+          });
+          reqId = res.id;
+          startedDate = new Date(res.created_at);
+        } catch {
+          const activeReqs = await apiGet(
+            `/api/matchmaking/requests/?game=${gameId}`
+          );
+          if (activeReqs?.length > 0) {
+            reqId = activeReqs[0].id;
+            radius = activeReqs[0].radius_km;
+            startedDate = new Date(activeReqs[0].created_at);
+          }
         }
+
+        setActiveRequestId(reqId);
+        setCurrentRadius(radius);
+        setActiveRequestStartedAt(startedDate);
+        setActiveGame({ name: gameName, image: gameImage });
+
+        const matchesData = await apiGet('/api/matchmaking/matches/');
+        setMatches(matchesData);
+        setHasNewMatch(false);
+        setIsMatchmakingModalOpen(true);
+      } catch (error) {
+        console.error('Erreur API lors du matchmaking', error);
+        alert('Un problème est survenu lors de la recherche de joueurs.');
+      } finally {
+        setIsMatching(false);
+      }
+    },
+    []
+  );
+
+  const startMatchmaking = useCallback(
+    async (gameId: string, gameName: string, gameImage: string) => {
+      if (activeRequestId) {
+        setPendingGame({ id: gameId, name: gameName, image: gameImage });
+        setIsMatchmakingModalOpen(true);
+        setIsConfirmModalOpen(true);
+        return;
       }
 
-      setActiveRequestId(reqId);
-      setCurrentRadius(radius);
-      setActiveRequestStartedAt(startedDate);
-      setActiveGame({ name: gameName, image: gameImage });
+      await executeMatchmaking(gameId, gameName, gameImage);
+    },
+    [activeRequestId, executeMatchmaking]
+  );
 
-      const matchesData = await apiGet('/api/matchmaking/matches/');
-      setMatches(matchesData);
-      setHasNewMatch(false);
-      setIsMatchmakingModalOpen(true);
-    } catch (error) {
-      console.error('Erreur API lors du matchmaking', error);
-      alert('Un problème est survenu lors de la recherche de joueurs.');
-    } finally {
-      setIsMatching(false);
-    }
-  };
-
-  const startMatchmaking = async (
-    gameId: string,
-    gameName: string,
-    gameImage: string
-  ) => {
-    if (activeRequestId) {
-      setPendingGame({ id: gameId, name: gameName, image: gameImage });
-      setIsMatchmakingModalOpen(true);
-      setIsConfirmModalOpen(true);
-      return;
-    }
-
-    await executeMatchmaking(gameId, gameName, gameImage);
-  };
-
-  const confirmNewMatchmaking = async () => {
-    if (pendingGame) {
-      await cancelMatchmaking();
-      setIsConfirmModalOpen(false);
-      await executeMatchmaking(
-        pendingGame.id,
-        pendingGame.name,
-        pendingGame.image
-      );
-      setPendingGame(null);
-    }
-  };
-
-  const cancelMatchmaking = async () => {
+  const cancelMatchmaking = useCallback(async () => {
     if (activeRequestId) {
       try {
         await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
@@ -225,7 +219,20 @@ export function MatchmakingProvider({
     setMatches([]);
     setHasNewMatch(false);
     setIsMatchmakingModalOpen(false);
-  };
+  }, [activeRequestId]);
+
+  const confirmNewMatchmaking = useCallback(async () => {
+    if (pendingGame) {
+      await cancelMatchmaking();
+      setIsConfirmModalOpen(false);
+      await executeMatchmaking(
+        pendingGame.id,
+        pendingGame.name,
+        pendingGame.image
+      );
+      setPendingGame(null);
+    }
+  }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
 
   useEffect(() => {
     if (!activeRequestId) return;
@@ -267,10 +274,17 @@ export function MatchmakingProvider({
     return () => clearTimeout(timeoutId);
   }, [activeRequestId, currentRadius, hasNewMatch]);
 
+  const contextValue = useMemo(
+    () => ({
+      startMatchmaking,
+      cancelMatchmaking,
+      isMatching,
+    }),
+    [startMatchmaking, cancelMatchmaking, isMatching]
+  );
+
   return (
-    <MatchmakingContext.Provider
-      value={{ startMatchmaking, cancelMatchmaking, isMatching }}
-    >
+    <MatchmakingContext.Provider value={contextValue}>
       {children}
 
       {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
