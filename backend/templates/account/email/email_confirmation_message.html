@@ -10,14 +10,12 @@
   </tr>
   <tr>
     <td>
-      {% autoescape off %}
       {% user_display user as user_display %}
       {% blocktrans with user_display=user_display site_domain=current_site.domain %}
       <p>Bonjour {{ user_display }},</p>
       <p>Pour confirmer l’inscription sur {{ site_domain }}, suivez ce lien :</p>
       <p><a href="{{ activate_url }}">{{ activate_url }}</a></p>
       {% endblocktrans %}
-      {% endautoescape %}
     </td>
   </tr>
 </table>
