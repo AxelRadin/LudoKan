@@ -151,10 +151,12 @@ export default function MatchmakingModal({
         {matches.length > 0 ? (
           <List sx={{ pt: 0 }}>
             {matches.map(match => {
-              const userName =
-                typeof match.user === 'object' && match.user?.username
-                  ? match.user.username
-                  : `Joueur #${typeof match.user === 'object' ? match.user?.id : match.user}`;
+              const user = match.user;
+              let userName = `Joueur #${user}`;
+
+              if (typeof user === 'object' && user !== null) {
+                userName = user.username || `Joueur #${user.id}`;
+              }
 
               return (
                 <Paper
