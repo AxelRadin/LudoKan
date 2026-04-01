@@ -30,12 +30,12 @@ interface Match {
 }
 
 interface MatchmakingModalProps {
-  open: boolean;
-  onClose: () => void;
-  onCancel: () => void;
-  matches: Match[];
-  startedAt: Date | null;
-  game: { name: string; image: string } | null;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onCancel: () => void;
+  readonly matches: Match[];
+  readonly startedAt: Date | null;
+  readonly game: { readonly name: string; readonly image: string } | null;
 }
 
 export default function MatchmakingModal({

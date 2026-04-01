@@ -8,9 +8,9 @@ import {
 } from '@mui/material';
 
 interface ConfirmCancelMatchmakingModalProps {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly onConfirm: () => void;
 }
 
 export default function ConfirmCancelMatchmakingModal({

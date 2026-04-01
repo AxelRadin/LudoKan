@@ -4,9 +4,9 @@ import { Box, Paper, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
 interface FloatingMatchmakingWidgetProps {
-  startedAt: Date | null;
-  hasNewMatch: boolean;
-  onClick: () => void;
+  readonly startedAt: Date | null;
+  readonly hasNewMatch: boolean;
+  readonly onClick: () => void;
 }
 
 export default function FloatingMatchmakingWidget({
