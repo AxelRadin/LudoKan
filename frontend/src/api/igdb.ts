@@ -182,6 +182,35 @@ export async function resolveIgdbGame(
     release_date: releaseDate,
   });
 }
+/**
+ * Resolves the Django game ID from a NormalizedGame.
+ *
+ * - If the game already has a `django_id`, returns it immediately (no network call).
+ * - Otherwise calls `POST /api/games/resolve-from-igdb/` to create/find the game.
+ *
+ * ⚠️  Must only be called when a **persistent action** requires a Django ID
+ *     (e.g. adding to library, rating, favouriting).
+ *     Never call during a read-only consultation.
+ */
+export async function resolveGameIdIfNeeded(game: NormalizedGame): Promise<{
+  game_id: number;
+  normalized_game: NormalizedGame;
+}> {
+  if (game.django_id) {
+    return { game_id: game.django_id, normalized_game: game };
+  }
+  if (!game.igdb_id) {
+    throw new Error(
+      '[resolveGameIdIfNeeded] Game has neither django_id nor igdb_id.'
+    );
+  }
+  return resolveIgdbGame(
+    game.igdb_id,
+    game.name,
+    game.cover_url ?? null,
+    game.release_date ?? null
+  );
+}
 
 export async function addGameToLibrary(djangoGameId: number): Promise<void> {
   await apiPost('/api/me/games/', {
