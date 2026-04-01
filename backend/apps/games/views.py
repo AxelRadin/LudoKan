@@ -263,16 +263,16 @@ class GameByIgdbIdView(APIView):
         # --- 1. Lookup in local DB ---
         game = Game.objects.filter(igdb_id=igdb_id).select_related("publisher").prefetch_related("genres", "platforms").first()
 
-        # If the game exists but is a "stub" (missing description or M2M),
+        # Healing Strategy: If the game exists but is a "stub" (missing description or M2M),
         # we don't shortcut. We proceed to fetch from IGDB to "heal" the record.
-        is_stub = game is None or not game.description or (game.genres.count() == 0 and game.platforms.count() == 0)
+        is_stub = game is not None and (not game.description or (game.genres.count() == 0 and game.platforms.count() == 0))
 
-        if not is_stub:
+        if game is not None and not is_stub:
             # We have a complete record in DB, return it normally
             serializer = GameReadSerializer(game, context={"request": request})
             return Response(serializer.data)
 
-        # --- 2. Fallback to IGDB (Healing case) ---
+        # --- 2. Fallback to IGDB ---
         query = f"{FIELDS_GAME_DETAIL} where id = {igdb_id}; limit 1;"
         try:
             data = igdb_client.igdb_request("games", query)
@@ -285,35 +285,53 @@ class GameByIgdbIdView(APIView):
 
             # Normalization + Enrichment
             from apps.games.igdb_wikidata import enrich_with_wikidata_display_name
-            from apps.games.services import get_or_create_game_from_igdb
 
             enriched = enrich_with_wikidata_display_name(arr)
             norm = enriched[0]
 
-            # Healing: create or update the record
-            game_obj, _ = get_or_create_game_from_igdb(
-                igdb_id=igdb_id,
-                name=norm.get("name"),
-                cover_url=norm.get("cover_url"),
-                release_date=norm.get("release_date"),
-                summary=norm.get("summary"),
-                platforms=norm.get("platforms"),
-                genres=norm.get("genres"),
-            )
+            if game is not None:
+                # Case 1: Game in DB as stub -> HEAL
+                from apps.games.services import get_or_create_game_from_igdb
 
-            # Re-fetch with fresh user context (library status etc.)
-            final_serializer = GameReadSerializer(game_obj, context={"request": request})
-            return Response(final_serializer.data)
+                game_obj, _ = get_or_create_game_from_igdb(
+                    igdb_id=igdb_id,
+                    name=norm.get("name"),
+                    cover_url=norm.get("cover_url"),
+                    release_date=norm.get("release_date"),
+                    summary=norm.get("summary"),
+                    platforms=norm.get("platforms"),
+                    genres=norm.get("genres"),
+                )
+                # Re-fetch with fresh user context (library status etc.)
+                final_serializer = GameReadSerializer(game_obj, context={"request": request})
+                return Response(final_serializer.data)
+            else:
+                # Case 2: Game not in DB -> PROXY ONLY (Read-Only)
+                # No creation here. We return the IGDB data with django_id=None.
+                from apps.games.igdb_normalizer import enrich_normalized_games
+
+                # enrich_normalized_games handles user_library/user_rating as None internally
+                # because game.igdb_id is not in DB.
+                final_arr = enrich_normalized_games([norm], request.user)
+                return Response(final_arr[0])
+
         except Exception as e:
             # Case where IGDB proxy is down/erroneous or ImproperlyConfigured
             if isinstance(e, ImproperlyConfigured):
                 if game:
                     return Response(GameReadSerializer(game, context={"request": request}).data)
-                return Response({"error": "IGDB connection not configured"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+                return Response(
+                    {"error": "IGDB connection not configured"},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
 
             if game:
                 return Response(GameReadSerializer(game, context={"request": request}).data)
-            return Response({"error": "IGDB search failed"}, status=status.HTTP_502_BAD_GATEWAY)
+            # Revenir à 404 pour les tests existants
+            return Response(
+                {"error": "Game not found or error fetching"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
 
 class ImportIgdbGameView(APIView):
