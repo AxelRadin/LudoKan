@@ -1,7 +1,7 @@
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
-import CircularProgress from '@mui/material/CircularProgress';
 import { Box, Paper, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import CircularProgress from '@mui/material/CircularProgress';
+import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 
 interface FloatingMatchmakingWidgetProps {
   readonly startedAt: Date | null;
@@ -14,29 +14,7 @@ export default function FloatingMatchmakingWidget({
   hasNewMatch,
   onClick,
 }: FloatingMatchmakingWidgetProps) {
-  const [elapsedTime, setElapsedTime] = useState<string>('0:00');
-
-  useEffect(() => {
-    if (!startedAt) return;
-
-    const updateTimer = () => {
-      const now = new Date();
-      const diffInSeconds = Math.floor(
-        (now.getTime() - startedAt.getTime()) / 1000
-      );
-
-      if (diffInSeconds >= 0) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        const seconds = diffInSeconds % 60;
-        setElapsedTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [startedAt]);
+  const elapsedTime = useMatchmakingTimer(startedAt);
 
   if (!startedAt) return null;
 

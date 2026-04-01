@@ -16,7 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
-import { useEffect, useState } from 'react';
+import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 
 const pulseRadar = keyframes`
   0% { transform: scale(0.8); opacity: 0.6; }
@@ -46,29 +46,7 @@ export default function MatchmakingModal({
   startedAt,
   game,
 }: MatchmakingModalProps) {
-  const [elapsedTime, setElapsedTime] = useState<string>('0:00');
-
-  useEffect(() => {
-    if (!startedAt) return;
-
-    const updateTimer = () => {
-      const now = new Date();
-      const diffInSeconds = Math.floor(
-        (now.getTime() - startedAt.getTime()) / 1000
-      );
-
-      if (diffInSeconds >= 0) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        const seconds = diffInSeconds % 60;
-        setElapsedTime(`${minutes}:${seconds.toString().padStart(2, '0')}`);
-      }
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [startedAt]);
+  const elapsedTime = useMatchmakingTimer(startedAt);
 
   return (
     <Dialog
