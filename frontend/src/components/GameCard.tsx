@@ -16,7 +16,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(!!game.user_library);
 
-  // A game is "IGDB only" if it has no django_id (not yet imported)
   const isIgdbOnly = !game.django_id;
 
   const handleNavigate = () => {
@@ -36,7 +35,6 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
       await addGameToLibrary(game_id);
       setAdded(true);
     } catch {
-      // already in library or error
       setAdded(true);
     } finally {
       setAdding(false);

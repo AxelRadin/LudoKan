@@ -17,6 +17,7 @@ import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
+import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 
 const router = createBrowserRouter([
   {
@@ -49,9 +50,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <AuthProvider>
-        <Sentry.ErrorBoundary fallback={errorFallback}>
-          <RouterProvider router={router} />
-        </Sentry.ErrorBoundary>
+        <MatchmakingProvider>
+          <Sentry.ErrorBoundary fallback={errorFallback}>
+            <RouterProvider router={router} />
+          </Sentry.ErrorBoundary>
+        </MatchmakingProvider>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>
