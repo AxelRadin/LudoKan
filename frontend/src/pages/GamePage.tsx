@@ -12,6 +12,7 @@ import {
   Box,
   Button,
   Divider,
+  Modal,
   Paper,
   Rating,
   Tooltip,
@@ -56,6 +57,7 @@ export default function GamePage() {
   >(null);
   const [translating, setTranslating] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
   const DESCRIPTION_LIMIT = 150;
 
   useEffect(() => {
@@ -648,6 +650,34 @@ export default function GamePage() {
                     </Box>
                   </Box>
                 )}
+                {selectedScreenshot && (
+                  <Modal open onClose={() => setSelectedScreenshot(null)}>
+                    <Box
+                      onClick={() => setSelectedScreenshot(null)}
+                      sx={{
+                        position: 'fixed',
+                        inset: 0,
+                        bgcolor: 'rgba(0,0,0,0.85)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'zoom-out',
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={selectedScreenshot}
+                        alt="Screenshot agrandi"
+                        sx={{
+                          maxWidth: '90vw',
+                          maxHeight: '90vh',
+                          borderRadius: 2,
+                          boxShadow: 8,
+                        }}
+                      />
+                    </Box>
+                  </Modal>
+                )}
                 {game.screenshots && game.screenshots.length > 0 && (
                   <Box>
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
@@ -670,6 +700,7 @@ export default function GamePage() {
                           component="img"
                           src={s.url}
                           alt={`Screenshot ${i + 1}`}
+                          onClick={() => setSelectedScreenshot(s.url)}
                           sx={{
                             height: { xs: 140, sm: 200 },
                             minWidth: { xs: 220, sm: 320 },
@@ -677,6 +708,7 @@ export default function GamePage() {
                             borderRadius: 2,
                             boxShadow: 2,
                             flexShrink: 0,
+                            cursor: 'pointer',
                           }}
                         />
                       ))}
