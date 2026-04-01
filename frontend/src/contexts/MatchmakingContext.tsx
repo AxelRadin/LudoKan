@@ -6,249 +6,300 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
 import { useAuth } from './useAuth';
 
 interface MatchmakingContextType {
-    startMatchmaking: (gameId: string, gameName: string, gameImage: string) => Promise<void>;
-    cancelMatchmaking: () => Promise<void>;
-    isMatching: boolean;
+  startMatchmaking: (
+    gameId: string,
+    gameName: string,
+    gameImage: string
+  ) => Promise<void>;
+  cancelMatchmaking: () => Promise<void>;
+  isMatching: boolean;
 }
-const MatchmakingContext = createContext<MatchmakingContextType | undefined>(undefined);
+const MatchmakingContext = createContext<MatchmakingContextType | undefined>(
+  undefined
+);
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useMatchmaking() {
-    const context = useContext(MatchmakingContext);
-    if (!context) {
-        throw new Error('useMatchmaking must be used within a MatchmakingProvider');
-    }
-    return context;
+  const context = useContext(MatchmakingContext);
+  if (!context) {
+    throw new Error('useMatchmaking must be used within a MatchmakingProvider');
+  }
+  return context;
 }
 
-export function MatchmakingProvider({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated } = useAuth();
+export function MatchmakingProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { isAuthenticated } = useAuth();
 
-    const [isMatching, setIsMatching] = useState(false);
-    const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
-    const [matches, setMatches] = useState<any[]>([]);
+  const [isMatching, setIsMatching] = useState(false);
+  const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
+  const [matches, setMatches] = useState<any[]>([]);
 
-    const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
-    const [activeRequestStartedAt, setActiveRequestStartedAt] = useState<Date | null>(null);
-    const [currentRadius, setCurrentRadius] = useState<number>(20);
-    const [hasNewMatch, setHasNewMatch] = useState(false);
+  const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
+  const [activeRequestStartedAt, setActiveRequestStartedAt] =
+    useState<Date | null>(null);
+  const [currentRadius, setCurrentRadius] = useState<number>(20);
+  const [hasNewMatch, setHasNewMatch] = useState(false);
 
-    const [activeGame, setActiveGame] = useState<{ name: string, image: string } | null>(null);
+  const [activeGame, setActiveGame] = useState<{
+    name: string;
+    image: string;
+  } | null>(null);
 
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [pendingGame, setPendingGame] = useState<{ id: string; name: string; image: string } | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [pendingGame, setPendingGame] = useState<{
+    id: string;
+    name: string;
+    image: string;
+  } | null>(null);
 
-    async function getUserLocation(): Promise<{ latitude: number; longitude: number }> {
-        return new Promise((resolve) => {
-            const fallbackToIP = async () => {
-                try {
-                    const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-                    const data = await res.json();
-                    resolve({ latitude: parseFloat(data.latitude), longitude: parseFloat(data.longitude) });
-                } catch {
-                    resolve({ latitude: 48.8566, longitude: 2.3522 });
-                }
-            };
+  async function getUserLocation(): Promise<{
+    latitude: number;
+    longitude: number;
+  }> {
+    return new Promise(resolve => {
+      const fallbackToIP = async () => {
+        try {
+          const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+          const data = await res.json();
+          resolve({
+            latitude: parseFloat(data.latitude),
+            longitude: parseFloat(data.longitude),
+          });
+        } catch {
+          resolve({ latitude: 48.8566, longitude: 2.3522 });
+        }
+      };
 
-            if (!navigator.geolocation) {
-                fallbackToIP();
-                return;
+      if (!navigator.geolocation) {
+        fallbackToIP();
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos =>
+          resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          }),
+        () => fallbackToIP()
+      );
+    });
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      apiGet('/api/matchmaking/requests/')
+        .then(async reqs => {
+          if (reqs && reqs.length > 0) {
+            const active = reqs[0];
+            setActiveRequestId(active.id);
+            setActiveRequestStartedAt(new Date(active.created_at));
+            setCurrentRadius(active.radius_km);
+
+            try {
+              const gameData = await apiGet(`/api/games/${active.game}/`);
+              let image = gameData.cover_url;
+              if (image && image.includes('t_thumb')) {
+                image = image.replace('t_thumb', 't_1080p');
+              } else if (image && image.includes('t_cover_big')) {
+                image = image.replace('t_cover_big', 't_1080p');
+              }
+              setActiveGame({ name: gameData.name_fr || gameData.name, image });
+            } catch (e) {
+              console.error(e);
             }
 
-            navigator.geolocation.getCurrentPosition(
-                (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-                () => fallbackToIP()
-            );
+            try {
+              const currentMatches = await apiGet('/api/matchmaking/matches/');
+              setMatches(currentMatches);
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        })
+        .catch(() => {});
+    } else {
+      setActiveRequestId(null);
+      setActiveRequestStartedAt(null);
+      setMatches([]);
+    }
+  }, [isAuthenticated]);
+
+  const executeMatchmaking = async (
+    gameId: string,
+    gameName: string,
+    gameImage: string
+  ) => {
+    setIsMatching(true);
+    try {
+      const { latitude, longitude } = await getUserLocation();
+      const defaultExpiresAt = new Date();
+      defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
+
+      let reqId = null;
+      let startedDate = new Date();
+      let radius = 20;
+
+      try {
+        const res = await apiPost('/api/matchmaking/requests/', {
+          game: gameId,
+          latitude,
+          longitude,
+          radius_km: radius,
+          expires_at: defaultExpiresAt.toISOString(),
         });
+        reqId = res.id;
+        startedDate = new Date(res.created_at);
+      } catch {
+        const activeReqs = await apiGet(
+          `/api/matchmaking/requests/?game=${gameId}`
+        );
+        if (activeReqs && activeReqs.length > 0) {
+          reqId = activeReqs[0].id;
+          radius = activeReqs[0].radius_km;
+          startedDate = new Date(activeReqs[0].created_at);
+        }
+      }
+
+      setActiveRequestId(reqId);
+      setCurrentRadius(radius);
+      setActiveRequestStartedAt(startedDate);
+      setActiveGame({ name: gameName, image: gameImage });
+
+      const matchesData = await apiGet('/api/matchmaking/matches/');
+      setMatches(matchesData);
+      setHasNewMatch(false);
+      setIsMatchmakingModalOpen(true);
+    } catch (error) {
+      console.error('Erreur API lors du matchmaking', error);
+      alert('Un problème est survenu lors de la recherche de joueurs.');
+    } finally {
+      setIsMatching(false);
+    }
+  };
+
+  const startMatchmaking = async (
+    gameId: string,
+    gameName: string,
+    gameImage: string
+  ) => {
+    if (activeRequestId) {
+      setPendingGame({ id: gameId, name: gameName, image: gameImage });
+      setIsMatchmakingModalOpen(true);
+      setIsConfirmModalOpen(true);
+      return;
     }
 
-    useEffect(() => {
-        if (isAuthenticated) {
-            apiGet('/api/matchmaking/requests/').then(async (reqs) => {
-                if (reqs && reqs.length > 0) {
-                    const active = reqs[0];
-                    setActiveRequestId(active.id);
-                    setActiveRequestStartedAt(new Date(active.created_at));
-                    setCurrentRadius(active.radius_km);
+    await executeMatchmaking(gameId, gameName, gameImage);
+  };
 
-                    try {
-                        const gameData = await apiGet(`/api/games/${active.game}/`);
-                        let image = gameData.cover_url;
-                        if (image && image.includes('t_thumb')) {
-                            image = image.replace('t_thumb', 't_1080p');
-                        } else if (image && image.includes('t_cover_big')) {
-                            image = image.replace('t_cover_big', 't_1080p');
-                        }
-                        setActiveGame({ name: gameData.name_fr || gameData.name, image });
-                    } catch (e) { console.error(e); }
+  const confirmNewMatchmaking = async () => {
+    if (pendingGame) {
+      await cancelMatchmaking();
+      setIsConfirmModalOpen(false);
+      await executeMatchmaking(
+        pendingGame.id,
+        pendingGame.name,
+        pendingGame.image
+      );
+      setPendingGame(null);
+    }
+  };
 
-                    try {
-                        const currentMatches = await apiGet('/api/matchmaking/matches/');
-                        setMatches(currentMatches);
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-            }).catch(() => { });
-        } else {
-            setActiveRequestId(null);
-            setActiveRequestStartedAt(null);
-            setMatches([]);
+  const cancelMatchmaking = async () => {
+    if (activeRequestId) {
+      try {
+        await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
+      } catch (error) {
+        console.error("Erreur lors de l'annulation côté serveur", error);
+      }
+    }
+
+    setActiveRequestId(null);
+    setActiveRequestStartedAt(null);
+    setActiveGame(null);
+    setMatches([]);
+    setHasNewMatch(false);
+    setIsMatchmakingModalOpen(false);
+  };
+
+  useEffect(() => {
+    if (!activeRequestId) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const currentMatches = await apiGet('/api/matchmaking/matches/');
+        if (currentMatches.length > matches.length) {
+          setMatches(currentMatches);
+          setHasNewMatch(true);
         }
-    }, [isAuthenticated]);
-
-    const executeMatchmaking = async (gameId: string, gameName: string, gameImage: string) => {
-        setIsMatching(true);
-        try {
-            const { latitude, longitude } = await getUserLocation();
-            const defaultExpiresAt = new Date();
-            defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
-
-            let reqId = null;
-            let startedDate = new Date();
-            let radius = 20;
-
-            try {
-                const res = await apiPost('/api/matchmaking/requests/', {
-                    game: gameId,
-                    latitude,
-                    longitude,
-                    radius_km: radius,
-                    expires_at: defaultExpiresAt.toISOString(),
-                });
-                reqId = res.id;
-                startedDate = new Date(res.created_at);
-            } catch {
-                const activeReqs = await apiGet(`/api/matchmaking/requests/?game=${gameId}`);
-                if (activeReqs && activeReqs.length > 0) {
-                    reqId = activeReqs[0].id;
-                    radius = activeReqs[0].radius_km;
-                    startedDate = new Date(activeReqs[0].created_at);
-                }
-            }
-
-            setActiveRequestId(reqId);
-            setCurrentRadius(radius);
-            setActiveRequestStartedAt(startedDate);
-            setActiveGame({ name: gameName, image: gameImage });
-
-            const matchesData = await apiGet('/api/matchmaking/matches/');
-            setMatches(matchesData);
-            setHasNewMatch(false);
-            setIsMatchmakingModalOpen(true);
-        } catch (error) {
-            console.error("Erreur API lors du matchmaking", error);
-            alert("Un problème est survenu lors de la recherche de joueurs.");
-        } finally {
-            setIsMatching(false);
-        }
-    };
-
-    const startMatchmaking = async (gameId: string, gameName: string, gameImage: string) => {
-        if (activeRequestId) {
-            setPendingGame({ id: gameId, name: gameName, image: gameImage });
-            setIsMatchmakingModalOpen(true);
-            setIsConfirmModalOpen(true);
-            return;
-        }
-
-        await executeMatchmaking(gameId, gameName, gameImage);
-    };
-
-    const confirmNewMatchmaking = async () => {
-        if (pendingGame) {
-            await cancelMatchmaking();
-            setIsConfirmModalOpen(false);
-            await executeMatchmaking(pendingGame.id, pendingGame.name, pendingGame.image);
-            setPendingGame(null);
-        }
-    };
-
-    const cancelMatchmaking = async () => {
-        if (activeRequestId) {
-            try {
-                await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
-            } catch (error) {
-                console.error("Erreur lors de l'annulation côté serveur", error);
-            }
-        }
-
+      } catch {
         setActiveRequestId(null);
         setActiveRequestStartedAt(null);
-        setActiveGame(null);
-        setMatches([]);
-        setHasNewMatch(false);
-        setIsMatchmakingModalOpen(false);
-    };
+      }
+    }, 10000);
 
-    useEffect(() => {
-        if (!activeRequestId) return;
+    return () => clearInterval(intervalId);
+  }, [activeRequestId, matches.length]);
 
-        const intervalId = setInterval(async () => {
-            try {
-                const currentMatches = await apiGet('/api/matchmaking/matches/');
-                if (currentMatches.length > matches.length) {
-                    setMatches(currentMatches);
-                    setHasNewMatch(true);
-                }
-            } catch {
-                setActiveRequestId(null);
-                setActiveRequestStartedAt(null);
-            }
-        }, 10000);
+  useEffect(() => {
+    if (!activeRequestId || hasNewMatch) return;
 
-        return () => clearInterval(intervalId);
-    }, [activeRequestId, matches.length]);
-
-    useEffect(() => {
-        if (!activeRequestId || hasNewMatch) return;
-
-        const timeoutId = setTimeout(async () => {
-            const newRadius = currentRadius * 2;
-            try {
-                await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
-                    radius_km: newRadius,
-                });
-                setCurrentRadius(newRadius);
-            } catch (error) {
-                console.error("Erreur d'extension du rayon", error);
-            }
-        }, 5 * 60 * 1000);
-
-        return () => clearTimeout(timeoutId);
-    }, [activeRequestId, currentRadius, hasNewMatch]);
-
-    return (
-        <MatchmakingContext.Provider value={{ startMatchmaking, cancelMatchmaking, isMatching }}>
-            {children}
-
-            {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
-                <FloatingMatchmakingWidget
-                    startedAt={activeRequestStartedAt}
-                    hasNewMatch={hasNewMatch}
-                    onClick={() => {
-                        setIsMatchmakingModalOpen(true);
-                        setHasNewMatch(false);
-                    }}
-                />
-            )}
-
-            <MatchmakingModal
-                open={isMatchmakingModalOpen}
-                onClose={() => setIsMatchmakingModalOpen(false)}
-                onCancel={cancelMatchmaking}
-                matches={matches}
-                startedAt={activeRequestStartedAt}
-                game={activeGame}
-            />
-            <ConfirmCancelMatchmakingModal
-                open={isConfirmModalOpen}
-                onClose={() => {
-                    setIsConfirmModalOpen(false);
-                    setPendingGame(null);
-                }}
-                onConfirm={confirmNewMatchmaking}
-            />
-        </MatchmakingContext.Provider>
+    const timeoutId = setTimeout(
+      async () => {
+        const newRadius = currentRadius * 2;
+        try {
+          await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
+            radius_km: newRadius,
+          });
+          setCurrentRadius(newRadius);
+        } catch (error) {
+          console.error("Erreur d'extension du rayon", error);
+        }
+      },
+      5 * 60 * 1000
     );
+
+    return () => clearTimeout(timeoutId);
+  }, [activeRequestId, currentRadius, hasNewMatch]);
+
+  return (
+    <MatchmakingContext.Provider
+      value={{ startMatchmaking, cancelMatchmaking, isMatching }}
+    >
+      {children}
+
+      {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
+        <FloatingMatchmakingWidget
+          startedAt={activeRequestStartedAt}
+          hasNewMatch={hasNewMatch}
+          onClick={() => {
+            setIsMatchmakingModalOpen(true);
+            setHasNewMatch(false);
+          }}
+        />
+      )}
+
+      <MatchmakingModal
+        open={isMatchmakingModalOpen}
+        onClose={() => setIsMatchmakingModalOpen(false)}
+        onCancel={cancelMatchmaking}
+        matches={matches}
+        startedAt={activeRequestStartedAt}
+        game={activeGame}
+      />
+      <ConfirmCancelMatchmakingModal
+        open={isConfirmModalOpen}
+        onClose={() => {
+          setIsConfirmModalOpen(false);
+          setPendingGame(null);
+        }}
+        onConfirm={confirmNewMatchmaking}
+      />
+    </MatchmakingContext.Provider>
+  );
 }

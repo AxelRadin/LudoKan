@@ -15,7 +15,7 @@ import {
   Paper,
   Rating,
   Tooltip,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
@@ -54,7 +54,9 @@ export default function GamePage() {
   const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
   const [userReview, setUserReview] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [translatedDescription, setTranslatedDescription] = useState<string | null>(null);
+  const [translatedDescription, setTranslatedDescription] = useState<
+    string | null
+  >(null);
   const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export default function GamePage() {
     setTranslatedDescription(null);
     translateDescription(game.summary)
       .then(setTranslatedDescription)
-      .catch(() => { })
+      .catch(() => {})
       .finally(() => setTranslating(false));
   }, [game?.summary]);
 
