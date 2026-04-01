@@ -22,8 +22,8 @@ import { useParams } from 'react-router-dom';
 import ReviewSection from '../components/reviews/ReviewSection';
 import {
   fetchIgdbGameById,
+  resolveGameIdIfNeeded,
   translateDescription,
-  resolveIgdbGame,
 } from '../api/igdb';
 import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
@@ -108,26 +108,19 @@ export default function GamePage() {
 
   async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;
-    if (igdbId && game) {
-      try {
-        const res = await resolveIgdbGame(
-          Number(igdbId),
-          game.name,
-          game.cover_url || null,
-          game.release_date || null
-        );
-        setDjangoId(res.game_id);
-        setGame(res.normalized_game);
-        if (res.normalized_game.user_library) {
-          setUserGame(res.normalized_game.user_library);
-        }
-        return res.game_id;
-      } catch (err) {
-        console.error('Erreur lors de la résolution IGDB', err);
-        return null;
+    if (!game) return null;
+    try {
+      const { game_id, normalized_game } = await resolveGameIdIfNeeded(game);
+      setDjangoId(game_id);
+      setGame(normalized_game);
+      if (normalized_game.user_library) {
+        setUserGame(normalized_game.user_library);
       }
+      return game_id;
+    } catch (err) {
+      console.error('[ensureDjangoId]', err);
+      return null;
     }
-    return null;
   }
 
   async function handleSetStatus(
