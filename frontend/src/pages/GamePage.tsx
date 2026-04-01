@@ -168,25 +168,12 @@ export default function GamePage() {
 
     const currentDjangoId = await ensureDjangoId();
     if (currentDjangoId === null) return;
-    const nextIsFavorite = !userGame?.is_favorite;
 
     try {
-      if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
-          is_favorite: nextIsFavorite,
-        });
-        setUserGame({
-          ...userGame,
-          is_favorite: updated.is_favorite,
-        });
-      } else {
-        const created = await apiPost('/api/me/games/', {
-          game_id: currentDjangoId,
-          status: 'ENVIE_DE_JOUER',
-          is_favorite: true,
-        });
-        setUserGame(created);
-      }
+      const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
+        is_favorite: !userGame?.is_favorite,
+      });
+      setUserGame(updated);
     } catch (error) {
       console.error(error);
       alert('Erreur lors de la mise à jour du coup de cœur');
