@@ -21,18 +21,6 @@ export interface TrendingSection {
   loading: boolean;
 }
 
-function mapIgdbToGame(game: any): Game {
-  return {
-    id: game.igdb_id,
-    title: game.name,
-    image: game.cover_url ?? undefined,
-    coverUrl: game.cover_url,
-    releaseDate: game.release_date,
-    user_library: game.user_library,
-    user_rating: game.user_rating,
-  };
-}
-
 function applySortSuccess(
   sort: SortKey,
   data: NormalizedGame[]
