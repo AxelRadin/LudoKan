@@ -78,7 +78,16 @@ export default function GamePage() {
     };
 
     fetchGameData();
-  }, [id, igdbId, isAuthenticated]);
+  }, [id, igdbId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !djangoId) return;
+    apiGet(`/api/games/${djangoId}/`)
+      .then((data: NormalizedGame) => {
+        if (data.user_library) setUserGame(data.user_library);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, djangoId]);
 
   useEffect(() => {
     if (!game?.summary) return;
@@ -91,19 +100,26 @@ export default function GamePage() {
   }, [game?.summary]);
 
   useEffect(() => {
-    if (djangoId && isAuthenticated) {
-      Promise.all([apiGet(`/api/reviews/?game=${djangoId}`), apiGet('/api/me')])
-        .then(([reviews, me]) => {
-          setCurrentUserId(me.id);
-          const myReview = reviews.find((r: any) => r.user?.id === me.id);
-          setUserReview(myReview || null);
-        })
-        .catch(() => {
-          setUserReview(null);
-        });
-    } else {
-      setUserReview(null);
+    if (!isAuthenticated) {
+      setCurrentUserId(null);
+      return;
     }
+    apiGet('/api/me')
+      .then((me: { id: number }) => setCurrentUserId(me.id))
+      .catch(() => setCurrentUserId(null));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!djangoId || !isAuthenticated) {
+      setUserReview(null);
+      return;
+    }
+    apiGet(`/api/reviews/?game=${djangoId}`)
+      .then((reviews: any[]) => {
+        const myReview = reviews.find((r: any) => r.user?.id === currentUserId);
+        setUserReview(myReview || null);
+      })
+      .catch(() => setUserReview(null));
   }, [djangoId, isAuthenticated]);
 
   async function ensureDjangoId(): Promise<number | null> {
