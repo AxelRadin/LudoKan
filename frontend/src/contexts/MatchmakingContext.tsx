@@ -130,7 +130,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
             }
           }
         })
-        .catch(() => { });
+        .catch(() => {});
     } else {
       setActiveRequestId(null);
       setActiveRequestStartedAt(null);
