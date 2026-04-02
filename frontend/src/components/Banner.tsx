@@ -2,45 +2,41 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React from 'react';
 
-/* ─── Google Fonts ─── */
 const fontLink = document.createElement('link');
 fontLink.rel = 'stylesheet';
 fontLink.href =
-  'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,900;1,700;1,900&family=DM+Sans:wght@300;400;500;600;700&display=swap';
-if (!document.head.querySelector('link[href*="Playfair"]')) {
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap';
+if (!document.head.querySelector('link[href*="Cormorant"]')) {
   document.head.appendChild(fontLink);
 }
 
 const styleEl = document.createElement('style');
-styleEl.setAttribute('data-banner', '1');
+styleEl.setAttribute('data-banner-lux', '1');
 styleEl.textContent = `
-  @keyframes bannerFadeUp {
-    from { opacity: 0; transform: translateY(16px); }
+  @keyframes bLuxFadeUp {
+    from { opacity: 0; transform: translateY(20px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes bannerGlow {
-    0%, 100% { opacity: 0.5; }
-    50%       { opacity: 1; }
+  @keyframes bLuxLineGrow {
+    from { transform: scaleX(0); transform-origin: left; }
+    to   { transform: scaleX(1); transform-origin: left; }
   }
-  @keyframes floatDot {
-    0%, 100% { transform: translateY(0px); }
-    50%       { transform: translateY(-8px); }
+  @keyframes bLuxFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
-  .banner-eyebrow { animation: bannerFadeUp 0.5s ease 0.1s both; }
-  .banner-title   { animation: bannerFadeUp 0.7s cubic-bezier(0.22,1,0.36,1) 0.2s both; }
-  .banner-sub     { animation: bannerFadeUp 0.5s ease 0.4s both; }
-  .banner-deco    { animation: bannerFadeUp 0.8s ease 0.1s both; }
-  .banner-line    { animation: bannerGlow 3s ease-in-out infinite; }
-  .float-dot-1    { animation: floatDot 4s ease-in-out infinite; }
-  .float-dot-2    { animation: floatDot 4s ease-in-out 1.3s infinite; }
-  .float-dot-3    { animation: floatDot 4s ease-in-out 2.6s infinite; }
+  .blux-tag   { animation: bLuxFadeUp  0.6s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+  .blux-title { animation: bLuxFadeUp  0.8s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
+  .blux-line  { animation: bLuxLineGrow 1s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
+  .blux-sub   { animation: bLuxFadeUp  0.6s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
+  .blux-deco  { animation: bLuxFadeIn  1.2s ease 0.2s both; }
 `;
-if (!document.head.querySelector('style[data-banner]')) {
+if (!document.head.querySelector('style[data-banner-lux]')) {
   document.head.appendChild(styleEl);
 }
 
-const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
-const FONT_BODY = "'DM Sans', system-ui, sans-serif";
+const FD = "'Cormorant Garamond', Georgia, serif";
+const FB = "'DM Sans', system-ui, sans-serif";
 
 export const Banner: React.FC = () => {
   return (
@@ -49,228 +45,300 @@ export const Banner: React.FC = () => {
         position: 'relative',
         overflow: 'hidden',
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 90% 130% at -10% 50%, rgba(255,150,150,0.5) 0%, transparent 55%),
-          radial-gradient(ellipse 60% 80% at 110% 50%, rgba(211,47,47,0.05) 0%, transparent 55%),
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+          radial-gradient(ellipse 110% 120% at -5% 50%, rgba(255,170,170,0.45) 0%, transparent 55%),
+          radial-gradient(ellipse 60% 80% at 108% 50%, rgba(198,40,40,0.05) 0%, transparent 50%),
           #ffd3d3
         `,
-        py: { xs: 5, md: 8 },
-        px: { xs: 3, md: 6 },
-        minHeight: { xs: 200, md: 300 },
-        display: 'flex',
+        minHeight: { xs: 220, md: 320 },
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
         alignItems: 'center',
+        px: { xs: 3, md: 7 },
+        py: { xs: 5, md: 7 },
+        gap: { xs: 4, md: 0 },
       }}
     >
-      {/* Left neon bar */}
-      <Box
-        className="banner-line"
-        sx={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 3,
-          background:
-            'linear-gradient(180deg, transparent, #d32f2f 30%, #ff8a80 70%, transparent)',
-        }}
-      />
-
-      {/* Subtle diagonal stripes */}
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          opacity: 0.025,
-          background:
-            'repeating-linear-gradient(-55deg, #d32f2f, #d32f2f 1px, transparent 1px, transparent 28px)',
-        }}
-      />
-
-      {/* Content */}
-      <Box
-        sx={{
-          position: 'relative',
-          zIndex: 1,
-          maxWidth: { xs: '100%', md: '58%' },
-        }}
-      >
-        {/* Eyebrow pill */}
+      {/* ── Left: text ── */}
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        {/* Tag */}
         <Box
-          className="banner-eyebrow"
+          className="blux-tag"
           sx={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 1,
-            px: 1.5,
-            py: 0.6,
-            mb: 2.5,
-            background: 'rgba(211,47,47,0.08)',
-            border: '1px solid rgba(211,47,47,0.2)',
-            borderRadius: 999,
+            gap: 1.5,
+            mb: 3,
           }}
         >
           <Box
             sx={{
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              bgcolor: '#d32f2f',
-              boxShadow: '0 0 6px rgba(211,47,47,0.8)',
+              width: 20,
+              height: '1px',
+              bgcolor: '#c62828',
+              opacity: 0.6,
             }}
           />
           <Typography
             sx={{
-              fontFamily: FONT_BODY,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 2.5,
+              fontFamily: FB,
+              fontSize: 9,
+              fontWeight: 600,
+              letterSpacing: 3,
               textTransform: 'uppercase',
-              color: '#d32f2f',
+              color: '#c62828',
+              opacity: 0.8,
             }}
           >
-            Votre bibliothèque gaming
+            Bibliothèque gaming
           </Typography>
         </Box>
 
         {/* Main title */}
         <Typography
-          className="banner-title"
+          className="blux-title"
           sx={{
-            fontFamily: FONT_DISPLAY,
-            fontWeight: 900,
+            fontFamily: FD,
+            fontWeight: 700,
             fontStyle: 'italic',
-            fontSize: { xs: 36, sm: 50, md: 66 },
-            lineHeight: 0.95,
+            fontSize: { xs: 44, sm: 56, md: 72 },
+            lineHeight: 0.9,
             letterSpacing: -2,
-            color: '#0f0f0f',
-            mb: 3,
+            color: '#1a0a0a',
+            mb: 3.5,
           }}
         >
-          Maîtrisez
-          <br />
-          votre{' '}
-          <Box
-            component="span"
-            sx={{
-              color: '#d32f2f',
-              position: 'relative',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                bottom: 4,
-                left: 0,
-                right: 0,
-                height: 3,
-                background: 'linear-gradient(to right, #d32f2f, #ff8a80)',
-                borderRadius: 999,
-                boxShadow: '0 0 8px rgba(211,47,47,0.4)',
-              },
-            }}
-          >
-            collection
+          Votre collection,{' '}
+          <Box component="span" sx={{ color: '#c62828', fontWeight: 300 }}>
+            enfin
           </Box>
+          <br />
+          maîtrisée.
         </Typography>
+
+        {/* Animated line */}
+        <Box
+          className="blux-line"
+          sx={{
+            width: 80,
+            height: '1px',
+            background:
+              'linear-gradient(to right, #c62828, rgba(198,40,40,0.2))',
+            mb: 3,
+          }}
+        />
 
         {/* Subtitle */}
         <Typography
-          className="banner-sub"
+          className="blux-sub"
           sx={{
-            fontFamily: FONT_BODY,
+            fontFamily: FD,
             fontWeight: 300,
-            fontSize: { xs: 14, md: 16 },
-            color: '#5a3a3a',
-            lineHeight: 1.75,
-            maxWidth: 400,
-            letterSpacing: 0.1,
+            fontStyle: 'italic',
+            fontSize: { xs: 16, md: 19 },
+            color: '#6b3a3a',
+            lineHeight: 1.65,
+            maxWidth: 360,
+            letterSpacing: 0.2,
           }}
         >
-          Suivez, organisez et découvrez vos jeux vidéo en un seul endroit —
-          fini les doublons et les oublis.
+          Suivez, organisez et découvrez vos jeux vidéo en un seul endroit.
         </Typography>
       </Box>
 
-      {/* Decorative right — concentric rings + floating dots */}
+      {/* ── Right: editorial graphic ── */}
       <Box
-        className="banner-deco"
+        className="blux-deco"
         sx={{
-          position: 'absolute',
-          right: { md: 80 },
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: 240,
-          height: 240,
-          display: { xs: 'none', md: 'block' },
+          display: { xs: 'none', md: 'flex' },
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          height: 260,
         }}
       >
-        <Box
+        {/* Large ghost letter */}
+        <Typography
           sx={{
+            fontFamily: FD,
+            fontWeight: 700,
+            fontStyle: 'italic',
+            fontSize: 260,
+            lineHeight: 1,
+            color: 'rgba(198,40,40,0.06)',
+            userSelect: 'none',
             position: 'absolute',
-            inset: 0,
-            border: '1px solid rgba(211,47,47,0.12)',
-            borderRadius: '50%',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: '18%',
-            border: '1px solid rgba(211,47,47,0.1)',
-            borderRadius: '50%',
-          }}
-        />
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: '34%',
-            background:
-              'radial-gradient(circle, rgba(211,47,47,0.1) 0%, transparent 70%)',
-            border: '1px solid rgba(211,47,47,0.18)',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            letterSpacing: -8,
           }}
         >
-          <Typography sx={{ fontSize: 38, lineHeight: 1 }}>🎮</Typography>
+          L
+        </Typography>
+
+        {/* Floating card 1 */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '10%',
+            left: '8%',
+            width: 90,
+            height: 120,
+            background: 'rgba(255,255,255,0.55)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(198,40,40,0.12)',
+            borderRadius: '2px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            p: 1.5,
+            boxShadow: '0 8px 32px rgba(198,40,40,0.08)',
+            transform: 'rotate(-4deg)',
+          }}
+        >
+          <Box
+            sx={{
+              height: 60,
+              background: 'rgba(198,40,40,0.08)',
+              borderRadius: '1px',
+              mb: 1,
+            }}
+          />
+          <Box
+            sx={{
+              height: 6,
+              width: '80%',
+              background: 'rgba(26,10,10,0.15)',
+              borderRadius: 1,
+              mb: 0.5,
+            }}
+          />
+          <Box
+            sx={{
+              height: 4,
+              width: '55%',
+              background: 'rgba(198,40,40,0.2)',
+              borderRadius: 1,
+            }}
+          />
         </Box>
 
+        {/* Floating card 2 */}
         <Box
-          className="float-dot-1"
           sx={{
             position: 'absolute',
-            top: '8%',
-            right: '14%',
-            width: 10,
-            height: 10,
+            top: '20%',
+            left: '38%',
+            width: 100,
+            height: 130,
+            background: 'rgba(255,255,255,0.7)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(198,40,40,0.15)',
+            borderRadius: '2px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            p: 1.5,
+            boxShadow: '0 16px 48px rgba(198,40,40,0.1)',
+            transform: 'rotate(2deg)',
+            zIndex: 2,
+          }}
+        >
+          <Box
+            sx={{
+              height: 72,
+              background: 'rgba(198,40,40,0.1)',
+              borderRadius: '1px',
+              mb: 1,
+            }}
+          />
+          <Box
+            sx={{
+              height: 6,
+              width: '75%',
+              background: 'rgba(26,10,10,0.18)',
+              borderRadius: 1,
+              mb: 0.5,
+            }}
+          />
+          <Box
+            sx={{
+              height: 4,
+              width: '50%',
+              background: 'rgba(198,40,40,0.25)',
+              borderRadius: 1,
+            }}
+          />
+        </Box>
+
+        {/* Floating card 3 */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '15%',
+            right: '4%',
+            width: 84,
+            height: 112,
+            background: 'rgba(255,255,255,0.45)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(198,40,40,0.1)',
+            borderRadius: '2px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            p: 1.5,
+            boxShadow: '0 8px 28px rgba(198,40,40,0.07)',
+            transform: 'rotate(5deg)',
+          }}
+        >
+          <Box
+            sx={{
+              height: 56,
+              background: 'rgba(198,40,40,0.07)',
+              borderRadius: '1px',
+              mb: 1,
+            }}
+          />
+          <Box
+            sx={{
+              height: 5,
+              width: '70%',
+              background: 'rgba(26,10,10,0.12)',
+              borderRadius: 1,
+              mb: 0.5,
+            }}
+          />
+          <Box
+            sx={{
+              height: 4,
+              width: '45%',
+              background: 'rgba(198,40,40,0.18)',
+              borderRadius: 1,
+            }}
+          />
+        </Box>
+
+        {/* Small accent dot */}
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: '18%',
+            left: '20%',
+            width: 8,
+            height: 8,
             borderRadius: '50%',
-            bgcolor: '#d32f2f',
-            boxShadow: '0 0 12px rgba(211,47,47,0.6)',
+            bgcolor: '#c62828',
+            opacity: 0.4,
           }}
         />
         <Box
-          className="float-dot-2"
           sx={{
             position: 'absolute',
-            bottom: '12%',
-            left: '10%',
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            bgcolor: '#ff8a80',
-            boxShadow: '0 0 8px rgba(255,138,128,0.5)',
-          }}
-        />
-        <Box
-          className="float-dot-3"
-          sx={{
-            position: 'absolute',
-            top: '42%',
-            right: '-4%',
+            bottom: '30%',
+            right: '15%',
             width: 5,
             height: 5,
             borderRadius: '50%',
-            bgcolor: '#d32f2f',
-            opacity: 0.5,
+            bgcolor: '#c62828',
+            opacity: 0.25,
           }}
         />
       </Box>
