@@ -49,7 +49,7 @@ const PLATFORM_MAP: Record<string, PlatformStyle> = {
 };
 
 interface PlatformLogosProps {
-  platforms: { nom_plateforme: string }[];
+  platforms: { name: string }[];
 }
 
 export default function PlatformLogos({ platforms }: PlatformLogosProps) {
@@ -60,11 +60,11 @@ export default function PlatformLogos({ platforms }: PlatformLogosProps) {
   return (
     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
       {platforms.map(p => {
-        const style = PLATFORM_MAP[p.nom_plateforme];
+        const style = PLATFORM_MAP[p.name];
         return (
           <Chip
-            key={p.nom_plateforme}
-            label={style?.label ?? p.nom_plateforme}
+            key={p.name}
+            label={style?.label ?? p.name}
             size="small"
             sx={{
               bgcolor: style?.bg ?? '#888',

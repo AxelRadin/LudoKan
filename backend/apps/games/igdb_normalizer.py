@@ -49,6 +49,15 @@ def _extract_entities(entities: Any) -> list[dict]:
     return out
 
 
+def _extract_publisher(involved_companies: Any) -> dict | None:
+    for ic in involved_companies or []:
+        if isinstance(ic, dict) and ic.get("publisher"):
+            company = ic.get("company")
+            if isinstance(company, dict) and company.get("name"):
+                return {"name": company["name"]}
+    return None
+
+
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     """
     Transforme une réponse IGDB brute vers le contrat NormalizedGame.
@@ -71,6 +80,7 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "genres": _extract_entities(g.get("genres")),
         "collections": _extract_entities(g.get("collections")),
         "franchises": _extract_entities(g.get("franchises")),
+        "publisher": _extract_publisher(g.get("involved_companies")),
         "user_library": None,
         "user_rating": None,
         "screenshots": _extract_screenshots(g.get("screenshots")),

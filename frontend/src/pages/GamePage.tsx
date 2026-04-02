@@ -500,11 +500,9 @@ export default function GamePage() {
                   Plateformes
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.platforms && game.platforms.length > 0
-                  ? game.platforms.map((p: any) => p.name).join(', ')
-                  : 'Non renseigné'}
-              </Typography>
+              <Box sx={{ mb: 3 }}>
+                <PlatformLogos platforms={game.platforms ?? []} />
+              </Box>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
