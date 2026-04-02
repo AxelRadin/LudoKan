@@ -26,6 +26,15 @@ export type GameListProps = {
   onRemove?: (userGameId: number) => void;
 };
 
+function isAllDigits(s: string): boolean {
+  if (s.length === 0) return false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s.charCodeAt(i);
+    if (c < 48 || c > 57) return false;
+  }
+  return true;
+}
+
 function parseTrailingCountTitle(title: string): {
   base: string;
   count: string | undefined;
@@ -38,10 +47,10 @@ function parseTrailingCountTitle(title: string): {
     return { base: title, count: undefined };
   }
   const inner = title.slice(open + 1, -1);
-  if (!/^\d+$/.test(inner)) {
+  if (!isAllDigits(inner)) {
     return { base: title, count: undefined };
   }
-  const base = title.slice(0, open).replace(/\s+$/, '');
+  const base = title.slice(0, open).trimEnd();
   return { base, count: inner };
 }
 

@@ -404,7 +404,7 @@ function useProfilePageModel(): ProfilePageModel {
   };
 }
 
-type ProfileEditDialogProps = {
+type ProfileEditDialogProps = Readonly<{
   open: boolean;
   onClose: () => void;
   user: UserProfile | null;
@@ -416,7 +416,7 @@ type ProfileEditDialogProps = {
   onAvatarRemove: () => void | Promise<void>;
   onFieldChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSave: () => void | Promise<void>;
-};
+}>;
 
 function ProfileEditDialog({
   open,
