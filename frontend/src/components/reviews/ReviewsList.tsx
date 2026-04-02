@@ -1,5 +1,5 @@
 import { Box, CircularProgress, Divider, Typography } from '@mui/material';
-import { ReviewItem } from '../../hooks/useReviews';
+import type { ReviewItem } from '../../hooks/useReviews';
 import ReviewCard from './ReviewCard';
 
 type ReviewsListProps = Readonly<{
