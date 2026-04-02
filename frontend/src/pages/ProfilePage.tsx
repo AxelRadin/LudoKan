@@ -1007,50 +1007,97 @@ export default function ProfilePage() {
                 onChange={handleFileChange}
               />
 
-              <Box
-                onClick={() => modalAvatarInputRef.current?.click()}
-                sx={{
-                  position: 'relative',
-                  width: 90,
-                  height: 90,
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  '&:hover .modal-av-overlay': { opacity: 1 },
-                }}
-              >
-                <Avatar
-                  src={displayedAvatar}
+              <Box sx={{ position: 'relative', width: 90, height: 90 }}>
+                {/* Croix supprimer */}
+                {displayedAvatar && (
+                  <Box
+                    onClick={() => {
+                      setAvatarFile(null);
+                      setAvatarPreview('');
+                      setAvatarError('');
+                      setRemoveAvatar(true);
+                      setForm(p => ({ ...p, avatar_url: '' }));
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      bgcolor: '#d32f2f',
+                      border: '2px solid white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      zIndex: 10,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                      transition: 'transform 0.15s ease, background 0.15s ease',
+                      '&:hover': {
+                        bgcolor: '#b71c1c',
+                        transform: 'scale(1.15)',
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: '#fff',
+                        fontSize: 14,
+                        lineHeight: 1,
+                        fontWeight: 700,
+                      }}
+                    >
+                      ×
+                    </Typography>
+                  </Box>
+                )}
+
+                <Box
+                  onClick={() => modalAvatarInputRef.current?.click()}
                   sx={{
+                    position: 'relative',
                     width: '100%',
                     height: '100%',
-                    fontSize: 32,
-                    fontFamily: FONT_DISPLAY,
-                    boxShadow: `0 4px 20px ${C.accentGlow}`,
-                    bgcolor: C.accent,
-                    border: '2.5px solid white',
-                  }}
-                >
-                  {form.pseudo?.[0]?.toUpperCase() || 'U'}
-                </Avatar>
-                <Box
-                  className="modal-av-overlay"
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
                     borderRadius: '50%',
-                    backgroundColor: 'rgba(0,0,0,0.35)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    fontFamily: FONT_BODY,
-                    opacity: 0,
-                    transition: 'opacity 0.15s ease',
+                    cursor: 'pointer',
+                    '&:hover .modal-av-overlay': { opacity: 1 },
                   }}
                 >
-                  Changer
+                  <Avatar
+                    src={displayedAvatar}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      fontSize: 32,
+                      fontFamily: FONT_DISPLAY,
+                      boxShadow: `0 4px 20px ${C.accentGlow}`,
+                      bgcolor: C.accent,
+                      border: '2.5px solid white',
+                    }}
+                  >
+                    {form.pseudo?.[0]?.toUpperCase() || 'U'}
+                  </Avatar>
+                  <Box
+                    className="modal-av-overlay"
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0,0,0,0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: FONT_BODY,
+                      opacity: 0,
+                      transition: 'opacity 0.15s ease',
+                    }}
+                  >
+                    Changer
+                  </Box>
                 </Box>
               </Box>
 
