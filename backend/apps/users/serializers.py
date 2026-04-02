@@ -63,6 +63,7 @@ class CustomRegisterSerializer(RegisterSerializer):
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False, allow_null=True)
     avatar_url = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -76,8 +77,12 @@ class UserSerializer(serializers.ModelSerializer):
             "avatar_url",
             "description_courte",
             "created_at",
+            "review_count",
         ]
         read_only_fields = ["id", "created_at", "email"]
+
+    def get_review_count(self, obj):
+        return obj.reviews.count()
 
     def get_avatar_url(self, obj):
         """Retourne l'URL absolue de l'avatar si présent"""

@@ -8,6 +8,7 @@ from django.core.exceptions import ValidationError
 def validate_review_content_length(value):
     """
     Valide que le contenu d'une review fait entre 4 et 500 caractères.
+    Un contenu vide est autorisé (note seule sans texte).
 
     Args:
         value (str): Le contenu à valider
@@ -15,5 +16,5 @@ def validate_review_content_length(value):
     Raises:
         ValidationError: Si le contenu ne respecte pas la longueur requise
     """
-    if not (4 <= len(value) <= 500):
-        raise ValidationError("Le contenu doit faire entre 4 et 500 caracteres.")
+    if value and len(value) > 500:
+        raise ValidationError("Le contenu ne peut pas dépasser 500 caractères.")
