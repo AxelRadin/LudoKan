@@ -119,12 +119,13 @@ export default function GamePage() {
       return;
     }
     apiGet(`/api/reviews/?game=${djangoId}`)
-      .then((reviews: any[]) => {
+      .then((data: any) => {
+        const reviews = Array.isArray(data) ? data : (data.results ?? []);
         const myReview = reviews.find((r: any) => r.user?.id === currentUserId);
         setUserReview(myReview || null);
       })
       .catch(() => setUserReview(null));
-  }, [djangoId, isAuthenticated]);
+  }, [djangoId, isAuthenticated, currentUserId]);
 
   async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;
@@ -618,6 +619,7 @@ export default function GamePage() {
           >
             <ReviewSection
               gameId={djangoId ? String(djangoId) : ''}
+              resolveGameId={ensureDjangoId}
               userReview={userReview}
               currentUserId={currentUserId}
               onReviewChange={review => setUserReview(review)}
