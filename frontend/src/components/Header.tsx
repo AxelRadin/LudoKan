@@ -70,7 +70,11 @@ export const Header: React.FC = () => {
         >
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
             <Box display="flex" alignItems="center">
-              <img src="/logo.png" alt="Ludokan Logo" style={{ height: 75 }} />
+              <img
+                src="/logo.png"
+                alt="Ludokan Logo"
+                style={{ height: 40, marginRight: 8 }}
+              />
             </Box>
           </Link>
 
