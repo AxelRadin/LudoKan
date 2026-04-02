@@ -44,7 +44,12 @@ export default function GameList({
   return (
     <Box>
       {title && (
-        <Typography variant="h6" fontWeight="bold" mb={2}>
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          mb={2}
+          sx={{ textAlign: 'left !important', width: '100%', display: 'block' }}
+        >
           {title}
         </Typography>
       )}
