@@ -11,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -100,7 +100,7 @@ type UserGame = {
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const ALLOWED_AVATAR_EXT = ['jpg', 'jpeg', 'png', 'webp'];
+const ALLOWED_AVATAR_EXT = new Set(['jpg', 'jpeg', 'png', 'webp']);
 
 const fileInputOverlaySx: React.CSSProperties = {
   position: 'absolute',
@@ -115,7 +115,94 @@ const fileInputOverlaySx: React.CSSProperties = {
   fontSize: 0,
 };
 
-export default function ProfilePage() {
+const glassCard = {
+  background: C.cardBg,
+  backdropFilter: 'blur(20px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+  border: `1px solid ${C.glassBorder}`,
+  borderRadius: '20px',
+  boxShadow: '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow:
+      '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+  },
+};
+
+const fieldSx = {
+  fontFamily: FONT_BODY,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '14px',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    fontFamily: FONT_BODY,
+    fontSize: 14.5,
+    '& fieldset': { borderColor: C.softBorder },
+    '&:hover fieldset': { borderColor: C.border },
+    '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
+  },
+  '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
+  '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
+};
+
+function formatProfileDate(iso?: string) {
+  return iso
+    ? new Date(iso).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'N/A';
+}
+
+function validateAvatarFile(file: File): string {
+  if (file.size > MAX_AVATAR_SIZE) return 'Fichier trop volumineux. Max 2 MB.';
+
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const mime = file.type;
+  const mimeOk = ALLOWED_AVATAR_TYPES.includes(mime);
+  const extOk = ALLOWED_AVATAR_EXT.has(ext);
+  const mimeEmptyOrUnknown = mime === '' || mime === 'application/octet-stream';
+
+  if (mimeOk || (mimeEmptyOrUnknown && extOk)) return '';
+
+  if (
+    mime.includes('heic') ||
+    mime.includes('heif') ||
+    ext === 'heic' ||
+    ext === 'heif'
+  )
+    return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
+
+  return 'Format invalide. JPG, PNG ou WEBP uniquement.';
+}
+
+function jeuPluralSuffix(count: number): string {
+  return count === 1 ? '' : 'x';
+}
+
+type ProfilePageModel = {
+  user: UserProfile | null;
+  loading: boolean;
+  editOpen: boolean;
+  form: UserProfile;
+  avatarError: string;
+  avatarBusy: boolean;
+  userGames: UserGame[];
+  gamesEnCours: GameListItem[];
+  gamesTermines: GameListItem[];
+  gamesEnvie: GameListItem[];
+  gamesFavoris: GameListItem[];
+  avatarSrc: string;
+  handleEditOpen: () => void;
+  handleEditClose: () => void;
+  handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  handleModalAvatarChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleAvatarRemoveNow: () => Promise<void>;
+  handleSave: () => Promise<void>;
+};
+
+function useProfilePageModel(): ProfilePageModel {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -177,32 +264,8 @@ export default function ProfilePage() {
     setAvatarError('');
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-
-  const validateAvatarFile = (file: File) => {
-    if (file.size > MAX_AVATAR_SIZE)
-      return 'Fichier trop volumineux. Max 2 MB.';
-
-    const ext = file.name.split('.').pop()?.toLowerCase() || '';
-    const mime = file.type;
-    const mimeOk = ALLOWED_AVATAR_TYPES.includes(mime);
-    const extOk = ALLOWED_AVATAR_EXT.includes(ext);
-    const mimeEmptyOrUnknown =
-      mime === '' || mime === 'application/octet-stream';
-
-    if (mimeOk || (mimeEmptyOrUnknown && extOk)) return '';
-
-    if (
-      mime.includes('heic') ||
-      mime.includes('heif') ||
-      ext === 'heic' ||
-      ext === 'heif'
-    )
-      return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
-
-    return 'Format invalide. JPG, PNG ou WEBP uniquement.';
-  };
 
   const profileTextPayload = () => ({
     pseudo: form.pseudo,
@@ -225,9 +288,7 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleModalAvatarChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleModalAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f || avatarBusy) return;
@@ -297,7 +358,7 @@ export default function ProfilePage() {
     }
   };
 
-  const map = (status: string): GameListItem[] =>
+  const gamesForStatus = (status: string): GameListItem[] =>
     userGames
       .filter(g => g.status === status)
       .map(g => ({
@@ -308,9 +369,9 @@ export default function ProfilePage() {
         status: g.status,
       }));
 
-  const gamesEnCours = map('EN_COURS');
-  const gamesTermines = map('TERMINE');
-  const gamesEnvie = map('ENVIE_DE_JOUER');
+  const gamesEnCours = gamesForStatus('EN_COURS');
+  const gamesTermines = gamesForStatus('TERMINE');
+  const gamesEnvie = gamesForStatus('ENVIE_DE_JOUER');
   const gamesFavoris = userGames
     .filter(g => g.is_favorite)
     .map(g => ({
@@ -321,46 +382,361 @@ export default function ProfilePage() {
       status: g.status,
     }));
 
-  /* ── Reusable sx ── */
-  const glassCard = {
-    background: C.cardBg,
-    backdropFilter: 'blur(20px) saturate(160%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-    border: `1px solid ${C.glassBorder}`,
-    borderRadius: '20px',
-    boxShadow:
-      '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-    transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-    '&:hover': {
-      transform: 'translateY(-3px)',
-      boxShadow:
-        '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
-    },
+  return {
+    user,
+    loading,
+    editOpen,
+    form,
+    avatarError,
+    avatarBusy,
+    userGames,
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    avatarSrc,
+    handleEditOpen,
+    handleEditClose,
+    handleChange,
+    handleModalAvatarChange,
+    handleAvatarRemoveNow,
+    handleSave,
   };
+}
 
-  const fieldSx = {
-    fontFamily: FONT_BODY,
-    '& .MuiOutlinedInput-root': {
-      borderRadius: '14px',
-      backgroundColor: 'rgba(255,255,255,0.85)',
-      fontFamily: FONT_BODY,
-      fontSize: 14.5,
-      '& fieldset': { borderColor: C.softBorder },
-      '&:hover fieldset': { borderColor: C.border },
-      '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
-    },
-    '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
-    '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
-  };
+type ProfileEditDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  user: UserProfile | null;
+  form: UserProfile;
+  avatarSrc: string;
+  avatarBusy: boolean;
+  avatarError: string;
+  onAvatarChange: (e: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+  onAvatarRemove: () => void | Promise<void>;
+  onFieldChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onSave: () => void | Promise<void>;
+};
 
-  const formatDate = (iso?: string) =>
-    iso
-      ? new Date(iso).toLocaleDateString('fr-FR', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      : 'N/A';
+function ProfileEditDialog({
+  open,
+  onClose,
+  user,
+  form,
+  avatarSrc,
+  avatarBusy,
+  avatarError,
+  onAvatarChange,
+  onAvatarRemove,
+  onFieldChange,
+  onSave,
+}: ProfileEditDialogProps) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        sx: {
+          borderRadius: '24px',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
+          background: C.dialogBg,
+          backdropFilter: 'blur(24px)',
+          border: `1px solid ${C.glassBorder}`,
+          fontFamily: FONT_BODY,
+        },
+      }}
+      BackdropProps={{
+        sx: {
+          backdropFilter: 'blur(6px)',
+          backgroundColor: 'rgba(255,200,200,0.25)',
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 700,
+          color: C.title,
+          pb: 0.5,
+          letterSpacing: -0.4,
+          fontSize: 22,
+          pt: 3,
+          px: 3.5,
+        }}
+      >
+        Modifier mon profil
+      </DialogTitle>
+
+      <DialogContent sx={{ px: 3.5, pt: '16px !important' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1,
+              py: 1.5,
+            }}
+          >
+            <Box sx={{ position: 'relative', width: 90, height: 90 }}>
+              {user?.avatar_url ? (
+                <Box
+                  component="button"
+                  type="button"
+                  disabled={avatarBusy}
+                  onClick={() => void onAvatarRemove()}
+                  aria-label="Supprimer la photo de profil"
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    bgcolor: '#d32f2f',
+                    border: '2px solid white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: avatarBusy ? 'default' : 'pointer',
+                    zIndex: 16,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    transition: 'transform 0.15s ease, background 0.15s ease',
+                    p: 0,
+                    '&:hover': {
+                      bgcolor: avatarBusy ? '#d32f2f' : '#b71c1c',
+                      transform: avatarBusy ? 'none' : 'scale(1.15)',
+                    },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: '#fff',
+                      fontSize: 14,
+                      lineHeight: 1,
+                      fontWeight: 700,
+                    }}
+                  >
+                    ×
+                  </Typography>
+                </Box>
+              ) : null}
+
+              <Box
+                component="label"
+                sx={{
+                  position: 'relative',
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  cursor: avatarBusy ? 'wait' : 'pointer',
+                  opacity: avatarBusy ? 0.75 : 1,
+                  '&:hover .modal-av-overlay': {
+                    opacity: avatarBusy ? 0 : 1,
+                  },
+                }}
+              >
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  disabled={avatarBusy}
+                  onChange={e => void onAvatarChange(e)}
+                  style={{
+                    ...fileInputOverlaySx,
+                    zIndex: 12,
+                    pointerEvents: avatarBusy ? 'none' : 'auto',
+                  }}
+                />
+                <Avatar
+                  src={avatarSrc}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    fontSize: 32,
+                    fontFamily: FONT_DISPLAY,
+                    boxShadow: `0 4px 20px ${C.accentGlow}`,
+                    bgcolor: C.accent,
+                    border: '2.5px solid white',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {form.pseudo?.[0]?.toUpperCase() || 'U'}
+                </Avatar>
+                <Box
+                  className="modal-av-overlay"
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0,0,0,0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fontFamily: FONT_BODY,
+                    opacity: 0,
+                    transition: 'opacity 0.15s ease',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  Changer
+                </Box>
+              </Box>
+
+              {avatarBusy ? (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'rgba(255,255,255,0.55)',
+                    zIndex: 20,
+                  }}
+                >
+                  <CircularProgress size={34} sx={{ color: C.accent }} />
+                </Box>
+              ) : null}
+            </Box>
+
+            {avatarError ? (
+              <Typography
+                sx={{
+                  color: C.accent,
+                  fontSize: 12.5,
+                  fontFamily: FONT_BODY,
+                  textAlign: 'center',
+                  maxWidth: 320,
+                  lineHeight: 1.45,
+                  px: 1,
+                }}
+              >
+                {avatarError}
+              </Typography>
+            ) : null}
+
+            <Typography
+              sx={{
+                color: C.muted,
+                fontSize: 12,
+                fontFamily: FONT_BODY,
+                textAlign: 'center',
+              }}
+            >
+              Clique sur la photo pour changer · JPG, PNG, WEBP · Max 2 MB
+            </Typography>
+          </Box>
+
+          <TextField
+            label="Pseudo"
+            name="pseudo"
+            fullWidth
+            value={form.pseudo}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="Prénom"
+            name="first_name"
+            fullWidth
+            value={form.first_name}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="Nom"
+            name="last_name"
+            fullWidth
+            value={form.last_name}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="Description"
+            name="description_courte"
+            fullWidth
+            multiline
+            minRows={3}
+            value={form.description_courte}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3.5, pb: 3, pt: 1, gap: 1 }}>
+        <Button
+          onClick={onClose}
+          sx={{
+            borderRadius: 999,
+            color: C.muted,
+            px: 2.5,
+            py: 0.9,
+            fontWeight: 500,
+            fontSize: 14,
+            textTransform: 'none',
+            fontFamily: FONT_BODY,
+            '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+          }}
+        >
+          Annuler
+        </Button>
+        <Button
+          onClick={() => void onSave()}
+          variant="contained"
+          sx={{
+            borderRadius: 999,
+            px: 3.5,
+            py: 1,
+            fontWeight: 700,
+            fontSize: 14,
+            textTransform: 'none',
+            fontFamily: FONT_BODY,
+            background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
+            boxShadow: `0 4px 18px ${C.accentGlow}`,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
+              boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
+              transform: 'translateY(-1px)',
+            },
+            transition: 'all 0.18s ease',
+          }}
+        >
+          Enregistrer
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+export default function ProfilePage() {
+  const {
+    user,
+    loading,
+    editOpen,
+    form,
+    avatarError,
+    avatarBusy,
+    userGames,
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    avatarSrc,
+    handleEditOpen,
+    handleEditClose,
+    handleChange,
+    handleModalAvatarChange,
+    handleAvatarRemoveNow,
+    handleSave,
+  } = useProfilePageModel();
 
   return (
     <Box
@@ -743,7 +1119,7 @@ export default function ProfilePage() {
                 lineHeight: 1.3,
               }}
             >
-              {loading ? '...' : formatDate(user?.created_at)}
+              {loading ? '...' : formatProfileDate(user?.created_at)}
             </Typography>
           </Paper>
         </Box>
@@ -908,7 +1284,7 @@ export default function ProfilePage() {
                   }}
                 >
                   {gamesFavoris.length} jeu
-                  {gamesFavoris.length !== 1 ? 'x' : ''}
+                  {jeuPluralSuffix(gamesFavoris.length)}
                 </Typography>
               </Box>
             </Box>
@@ -988,7 +1364,7 @@ export default function ProfilePage() {
                   fontWeight: 700,
                 }}
               >
-                {userGames.length} jeu{userGames.length !== 1 ? 'x' : ''} au
+                {userGames.length} jeu{jeuPluralSuffix(userGames.length)} au
                 total
               </Typography>
             </Box>
@@ -1021,289 +1397,19 @@ export default function ProfilePage() {
         </Paper>
       </Box>
 
-      {/* ── EDIT DIALOG ── */}
-      <Dialog
+      <ProfileEditDialog
         open={editOpen}
         onClose={handleEditClose}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: '24px',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
-            background: C.dialogBg,
-            backdropFilter: 'blur(24px)',
-            border: `1px solid ${C.glassBorder}`,
-            fontFamily: FONT_BODY,
-          },
-        }}
-        BackdropProps={{
-          sx: {
-            backdropFilter: 'blur(6px)',
-            backgroundColor: 'rgba(255,200,200,0.25)',
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            fontFamily: FONT_DISPLAY,
-            fontWeight: 700,
-            color: C.title,
-            pb: 0.5,
-            letterSpacing: -0.4,
-            fontSize: 22,
-            pt: 3,
-            px: 3.5,
-          }}
-        >
-          Modifier mon profil
-        </DialogTitle>
-
-        <DialogContent sx={{ px: 3.5, pt: '16px !important' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Avatar : upload immédiat au choix du fichier */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1,
-                py: 1.5,
-              }}
-            >
-              <Box sx={{ position: 'relative', width: 90, height: 90 }}>
-                {user?.avatar_url ? (
-                  <Box
-                    component="button"
-                    type="button"
-                    disabled={avatarBusy}
-                    onClick={() => void handleAvatarRemoveNow()}
-                    aria-label="Supprimer la photo de profil"
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      bgcolor: '#d32f2f',
-                      border: '2px solid white',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: avatarBusy ? 'default' : 'pointer',
-                      zIndex: 16,
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-                      transition: 'transform 0.15s ease, background 0.15s ease',
-                      p: 0,
-                      '&:hover': {
-                        bgcolor: avatarBusy ? '#d32f2f' : '#b71c1c',
-                        transform: avatarBusy ? 'none' : 'scale(1.15)',
-                      },
-                    }}
-                  >
-                    <Typography
-                      sx={{
-                        color: '#fff',
-                        fontSize: 14,
-                        lineHeight: 1,
-                        fontWeight: 700,
-                      }}
-                    >
-                      ×
-                    </Typography>
-                  </Box>
-                ) : null}
-
-                <Box
-                  component="label"
-                  sx={{
-                    position: 'relative',
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: '50%',
-                    cursor: avatarBusy ? 'wait' : 'pointer',
-                    opacity: avatarBusy ? 0.75 : 1,
-                    '&:hover .modal-av-overlay': {
-                      opacity: avatarBusy ? 0 : 1,
-                    },
-                  }}
-                >
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                    disabled={avatarBusy}
-                    onChange={e => void handleModalAvatarChange(e)}
-                    style={{
-                      ...fileInputOverlaySx,
-                      zIndex: 12,
-                      pointerEvents: avatarBusy ? 'none' : 'auto',
-                    }}
-                  />
-                  <Avatar
-                    src={avatarSrc}
-                    sx={{
-                      width: '100%',
-                      height: '100%',
-                      fontSize: 32,
-                      fontFamily: FONT_DISPLAY,
-                      boxShadow: `0 4px 20px ${C.accentGlow}`,
-                      bgcolor: C.accent,
-                      border: '2.5px solid white',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    {form.pseudo?.[0]?.toUpperCase() || 'U'}
-                  </Avatar>
-                  <Box
-                    className="modal-av-overlay"
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(0,0,0,0.35)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      fontFamily: FONT_BODY,
-                      opacity: 0,
-                      transition: 'opacity 0.15s ease',
-                      pointerEvents: 'none',
-                    }}
-                  >
-                    Changer
-                  </Box>
-                </Box>
-
-                {avatarBusy ? (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'rgba(255,255,255,0.55)',
-                      zIndex: 20,
-                    }}
-                  >
-                    <CircularProgress size={34} sx={{ color: C.accent }} />
-                  </Box>
-                ) : null}
-              </Box>
-
-              {avatarError ? (
-                <Typography
-                  sx={{
-                    color: C.accent,
-                    fontSize: 12.5,
-                    fontFamily: FONT_BODY,
-                    textAlign: 'center',
-                    maxWidth: 320,
-                    lineHeight: 1.45,
-                    px: 1,
-                  }}
-                >
-                  {avatarError}
-                </Typography>
-              ) : null}
-
-              <Typography
-                sx={{
-                  color: C.muted,
-                  fontSize: 12,
-                  fontFamily: FONT_BODY,
-                  textAlign: 'center',
-                }}
-              >
-                Clique sur la photo pour changer · JPG, PNG, WEBP · Max 2 MB
-              </Typography>
-            </Box>
-
-            <TextField
-              label="Pseudo"
-              name="pseudo"
-              fullWidth
-              value={form.pseudo}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-            <TextField
-              label="Prénom"
-              name="first_name"
-              fullWidth
-              value={form.first_name}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-            <TextField
-              label="Nom"
-              name="last_name"
-              fullWidth
-              value={form.last_name}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-            <TextField
-              label="Description"
-              name="description_courte"
-              fullWidth
-              multiline
-              minRows={3}
-              value={form.description_courte}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3.5, pb: 3, pt: 1, gap: 1 }}>
-          <Button
-            onClick={handleEditClose}
-            sx={{
-              borderRadius: 999,
-              color: C.muted,
-              px: 2.5,
-              py: 0.9,
-              fontWeight: 500,
-              fontSize: 14,
-              textTransform: 'none',
-              fontFamily: FONT_BODY,
-              '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
-            }}
-          >
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            sx={{
-              borderRadius: 999,
-              px: 3.5,
-              py: 1,
-              fontWeight: 700,
-              fontSize: 14,
-              textTransform: 'none',
-              fontFamily: FONT_BODY,
-              background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
-              boxShadow: `0 4px 18px ${C.accentGlow}`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-                boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
-                transform: 'translateY(-1px)',
-              },
-              transition: 'all 0.18s ease',
-            }}
-          >
-            Enregistrer
-          </Button>
-        </DialogActions>
-      </Dialog>
+        user={user}
+        form={form}
+        avatarSrc={avatarSrc}
+        avatarBusy={avatarBusy}
+        avatarError={avatarError}
+        onAvatarChange={handleModalAvatarChange}
+        onAvatarRemove={handleAvatarRemoveNow}
+        onFieldChange={handleChange}
+        onSave={handleSave}
+      />
     </Box>
   );
 }

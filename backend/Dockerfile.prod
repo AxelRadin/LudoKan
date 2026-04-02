@@ -27,8 +27,7 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 
 COPY docker/entrypoint.prod.sh /entrypoint.prod.sh
-RUN chmod +x /entrypoint.prod.sh
-RUN chmod +x /app/docker/entrypoint.asgi.sh
+RUN chmod +x /entrypoint.prod.sh /app/docker/entrypoint.asgi.sh
 
 
 USER app
