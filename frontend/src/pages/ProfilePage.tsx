@@ -916,13 +916,31 @@ export default function ProfilePage() {
                     color: C.title,
                     letterSpacing: -0.3,
                   }}
-                ></Typography>
+                >
+                  Coups de cœur ({gamesFavoris.length})
+                </Typography>
               </Box>
-              <Typography
-                sx={{ fontFamily: FONT_BODY, color: C.light, fontSize: 13 }}
+              <Box
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 999,
+                  background: 'rgba(211,47,47,0.1)',
+                  border: '1px solid rgba(211,47,47,0.25)',
+                }}
               >
-                {gamesFavoris.length} jeu{gamesFavoris.length !== 1 ? 'x' : ''}
-              </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    color: C.accent,
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  {gamesFavoris.length} jeu
+                  {gamesFavoris.length !== 1 ? 'x' : ''}
+                </Typography>
+              </Box>
             </Box>
 
             <Box
@@ -933,10 +951,7 @@ export default function ProfilePage() {
               }}
             />
 
-            <GameList
-              games={gamesFavoris}
-              title={`Coups de cœur (${gamesFavoris.length})`}
-            />
+            <GameList games={gamesFavoris} />
           </Paper>
         )}
 
