@@ -11,6 +11,7 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import {
   Box,
   Button,
+  Chip,
   Divider,
   Modal,
   Paper,
@@ -31,6 +32,60 @@ import SecondaryButton from '../components/SecondaryButton';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame, UserLibraryData } from '../types/game';
+
+import React from 'react';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CasinoIcon from '@mui/icons-material/Casino';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import ExploreIcon from '@mui/icons-material/Explore';
+import ExtensionIcon from '@mui/icons-material/Extension';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+import GroupsIcon from '@mui/icons-material/Groups';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import ScienceIcon from '@mui/icons-material/Science';
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import StairsIcon from '@mui/icons-material/Stairs';
+
+const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
+  // IGDB (anglais)
+  'Action':                            <LocalFireDepartmentIcon fontSize="small" />,
+  'Adventure':                         <ExploreIcon fontSize="small" />,
+  'Role-playing (RPG)':                <AutoFixHighIcon fontSize="small" />,
+  'Shooter':                           <GpsFixedIcon fontSize="small" />,
+  'Strategy':                          <PsychologyIcon fontSize="small" />,
+  'Real Time Strategy (RTS)':          <PsychologyIcon fontSize="small" />,
+  'Turn-based strategy (TBS)':         <PsychologyIcon fontSize="small" />,
+  'Tactical':                          <PsychologyIcon fontSize="small" />,
+  'Simulation':                        <ScienceIcon fontSize="small" />,
+  'Puzzle':                            <ExtensionIcon fontSize="small" />,
+  'Racing':                            <DirectionsCarIcon fontSize="small" />,
+  'Sport':                             <SportsSoccerIcon fontSize="small" />,
+  "Hack and slash/Beat 'em up":        <FitnessCenterIcon fontSize="small" />,
+  'Platform':                          <StairsIcon fontSize="small" />,
+  'Music':                             <MusicNoteIcon fontSize="small" />,
+  'Card & Board Game':                 <CasinoIcon fontSize="small" />,
+  'Point-and-click':                   <MenuBookIcon fontSize="small" />,
+  'Visual Novel':                      <MenuBookIcon fontSize="small" />,
+  'Massively Multiplayer Online (MMO)':<GroupsIcon fontSize="small" />,
+  'MOBA':                              <GroupsIcon fontSize="small" />,
+  'Fighting':                          <FitnessCenterIcon fontSize="small" />,
+  'Arcade':                            <SportsEsportsIcon fontSize="small" />,
+  // Django (français)
+  'Aventure':                          <ExploreIcon fontSize="small" />,
+  'RPG':                               <AutoFixHighIcon fontSize="small" />,
+  'FPS':                               <GpsFixedIcon fontSize="small" />,
+  'TPS':                               <GpsFixedIcon fontSize="small" />,
+  'Stratégie':                         <PsychologyIcon fontSize="small" />,
+  'Course':                            <DirectionsCarIcon fontSize="small" />,
+  "Hack'n Slash":                      <FitnessCenterIcon fontSize="small" />,
+  'Plateforme':                        <StairsIcon fontSize="small" />,
+  'Jeu de cartes':                     <CasinoIcon fontSize="small" />,
+};
 
 function getHighResImage(url: string | null) {
   if (!url) return '';
@@ -555,11 +610,19 @@ export default function GamePage() {
                   Genres
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
                 {game.genres && game.genres.length > 0
-                  ? game.genres.map((g: any) => g.name).join(', ')
-                  : 'Non renseigné'}
-              </Typography>
+                  ? game.genres.map((g: any) => (
+                      <Chip
+                        key={g.name}
+                        label={g.name}
+                        size="small"
+                        icon={GENRE_ICON_MAP[g.name]}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    ))
+                  : <Typography variant="body1">Non renseigné</Typography>}
+              </Box>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
