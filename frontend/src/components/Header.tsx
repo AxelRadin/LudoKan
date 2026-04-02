@@ -5,7 +5,6 @@ import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
@@ -71,14 +70,7 @@ export const Header: React.FC = () => {
         >
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
             <Box display="flex" alignItems="center">
-              <img
-                src="/logo.png"
-                alt="Ludokan Logo"
-                style={{ height: 40, marginRight: 8 }}
-              />
-              <Typography variant="h6" sx={{ fontFamily: 'Lobster, cursive' }}>
-                Ludokan
-              </Typography>
+              <img src="/logo.png" alt="Ludokan Logo" style={{ height: 75 }} />
             </Box>
           </Link>
 
