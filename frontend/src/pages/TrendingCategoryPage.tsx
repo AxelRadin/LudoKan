@@ -2,9 +2,10 @@ import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
 import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { fetchTrendingGames, getCoverUrl } from '../api/igdb';
-import GamesGrid, { type GameForCard } from '../components/GamesGrid';
+import { fetchTrendingGames } from '../api/igdb';
+import GamesGrid from '../components/GamesGrid';
 import PageLayout from '../components/PageLayout';
+import type { NormalizedGame } from '../types/game';
 
 const SORT_TITLES: Record<string, string> = {
   rating: 'Jeux les mieux notés',
@@ -15,26 +16,12 @@ const SORT_TITLES: Record<string, string> = {
 
 const PAGE_SIZE = 25;
 
-function mapIgdbToGame(game: any): GameForCard {
-  const coverUrl = getCoverUrl(game.cover);
-  const releaseDate = game.first_release_date
-    ? new Date(game.first_release_date * 1000).toISOString().split('T')[0]
-    : null;
-  return {
-    id: game.id,
-    title: game.display_name ?? game.name,
-    image: coverUrl ?? '',
-    coverUrl: coverUrl ?? null,
-    releaseDate,
-  };
-}
-
 export default function TrendingCategoryPage() {
   const { sort, genreId } = useParams<{ sort?: string; genreId?: string }>();
   const location = useLocation();
   const state = location.state as { genreName?: string } | null;
 
-  const [games, setGames] = useState<GameForCard[]>([]);
+  const [games, setGames] = useState<NormalizedGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
@@ -65,7 +52,7 @@ export default function TrendingCategoryPage() {
       )
         .then(data => {
           if (!controller.signal.aborted) {
-            setGames(data.map(mapIgdbToGame));
+            setGames(data);
             setHasMore(data.length === PAGE_SIZE);
           }
         })
@@ -87,7 +74,7 @@ export default function TrendingCategoryPage() {
       )
         .then(data => {
           if (!controller.signal.aborted) {
-            setGames(data.map(mapIgdbToGame));
+            setGames(data);
             setHasMore(data.length === PAGE_SIZE);
           }
         })
@@ -113,7 +100,6 @@ export default function TrendingCategoryPage() {
         games={games}
         loading={loading}
         emptyMessage="Aucun jeu dans cette catégorie."
-        igdb
       />
       {!loading && (page > 1 || hasMore) && (
         <Box mt={5} display="flex" justifyContent="center">

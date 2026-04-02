@@ -1,0 +1,20 @@
+{% extends "account/email/base_message.html" %}
+{% load account i18n %}
+
+{% block head_title %}Confirmez votre adresse e-mail{% endblock %}
+
+{% block content %}
+<div style="width:100%;box-sizing:border-box;">
+  <div style="text-align:center;padding-bottom:24px;">
+    <img src="https://placehold.co/200" alt="LudoKan" style="display:block;border:0;margin:0 auto;max-width:160px;width:160px;height:auto;" />
+  </div>
+  <div>
+    {% user_display user as user_display %}
+    {% blocktrans with user_display=user_display site_domain=current_site.domain %}
+    <p>Bonjour {{ user_display }},</p>
+    <p>Pour confirmer l’inscription sur {{ site_domain }}, suivez ce lien :</p>
+    <p><a href="{{ activate_url }}">{{ activate_url }}</a></p>
+    {% endblocktrans %}
+  </div>
+</div>
+{% endblock %}

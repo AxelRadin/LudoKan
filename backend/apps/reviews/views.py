@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.permissions import CanDeleteReview, CanEditReport, CanEditReview, CanReadReport, CanReadReview
 from apps.reviews.serializers import ContentReportAdminSerializer, ContentReportCreateSerializer, ReviewReadSerializer, ReviewWriteSerializer
@@ -63,8 +64,15 @@ class ReviewViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Associe automatiquement l'utilisateur connecte lors de la creation.
+        Si l'utilisateur n'a pas encore de UserGame pour ce jeu,
+        en crée un avec le statut TERMINE (notation implicite).
         """
-        serializer.save(user=self.request.user)
+        review = serializer.save(user=self.request.user)
+        UserGame.objects.get_or_create(
+            user=self.request.user,
+            game=review.game,
+            defaults={"status": UserGame.GameStatus.TERMINE},
+        )
 
     def get_permissions(self):
         """

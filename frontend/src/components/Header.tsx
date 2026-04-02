@@ -7,32 +7,39 @@ import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
+import { apiPost } from '../services/api';
 import theme from '../theme';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
-import { useAuth } from '../contexts/useAuth';
-import { apiPost } from '../services/api';
 
 export const Header: React.FC = () => {
-  const { isAuthenticated, setAuthenticated } = useAuth();
-  const [openAuth, setOpenAuth] = useState(false);
+  const navigate = useNavigate();
+  const {
+    isAuthenticated,
+    setAuthenticated,
+    isAuthModalOpen,
+    setAuthModalOpen,
+    pendingAction,
+    setPendingAction,
+  } = useAuth();
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   const handleLoginOpen = () => {
     setAuthMode('login');
-    setOpenAuth(true);
+    setAuthModalOpen(true);
   };
 
   const handleRegisterOpen = () => {
     setAuthMode('register');
-    setOpenAuth(true);
+    setAuthModalOpen(true);
   };
 
   const handleAuthClose = () => {
-    setOpenAuth(false);
+    setAuthModalOpen(false);
   };
 
   const handleLogout = async () => {
@@ -43,6 +50,7 @@ export const Header: React.FC = () => {
       console.error('Erreur lors du logout', e);
     } finally {
       setAuthenticated(false);
+      navigate('/');
     }
   };
 
@@ -103,7 +111,7 @@ export const Header: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Dialog open={openAuth} onClose={handleAuthClose} keepMounted>
+      <Dialog open={isAuthModalOpen} onClose={handleAuthClose} keepMounted>
         <Box
           sx={{
             position: 'absolute',
@@ -122,7 +130,11 @@ export const Header: React.FC = () => {
             onSwitchToRegister={() => setAuthMode('register')}
             onLoginSuccess={() => {
               setAuthenticated(true);
-              setOpenAuth(false);
+              setAuthModalOpen(false);
+              if (pendingAction) {
+                pendingAction();
+                setPendingAction(null);
+              }
             }}
           />
         ) : (

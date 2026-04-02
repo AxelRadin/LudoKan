@@ -17,16 +17,12 @@ import {
 import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCoverUrl, type IgdbGame, searchIgdbGames } from '../api/igdb';
+import { type IgdbGame, searchIgdbGames } from '../api/igdb';
 import { apiGet } from '../services/api';
+import type { NormalizedGame } from '../types/game';
 
-type Game = {
-  id: number;
-  name: string;
-  cover_url?: string;
-  year?: number;
-  source: 'local' | 'igdb';
-};
+// Local API result mapped to NormalizedGame for a unified type across all sources
+type SearchSourcedGame = NormalizedGame & { source: 'local' | 'igdb' };
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -88,15 +84,23 @@ const SEARCH_DEBOUNCE_MS = 280;
 const DROPDOWN_LOCAL_MAX = 5;
 const DROPDOWN_IGDB_MAX = 8;
 
-function mapIgdbToGame(g: IgdbGame): Game {
+function mapIgdbToSearchGame(g: IgdbGame): SearchSourcedGame {
+  return { ...g, source: 'igdb' };
+}
+
+function mapLocalToSearchGame(g: any): SearchSourcedGame {
   return {
-    id: g.id,
-    name: g.display_name || g.name,
-    cover_url: getCoverUrl(g.cover) || undefined,
-    year: g.first_release_date
-      ? new Date(g.first_release_date * 1000).getFullYear()
-      : undefined,
-    source: 'igdb',
+    igdb_id: g.igdb_id ?? 0,
+    django_id: g.id ?? null,
+    name: g.name ?? '',
+    summary: g.description ?? null,
+    cover_url: g.cover_url ?? null,
+    release_date: g.release_date ?? null,
+    platforms: g.platforms ?? [],
+    genres: g.genres ?? [],
+    user_library: g.user_library ?? null,
+    user_rating: g.user_rating ?? null,
+    source: 'local',
   };
 }
 
@@ -104,8 +108,8 @@ const GameSearchBar: React.FC = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [localResults, setLocalResults] = useState<Game[]>([]);
-  const [igdbResults, setIgdbResults] = useState<Game[]>([]);
+  const [localResults, setLocalResults] = useState<SearchSourcedGame[]>([]);
+  const [igdbResults, setIgdbResults] = useState<SearchSourcedGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -157,17 +161,11 @@ const GameSearchBar: React.FC = () => {
         const rawResults = Array.isArray(res)
           ? res
           : ((res as { results?: unknown[] })?.results ?? []);
-        return rawResults.map((g: any) => ({
-          id: g.id,
-          name: g.name,
-          cover_url: g.cover_url,
-          source: 'local' as const,
-          year: g.release_date
-            ? new Date(g.release_date).getFullYear()
-            : undefined,
-        })) as Game[];
+        return rawResults.map((g: any) =>
+          mapLocalToSearchGame(g)
+        ) as SearchSourcedGame[];
       })
-      .catch(() => [] as Game[]);
+      .catch(() => [] as SearchSourcedGame[]);
 
     const igdbReq = searchIgdbGames(
       debouncedQuery,
@@ -175,8 +173,8 @@ const GameSearchBar: React.FC = () => {
       false,
       controller.signal
     )
-      .then(games => games.map(mapIgdbToGame))
-      .catch(() => [] as Game[]);
+      .then(games => games.map(mapIgdbToSearchGame))
+      .catch(() => [] as SearchSourcedGame[]);
 
     Promise.all([localReq, igdbReq])
       .then(([local, igdb]) => {
@@ -214,11 +212,11 @@ const GameSearchBar: React.FC = () => {
     navigate(`/search?q=${encodeURIComponent(q)}`);
   };
 
-  const handlePickGame = (game: Game) => {
-    if (game.source === 'local') {
-      navigate(`/game/${game.id}`);
+  const handlePickGame = (game: SearchSourcedGame) => {
+    if (game.source === 'local' && game.django_id) {
+      navigate(`/game/${game.django_id}`);
     } else {
-      navigate(`/game/igdb/${game.id}`);
+      navigate(`/game/igdb/${game.igdb_id}`);
     }
     setShowDropdown(false);
     setQuery('');
@@ -300,40 +298,50 @@ const GameSearchBar: React.FC = () => {
                 py: 0,
               }}
             >
-              {allResults.map(game => (
-                <React.Fragment key={`${game.source}-${game.id}`}>
-                  <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
-                    <ListItemButton onClick={() => handlePickGame(game)}>
-                      <ListItemAvatar>
-                        <Avatar
-                          variant="rounded"
-                          src={game.cover_url}
-                          alt={game.name}
-                          sx={{ width: 48, height: 64, mr: 2, bgcolor: '#eee' }}
-                        >
-                          {game.name[0]}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <span>
-                            <b>{game.name}</b>
-                            {game.year && (
-                              <span style={{ color: '#888', marginLeft: 8 }}>
-                                ({game.year})
-                              </span>
-                            )}
-                          </span>
-                        }
-                        secondary={
-                          game.source === 'local' ? 'Base locale' : 'IGDB'
-                        }
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                  <Divider component="li" />
-                </React.Fragment>
-              ))}
+              {allResults.map(game => {
+                const releaseYear = game.release_date
+                  ? new Date(game.release_date).getFullYear()
+                  : null;
+                return (
+                  <React.Fragment key={`${game.source}-${game.igdb_id}`}>
+                    <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
+                      <ListItemButton onClick={() => handlePickGame(game)}>
+                        <ListItemAvatar>
+                          <Avatar
+                            variant="rounded"
+                            src={game.cover_url ?? undefined}
+                            alt={game.name}
+                            sx={{
+                              width: 48,
+                              height: 64,
+                              mr: 2,
+                              bgcolor: '#eee',
+                            }}
+                          >
+                            {game.name[0]}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <span>
+                              <b>{game.name}</b>
+                              {releaseYear && (
+                                <span style={{ color: '#888', marginLeft: 8 }}>
+                                  ({releaseYear})
+                                </span>
+                              )}
+                            </span>
+                          }
+                          secondary={
+                            game.source === 'local' ? 'Base locale' : 'IGDB'
+                          }
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                    <Divider component="li" />
+                  </React.Fragment>
+                );
+              })}
             </List>
           )}
           {!loading && query.trim() && (

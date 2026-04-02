@@ -1,8 +1,3 @@
-"""
-Le modèle Notification de django-notifications-hq.
-Modèles BACK-021A : SystemLog, ActivityLog, ReportSchedule.
-"""
-
 from django import forms
 from django.contrib import admin
 

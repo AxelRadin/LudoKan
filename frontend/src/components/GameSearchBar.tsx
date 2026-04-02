@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { getCoverUrl, type IgdbGame } from '../api/igdb';
+import { type IgdbGame } from '../api/igdb';
 import { useIgdbSuggestions } from '../hooks/useIgdbSuggestions';
 import { Link } from 'react-router-dom';
 
@@ -8,7 +8,7 @@ type Props = Readonly<{
 }>;
 
 function getDisplayName(game: IgdbGame): string {
-  return game.display_name ?? game.name;
+  return game.name;
 }
 
 export default function GameSearchBar({ onSelect }: Props) {
@@ -89,15 +89,11 @@ export default function GameSearchBar({ onSelect }: Props) {
           {!loading &&
             !error &&
             suggestions.map(g => {
-              const cover = getCoverUrl(g.cover);
-              console.log(
-                'LOCALIZATIONS:',
-                g.name,
-                g.game_localizations?.map(l => l.region?.name)
-              );
+              const cover = g.cover_url;
+
               return (
                 <button
-                  key={g.id}
+                  key={g.igdb_id}
                   type="button"
                   onClick={() => {
                     onSelect(g);

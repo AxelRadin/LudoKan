@@ -1,47 +1,45 @@
 import { Box, Card, CardMedia, IconButton, Tooltip } from '@mui/material';
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addGameToLibrary, importIgdbGameToDjango } from '../api/igdb';
-import { useAuth } from '../hooks/useAuth';
+import { addGameToLibrary, resolveIgdbGame } from '../api/igdb';
+import { useAuth } from '../contexts/useAuth';
+import type { NormalizedGame } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 
 interface GameCardProps {
-  id: number;
-  title: string;
-  image: string;
-  igdb?: boolean;
-  coverUrl?: string | null;
-  releaseDate?: string | null;
+  game: NormalizedGame;
 }
 
-export const GameCard: React.FC<GameCardProps> = ({
-  id,
-  title,
-  image,
-  igdb = false,
-  coverUrl,
-  releaseDate,
-}) => {
+export const GameCard: React.FC<GameCardProps> = ({ game }) => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [adding, setAdding] = useState(false);
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = useState(!!game.user_library);
+
+  const isIgdbOnly = !game.django_id;
+
+  const handleNavigate = () => {
+    if (game.django_id) {
+      navigate(`/game/${game.django_id}`);
+    } else {
+      navigate(`/game/igdb/${game.igdb_id}`);
+    }
+  };
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (adding || added || !igdb) return;
+    if (adding || added || !isIgdbOnly) return;
     setAdding(true);
     try {
-      const { id: djangoId } = await importIgdbGameToDjango(
-        id,
-        title,
-        coverUrl ?? null,
-        releaseDate ?? null
+      const { game_id } = await resolveIgdbGame(
+        game.igdb_id,
+        game.name,
+        game.cover_url ?? null,
+        game.release_date ?? null
       );
-      await addGameToLibrary(djangoId);
+      await addGameToLibrary(game_id);
       setAdded(true);
     } catch {
-      // already in library or error
       setAdded(true);
     } finally {
       setAdding(false);
@@ -62,7 +60,7 @@ export const GameCard: React.FC<GameCardProps> = ({
 
   return (
     <Card
-      onClick={() => navigate(igdb ? `/game/igdb/${id}` : `/game/${id}`)}
+      onClick={handleNavigate}
       sx={{
         minWidth: 150,
         borderRadius: 2,
@@ -74,11 +72,11 @@ export const GameCard: React.FC<GameCardProps> = ({
       <CardMedia
         component="img"
         height="200"
-        image={image}
-        alt={title}
+        image={game.cover_url ?? ''}
+        alt={game.name}
         sx={{ objectFit: 'cover' }}
       />
-      {igdb && isAuthenticated && (
+      {isIgdbOnly && isAuthenticated && (
         <Box sx={{ position: 'absolute', bottom: 6, right: 6 }}>
           <Tooltip title={added ? 'Ajouté !' : 'Ajouter à ma bibliothèque'}>
             <span>

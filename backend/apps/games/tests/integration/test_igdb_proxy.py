@@ -11,18 +11,21 @@ from django.core.exceptions import ImproperlyConfigured
 from django.test import RequestFactory
 from rest_framework import status
 
+from apps.games.igdb_normalizer import normalize_igdb_game
 from apps.games.igdb_proxy_constants import MAX_TRANSLATE_TEXT_LEN
 from apps.games.views_igdb import IgdbCollectionGamesView, IgdbFranchiseGamesView, IgdbGameDetailView
 
 
 def _enrich_stub(games):
     return [
-        {
-            **g,
-            "display_name": g.get("name") or "",
-            "name_fr": None,
-            "name_en": (g.get("name") or "").strip(),
-        }
+        normalize_igdb_game(
+            {
+                **g,
+                "display_name": g.get("name") or "",
+                "name_fr": None,
+                "name_en": (g.get("name") or "").strip(),
+            }
+        )
         for g in games
     ]
 
@@ -53,7 +56,7 @@ class TestIgdbProxySearch:
             return fake_games
 
         def mock_enrich(games):
-            return [{**g, "display_name": g.get("name"), "name_fr": None, "name_en": g.get("name")} for g in games]
+            return [normalize_igdb_game({**g, "display_name": g.get("name"), "name_fr": None, "name_en": g.get("name")}) for g in games]
 
         monkeypatch.setattr(
             "apps.games.views_igdb.igdb_client.igdb_request",
@@ -68,7 +71,7 @@ class TestIgdbProxySearch:
         assert response.status_code == status.HTTP_200_OK
         assert isinstance(response.data, list)
         assert len(response.data) == 1
-        assert response.data[0]["id"] == 100
+        assert response.data[0]["igdb_id"] == 100
         assert response.data[0]["name"] == "The Legend of Zelda"
 
     def test_search_suggest_mode_merges_name_and_search(self, api_client, monkeypatch):
@@ -90,7 +93,7 @@ class TestIgdbProxySearch:
         # limit par défaut = 1 → [:limit] ne garde qu’un jeu après tri par total_rating_count
         response = api_client.get("/api/igdb/search/", {"q": "test", "suggest": "1", "limit": "2"})
         assert response.status_code == status.HTTP_200_OK
-        ids = {g["id"] for g in response.data}
+        ids = {g["igdb_id"] for g in response.data}
         assert ids == {1, 2}
 
     def test_search_non_suggest_simple(self, api_client, mock_enrich, monkeypatch):
@@ -119,7 +122,7 @@ class TestIgdbProxySearch:
         response = api_client.get("/api/igdb/search/", {"q": "café"})
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data) == 1
-        assert response.data[0]["id"] == 7
+        assert response.data[0]["igdb_id"] == 7
         assert len(calls) == 2
 
     def test_search_igdb_unavailable_returns_empty(self, api_client, monkeypatch):
@@ -157,7 +160,7 @@ class TestIgdbProxyGamesList:
         )
         response = api_client.get("/api/igdb/games/")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["id"] == 1
+        assert response.data[0]["igdb_id"] == 1
 
     def test_games_list_non_list_response(self, api_client, monkeypatch):
         monkeypatch.setattr(
@@ -216,8 +219,8 @@ class TestIgdbProxyTrending:
         )
         response = api_client.get("/api/igdb/trending/", {"enrich": "0"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["display_name"] == "N"
-        assert response.data[0]["name_fr"] is None
+        assert response.data[0]["name"] == "N"
+        assert response.data[0]["user_rating"] is None
 
     def test_trending_with_genre_filter(self, api_client, mock_enrich, monkeypatch):
         def mock_igdb(ep, q):
@@ -279,7 +282,7 @@ class TestIgdbProxyGameDetail:
         )
         response = api_client.get("/api/igdb/games/99/")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["id"] == 99
+        assert response.data["igdb_id"] == 99
 
     def test_detail_invalid_id(self, api_client):
         """`<int:id>` rejette les non-entiers avant la vue → 404 Django."""
@@ -320,7 +323,7 @@ class TestIgdbProxyCollectionFranchise:
         )
         response = api_client.get("/api/igdb/collections/5/games/")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data == [{"id": 1}]
+        assert response.data[0]["igdb_id"] == 1
 
     def test_collection_invalid_id(self, api_client):
         response = api_client.get("/api/igdb/collections/bad/games/")
@@ -350,7 +353,7 @@ class TestIgdbProxyCollectionFranchise:
         )
         response = api_client.get("/api/igdb/franchises/3/games/")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["id"] == 2
+        assert response.data[0]["igdb_id"] == 2
 
     def test_franchise_invalid_id(self, api_client):
         response = api_client.get("/api/igdb/franchises/x/games/")
@@ -550,7 +553,7 @@ class TestIgdbProxySearchSuggestBranches:
         )
         response = api_client.get("/api/igdb/search/", {"q": "x", "suggest": "1", "limit": "5"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["id"] == 1
+        assert response.data[0]["igdb_id"] == 1
 
     def test_suggest_search_request_raises_name_ok(self, api_client, monkeypatch):
         def mock_igdb(ep, q):
@@ -570,7 +573,7 @@ class TestIgdbProxySearchSuggestBranches:
         )
         response = api_client.get("/api/igdb/search/", {"q": "y", "suggest": "1", "limit": "5"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["id"] == 2
+        assert response.data[0]["igdb_id"] == 2
 
     def test_suggest_fallback_accented_when_merge_empty(self, api_client, monkeypatch):
         calls = []
@@ -591,7 +594,7 @@ class TestIgdbProxySearchSuggestBranches:
         )
         response = api_client.get("/api/igdb/search/", {"q": "café", "suggest": "1", "limit": "3"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["id"] == 7
+        assert response.data[0]["igdb_id"] == 7
         assert len(calls) == 3
 
     def test_suggest_fallback_accented_exception_swallowed(self, api_client, monkeypatch):
@@ -693,7 +696,7 @@ class TestIgdbProxySearchPageExtra:
         )
         response = api_client.get("/api/igdb/search-page/", {"q": "café"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["id"] == 3
+        assert response.data[0]["igdb_id"] == 3
 
     def test_search_body_inner_exception(self, api_client, mock_enrich, monkeypatch):
         def mock_igdb(ep, q):

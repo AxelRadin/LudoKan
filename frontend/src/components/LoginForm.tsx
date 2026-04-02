@@ -1,11 +1,12 @@
 import Alert from '@mui/material/Alert';
+import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Ajout
-import { apiPost } from '../services/api';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
+import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
@@ -23,7 +24,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate(); // Ajout
+  const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,12 +44,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       });
       console.log('User connecté', data);
 
-      // Met à jour l'état d'authentification global
       setAuthenticated(true);
-      onLoginSuccess?.();
-
-      // Redirection vers la page d'accueil (les cookies JWT sont déjà posés par le backend)
-      navigate('/', { replace: true });
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
     } finally {
@@ -103,6 +104,44 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         >
           {loading ? 'Connexion...' : 'Se connecter'}
         </PrimaryButton>
+
+        <Typography variant="body2" mt={2}>
+          Tu n&apos;as pas encore de compte ?{' '}
+          <Link
+            component="button"
+            type="button"
+            onClick={onSwitchToRegister}
+            underline="hover"
+            sx={{ fontWeight: 600 }}
+          >
+            Créer un compte
+          </Link>
+        </Typography>
+        <Typography
+          variant="body2"
+          mt={2}
+          sx={{ width: 320, textAlign: 'center' }}
+        >
+          En vous connectant, vous acceptez nos{' '}
+          <Link
+            component={RouterLink}
+            to="/conditions"
+            underline="hover"
+            sx={{ fontWeight: 600 }}
+          >
+            Conditions d&apos;utilisation
+          </Link>{' '}
+          et notre{' '}
+          <Link
+            component={RouterLink}
+            to="/politique"
+            underline="hover"
+            sx={{ fontWeight: 600 }}
+          >
+            Politique de confidentialité
+          </Link>
+          .
+        </Typography>
       </form>
     </AuthFormContainer>
   );

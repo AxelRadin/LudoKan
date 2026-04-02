@@ -362,7 +362,7 @@ class TestGameFilterNumericCombined:
         """Filtrage numérique combiné avec genre (AND entre types)"""
         from apps.games.models import Genre
 
-        genre_action = Genre.objects.create(igdb_id=9901, nom_genre="Action", description="")
+        genre_action = Genre.objects.create(igdb_id=9901, name="Action", description="")
         game_teen.genres.add(genre_action)
 
         response = api_client.get(f"/api/games/?min_age=12&genre={genre_action.id}")

@@ -4,26 +4,18 @@ import Typography from '@mui/material/Typography';
 import React from 'react';
 import GameCard from './GameCard';
 
-export interface GameForCard {
-  id: number;
-  title: string;
-  image: string;
-  coverUrl?: string | null;
-  releaseDate?: string | null;
-}
+import type { NormalizedGame } from '../types/game';
 
 export interface GamesGridProps {
-  games: GameForCard[];
+  games: NormalizedGame[];
   loading?: boolean;
   emptyMessage?: string;
-  igdb?: boolean;
 }
 
 export const GamesGrid: React.FC<GamesGridProps> = ({
   games,
   loading = false,
   emptyMessage = 'Aucun jeu à afficher.',
-  igdb = false,
 }) => {
   if (loading) {
     return (
@@ -53,15 +45,7 @@ export const GamesGrid: React.FC<GamesGridProps> = ({
       }}
     >
       {games.map(game => (
-        <GameCard
-          key={game.id}
-          id={game.id}
-          title={game.title}
-          image={game.image}
-          coverUrl={game.coverUrl}
-          releaseDate={game.releaseDate}
-          igdb={igdb}
-        />
+        <GameCard key={game.igdb_id} game={game} />
       ))}
     </Box>
   );
