@@ -49,15 +49,15 @@ const FONT_DISPLAY = "'Bebas Neue', Impact, sans-serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 
 const C = {
-  bg: '#0a0a0a',
-  bgCard: '#111111',
-  bgCardHover: '#161616',
-  border: '#1e1e1e',
-  borderRed: '#3d0000',
+  bg: '#ffd3d3',
+  bgCard: 'rgba(255,255,255,0.6)',
+  bgCardHover: 'rgba(255,255,255,0.78)',
+  border: 'rgba(241,199,199,0.6)',
+  borderRed: 'rgba(211,47,47,0.35)',
   accent: '#d32f2f',
-  accentGlow: 'rgba(211,47,47,0.5)',
-  text: '#f0f0f0',
-  muted: '#555',
+  accentGlow: 'rgba(211,47,47,0.45)',
+  text: '#0f0f0f',
+  muted: '#7a4040',
 };
 
 function NeonHeader({ label, title }: { label: string; title: string }) {
@@ -146,7 +146,7 @@ function NeonCard({
           position: 'absolute',
           inset: 0,
           background:
-            'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.007) 3px, rgba(255,255,255,0.007) 4px)',
+            'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px)',
           pointerEvents: 'none',
         },
         '&:hover': { borderColor: C.borderRed, background: C.bgCardHover },
@@ -180,7 +180,12 @@ export const HomePage = () => {
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
-        backgroundColor: C.bg,
+        background: `
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
+          radial-gradient(ellipse 130% 70% at 10% -5%, rgba(255,190,190,0.65) 0%, transparent 55%),
+          radial-gradient(ellipse 70% 50% at 95% 100%, rgba(211,47,47,0.08) 0%, transparent 50%),
+          #ffd3d3
+        `,
         position: 'relative',
       }}
     >
@@ -192,7 +197,7 @@ export const HomePage = () => {
           pointerEvents: 'none',
           zIndex: 9999,
           background:
-            'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px)',
+            'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.012) 2px, rgba(0,0,0,0.012) 4px)',
         }}
       />
 
@@ -301,7 +306,7 @@ export const HomePage = () => {
               inset: 0,
               zIndex: 1,
               background:
-                'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.035) 3px, rgba(0,0,0,0.035) 4px)',
+                'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.015) 3px, rgba(0,0,0,0.015) 4px)',
               pointerEvents: 'none',
             },
           }}
