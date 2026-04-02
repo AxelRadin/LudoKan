@@ -916,9 +916,7 @@ export default function ProfilePage() {
                     color: C.title,
                     letterSpacing: -0.3,
                   }}
-                >
-                  Coups de cœur
-                </Typography>
+                ></Typography>
               </Box>
               <Typography
                 sx={{ fontFamily: FONT_BODY, color: C.light, fontSize: 13 }}
@@ -935,7 +933,10 @@ export default function ProfilePage() {
               }}
             />
 
-            <GameList games={gamesFavoris} title="" />
+            <GameList
+              games={gamesFavoris}
+              title={`Coups de cœur (${gamesFavoris.length})`}
+            />
           </Paper>
         )}
 
