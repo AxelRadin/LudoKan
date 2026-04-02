@@ -8,7 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/useAuth';
 import { useSubmitReview } from '../../hooks/useSubmitReview';
@@ -29,6 +29,7 @@ type ReviewFormValues = {
 
 type ReviewFormProps = Readonly<{
   gameId: string;
+  resolveGameId?: () => Promise<string | number | null>;
   initialValues?: Partial<ReviewFormValues> & { id?: number };
   onSuccess?: (review: { id: number; title?: string; content: string }) => void;
   onCancel?: () => void;
@@ -36,17 +37,27 @@ type ReviewFormProps = Readonly<{
 
 function submitLabel(loading: boolean, existingId?: number): string {
   if (loading) return 'Envoi...';
-  return existingId ? 'Mettre à jour' : 'Publier mon avis';
+  return existingId ? 'Mettre à jour' : 'Publier';
 }
 
 export default function ReviewForm({
   gameId,
+  resolveGameId,
   initialValues,
   onSuccess,
   onCancel,
 }: ReviewFormProps) {
   const { isAuthenticated } = useAuth();
   const { loading, success, error, submitReview } = useSubmitReview();
+  const [showTextFields, setShowTextFields] = useState(
+    !!(initialValues?.id || initialValues?.title || initialValues?.content)
+  );
+
+  useEffect(() => {
+    if (initialValues?.id) {
+      setShowTextFields(true);
+    }
+  }, [initialValues?.id]);
 
   const {
     register,
@@ -54,7 +65,7 @@ export default function ReviewForm({
     watch,
     reset,
     setValue,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<ReviewFormValues>({
     mode: 'onChange',
     defaultValues: {
@@ -68,19 +79,38 @@ export default function ReviewForm({
   const content = watch('content') ?? '';
   const rating = watch('rating') ?? 0;
 
+  const canSubmit = rating > 0 || content.length > 0;
+
   useEffect(() => {
     if (success && !initialValues?.id) {
       reset({ title: '', content: '', rating: 0 });
+      setShowTextFields(false);
     }
   }, [success, reset, initialValues?.id]);
 
+  useEffect(() => {
+    reset({
+      title: initialValues?.title || '',
+      content: initialValues?.content || '',
+      rating: initialValues?.rating || 0,
+    });
+  }, [
+    initialValues?.id,
+    initialValues?.title,
+    initialValues?.content,
+    initialValues?.rating,
+    reset,
+  ]);
+
   async function onSubmit(data: ReviewFormValues) {
+    const resolvedGameId = resolveGameId ? await resolveGameId() : gameId;
+    if (!resolvedGameId) return;
     const result = await submitReview(
-      gameId,
+      String(resolvedGameId),
       data.content,
       initialValues?.id,
-      data.title,
-      data.rating
+      data.title || undefined,
+      data.rating || undefined
     );
     if (result && onSuccess) {
       onSuccess(result as { id: number; title?: string; content: string });
@@ -141,67 +171,76 @@ export default function ReviewForm({
         </Box>
       </Box>
 
-      {/* Titre */}
-      <TextField
-        label="Titre de l'avis"
-        fullWidth
-        size="small"
-        {...register('title', {
-          required: 'Le titre est obligatoire.',
-          maxLength: {
-            value: 25,
-            message: 'Le titre ne peut pas dépasser 25 caractères.',
-          },
-        })}
-        error={!!errors.title}
-        helperText={errors.title?.message}
-        disabled={loading}
-        sx={{
-          mb: 1,
-          '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 },
-        }}
-      />
-      <Typography
-        variant="caption"
-        color={title.length > 25 ? 'error' : 'text.secondary'}
-        sx={{ mb: 2, display: 'block' }}
-      >
-        {title.length} / 25
-      </Typography>
+      {/* Bouton pour afficher les champs texte */}
+      {!showTextFields && !initialValues?.id && (
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => setShowTextFields(true)}
+          sx={{ mb: 2, textTransform: 'none', color: 'text.secondary' }}
+        >
+          + Ajouter un commentaire
+        </Button>
+      )}
 
-      {/* Contenu */}
-      <TextField
-        label="Votre avis"
-        multiline
-        rows={4}
-        fullWidth
-        placeholder="Qu'avez-vous pensé de ce jeu ?"
-        {...register('content', {
-          required: "L'avis est obligatoire.",
-          minLength: {
-            value: 10,
-            message: "L'avis doit contenir au moins 10 caractères.",
-          },
-          maxLength: {
-            value: 125,
-            message: "L'avis ne peut pas dépasser 125 caractères.",
-          },
-        })}
-        error={!!errors.content}
-        helperText={errors.content?.message}
-        disabled={loading}
-        sx={{
-          mb: 1,
-          '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 },
-        }}
-      />
-      <Typography
-        variant="caption"
-        color={content.length > 125 ? 'error' : 'text.secondary'}
-        sx={{ mb: 2, display: 'block' }}
-      >
-        {content.length} / 125
-      </Typography>
+      {/* Titre + Contenu */}
+      {showTextFields && (
+        <>
+          <TextField
+            label="Titre de l'avis"
+            fullWidth
+            size="small"
+            {...register('title', {
+              maxLength: {
+                value: 25,
+                message: 'Le titre ne peut pas dépasser 25 caractères.',
+              },
+            })}
+            error={!!errors.title}
+            helperText={errors.title?.message}
+            disabled={loading}
+            sx={{
+              mb: 1,
+              '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 },
+            }}
+          />
+          <Typography
+            variant="caption"
+            color={title.length > 25 ? 'error' : 'text.secondary'}
+            sx={{ mb: 2, display: 'block' }}
+          >
+            {title.length} / 25
+          </Typography>
+
+          <TextField
+            label="Votre avis"
+            multiline
+            rows={4}
+            fullWidth
+            placeholder="Qu'avez-vous pensé de ce jeu ?"
+            {...register('content', {
+              maxLength: {
+                value: 125,
+                message: "L'avis ne peut pas dépasser 125 caractères.",
+              },
+            })}
+            error={!!errors.content}
+            helperText={errors.content?.message}
+            disabled={loading}
+            sx={{
+              mb: 1,
+              '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2 },
+            }}
+          />
+          <Typography
+            variant="caption"
+            color={content.length > 125 ? 'error' : 'text.secondary'}
+            sx={{ mb: 2, display: 'block' }}
+          >
+            {content.length} / 125
+          </Typography>
+        </>
+      )}
 
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
         {onCancel && (
@@ -217,7 +256,7 @@ export default function ReviewForm({
         <Button
           type="submit"
           variant="contained"
-          disabled={!isValid || loading}
+          disabled={!canSubmit || loading}
           startIcon={
             loading ? <CircularProgress size={16} color="inherit" /> : null
           }
@@ -235,9 +274,7 @@ export default function ReviewForm({
 
       {success && (
         <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }}>
-          {initialValues?.id
-            ? 'Avis mis à jour !'
-            : 'Avis publié avec succès !'}
+          {initialValues?.id ? 'Avis mis à jour !' : 'Publié avec succès !'}
         </Alert>
       )}
       {error && (
