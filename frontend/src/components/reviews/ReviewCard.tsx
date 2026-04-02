@@ -18,6 +18,8 @@ type Review = {
   content: string;
   rating?: { value: number };
   created_at?: string;
+  date_created?: string;
+  user?: { id: number; pseudo?: string; username?: string };
 };
 
 type ReviewCardProps = Readonly<{
@@ -41,13 +43,15 @@ export default function ReviewCard({
 
   const handleCloseMenu = () => setAnchorEl(null);
 
-  const formattedDate = review.created_at
-    ? new Date(review.created_at).toLocaleDateString('fr-FR', {
+  const dateStr = review.date_created ?? review.created_at;
+  const formattedDate = dateStr
+    ? new Date(dateStr).toLocaleDateString('fr-FR', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
       })
     : null;
+  const authorName = review.user?.pseudo ?? review.user?.username ?? 'Anonyme';
 
   return (
     <Box
@@ -76,6 +80,9 @@ export default function ReviewCard({
               sx={{ mb: 0.5 }}
             />
           )}
+          <Typography variant="caption" color="text.secondary">
+            {authorName}
+          </Typography>
           {review.title && (
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {review.title}
