@@ -210,32 +210,6 @@ export const HomePage = () => {
           <Banner />
         </Box>
 
-        {/* ── Horizontal rule with year ── */}
-        <Box
-          className="lux-s0"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-            mb: { xs: 3, md: 4 },
-          }}
-        >
-          <Box sx={{ flex: 1, height: '1px', bgcolor: C.border }} />
-          <Typography
-            sx={{
-              fontFamily: FD,
-              fontStyle: 'italic',
-              fontSize: 12,
-              color: C.light,
-              letterSpacing: 1,
-              flexShrink: 0,
-            }}
-          >
-            Sélection 2026
-          </Typography>
-          <Box sx={{ flex: 1, height: '1px', bgcolor: C.border }} />
-        </Box>
-
         {/* ── Trending sections ── */}
         <Section className="lux-s1">
           <SectionLabel label="Découverte" title="Jeux les plus récents" />
