@@ -233,3 +233,5 @@ class IgdbResolveSerializer(serializers.Serializer):
     summary = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     platforms = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
     genres = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
+    screenshots = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
+    videos = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
