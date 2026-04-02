@@ -1001,11 +1001,27 @@ export default function ProfilePage() {
                 Jeux par statut
               </Typography>
             </Box>
-            <Typography
-              sx={{ fontFamily: FONT_BODY, color: C.light, fontSize: 13 }}
+            <Box
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 999,
+                background: 'rgba(211,47,47,0.1)',
+                border: '1px solid rgba(211,47,47,0.25)',
+              }}
             >
-              {userGames.length} jeu{userGames.length !== 1 ? 'x' : ''} au total
-            </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  color: C.accent,
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                {userGames.length} jeu{userGames.length !== 1 ? 'x' : ''} au
+                total
+              </Typography>
+            </Box>
           </Box>
 
           {/* Thin accent line */}
