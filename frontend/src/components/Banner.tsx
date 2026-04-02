@@ -1,312 +1,209 @@
+import React, { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import React from 'react';
 
-const fontLink = document.createElement('link');
-fontLink.rel = 'stylesheet';
-fontLink.href =
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,700;1,300;1,700&family=DM+Sans:wght@300;400;500&display=swap';
-if (!document.head.querySelector('link[href*="Cormorant"]')) {
-  document.head.appendChild(fontLink);
-}
-
-const styleEl = document.createElement('style');
-styleEl.setAttribute('data-banner-wow', '1');
-styleEl.textContent = `
-  @keyframes wowReveal {
-    from { clip-path: inset(0 100% 0 0); opacity: 0; }
-    to   { clip-path: inset(0 0% 0 0);   opacity: 1; }
-  }
-  @keyframes wowFadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes wowFadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes wowLineX {
-    from { transform: scaleX(0); transform-origin: left; }
-    to   { transform: scaleX(1); transform-origin: left; }
-  }
-  @keyframes wowFloat {
-    0%, 100% { transform: translateY(0); }
-    50%       { transform: translateY(-6px); }
-  }
-  .wow-overline { animation: wowFadeUp   0.6s cubic-bezier(0.16,1,0.3,1) 0.0s  both; }
-  .wow-t1       { animation: wowReveal   0.9s cubic-bezier(0.16,1,0.3,1) 0.1s  both; }
-  .wow-t2       { animation: wowReveal   0.9s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
-  .wow-t3       { animation: wowReveal   0.9s cubic-bezier(0.16,1,0.3,1) 0.46s both; }
-  .wow-line     { animation: wowLineX    0.8s cubic-bezier(0.16,1,0.3,1) 0.7s  both; }
-  .wow-sub      { animation: wowFadeUp   0.6s cubic-bezier(0.16,1,0.3,1) 0.8s  both; }
-  .wow-stat     { animation: wowFadeIn   0.6s ease                        1.0s  both; }
-  .wow-float    { animation: wowFloat    5s ease-in-out infinite; }
-`;
-if (!document.head.querySelector('style[data-banner-wow]')) {
-  document.head.appendChild(styleEl);
-}
-
-const FD = "'Cormorant Garamond', Georgia, serif";
-const FB = "'DM Sans', system-ui, sans-serif";
+const FD = "'Orbitron', 'Rajdhani', sans-serif";
+const FB = "'Inter', 'DM Sans', sans-serif";
 
 export const Banner: React.FC = () => {
+  useEffect(() => {
+    if (!document.head.querySelector('link[data-gaming-banner-fonts]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.setAttribute('data-gaming-banner-fonts', '1');
+      link.href =
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@600;700;800&family=Rajdhani:wght@500;600;700&display=swap';
+      document.head.appendChild(link);
+    }
+
+    if (!document.head.querySelector('style[data-gaming-banner-style]')) {
+      const style = document.createElement('style');
+      style.setAttribute('data-gaming-banner-style', '1');
+      style.textContent = `
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes floatSoft {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+
+        .banner-fade-1 { animation: fadeUp .7s ease-out both; }
+        .banner-fade-2 { animation: fadeUp .7s ease-out .15s both; }
+        .banner-fade-3 { animation: fadeUp .7s ease-out .3s both; }
+        .banner-float  { animation: floatSoft 5s ease-in-out infinite; }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <Box
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: { xs: 260, md: 380 },
+        minHeight: { xs: 280, md: 360 },
         display: 'flex',
         alignItems: 'center',
+        px: { xs: 3, sm: 5, md: 8 },
+        py: { xs: 5, md: 6 },
+        borderRadius: 4,
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.028'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 100% 140% at -10% 60%, rgba(255,160,160,0.55) 0%, transparent 50%),
-          radial-gradient(ellipse 70%  100% at 110% 40%, rgba(198,40,40,0.06)   0%, transparent 50%),
-          radial-gradient(ellipse 50%  60%  at 50%  100%, rgba(255,200,200,0.3) 0%, transparent 60%),
-          #ffd3d3
+          radial-gradient(circle at 20% 20%, rgba(255, 72, 72, 0.22) 0%, transparent 25%),
+          radial-gradient(circle at 85% 30%, rgba(255, 0, 0, 0.14) 0%, transparent 30%),
+          linear-gradient(135deg, #0f0a0a 0%, #1c0b0b 35%, #3a0d0d 100%)
         `,
-        px: { xs: 3, sm: 5, md: 8, lg: 10 },
-        py: { xs: 5, md: 7 },
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 18px 60px rgba(0,0,0,0.28)',
       }}
     >
-      {/* ── Giant ghost text background ── */}
+      {/* grille discrète */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.07,
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)
+          `,
+          backgroundSize: '28px 28px',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* glow à droite */}
+      <Box
+        className="banner-float"
+        sx={{
+          position: 'absolute',
+          right: { xs: -40, md: 40 },
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: { xs: 140, md: 220 },
+          height: { xs: 140, md: 220 },
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(255,70,70,0.25) 0%, rgba(255,70,70,0.08) 35%, transparent 70%)',
+          filter: 'blur(10px)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ghost text */}
       <Typography
         aria-hidden
         sx={{
           position: 'absolute',
-          right: { xs: '-5%', md: '2%' },
+          right: { xs: '-4%', md: '4%' },
           top: '50%',
           transform: 'translateY(-50%)',
           fontFamily: FD,
-          fontWeight: 700,
-          fontStyle: 'italic',
-          fontSize: { xs: '28vw', md: '22vw' },
-          lineHeight: 0.85,
-          color: 'rgba(198,40,40,0.055)',
+          fontWeight: 800,
+          fontSize: { xs: '24vw', md: '14vw' },
+          lineHeight: 1,
+          color: 'rgba(255,255,255,0.04)',
+          letterSpacing: '0.08em',
           userSelect: 'none',
           pointerEvents: 'none',
-          letterSpacing: -8,
-          whiteSpace: 'nowrap',
         }}
       >
-        GG
+        PLAY
       </Typography>
 
-      {/* ── Vertical rule left ── */}
-      <Box
-        sx={{
-          position: 'absolute',
-          left: { xs: 16, md: 32 },
-          top: '15%',
-          bottom: '15%',
-          width: '1px',
-          background:
-            'linear-gradient(to bottom, transparent, rgba(198,40,40,0.35) 30%, rgba(198,40,40,0.35) 70%, transparent)',
-        }}
-      />
-
-      {/* ── Main content ── */}
+      {/* contenu */}
       <Box
         sx={{
           position: 'relative',
           zIndex: 2,
-          maxWidth: { xs: '100%', md: '65%' },
+          maxWidth: { xs: '100%', md: '60%' },
         }}
       >
-        {/* Overline */}
-        <Box
-          className="wow-overline"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            mb: { xs: 2.5, md: 3.5 },
-          }}
-        >
-          <Box sx={{ width: 24, height: 1, bgcolor: 'rgba(198,40,40,0.5)' }} />
-          <Typography
-            sx={{
-              fontFamily: FB,
-              fontSize: 9,
-              fontWeight: 500,
-              letterSpacing: 3.5,
-              textTransform: 'uppercase',
-              color: 'rgba(198,40,40,0.65)',
-            }}
-          >
-            Bibliothèque gaming
-          </Typography>
-        </Box>
-
-        {/* Title — 3 lines revealed one by one */}
-        <Box sx={{ mb: { xs: 3, md: 4 }, overflow: 'hidden' }}>
-          <Typography
-            className="wow-t1"
-            sx={{
-              fontFamily: FD,
-              fontWeight: 700,
-              fontStyle: 'italic',
-              fontSize: { xs: 48, sm: 64, md: 88, lg: 104 },
-              lineHeight: 0.88,
-              letterSpacing: { xs: -2, md: -4 },
-              color: '#1a0a0a',
-              display: 'block',
-            }}
-          >
-            Votre
-          </Typography>
-          <Typography
-            className="wow-t2"
-            sx={{
-              fontFamily: FD,
-              fontWeight: 700,
-              fontStyle: 'italic',
-              fontSize: { xs: 48, sm: 64, md: 88, lg: 104 },
-              lineHeight: 0.88,
-              letterSpacing: { xs: -2, md: -4 },
-              color: '#1a0a0a',
-              display: 'block',
-            }}
-          >
-            collection
-          </Typography>
-          <Typography
-            className="wow-t3"
-            sx={{
-              fontFamily: FD,
-              fontWeight: 300,
-              fontStyle: 'italic',
-              fontSize: { xs: 48, sm: 64, md: 88, lg: 104 },
-              lineHeight: 0.88,
-              letterSpacing: { xs: -2, md: -4 },
-              color: '#c62828',
-              display: 'block',
-            }}
-          >
-            maîtrisée.
-          </Typography>
-        </Box>
-
-        {/* Divider line */}
-        <Box
-          className="wow-line"
-          sx={{
-            height: 1,
-            background:
-              'linear-gradient(to right, rgba(198,40,40,0.4), transparent)',
-            mb: { xs: 2.5, md: 3 },
-            maxWidth: 320,
-          }}
-        />
-
-        {/* Subtitle */}
         <Typography
-          className="wow-sub"
+          className="banner-fade-1"
           sx={{
-            fontFamily: FD,
-            fontWeight: 300,
-            fontStyle: 'italic',
-            fontSize: { xs: 15, md: 18 },
-            color: '#6b3a3a',
-            lineHeight: 1.65,
-            maxWidth: 380,
-            letterSpacing: 0.1,
+            fontFamily: FB,
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.65)',
+            mb: 2,
           }}
         >
-          Suivez, organisez et découvrez vos jeux vidéo — en un seul endroit.
+          Bibliothèque gaming
         </Typography>
 
-        {/* Stats row */}
-        <Box
-          className="wow-stat"
+        <Typography
+          className="banner-fade-2"
           sx={{
-            display: 'flex',
-            gap: { xs: 3, md: 5 },
-            mt: { xs: 3, md: 4 },
-            alignItems: 'center',
+            fontFamily: FD,
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            fontSize: { xs: 34, sm: 46, md: 64 },
+            lineHeight: 0.95,
+            color: '#ffffff',
+            mb: 1.5,
+            textShadow: '0 6px 24px rgba(0,0,0,0.25)',
           }}
         >
-          {[
-            { num: '∞', label: 'Jeux trackés' },
-            { num: '1', label: 'Endroit' },
-            { num: '0', label: 'Doublon' },
-          ].map(({ num, label }, i) => (
+          Votre collection,
+          <br />
+          votre univers.
+        </Typography>
+
+        <Typography
+          className="banner-fade-3"
+          sx={{
+            fontFamily: FB,
+            fontSize: { xs: 14, md: 17 },
+            fontWeight: 400,
+            lineHeight: 1.7,
+            color: 'rgba(255,255,255,0.72)',
+            maxWidth: 460,
+            mb: 3,
+          }}
+        >
+          Suivez, organisez et retrouvez tous vos jeux dans une interface
+          élégante, simple et pensée pour les joueurs.
+        </Typography>
+
+        <Box
+          className="banner-fade-3"
+          sx={{
+            display: 'flex',
+            gap: 1.2,
+            flexWrap: 'wrap',
+          }}
+        >
+          {['Jeux', 'Wishlist', 'Collection'].map(item => (
             <Box
-              key={i}
-              sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}
+              key={item}
+              sx={{
+                px: 1.8,
+                py: 0.9,
+                borderRadius: 999,
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(10px)',
+              }}
             >
               <Typography
                 sx={{
-                  fontFamily: FD,
-                  fontWeight: 700,
-                  fontStyle: 'italic',
-                  fontSize: { xs: 28, md: 36 },
-                  lineHeight: 1,
-                  color: '#c62828',
-                  letterSpacing: -1,
-                }}
-              >
-                {num}
-              </Typography>
-              <Typography
-                sx={{
                   fontFamily: FB,
-                  fontSize: 9,
-                  fontWeight: 400,
-                  letterSpacing: 1.5,
-                  textTransform: 'uppercase',
-                  color: 'rgba(107,58,58,0.65)',
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: 'rgba(255,255,255,0.82)',
                 }}
               >
-                {label}
+                {item}
               </Typography>
             </Box>
           ))}
         </Box>
       </Box>
-
-      {/* ── Floating accent dots ── */}
-      <Box
-        className="wow-float"
-        sx={{
-          position: 'absolute',
-          right: { xs: '5%', md: '22%' },
-          top: '12%',
-          width: 10,
-          height: 10,
-          borderRadius: '50%',
-          bgcolor: '#c62828',
-          opacity: 0.3,
-        }}
-      />
-      <Box
-        className="wow-float"
-        sx={{
-          position: 'absolute',
-          right: { xs: '12%', md: '16%' },
-          bottom: '18%',
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          bgcolor: '#c62828',
-          opacity: 0.2,
-          animationDelay: '1.5s',
-        }}
-      />
-      <Box
-        className="wow-float"
-        sx={{
-          position: 'absolute',
-          right: { xs: '20%', md: '28%' },
-          top: '55%',
-          width: 4,
-          height: 4,
-          borderRadius: '50%',
-          bgcolor: '#c62828',
-          opacity: 0.15,
-          animationDelay: '3s',
-        }}
-      />
     </Box>
   );
 };
