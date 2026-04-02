@@ -28,6 +28,8 @@ RUN useradd --create-home --shell /bin/bash app && \
 
 COPY docker/entrypoint.prod.sh /entrypoint.prod.sh
 RUN chmod +x /entrypoint.prod.sh
+RUN chmod +x /app/docker/entrypoint.asgi.sh
+
 
 USER app
 EXPOSE 8000

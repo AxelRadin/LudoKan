@@ -2,6 +2,7 @@ import {
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -10,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -99,6 +100,20 @@ type UserGame = {
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_AVATAR_EXT = ['jpg', 'jpeg', 'png', 'webp'];
+
+const fileInputOverlaySx: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  margin: 0,
+  padding: 0,
+  opacity: 0,
+  cursor: 'pointer',
+  zIndex: 10,
+  fontSize: 0,
+};
 
 export default function ProfilePage() {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -113,14 +128,9 @@ export default function ProfilePage() {
     description_courte: '',
     created_at: '',
   });
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarError, setAvatarError] = useState('');
-  const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
-
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const modalAvatarInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     apiGet('/api/me/')
@@ -143,29 +153,13 @@ export default function ProfilePage() {
     );
   }, []);
 
-  useEffect(() => {
-    if (!avatarFile) {
-      setAvatarPreview('');
-      return;
-    }
-    const url = URL.createObjectURL(avatarFile);
-    setAvatarPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [avatarFile]);
-
-  const displayedAvatar = useMemo(() => {
-    if (removeAvatar) return defaultAvatar;
-    if (avatarPreview) return avatarPreview;
-    if (form.avatar_url) return form.avatar_url;
-    if (user?.avatar_url) return user.avatar_url;
-    return defaultAvatar;
-  }, [removeAvatar, avatarPreview, form.avatar_url, user?.avatar_url]);
+  const avatarSrc = useMemo(
+    () => user?.avatar_url || defaultAvatar,
+    [user?.avatar_url]
+  );
 
   const handleEditOpen = () => {
     setAvatarError('');
-    setAvatarFile(null);
-    setAvatarPreview('');
-    setRemoveAvatar(false);
     setForm({
       pseudo: user?.pseudo || '',
       email: user?.email || '',
@@ -180,77 +174,124 @@ export default function ProfilePage() {
 
   const handleEditClose = () => {
     setEditOpen(false);
-    setAvatarFile(null);
-    setAvatarPreview('');
     setAvatarError('');
-    setRemoveAvatar(false);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const validateAvatarFile = (file: File) => {
-    if (!ALLOWED_AVATAR_TYPES.includes(file.type))
-      return 'Format invalide. JPG, PNG ou WEBP uniquement.';
     if (file.size > MAX_AVATAR_SIZE)
       return 'Fichier trop volumineux. Max 2 MB.';
-    return '';
+
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+    const mime = file.type;
+    const mimeOk = ALLOWED_AVATAR_TYPES.includes(mime);
+    const extOk = ALLOWED_AVATAR_EXT.includes(ext);
+    const mimeEmptyOrUnknown =
+      mime === '' || mime === 'application/octet-stream';
+
+    if (mimeOk || (mimeEmptyOrUnknown && extOk)) return '';
+
+    if (
+      mime.includes('heic') ||
+      mime.includes('heif') ||
+      ext === 'heic' ||
+      ext === 'heif'
+    )
+      return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
+
+    return 'Format invalide. JPG, PNG ou WEBP uniquement.';
   };
 
-  const applySelectedFile = (f?: File) => {
-    if (!f) return;
+  const profileTextPayload = () => ({
+    pseudo: form.pseudo,
+    first_name: form.first_name || '',
+    last_name: form.last_name || '',
+    description_courte: form.description_courte || '',
+  });
+
+  const mergeUpdatedUser = (updated: UserProfile) => {
+    setUser(updated);
+    setForm(prev => ({
+      ...prev,
+      pseudo: updated.pseudo ?? prev.pseudo,
+      email: updated.email ?? prev.email,
+      first_name: updated.first_name ?? prev.first_name,
+      last_name: updated.last_name ?? prev.last_name,
+      avatar_url: updated.avatar_url ?? prev.avatar_url,
+      description_courte: updated.description_courte ?? prev.description_courte,
+      created_at: updated.created_at ?? prev.created_at,
+    }));
+  };
+
+  const handleModalAvatarChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || avatarBusy) return;
+
     const err = validateAvatarFile(f);
     if (err) {
       setAvatarError(err);
-      setAvatarFile(null);
-      setAvatarPreview('');
       return;
     }
     setAvatarError('');
-    setRemoveAvatar(false);
-    setAvatarFile(f);
+    setAvatarBusy(true);
+    try {
+      const body = new FormData();
+      const p = profileTextPayload();
+      body.append('pseudo', p.pseudo);
+      body.append('first_name', p.first_name);
+      body.append('last_name', p.last_name);
+      body.append('description_courte', p.description_courte);
+      body.append('avatar', f);
+      const updated = await apiPatch('/api/me/', body);
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de mettre à jour la photo.';
+      setAvatarError(msg);
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    applySelectedFile(e.target.files?.[0]);
-    e.target.value = '';
+  const handleAvatarRemoveNow = async () => {
+    if (avatarBusy || !user?.avatar_url) return;
+    setAvatarError('');
+    setAvatarBusy(true);
+    try {
+      const updated = await apiPatch('/api/me/', {
+        ...profileTextPayload(),
+        avatar: null,
+      });
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de supprimer la photo.';
+      setAvatarError(msg);
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
   const handleSave = async () => {
     try {
-      let body: FormData | Record<string, string | undefined>;
-      if (avatarFile || removeAvatar) {
-        body = new FormData();
-        body.append('pseudo', form.pseudo);
-        body.append('first_name', form.first_name || '');
-        body.append('last_name', form.last_name || '');
-        body.append('description_courte', form.description_courte || '');
-        if (avatarFile) body.append('avatar', avatarFile);
-        if (removeAvatar) body.append('remove_avatar', 'true');
-      } else {
-        body = {
-          pseudo: form.pseudo,
-          first_name: form.first_name,
-          last_name: form.last_name,
-          description_courte: form.description_courte,
-        };
-      }
-      const updated = await apiPatch('/api/me/', body);
-      setUser(updated);
-      setForm({
-        pseudo: updated.pseudo || '',
-        email: updated.email || '',
-        first_name: updated.first_name || '',
-        last_name: updated.last_name || '',
-        avatar_url: updated.avatar_url || '',
-        description_courte: updated.description_courte || '',
-        created_at: updated.created_at || '',
+      const updated = await apiPatch('/api/me/', {
+        pseudo: form.pseudo,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        description_courte: form.description_courte,
       });
+      mergeUpdatedUser(updated);
       setEditOpen(false);
-      setAvatarFile(null);
-      setAvatarPreview('');
       setAvatarError('');
-      setRemoveAvatar(false);
     } catch (err: any) {
       alert('Erreur : ' + (err?.message || ''));
     }
@@ -421,41 +462,28 @@ export default function ProfilePage() {
                   gap: { xs: 2, md: 3 },
                 }}
               >
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  hidden
-                  onChange={handleFileChange}
-                />
-
-                {/* Avatar with ring */}
+                {/* Avatar (lecture seule — changement uniquement via « Modifier le profil ») */}
                 <Box
-                  onClick={() => avatarInputRef.current?.click()}
                   sx={{
                     position: 'relative',
                     flexShrink: 0,
-                    cursor: 'pointer',
-                    '&:hover .av-ring': { opacity: 1 },
-                    '&:hover .av-label': { opacity: 1 },
+                    display: 'inline-block',
                   }}
                 >
-                  {/* Glowing ring */}
                   <Box
-                    className="av-ring"
                     sx={{
                       position: 'absolute',
                       inset: -4,
                       borderRadius: '50%',
                       background: `conic-gradient(from 180deg, ${C.accent}, #ff8a80, ${C.accent})`,
-                      opacity: 0,
-                      transition: 'opacity 0.2s ease',
+                      opacity: 0.35,
                       animation: 'shimmer 2s linear infinite',
                       backgroundSize: '200% auto',
+                      pointerEvents: 'none',
                     }}
                   />
                   <Avatar
-                    src={displayedAvatar}
+                    src={avatarSrc}
                     alt={user?.pseudo}
                     sx={{
                       width: { xs: 80, md: 96 },
@@ -471,28 +499,6 @@ export default function ProfilePage() {
                   >
                     {user?.pseudo?.[0]?.toUpperCase() || 'U'}
                   </Avatar>
-                  <Box
-                    className="av-label"
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      zIndex: 2,
-                      backgroundColor: 'rgba(0,0,0,0.38)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      opacity: 0,
-                      transition: 'opacity 0.15s ease',
-                      fontFamily: FONT_BODY,
-                      letterSpacing: 0.3,
-                    }}
-                  >
-                    Changer
-                  </Box>
                 </Box>
 
                 {/* Identity */}
@@ -1055,35 +1061,24 @@ export default function ProfilePage() {
 
         <DialogContent sx={{ px: 3.5, pt: '16px !important' }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Avatar picker */}
+            {/* Avatar : upload immédiat au choix du fichier */}
             <Box
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: 1.5,
+                gap: 1,
                 py: 1.5,
               }}
             >
-              <input
-                ref={modalAvatarInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
-                onChange={handleFileChange}
-              />
-
               <Box sx={{ position: 'relative', width: 90, height: 90 }}>
-                {/* Croix supprimer */}
-                {displayedAvatar && (
+                {user?.avatar_url ? (
                   <Box
-                    onClick={() => {
-                      setAvatarFile(null);
-                      setAvatarPreview('');
-                      setAvatarError('');
-                      setRemoveAvatar(true);
-                      setForm(p => ({ ...p, avatar_url: '' }));
-                    }}
+                    component="button"
+                    type="button"
+                    disabled={avatarBusy}
+                    onClick={() => void handleAvatarRemoveNow()}
+                    aria-label="Supprimer la photo de profil"
                     sx={{
                       position: 'absolute',
                       top: 0,
@@ -1096,13 +1091,14 @@ export default function ProfilePage() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      cursor: 'pointer',
-                      zIndex: 10,
+                      cursor: avatarBusy ? 'default' : 'pointer',
+                      zIndex: 16,
                       boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
                       transition: 'transform 0.15s ease, background 0.15s ease',
+                      p: 0,
                       '&:hover': {
-                        bgcolor: '#b71c1c',
-                        transform: 'scale(1.15)',
+                        bgcolor: avatarBusy ? '#d32f2f' : '#b71c1c',
+                        transform: avatarBusy ? 'none' : 'scale(1.15)',
                       },
                     }}
                   >
@@ -1117,21 +1113,36 @@ export default function ProfilePage() {
                       ×
                     </Typography>
                   </Box>
-                )}
+                ) : null}
 
                 <Box
-                  onClick={() => modalAvatarInputRef.current?.click()}
+                  component="label"
                   sx={{
                     position: 'relative',
+                    display: 'block',
                     width: '100%',
                     height: '100%',
                     borderRadius: '50%',
-                    cursor: 'pointer',
-                    '&:hover .modal-av-overlay': { opacity: 1 },
+                    cursor: avatarBusy ? 'wait' : 'pointer',
+                    opacity: avatarBusy ? 0.75 : 1,
+                    '&:hover .modal-av-overlay': {
+                      opacity: avatarBusy ? 0 : 1,
+                    },
                   }}
                 >
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                    disabled={avatarBusy}
+                    onChange={e => void handleModalAvatarChange(e)}
+                    style={{
+                      ...fileInputOverlaySx,
+                      zIndex: 12,
+                      pointerEvents: avatarBusy ? 'none' : 'auto',
+                    }}
+                  />
                   <Avatar
-                    src={displayedAvatar}
+                    src={avatarSrc}
                     sx={{
                       width: '100%',
                       height: '100%',
@@ -1140,6 +1151,7 @@ export default function ProfilePage() {
                       boxShadow: `0 4px 20px ${C.accentGlow}`,
                       bgcolor: C.accent,
                       border: '2.5px solid white',
+                      pointerEvents: 'none',
                     }}
                   >
                     {form.pseudo?.[0]?.toUpperCase() || 'U'}
@@ -1160,12 +1172,46 @@ export default function ProfilePage() {
                       fontFamily: FONT_BODY,
                       opacity: 0,
                       transition: 'opacity 0.15s ease',
+                      pointerEvents: 'none',
                     }}
                   >
                     Changer
                   </Box>
                 </Box>
+
+                {avatarBusy ? (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      bgcolor: 'rgba(255,255,255,0.55)',
+                      zIndex: 20,
+                    }}
+                  >
+                    <CircularProgress size={34} sx={{ color: C.accent }} />
+                  </Box>
+                ) : null}
               </Box>
+
+              {avatarError ? (
+                <Typography
+                  sx={{
+                    color: C.accent,
+                    fontSize: 12.5,
+                    fontFamily: FONT_BODY,
+                    textAlign: 'center',
+                    maxWidth: 320,
+                    lineHeight: 1.45,
+                    px: 1,
+                  }}
+                >
+                  {avatarError}
+                </Typography>
+              ) : null}
 
               <Typography
                 sx={{
@@ -1175,7 +1221,7 @@ export default function ProfilePage() {
                   textAlign: 'center',
                 }}
               >
-                Clique pour changer · JPG, PNG, WEBP · Max 2 MB
+                Clique sur la photo pour changer · JPG, PNG, WEBP · Max 2 MB
               </Typography>
             </Box>
 
@@ -1213,54 +1259,6 @@ export default function ProfilePage() {
               onChange={handleChange}
               sx={fieldSx}
             />
-
-            {/* Status messages */}
-            {(avatarFile || removeAvatar || avatarError) && (
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.8)',
-                  border: `1px solid ${C.softBorder}`,
-                }}
-              >
-                {avatarFile && (
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: C.title,
-                      fontWeight: 600,
-                      fontFamily: FONT_BODY,
-                    }}
-                  >
-                    ✓ {avatarFile.name}
-                  </Typography>
-                )}
-                {removeAvatar && (
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: '#b45309',
-                      fontFamily: FONT_BODY,
-                    }}
-                  >
-                    L'avatar sera supprimé.
-                  </Typography>
-                )}
-                {avatarError && (
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: C.accent,
-                      fontFamily: FONT_BODY,
-                    }}
-                  >
-                    {avatarError}
-                  </Typography>
-                )}
-              </Box>
-            )}
           </Box>
         </DialogContent>
 
