@@ -941,9 +941,18 @@ export default function ProfilePage() {
               gap: 3,
             }}
           >
-            <GameList games={gamesEnCours} title="En cours" />
-            <GameList games={gamesTermines} title="Terminés" />
-            <GameList games={gamesEnvie} title="Envie d'y jouer" />
+            <GameList
+              games={gamesEnCours}
+              title={`En cours (${gamesEnCours.length})`}
+            />
+            <GameList
+              games={gamesTermines}
+              title={`Terminés (${gamesTermines.length})`}
+            />
+            <GameList
+              games={gamesEnvie}
+              title={`Envie d'y jouer (${gamesEnvie.length})`}
+            />
           </Box>
         </Paper>
       </Box>
