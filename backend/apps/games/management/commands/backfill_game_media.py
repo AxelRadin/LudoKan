@@ -91,7 +91,7 @@ class Command(BaseCommand):
     def _process_igdb_chunk(self, chunk, dry_run):
         """Fetch one IGDB chunk and apply updates. Returns (processed, success, error) deltas."""
         chunk_list_str = ",".join(map(str, chunk))
-        query = f"fields name,screenshots.url,videos.video_id,videos.name; " f"where id = ({chunk_list_str}); limit {len(chunk)};"
+        query = f"fields name,screenshots.url,videos.video_id,videos.name; where id = ({chunk_list_str}); limit {len(chunk)};"
         igdb_raw_data = igdb_client.igdb_request("games", query)
 
         if not isinstance(igdb_raw_data, list):
@@ -122,9 +122,7 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"[DRY-RUN] Target IGDB ID {current_igdb_id}: " f"Found {len(screenshots or [])} screens, {len(videos or [])} videos."
-                )
+                self.style.SUCCESS(f"[DRY-RUN] Target IGDB ID {current_igdb_id}: Found {len(screenshots or [])} screens, {len(videos or [])} videos.")
             )
             return (1, 1, 0)
 
