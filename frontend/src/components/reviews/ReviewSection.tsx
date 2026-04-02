@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
 import ReviewCard from './ReviewCard';
 import ReviewForm from './ReviewForm';
+import ReviewsList from './ReviewsList';
 
 type Review = {
   id: number;
@@ -75,6 +76,14 @@ export default function ReviewSection({
           onCancel={editingReview ? () => setEditingReview(null) : undefined}
         />
       )}
+
+      <ReviewsList
+        gameId={gameId || null}
+        currentUserId={currentUserId}
+        userReviewId={userReview?.id ?? null}
+        onEditReview={review => setEditingReview(review)}
+        onDeleteReview={handleDeleteReview}
+      />
     </Box>
   );
 }
