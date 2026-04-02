@@ -86,6 +86,7 @@ type UserProfile = {
 type UserGame = {
   id: number;
   status: string;
+  is_favorite: boolean;
   date_added: string;
   game: {
     id: number;
@@ -269,6 +270,15 @@ export default function ProfilePage() {
   const gamesEnCours = map('EN_COURS');
   const gamesTermines = map('TERMINE');
   const gamesEnvie = map('ENVIE_DE_JOUER');
+  const gamesFavoris = userGames
+    .filter(g => g.is_favorite)
+    .map(g => ({
+      id: g.game.id,
+      name: g.game.name,
+      cover_url: g.game.cover_url,
+      image: g.game.image,
+      status: g.status,
+    }));
 
   /* ── Reusable sx ── */
   const glassCard = {
@@ -862,6 +872,72 @@ export default function ProfilePage() {
             ))}
           </Box>
         </Box>
+
+        {/* ── COUPS DE CŒUR ── */}
+        {gamesFavoris.length > 0 && (
+          <Paper
+            elevation={0}
+            sx={{
+              ...glassCard,
+              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+              p: { xs: 2.5, md: 4 },
+              mb: 2.5,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: C.accent,
+                    mb: 0.5,
+                  }}
+                >
+                  Sélection
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_DISPLAY,
+                    fontWeight: 700,
+                    fontSize: 20,
+                    color: C.title,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  ❤️ Coups de cœur
+                </Typography>
+              </Box>
+              <Typography
+                sx={{ fontFamily: FONT_BODY, color: C.light, fontSize: 13 }}
+              >
+                {gamesFavoris.length} jeu{gamesFavoris.length !== 1 ? 'x' : ''}
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                height: '1px',
+                background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
+                mb: 3,
+              }}
+            />
+
+            <GameList games={gamesFavoris} title="" />
+          </Paper>
+        )}
 
         {/* ── LIBRARY ── */}
         <Paper
