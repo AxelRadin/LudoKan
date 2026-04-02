@@ -361,42 +361,6 @@ export default function ProfilePage() {
           >
             Ludokan
           </Typography>
-
-          {/* Pill badge */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 2,
-              py: 0.75,
-              borderRadius: 999,
-              background: C.glass,
-              border: `1px solid ${C.glassBorder}`,
-              backdropFilter: 'blur(12px)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-            }}
-          >
-            <Box
-              sx={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                bgcolor: '#22c55e',
-                boxShadow: '0 0 0 2px rgba(34,197,94,0.25)',
-              }}
-            />
-            <Typography
-              sx={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: C.muted,
-                fontFamily: FONT_BODY,
-              }}
-            >
-              {loading ? '...' : user?.pseudo}
-            </Typography>
-          </Box>
         </Box>
 
         {/* ── HERO SECTION ── */}
