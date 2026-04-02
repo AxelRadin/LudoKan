@@ -74,20 +74,30 @@ export async function apiPost(
   });
 }
 
+function isFormData(value: unknown): value is FormData {
+  return typeof FormData !== 'undefined' && value instanceof FormData;
+}
+
 // PATCH
 export async function apiPatch(
   path: string,
   body: any,
   options: RequestInit = {}
 ) {
+  const { headers: optionHeaders, ...rest } = options;
+  const headers = new Headers(optionHeaders ?? undefined);
+
+  if (isFormData(body)) {
+    headers.delete('Content-Type');
+  } else if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   return request(path, {
     method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    body: JSON.stringify(body),
-    ...options,
+    ...rest,
+    headers,
+    body: isFormData(body) ? body : JSON.stringify(body),
   });
 }
 

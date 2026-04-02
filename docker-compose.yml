@@ -27,7 +27,7 @@ services:
     build:
       context: backend
       dockerfile: Dockerfile
-    command: /entrypoint.sh
+    command: ["/bin/bash", "/app/docker/entrypoint.sh"]
     volumes:
       - ./backend:/app
       - ./backend/static:/app/static
