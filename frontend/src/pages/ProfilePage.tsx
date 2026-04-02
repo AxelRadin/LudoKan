@@ -215,14 +215,6 @@ export default function ProfilePage() {
     e.target.value = '';
   };
 
-  const handleRemoveAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreview('');
-    setAvatarError('');
-    setRemoveAvatar(true);
-    setForm(p => ({ ...p, avatar_url: '' }));
-  };
-
   const handleSave = async () => {
     try {
       let body: FormData | Record<string, string | undefined>;
@@ -1156,49 +1148,6 @@ export default function ProfilePage() {
                 )}
               </Box>
             )}
-
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5 }}>
-              <Button
-                variant="outlined"
-                onClick={() => modalAvatarInputRef.current?.click()}
-                sx={{
-                  borderRadius: 999,
-                  px: 2.5,
-                  py: 0.9,
-                  borderColor: C.border,
-                  color: C.muted,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textTransform: 'none',
-                  fontFamily: FONT_BODY,
-                  '&:hover': {
-                    borderColor: C.accent,
-                    color: C.accent,
-                    backgroundColor: C.accentGlow,
-                  },
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Changer l'avatar
-              </Button>
-              <Button
-                variant="text"
-                onClick={handleRemoveAvatar}
-                sx={{
-                  borderRadius: 999,
-                  px: 2.5,
-                  py: 0.9,
-                  color: C.muted,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textTransform: 'none',
-                  fontFamily: FONT_BODY,
-                  '&:hover': { color: C.accent, backgroundColor: C.accentGlow },
-                }}
-              >
-                Supprimer
-              </Button>
-            </Box>
           </Box>
         </DialogContent>
 
