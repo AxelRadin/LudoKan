@@ -295,7 +295,7 @@ def translate_chunks_mymemory(chunks: list[str]) -> str:
     translated_parts: list[str] = []
     for chunk in chunks:
         try:
-            url = f"{MYMEMORY_URL}?q={urlencode({'q': chunk})}&langpair=en|fr"
+            url = f"{MYMEMORY_URL}?{urlencode({'q': chunk, 'langpair': 'en|fr'})}"
             r = requests.get(url, headers={"User-Agent": "LudoKan/1.0"}, timeout=10)
             if r.ok:
                 data = r.json()

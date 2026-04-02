@@ -32,6 +32,22 @@ export type IgdbFranchise = {
   name: string;
 };
 
+export type IgdbInvolvedCompany = {
+  publisher: boolean;
+  company: { name: string };
+};
+
+export type IgdbScreenshot = {
+  id: number;
+  url: string;
+};
+
+export type IgdbVideo = {
+  id: number;
+  video_id: string;
+  name?: string;
+};
+
 export type IgdbGame = NormalizedGame;
 
 export type IgdbAlternativeName = {

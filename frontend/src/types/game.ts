@@ -79,6 +79,10 @@ export interface NormalizedGame {
   collections?: BasePlatform[];
   franchises?: BasePlatform[];
 
+  // Media fields (from IGDB)
+  screenshots?: { url: string }[];
+  videos?: { video_id: string; name?: string }[];
+
   // Django specific fields (Optional)
   id?: number;
   min_players?: number | null;

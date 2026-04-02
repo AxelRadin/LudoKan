@@ -42,6 +42,8 @@ RUN useradd --create-home --shell /bin/bash app && \
 
 # Entrypoint pour faire migrations etc.
 COPY docker/entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r//' /entrypoint.sh && chmod +x /entrypoint.sh
+
 RUN chmod +x /entrypoint.sh
 
 USER app
