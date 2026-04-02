@@ -112,3 +112,64 @@ def test_backfill_api_error(mock_igdb_request, game_with_igdb):
     output = out.getvalue()
     assert "Chunk error: API Offline" in output
     assert "Errors: 0" in output
+
+
+@pytest.mark.django_db
+@patch("apps.games.management.commands.backfill_game_media.igdb_client.igdb_request")
+def test_backfill_limit(mock_igdb_request, game_with_igdb):
+    """Test le filtrage par --limit."""
+    mock_igdb_request.return_value = [{"id": 123}]
+    out = StringIO()
+    call_command("backfill_game_media", "--limit=1", stdout=out)
+    assert "Preparing to process 1 games..." in out.getvalue()
+
+
+@pytest.mark.django_db
+@patch("apps.games.management.commands.backfill_game_media.igdb_client.igdb_request")
+def test_backfill_specific_igdb_id(mock_igdb_request, game_with_igdb):
+    """Test le filtrage par --igdb-id."""
+    mock_igdb_request.return_value = [{"id": 123}]
+    out = StringIO()
+    call_command("backfill_game_media", f"--igdb-id={game_with_igdb.igdb_id}", stdout=out)
+    assert "Preparing to process 1 games..." in out.getvalue()
+
+
+@pytest.mark.django_db
+@patch("apps.games.management.commands.backfill_game_media.igdb_client.igdb_request")
+def test_backfill_db_sync_error(mock_igdb_request, game_with_igdb):
+    """Test l'erreur lors de la persistance en base locale."""
+    mock_igdb_request.return_value = [{"id": 123, "screenshots": [{"id": 1, "url": "url", "image_id": "test_id"}]}]
+
+    with patch("apps.games.management.commands.backfill_game_media.get_or_create_game_from_igdb", side_effect=Exception("DB Error")):
+        out = StringIO()
+        call_command("backfill_game_media", stdout=out)
+
+        output = out.getvalue()
+        assert "Error for IGDB ID 123: DB Error" in output
+        assert "Errors: 1" in output
+
+
+@pytest.mark.django_db
+@patch("apps.games.management.commands.backfill_game_media.igdb_client.igdb_request")
+def test_backfill_igdb_not_list(mock_igdb_request, game_with_igdb):
+    """Test le cas où l'API ne renvoie pas une liste."""
+    mock_igdb_request.return_value = {"error": "Not a list"}
+
+    out = StringIO()
+    call_command("backfill_game_media", stdout=out)
+
+    output = out.getvalue()
+    assert "Expected list from IGDB, got <class 'dict'>" in output
+
+
+@pytest.mark.django_db
+@patch("apps.games.management.commands.backfill_game_media.igdb_client.igdb_request")
+def test_backfill_igdb_game_no_id(mock_igdb_request, game_with_igdb):
+    """Test le cas où un jeu IGDB n'a pas de champ id."""
+    mock_igdb_request.return_value = [{"name": "No ID Game"}, {"id": 123}]
+
+    out = StringIO()
+    call_command("backfill_game_media", stdout=out)
+
+    output = out.getvalue()
+    assert "Ignoring IGDB ID 123 (No media found)" in output
