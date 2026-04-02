@@ -230,3 +230,6 @@ class IgdbResolveSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True)
     cover_url = serializers.URLField(required=False, allow_null=True)
     release_date = serializers.DateField(required=False, allow_null=True)
+    summary = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    platforms = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
+    genres = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
