@@ -1,5 +1,13 @@
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, Card, CardContent, CardMedia, IconButton, Tooltip, Typography } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardMedia,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { Link } from 'react-router-dom';
 
 export type GameListItem = {
@@ -46,10 +54,7 @@ export default function GameList({
         ) : (
           games.map(game => (
             <Box key={game.id} sx={{ position: 'relative' }}>
-              <Link
-                to={`/game/${game.id}`}
-                style={{ textDecoration: 'none' }}
-              >
+              <Link to={`/game/${game.id}`} style={{ textDecoration: 'none' }}>
                 <Card sx={{ width: 140, textAlign: 'center', boxShadow: 2 }}>
                   <CardMedia
                     component="img"

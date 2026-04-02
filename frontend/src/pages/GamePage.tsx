@@ -57,40 +57,40 @@ import StairsIcon from '@mui/icons-material/Stairs';
 
 const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   // IGDB (anglais)
-  'Action':                            <LocalFireDepartmentIcon fontSize="small" />,
-  'Adventure':                         <ExploreIcon fontSize="small" />,
-  'Role-playing (RPG)':                <AutoFixHighIcon fontSize="small" />,
-  'Shooter':                           <GpsFixedIcon fontSize="small" />,
-  'Strategy':                          <PsychologyIcon fontSize="small" />,
-  'Real Time Strategy (RTS)':          <PsychologyIcon fontSize="small" />,
-  'Turn-based strategy (TBS)':         <PsychologyIcon fontSize="small" />,
-  'Tactical':                          <PsychologyIcon fontSize="small" />,
-  'Simulation':                        <EngineeringIcon fontSize="small" />,
-  'Simulator':                         <EngineeringIcon fontSize="small" />,
-  'Indie':                             <PaletteIcon fontSize="small" />,
-  'Puzzle':                            <ExtensionIcon fontSize="small" />,
-  'Racing':                            <DirectionsCarIcon fontSize="small" />,
-  'Sport':                             <SportsSoccerIcon fontSize="small" />,
-  "Hack and slash/Beat 'em up":        <BoltIcon fontSize="small" />,
-  'Platform':                          <StairsIcon fontSize="small" />,
-  'Music':                             <MusicNoteIcon fontSize="small" />,
-  'Card & Board Game':                 <CasinoIcon fontSize="small" />,
-  'Point-and-click':                   <MenuBookIcon fontSize="small" />,
-  'Visual Novel':                      <MenuBookIcon fontSize="small" />,
-  'Massively Multiplayer Online (MMO)':<GroupsIcon fontSize="small" />,
-  'MOBA':                              <GroupsIcon fontSize="small" />,
-  'Fighting':                          <SportsMartialArtsIcon fontSize="small" />,
-  'Arcade':                            <SportsEsportsIcon fontSize="small" />,
+  Action: <LocalFireDepartmentIcon fontSize="small" />,
+  Adventure: <ExploreIcon fontSize="small" />,
+  'Role-playing (RPG)': <AutoFixHighIcon fontSize="small" />,
+  Shooter: <GpsFixedIcon fontSize="small" />,
+  Strategy: <PsychologyIcon fontSize="small" />,
+  'Real Time Strategy (RTS)': <PsychologyIcon fontSize="small" />,
+  'Turn-based strategy (TBS)': <PsychologyIcon fontSize="small" />,
+  Tactical: <PsychologyIcon fontSize="small" />,
+  Simulation: <EngineeringIcon fontSize="small" />,
+  Simulator: <EngineeringIcon fontSize="small" />,
+  Indie: <PaletteIcon fontSize="small" />,
+  Puzzle: <ExtensionIcon fontSize="small" />,
+  Racing: <DirectionsCarIcon fontSize="small" />,
+  Sport: <SportsSoccerIcon fontSize="small" />,
+  "Hack and slash/Beat 'em up": <BoltIcon fontSize="small" />,
+  Platform: <StairsIcon fontSize="small" />,
+  Music: <MusicNoteIcon fontSize="small" />,
+  'Card & Board Game': <CasinoIcon fontSize="small" />,
+  'Point-and-click': <MenuBookIcon fontSize="small" />,
+  'Visual Novel': <MenuBookIcon fontSize="small" />,
+  'Massively Multiplayer Online (MMO)': <GroupsIcon fontSize="small" />,
+  MOBA: <GroupsIcon fontSize="small" />,
+  Fighting: <SportsMartialArtsIcon fontSize="small" />,
+  Arcade: <SportsEsportsIcon fontSize="small" />,
   // Django (français)
-  'Aventure':                          <ExploreIcon fontSize="small" />,
-  'RPG':                               <AutoFixHighIcon fontSize="small" />,
-  'FPS':                               <GpsFixedIcon fontSize="small" />,
-  'TPS':                               <GpsFixedIcon fontSize="small" />,
-  'Stratégie':                         <PsychologyIcon fontSize="small" />,
-  'Course':                            <DirectionsCarIcon fontSize="small" />,
-  "Hack'n Slash":                      <BoltIcon fontSize="small" />,
-  'Plateforme':                        <StairsIcon fontSize="small" />,
-  'Jeu de cartes':                     <CasinoIcon fontSize="small" />,
+  Aventure: <ExploreIcon fontSize="small" />,
+  RPG: <AutoFixHighIcon fontSize="small" />,
+  FPS: <GpsFixedIcon fontSize="small" />,
+  TPS: <GpsFixedIcon fontSize="small" />,
+  Stratégie: <PsychologyIcon fontSize="small" />,
+  Course: <DirectionsCarIcon fontSize="small" />,
+  "Hack'n Slash": <BoltIcon fontSize="small" />,
+  Plateforme: <StairsIcon fontSize="small" />,
+  'Jeu de cartes': <CasinoIcon fontSize="small" />,
 };
 
 function getHighResImage(url: string | null) {
@@ -121,7 +121,9 @@ export default function GamePage() {
   >(null);
   const [translating, setTranslating] = useState(false);
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(null);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(
+    null
+  );
   const DESCRIPTION_LIMIT = 150;
 
   useEffect(() => {
@@ -633,17 +635,19 @@ export default function GamePage() {
                 </Typography>
               </Box>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-                {game.genres && game.genres.length > 0
-                  ? game.genres.map((g: any) => (
-                      <Chip
-                        key={g.name}
-                        label={g.name}
-                        size="small"
-                        icon={GENRE_ICON_MAP[g.name]}
-                        sx={{ fontWeight: 600 }}
-                      />
-                    ))
-                  : <Typography variant="body1">Non renseigné</Typography>}
+                {game.genres && game.genres.length > 0 ? (
+                  game.genres.map((g: any) => (
+                    <Chip
+                      key={g.name}
+                      label={g.name}
+                      size="small"
+                      icon={GENRE_ICON_MAP[g.name]}
+                      sx={{ fontWeight: 600 }}
+                    />
+                  ))
+                ) : (
+                  <Typography variant="body1">Non renseigné</Typography>
+                )}
               </Box>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
@@ -696,11 +700,15 @@ export default function GamePage() {
               Ajouter à la collection
             </Button>
           </Box>
-          {((game.screenshots && game.screenshots.length > 0) || (game.videos && game.videos.length > 0)) && (
+          {((game.screenshots && game.screenshots.length > 0) ||
+            (game.videos && game.videos.length > 0)) && (
             <>
               <Divider sx={{ my: 4 }} />
               <Box sx={{ width: '100%' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}
+                >
                   Médias
                 </Typography>
                 {game.videos && game.videos.length > 0 && (
@@ -722,7 +730,13 @@ export default function GamePage() {
                         title={game.videos[0].name || 'Trailer'}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          border: 'none',
+                        }}
                       />
                     </Box>
                   </Box>
@@ -765,7 +779,10 @@ export default function GamePage() {
                         overflowX: 'auto',
                         pb: 1,
                         '&::-webkit-scrollbar': { height: 6 },
-                        '&::-webkit-scrollbar-thumb': { borderRadius: 3, bgcolor: 'rgba(0,0,0,0.2)' },
+                        '&::-webkit-scrollbar-thumb': {
+                          borderRadius: 3,
+                          bgcolor: 'rgba(0,0,0,0.2)',
+                        },
                       }}
                     >
                       {game.screenshots.map((s: any, i: number) => (

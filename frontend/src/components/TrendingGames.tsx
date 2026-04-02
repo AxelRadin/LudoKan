@@ -87,7 +87,10 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   const handleScrollRight = () => {
     if (scrollRef.current) {
       const { scrollWidth, clientWidth } = scrollRef.current;
-      positionRef.current = Math.min(positionRef.current + 200, scrollWidth - clientWidth);
+      positionRef.current = Math.min(
+        positionRef.current + 200,
+        scrollWidth - clientWidth
+      );
       scrollRef.current.scrollLeft = positionRef.current;
     }
   };
