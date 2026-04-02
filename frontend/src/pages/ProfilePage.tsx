@@ -917,7 +917,7 @@ export default function ProfilePage() {
                     letterSpacing: -0.3,
                   }}
                 >
-                  ❤️ Coups de cœur
+                  Coups de cœur
                 </Typography>
               </Box>
               <Typography
