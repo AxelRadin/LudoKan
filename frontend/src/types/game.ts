@@ -81,7 +81,7 @@ export interface NormalizedGame {
 
   // Media fields (from IGDB)
   screenshots?: { url: string }[];
-  videos?: { video_id: string; name?: string }[];
+  videos?: { id?: number; video_id: string; name?: string }[];
 
   // Django specific fields (Optional)
   id?: number;
