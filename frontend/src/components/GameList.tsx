@@ -46,7 +46,8 @@ export default function GameList({
       {title && (
         <Box
           sx={{
-            display: 'inline-flex',
+            display: 'flex',
+            alignSelf: 'flex-start',
             alignItems: 'center',
             gap: 1.5,
             mb: 2,
