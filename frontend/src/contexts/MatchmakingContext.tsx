@@ -217,24 +217,35 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     }
   }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
 
+  // Nouveau useEffect de polling avec cache buster et protection d'état
   useEffect(() => {
     if (!activeRequestId) return;
 
     const intervalId = setInterval(async () => {
       try {
-        const currentMatches = await apiGet('/api/matchmaking/matches/');
-        if (currentMatches.length > matches.length) {
-          setMatches(currentMatches);
-          setHasNewMatch(true);
+        // Ajout du paramètre _t pour empêcher la mise en cache par le navigateur
+        const currentMatches = await apiGet(
+          `/api/matchmaking/matches/?_t=${Date.now()}`
+        );
+
+        if (Array.isArray(currentMatches)) {
+          setMatches(prevMatches => {
+            // Comparaison sûre avec l'état précédent
+            if (currentMatches.length > prevMatches.length) {
+              setHasNewMatch(true);
+            }
+            return currentMatches;
+          });
         }
       } catch {
+        // En cas d'erreur (ex: requête expirée en base), on réinitialise
         setActiveRequestId(null);
         setActiveRequestStartedAt(null);
       }
-    }, 10000);
+    }, 5000); // 5000ms = 5 secondes
 
     return () => clearInterval(intervalId);
-  }, [activeRequestId, matches.length]);
+  }, [activeRequestId]);
 
   useEffect(() => {
     if (!activeRequestId || hasNewMatch) return;

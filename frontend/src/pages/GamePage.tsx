@@ -11,25 +11,85 @@ import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import {
   Box,
   Button,
+  Chip,
   Divider,
+  Modal,
   Paper,
   Rating,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   fetchIgdbGameById,
   resolveGameIdIfNeeded,
   translateDescription,
 } from '../api/igdb';
+import PlatformLogos from '../components/PlatformLogos';
 import ReviewSection from '../components/reviews/ReviewSection';
 import SecondaryButton from '../components/SecondaryButton';
 import { useMatchmaking } from '../contexts/MatchmakingContext';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame, UserLibraryData } from '../types/game';
+
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CasinoIcon from '@mui/icons-material/Casino';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import ExploreIcon from '@mui/icons-material/Explore';
+import ExtensionIcon from '@mui/icons-material/Extension';
+import BoltIcon from '@mui/icons-material/Bolt';
+import EngineeringIcon from '@mui/icons-material/Engineering';
+import GpsFixedIcon from '@mui/icons-material/GpsFixed';
+import GroupsIcon from '@mui/icons-material/Groups';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import PaletteIcon from '@mui/icons-material/Palette';
+import PsychologyIcon from '@mui/icons-material/Psychology';
+import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
+import StairsIcon from '@mui/icons-material/Stairs';
+
+const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
+  // IGDB (anglais)
+  Action: <LocalFireDepartmentIcon fontSize="small" />,
+  Adventure: <ExploreIcon fontSize="small" />,
+  'Role-playing (RPG)': <AutoFixHighIcon fontSize="small" />,
+  Shooter: <GpsFixedIcon fontSize="small" />,
+  Strategy: <PsychologyIcon fontSize="small" />,
+  'Real Time Strategy (RTS)': <PsychologyIcon fontSize="small" />,
+  'Turn-based strategy (TBS)': <PsychologyIcon fontSize="small" />,
+  Tactical: <PsychologyIcon fontSize="small" />,
+  Simulation: <EngineeringIcon fontSize="small" />,
+  Simulator: <EngineeringIcon fontSize="small" />,
+  Indie: <PaletteIcon fontSize="small" />,
+  Puzzle: <ExtensionIcon fontSize="small" />,
+  Racing: <DirectionsCarIcon fontSize="small" />,
+  Sport: <SportsSoccerIcon fontSize="small" />,
+  "Hack and slash/Beat 'em up": <BoltIcon fontSize="small" />,
+  Platform: <StairsIcon fontSize="small" />,
+  Music: <MusicNoteIcon fontSize="small" />,
+  'Card & Board Game': <CasinoIcon fontSize="small" />,
+  'Point-and-click': <MenuBookIcon fontSize="small" />,
+  'Visual Novel': <MenuBookIcon fontSize="small" />,
+  'Massively Multiplayer Online (MMO)': <GroupsIcon fontSize="small" />,
+  MOBA: <GroupsIcon fontSize="small" />,
+  Fighting: <SportsMartialArtsIcon fontSize="small" />,
+  Arcade: <SportsEsportsIcon fontSize="small" />,
+  // Django (français)
+  Aventure: <ExploreIcon fontSize="small" />,
+  RPG: <AutoFixHighIcon fontSize="small" />,
+  FPS: <GpsFixedIcon fontSize="small" />,
+  TPS: <GpsFixedIcon fontSize="small" />,
+  Stratégie: <PsychologyIcon fontSize="small" />,
+  Course: <DirectionsCarIcon fontSize="small" />,
+  "Hack'n Slash": <BoltIcon fontSize="small" />,
+  Plateforme: <StairsIcon fontSize="small" />,
+  'Jeu de cartes': <CasinoIcon fontSize="small" />,
+};
 
 function getHighResImage(url: string | null) {
   if (!url) return '';
@@ -58,22 +118,22 @@ export default function GamePage() {
     string | null
   >(null);
   const [translating, setTranslating] = useState(false);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(
+    null
+  );
+  const DESCRIPTION_LIMIT = 150;
 
   useEffect(() => {
     const fetchGameData = async () => {
       try {
-        let data: NormalizedGame;
         if (igdbId) {
-          data = await fetchIgdbGameById(Number(igdbId));
+          const data = await fetchIgdbGameById(Number(igdbId));
+          setGame(data);
         } else {
-          data = await apiGet(`/api/games/${id}/`);
-        }
-
-        setGame(data);
-        if (data.django_id) {
-          setDjangoId(data.django_id);
-        }
-        if (data.user_library) {
+          const data = await apiGet(`/api/games/${id}/`);
+          setGame({ ...data, name: data.name_fr || data.name });
+          setDjangoId(data.id);
           setUserGame(data.user_library);
         }
       } catch {
@@ -124,7 +184,7 @@ export default function GamePage() {
         setUserReview(myReview || null);
       })
       .catch(() => setUserReview(null));
-  }, [djangoId, isAuthenticated]);
+  }, [djangoId, isAuthenticated, currentUserId]);
 
   async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;
@@ -517,11 +577,9 @@ export default function GamePage() {
                   Plateformes
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.platforms && game.platforms.length > 0
-                  ? game.platforms.map((p: any) => p.name).join(', ')
-                  : 'Non renseigné'}
-              </Typography>
+              <Box sx={{ mb: 3 }}>
+                <PlatformLogos platforms={game.platforms ?? []} />
+              </Box>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -530,19 +588,42 @@ export default function GamePage() {
                   Description
                 </Typography>
               </Box>
-              <Typography
-                variant="body1"
-                sx={{
-                  mb: 3,
-                  color: translating ? 'text.secondary' : 'text.primary',
-                }}
-              >
-                {translating
+              {(() => {
+                const fullText = translating
                   ? 'Traduction en cours…'
                   : (translatedDescription ??
                     game.summary ??
-                    'Aucune description disponible.')}
-              </Typography>
+                    'Aucune description disponible.');
+                const isTruncatable =
+                  !translating && fullText.length > DESCRIPTION_LIMIT;
+                const displayText =
+                  isTruncatable && !descriptionExpanded
+                    ? fullText.slice(0, DESCRIPTION_LIMIT) + '…'
+                    : fullText;
+                return (
+                  <>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: isTruncatable ? 1 : 3,
+                        color: translating ? 'text.secondary' : 'text.primary',
+                        textAlign: 'justify',
+                      }}
+                    >
+                      {displayText}
+                    </Typography>
+                    {isTruncatable && (
+                      <Button
+                        size="small"
+                        onClick={() => setDescriptionExpanded(prev => !prev)}
+                        sx={{ mb: 3, p: 0, textTransform: 'none' }}
+                      >
+                        {descriptionExpanded ? 'Voir moins' : 'Voir plus'}
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -551,11 +632,21 @@ export default function GamePage() {
                   Genres
                 </Typography>
               </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.genres && game.genres.length > 0
-                  ? game.genres.map((g: any) => g.name).join(', ')
-                  : 'Non renseigné'}
-              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+                {game.genres && game.genres.length > 0 ? (
+                  game.genres.map((g: any) => (
+                    <Chip
+                      key={g.name}
+                      label={g.name}
+                      size="small"
+                      icon={GENRE_ICON_MAP[g.name]}
+                      sx={{ fontWeight: 600 }}
+                    />
+                  ))
+                ) : (
+                  <Typography variant="body1">Non renseigné</Typography>
+                )}
+              </Box>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
               >
@@ -607,6 +698,119 @@ export default function GamePage() {
               Ajouter à la collection
             </Button>
           </Box>
+          {((game.screenshots && game.screenshots.length > 0) ||
+            (game.videos && game.videos.length > 0)) && (
+            <>
+              <Divider sx={{ my: 4 }} />
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}
+                >
+                  Médias
+                </Typography>
+                {game.videos && game.videos.length > 0 && (
+                  <Box sx={{ mb: 4 }}>
+                    <Box
+                      sx={{
+                        position: 'relative',
+                        width: '100%',
+                        maxWidth: 800,
+                        mx: 'auto',
+                        aspectRatio: '16/9',
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        boxShadow: 3,
+                      }}
+                    >
+                      <iframe
+                        src={`https://www.youtube.com/embed/${game.videos[0].video_id}`}
+                        title={game.videos[0].name || 'Trailer'}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          border: 'none',
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                )}
+                {selectedScreenshot && (
+                  <Modal open onClose={() => setSelectedScreenshot(null)}>
+                    <Box
+                      onClick={() => setSelectedScreenshot(null)}
+                      sx={{
+                        position: 'fixed',
+                        inset: 0,
+                        bgcolor: 'rgba(0,0,0,0.85)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'zoom-out',
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={selectedScreenshot}
+                        alt="Screenshot agrandi"
+                        sx={{
+                          maxWidth: '90vw',
+                          maxHeight: '90vh',
+                          borderRadius: 2,
+                          boxShadow: 8,
+                        }}
+                      />
+                    </Box>
+                  </Modal>
+                )}
+                {game.screenshots && game.screenshots.length > 0 && (
+                  <Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 2,
+                        overflowX: 'auto',
+                        pb: 1,
+                        '&::-webkit-scrollbar': { height: 6 },
+                        '&::-webkit-scrollbar-thumb': {
+                          borderRadius: 3,
+                          bgcolor: 'rgba(0,0,0,0.2)',
+                        },
+                      }}
+                    >
+                      {game.screenshots.map(s => (
+                        <Box
+                          key={s.url}
+                          component="img"
+                          src={s.url}
+                          alt={
+                            game.name
+                              ? `Capture d'écran — ${game.name}`
+                              : "Capture d'écran"
+                          }
+                          onClick={() => setSelectedScreenshot(s.url)}
+                          sx={{
+                            height: { xs: 140, sm: 200 },
+                            minWidth: { xs: 220, sm: 320 },
+                            objectFit: 'cover',
+                            borderRadius: 2,
+                            boxShadow: 2,
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </>
+          )}
           <Divider sx={{ my: 4 }} />
           <Box
             sx={{

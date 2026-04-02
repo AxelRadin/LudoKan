@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '../services/api';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
 export type IgdbPlatform = {
@@ -30,6 +30,22 @@ export type IgdbCollection = {
 export type IgdbFranchise = {
   id: number;
   name: string;
+};
+
+export type IgdbInvolvedCompany = {
+  publisher: boolean;
+  company: { name: string };
+};
+
+export type IgdbScreenshot = {
+  id: number;
+  url: string;
+};
+
+export type IgdbVideo = {
+  id: number;
+  video_id: string;
+  name?: string;
 };
 
 export type IgdbGame = NormalizedGame;
@@ -213,8 +229,8 @@ export async function resolveGameIdIfNeeded(game: NormalizedGame): Promise<{
 }
 
 export async function addGameToLibrary(djangoGameId: number): Promise<void> {
-  await apiPost('/api/me/games/', {
-    game_id: djangoGameId,
+  // Use PATCH for "upsert" logic on the backend
+  await apiPatch(`/api/me/games/${djangoGameId}/`, {
     status: 'EN_COURS',
   });
 }
