@@ -2,6 +2,7 @@ import {
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -10,7 +11,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -86,6 +87,7 @@ type UserProfile = {
 type UserGame = {
   id: number;
   status: string;
+  is_favorite: boolean;
   date_added: string;
   game: {
     id: number;
@@ -98,8 +100,109 @@ type UserGame = {
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_AVATAR_EXT = new Set(['jpg', 'jpeg', 'png', 'webp']);
 
-export default function ProfilePage() {
+const fileInputOverlaySx: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  margin: 0,
+  padding: 0,
+  opacity: 0,
+  cursor: 'pointer',
+  zIndex: 10,
+  fontSize: 0,
+};
+
+const glassCard = {
+  background: C.cardBg,
+  backdropFilter: 'blur(20px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+  border: `1px solid ${C.glassBorder}`,
+  borderRadius: '20px',
+  boxShadow: '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow:
+      '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+  },
+};
+
+const fieldSx = {
+  fontFamily: FONT_BODY,
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '14px',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    fontFamily: FONT_BODY,
+    fontSize: 14.5,
+    '& fieldset': { borderColor: C.softBorder },
+    '&:hover fieldset': { borderColor: C.border },
+    '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
+  },
+  '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
+  '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
+};
+
+function formatProfileDate(iso?: string) {
+  return iso
+    ? new Date(iso).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : 'N/A';
+}
+
+function validateAvatarFile(file: File): string {
+  if (file.size > MAX_AVATAR_SIZE) return 'Fichier trop volumineux. Max 2 MB.';
+
+  const ext = file.name.split('.').pop()?.toLowerCase() || '';
+  const mime = file.type;
+  const mimeOk = ALLOWED_AVATAR_TYPES.includes(mime);
+  const extOk = ALLOWED_AVATAR_EXT.has(ext);
+  const mimeEmptyOrUnknown = mime === '' || mime === 'application/octet-stream';
+
+  if (mimeOk || (mimeEmptyOrUnknown && extOk)) return '';
+
+  if (
+    mime.includes('heic') ||
+    mime.includes('heif') ||
+    ext === 'heic' ||
+    ext === 'heif'
+  )
+    return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
+
+  return 'Format invalide. JPG, PNG ou WEBP uniquement.';
+}
+
+function jeuPluralSuffix(count: number): string {
+  return count === 1 ? '' : 'x';
+}
+
+type ProfilePageModel = {
+  user: UserProfile | null;
+  loading: boolean;
+  editOpen: boolean;
+  form: UserProfile;
+  avatarError: string;
+  avatarBusy: boolean;
+  userGames: UserGame[];
+  gamesEnCours: GameListItem[];
+  gamesTermines: GameListItem[];
+  gamesEnvie: GameListItem[];
+  gamesFavoris: GameListItem[];
+  avatarSrc: string;
+  handleEditOpen: () => void;
+  handleEditClose: () => void;
+  handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  handleModalAvatarChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleAvatarRemoveNow: () => Promise<void>;
+  handleSave: () => Promise<void>;
+};
+
+function useProfilePageModel(): ProfilePageModel {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -112,14 +215,9 @@ export default function ProfilePage() {
     description_courte: '',
     created_at: '',
   });
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState('');
   const [avatarError, setAvatarError] = useState('');
-  const [removeAvatar, setRemoveAvatar] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
-
-  const avatarInputRef = useRef<HTMLInputElement | null>(null);
-  const modalAvatarInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     apiGet('/api/me/')
@@ -142,29 +240,13 @@ export default function ProfilePage() {
     );
   }, []);
 
-  useEffect(() => {
-    if (!avatarFile) {
-      setAvatarPreview('');
-      return;
-    }
-    const url = URL.createObjectURL(avatarFile);
-    setAvatarPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [avatarFile]);
-
-  const displayedAvatar = useMemo(() => {
-    if (removeAvatar) return defaultAvatar;
-    if (avatarPreview) return avatarPreview;
-    if (form.avatar_url) return form.avatar_url;
-    if (user?.avatar_url) return user.avatar_url;
-    return defaultAvatar;
-  }, [removeAvatar, avatarPreview, form.avatar_url, user?.avatar_url]);
+  const avatarSrc = useMemo(
+    () => user?.avatar_url || defaultAvatar,
+    [user?.avatar_url]
+  );
 
   const handleEditOpen = () => {
     setAvatarError('');
-    setAvatarFile(null);
-    setAvatarPreview('');
-    setRemoveAvatar(false);
     setForm({
       pseudo: user?.pseudo || '',
       email: user?.email || '',
@@ -179,91 +261,104 @@ export default function ProfilePage() {
 
   const handleEditClose = () => {
     setEditOpen(false);
-    setAvatarFile(null);
-    setAvatarPreview('');
     setAvatarError('');
-    setRemoveAvatar(false);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  const validateAvatarFile = (file: File) => {
-    if (!ALLOWED_AVATAR_TYPES.includes(file.type))
-      return 'Format invalide. JPG, PNG ou WEBP uniquement.';
-    if (file.size > MAX_AVATAR_SIZE)
-      return 'Fichier trop volumineux. Max 2 MB.';
-    return '';
+  const profileTextPayload = () => ({
+    pseudo: form.pseudo,
+    first_name: form.first_name || '',
+    last_name: form.last_name || '',
+    description_courte: form.description_courte || '',
+  });
+
+  const mergeUpdatedUser = (updated: UserProfile) => {
+    setUser(updated);
+    setForm(prev => ({
+      ...prev,
+      pseudo: updated.pseudo ?? prev.pseudo,
+      email: updated.email ?? prev.email,
+      first_name: updated.first_name ?? prev.first_name,
+      last_name: updated.last_name ?? prev.last_name,
+      avatar_url: updated.avatar_url ?? prev.avatar_url,
+      description_courte: updated.description_courte ?? prev.description_courte,
+      created_at: updated.created_at ?? prev.created_at,
+    }));
   };
 
-  const applySelectedFile = (f?: File) => {
-    if (!f) return;
+  const handleModalAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || avatarBusy) return;
+
     const err = validateAvatarFile(f);
     if (err) {
       setAvatarError(err);
-      setAvatarFile(null);
-      setAvatarPreview('');
       return;
     }
     setAvatarError('');
-    setRemoveAvatar(false);
-    setAvatarFile(f);
+    setAvatarBusy(true);
+    try {
+      const body = new FormData();
+      const p = profileTextPayload();
+      body.append('pseudo', p.pseudo);
+      body.append('first_name', p.first_name);
+      body.append('last_name', p.last_name);
+      body.append('description_courte', p.description_courte);
+      body.append('avatar', f);
+      const updated = await apiPatch('/api/me/', body);
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de mettre à jour la photo.';
+      setAvatarError(msg);
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    applySelectedFile(e.target.files?.[0]);
-    e.target.value = '';
-  };
-
-  const handleRemoveAvatar = () => {
-    setAvatarFile(null);
-    setAvatarPreview('');
+  const handleAvatarRemoveNow = async () => {
+    if (avatarBusy || !user?.avatar_url) return;
     setAvatarError('');
-    setRemoveAvatar(true);
-    setForm(p => ({ ...p, avatar_url: '' }));
+    setAvatarBusy(true);
+    try {
+      const updated = await apiPatch('/api/me/', {
+        ...profileTextPayload(),
+        avatar: null,
+      });
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de supprimer la photo.';
+      setAvatarError(msg);
+    } finally {
+      setAvatarBusy(false);
+    }
   };
 
   const handleSave = async () => {
     try {
-      let body: FormData | Record<string, string | undefined>;
-      if (avatarFile || removeAvatar) {
-        body = new FormData();
-        body.append('pseudo', form.pseudo);
-        body.append('first_name', form.first_name || '');
-        body.append('last_name', form.last_name || '');
-        body.append('description_courte', form.description_courte || '');
-        if (avatarFile) body.append('avatar', avatarFile);
-        if (removeAvatar) body.append('remove_avatar', 'true');
-      } else {
-        body = {
-          pseudo: form.pseudo,
-          first_name: form.first_name,
-          last_name: form.last_name,
-          description_courte: form.description_courte,
-        };
-      }
-      const updated = await apiPatch('/api/me/', body);
-      setUser(updated);
-      setForm({
-        pseudo: updated.pseudo || '',
-        email: updated.email || '',
-        first_name: updated.first_name || '',
-        last_name: updated.last_name || '',
-        avatar_url: updated.avatar_url || '',
-        description_courte: updated.description_courte || '',
-        created_at: updated.created_at || '',
+      const updated = await apiPatch('/api/me/', {
+        pseudo: form.pseudo,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        description_courte: form.description_courte,
       });
+      mergeUpdatedUser(updated);
       setEditOpen(false);
-      setAvatarFile(null);
-      setAvatarPreview('');
       setAvatarError('');
-      setRemoveAvatar(false);
     } catch (err: any) {
       alert('Erreur : ' + (err?.message || ''));
     }
   };
 
-  const map = (status: string): GameListItem[] =>
+  const gamesForStatus = (status: string): GameListItem[] =>
     userGames
       .filter(g => g.status === status)
       .map(g => ({
@@ -274,50 +369,374 @@ export default function ProfilePage() {
         status: g.status,
       }));
 
-  const gamesEnCours = map('EN_COURS');
-  const gamesTermines = map('TERMINE');
-  const gamesEnvie = map('ENVIE_DE_JOUER');
+  const gamesEnCours = gamesForStatus('EN_COURS');
+  const gamesTermines = gamesForStatus('TERMINE');
+  const gamesEnvie = gamesForStatus('ENVIE_DE_JOUER');
+  const gamesFavoris = userGames
+    .filter(g => g.is_favorite)
+    .map(g => ({
+      id: g.game.id,
+      name: g.game.name,
+      cover_url: g.game.cover_url,
+      image: g.game.image,
+      status: g.status,
+    }));
 
-  /* ── Reusable sx ── */
-  const glassCard = {
-    background: C.cardBg,
-    backdropFilter: 'blur(20px) saturate(160%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-    border: `1px solid ${C.glassBorder}`,
-    borderRadius: '20px',
-    boxShadow:
-      '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-    transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-    '&:hover': {
-      transform: 'translateY(-3px)',
-      boxShadow:
-        '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
-    },
+  return {
+    user,
+    loading,
+    editOpen,
+    form,
+    avatarError,
+    avatarBusy,
+    userGames,
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    avatarSrc,
+    handleEditOpen,
+    handleEditClose,
+    handleChange,
+    handleModalAvatarChange,
+    handleAvatarRemoveNow,
+    handleSave,
   };
+}
 
-  const fieldSx = {
-    fontFamily: FONT_BODY,
-    '& .MuiOutlinedInput-root': {
-      borderRadius: '14px',
-      backgroundColor: 'rgba(255,255,255,0.85)',
-      fontFamily: FONT_BODY,
-      fontSize: 14.5,
-      '& fieldset': { borderColor: C.softBorder },
-      '&:hover fieldset': { borderColor: C.border },
-      '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
-    },
-    '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
-    '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
-  };
+type ProfileEditDialogProps = Readonly<{
+  open: boolean;
+  onClose: () => void;
+  user: UserProfile | null;
+  form: UserProfile;
+  avatarSrc: string;
+  avatarBusy: boolean;
+  avatarError: string;
+  onAvatarChange: (e: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+  onAvatarRemove: () => void | Promise<void>;
+  onFieldChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  onSave: () => void | Promise<void>;
+}>;
 
-  const formatDate = (iso?: string) =>
-    iso
-      ? new Date(iso).toLocaleDateString('fr-FR', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      : 'N/A';
+function ProfileEditDialog({
+  open,
+  onClose,
+  user,
+  form,
+  avatarSrc,
+  avatarBusy,
+  avatarError,
+  onAvatarChange,
+  onAvatarRemove,
+  onFieldChange,
+  onSave,
+}: ProfileEditDialogProps) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        sx: {
+          borderRadius: '24px',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
+          background: C.dialogBg,
+          backdropFilter: 'blur(24px)',
+          border: `1px solid ${C.glassBorder}`,
+          fontFamily: FONT_BODY,
+        },
+      }}
+      BackdropProps={{
+        sx: {
+          backdropFilter: 'blur(6px)',
+          backgroundColor: 'rgba(255,200,200,0.25)',
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 700,
+          color: C.title,
+          pb: 0.5,
+          letterSpacing: -0.4,
+          fontSize: 22,
+          pt: 3,
+          px: 3.5,
+        }}
+      >
+        Modifier mon profil
+      </DialogTitle>
+
+      <DialogContent sx={{ px: 3.5, pt: '16px !important' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1,
+              py: 1.5,
+            }}
+          >
+            <Box sx={{ position: 'relative', width: 90, height: 90 }}>
+              {user?.avatar_url ? (
+                <Box
+                  component="button"
+                  type="button"
+                  disabled={avatarBusy}
+                  onClick={() => void onAvatarRemove()}
+                  aria-label="Supprimer la photo de profil"
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    bgcolor: '#d32f2f',
+                    border: '2px solid white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: avatarBusy ? 'default' : 'pointer',
+                    zIndex: 16,
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    transition: 'transform 0.15s ease, background 0.15s ease',
+                    p: 0,
+                    '&:hover': {
+                      bgcolor: avatarBusy ? '#d32f2f' : '#b71c1c',
+                      transform: avatarBusy ? 'none' : 'scale(1.15)',
+                    },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: '#fff',
+                      fontSize: 14,
+                      lineHeight: 1,
+                      fontWeight: 700,
+                    }}
+                  >
+                    ×
+                  </Typography>
+                </Box>
+              ) : null}
+
+              <Box
+                component="label"
+                sx={{
+                  position: 'relative',
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  cursor: avatarBusy ? 'wait' : 'pointer',
+                  opacity: avatarBusy ? 0.75 : 1,
+                  '&:hover .modal-av-overlay': {
+                    opacity: avatarBusy ? 0 : 1,
+                  },
+                }}
+              >
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  disabled={avatarBusy}
+                  onChange={e => void onAvatarChange(e)}
+                  style={{
+                    ...fileInputOverlaySx,
+                    zIndex: 12,
+                    pointerEvents: avatarBusy ? 'none' : 'auto',
+                  }}
+                />
+                <Avatar
+                  src={avatarSrc}
+                  sx={{
+                    width: '100%',
+                    height: '100%',
+                    fontSize: 32,
+                    fontFamily: FONT_DISPLAY,
+                    boxShadow: `0 4px 20px ${C.accentGlow}`,
+                    bgcolor: C.accent,
+                    border: '2.5px solid white',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {form.pseudo?.[0]?.toUpperCase() || 'U'}
+                </Avatar>
+                <Box
+                  className="modal-av-overlay"
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    backgroundColor: 'rgba(0,0,0,0.35)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fontFamily: FONT_BODY,
+                    opacity: 0,
+                    transition: 'opacity 0.15s ease',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  Changer
+                </Box>
+              </Box>
+
+              {avatarBusy ? (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'rgba(255,255,255,0.55)',
+                    zIndex: 20,
+                  }}
+                >
+                  <CircularProgress size={34} sx={{ color: C.accent }} />
+                </Box>
+              ) : null}
+            </Box>
+
+            {avatarError ? (
+              <Typography
+                sx={{
+                  color: C.accent,
+                  fontSize: 12.5,
+                  fontFamily: FONT_BODY,
+                  textAlign: 'center',
+                  maxWidth: 320,
+                  lineHeight: 1.45,
+                  px: 1,
+                }}
+              >
+                {avatarError}
+              </Typography>
+            ) : null}
+
+            <Typography
+              sx={{
+                color: C.muted,
+                fontSize: 12,
+                fontFamily: FONT_BODY,
+                textAlign: 'center',
+              }}
+            >
+              Clique sur la photo pour changer · JPG, PNG, WEBP · Max 2 MB
+            </Typography>
+          </Box>
+
+          <TextField
+            label="Pseudo"
+            name="pseudo"
+            fullWidth
+            value={form.pseudo}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="Prénom"
+            name="first_name"
+            fullWidth
+            value={form.first_name}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="Nom"
+            name="last_name"
+            fullWidth
+            value={form.last_name}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="Description"
+            name="description_courte"
+            fullWidth
+            multiline
+            minRows={3}
+            value={form.description_courte}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ px: 3.5, pb: 3, pt: 1, gap: 1 }}>
+        <Button
+          onClick={onClose}
+          sx={{
+            borderRadius: 999,
+            color: C.muted,
+            px: 2.5,
+            py: 0.9,
+            fontWeight: 500,
+            fontSize: 14,
+            textTransform: 'none',
+            fontFamily: FONT_BODY,
+            '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+          }}
+        >
+          Annuler
+        </Button>
+        <Button
+          onClick={() => void onSave()}
+          variant="contained"
+          sx={{
+            borderRadius: 999,
+            px: 3.5,
+            py: 1,
+            fontWeight: 700,
+            fontSize: 14,
+            textTransform: 'none',
+            fontFamily: FONT_BODY,
+            background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
+            boxShadow: `0 4px 18px ${C.accentGlow}`,
+            '&:hover': {
+              background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
+              boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
+              transform: 'translateY(-1px)',
+            },
+            transition: 'all 0.18s ease',
+          }}
+        >
+          Enregistrer
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+export default function ProfilePage() {
+  const {
+    user,
+    loading,
+    editOpen,
+    form,
+    avatarError,
+    avatarBusy,
+    userGames,
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    avatarSrc,
+    handleEditOpen,
+    handleEditClose,
+    handleChange,
+    handleModalAvatarChange,
+    handleAvatarRemoveNow,
+    handleSave,
+  } = useProfilePageModel();
 
   return (
     <Box
@@ -359,42 +778,6 @@ export default function ProfilePage() {
           >
             Ludokan
           </Typography>
-
-          {/* Pill badge */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 2,
-              py: 0.75,
-              borderRadius: 999,
-              background: C.glass,
-              border: `1px solid ${C.glassBorder}`,
-              backdropFilter: 'blur(12px)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-            }}
-          >
-            <Box
-              sx={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                bgcolor: '#22c55e',
-                boxShadow: '0 0 0 2px rgba(34,197,94,0.25)',
-              }}
-            />
-            <Typography
-              sx={{
-                fontSize: 12.5,
-                fontWeight: 600,
-                color: C.muted,
-                fontFamily: FONT_BODY,
-              }}
-            >
-              {loading ? '...' : user?.pseudo}
-            </Typography>
-          </Box>
         </Box>
 
         {/* ── HERO SECTION ── */}
@@ -455,41 +838,28 @@ export default function ProfilePage() {
                   gap: { xs: 2, md: 3 },
                 }}
               >
-                <input
-                  ref={avatarInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  hidden
-                  onChange={handleFileChange}
-                />
-
-                {/* Avatar with ring */}
+                {/* Avatar (lecture seule — changement uniquement via « Modifier le profil ») */}
                 <Box
-                  onClick={() => avatarInputRef.current?.click()}
                   sx={{
                     position: 'relative',
                     flexShrink: 0,
-                    cursor: 'pointer',
-                    '&:hover .av-ring': { opacity: 1 },
-                    '&:hover .av-label': { opacity: 1 },
+                    display: 'inline-block',
                   }}
                 >
-                  {/* Glowing ring */}
                   <Box
-                    className="av-ring"
                     sx={{
                       position: 'absolute',
                       inset: -4,
                       borderRadius: '50%',
                       background: `conic-gradient(from 180deg, ${C.accent}, #ff8a80, ${C.accent})`,
-                      opacity: 0,
-                      transition: 'opacity 0.2s ease',
+                      opacity: 0.35,
                       animation: 'shimmer 2s linear infinite',
                       backgroundSize: '200% auto',
+                      pointerEvents: 'none',
                     }}
                   />
                   <Avatar
-                    src={displayedAvatar}
+                    src={avatarSrc}
                     alt={user?.pseudo}
                     sx={{
                       width: { xs: 80, md: 96 },
@@ -505,28 +875,6 @@ export default function ProfilePage() {
                   >
                     {user?.pseudo?.[0]?.toUpperCase() || 'U'}
                   </Avatar>
-                  <Box
-                    className="av-label"
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: '50%',
-                      zIndex: 2,
-                      backgroundColor: 'rgba(0,0,0,0.38)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#fff',
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      opacity: 0,
-                      transition: 'opacity 0.15s ease',
-                      fontFamily: FONT_BODY,
-                      letterSpacing: 0.3,
-                    }}
-                  >
-                    Changer
-                  </Box>
                 </Box>
 
                 {/* Identity */}
@@ -771,7 +1119,7 @@ export default function ProfilePage() {
                 lineHeight: 1.3,
               }}
             >
-              {loading ? '...' : formatDate(user?.created_at)}
+              {loading ? '...' : formatProfileDate(user?.created_at)}
             </Typography>
           </Paper>
         </Box>
@@ -871,6 +1219,88 @@ export default function ProfilePage() {
           </Box>
         </Box>
 
+        {/* ── COUPS DE CŒUR ── */}
+        {gamesFavoris.length > 0 && (
+          <Paper
+            elevation={0}
+            sx={{
+              ...glassCard,
+              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+              p: { xs: 2.5, md: 4 },
+              mb: 2.5,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: C.accent,
+                    mb: 0.5,
+                  }}
+                >
+                  Sélection
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_DISPLAY,
+                    fontWeight: 700,
+                    fontSize: 20,
+                    color: C.title,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  Coups de cœur ({gamesFavoris.length})
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 999,
+                  background: 'rgba(211,47,47,0.1)',
+                  border: '1px solid rgba(211,47,47,0.25)',
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    color: C.accent,
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  {gamesFavoris.length} jeu
+                  {jeuPluralSuffix(gamesFavoris.length)}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                height: '1px',
+                background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
+                mb: 3,
+              }}
+            />
+
+            <GameList games={gamesFavoris} showStatus={false} />
+          </Paper>
+        )}
+
         {/* ── LIBRARY ── */}
         <Paper
           elevation={0}
@@ -917,11 +1347,27 @@ export default function ProfilePage() {
                 Jeux par statut
               </Typography>
             </Box>
-            <Typography
-              sx={{ fontFamily: FONT_BODY, color: C.light, fontSize: 13 }}
+            <Box
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 999,
+                background: 'rgba(211,47,47,0.1)',
+                border: '1px solid rgba(211,47,47,0.25)',
+              }}
             >
-              {userGames.length} jeu{userGames.length !== 1 ? 'x' : ''} au total
-            </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  color: C.accent,
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                {userGames.length} jeu{jeuPluralSuffix(userGames.length)} au
+                total
+              </Typography>
+            </Box>
           </Box>
 
           {/* Thin accent line */}
@@ -933,307 +1379,37 @@ export default function ProfilePage() {
             }}
           />
 
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-              gap: 3,
-            }}
-          >
-            <GameList games={gamesEnCours} title="En cours" />
-            <GameList games={gamesTermines} title="Terminés" />
-            <GameList games={gamesEnvie} title="Envie d'y jouer" />
+          {/* ── Game lists stacked vertically ── */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {[
+              { games: gamesEnCours, label: 'En cours' },
+              { games: gamesTermines, label: 'Terminés' },
+              { games: gamesEnvie, label: "Envie d'y jouer" },
+            ].map(({ games, label }) => (
+              <GameList
+                key={label}
+                games={games}
+                title={`${label} (${games.length})`}
+                showStatus={false}
+              />
+            ))}
           </Box>
         </Paper>
       </Box>
 
-      {/* ── EDIT DIALOG ── */}
-      <Dialog
+      <ProfileEditDialog
         open={editOpen}
         onClose={handleEditClose}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: '24px',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.18)',
-            background: C.dialogBg,
-            backdropFilter: 'blur(24px)',
-            border: `1px solid ${C.glassBorder}`,
-            fontFamily: FONT_BODY,
-          },
-        }}
-        BackdropProps={{
-          sx: {
-            backdropFilter: 'blur(6px)',
-            backgroundColor: 'rgba(255,200,200,0.25)',
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            fontFamily: FONT_DISPLAY,
-            fontWeight: 700,
-            color: C.title,
-            pb: 0.5,
-            letterSpacing: -0.4,
-            fontSize: 22,
-            pt: 3,
-            px: 3.5,
-          }}
-        >
-          Modifier mon profil
-        </DialogTitle>
-
-        <DialogContent sx={{ px: 3.5, pt: '16px !important' }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Avatar picker */}
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1.5,
-                py: 1.5,
-              }}
-            >
-              <input
-                ref={modalAvatarInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                hidden
-                onChange={handleFileChange}
-              />
-
-              <Box
-                onClick={() => modalAvatarInputRef.current?.click()}
-                sx={{
-                  position: 'relative',
-                  width: 90,
-                  height: 90,
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  '&:hover .modal-av-overlay': { opacity: 1 },
-                }}
-              >
-                <Avatar
-                  src={displayedAvatar}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    fontSize: 32,
-                    fontFamily: FONT_DISPLAY,
-                    boxShadow: `0 4px 20px ${C.accentGlow}`,
-                    bgcolor: C.accent,
-                    border: '2.5px solid white',
-                  }}
-                >
-                  {form.pseudo?.[0]?.toUpperCase() || 'U'}
-                </Avatar>
-                <Box
-                  className="modal-av-overlay"
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(0,0,0,0.35)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    fontFamily: FONT_BODY,
-                    opacity: 0,
-                    transition: 'opacity 0.15s ease',
-                  }}
-                >
-                  Changer
-                </Box>
-              </Box>
-
-              <Typography
-                sx={{
-                  color: C.muted,
-                  fontSize: 12,
-                  fontFamily: FONT_BODY,
-                  textAlign: 'center',
-                }}
-              >
-                Clique pour changer · JPG, PNG, WEBP · Max 2 MB
-              </Typography>
-            </Box>
-
-            <TextField
-              label="Pseudo"
-              name="pseudo"
-              fullWidth
-              value={form.pseudo}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-            <TextField
-              label="Prénom"
-              name="first_name"
-              fullWidth
-              value={form.first_name}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-            <TextField
-              label="Nom"
-              name="last_name"
-              fullWidth
-              value={form.last_name}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-            <TextField
-              label="Description"
-              name="description_courte"
-              fullWidth
-              multiline
-              minRows={3}
-              value={form.description_courte}
-              onChange={handleChange}
-              sx={fieldSx}
-            />
-
-            {/* Status messages */}
-            {(avatarFile || removeAvatar || avatarError) && (
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  borderRadius: '12px',
-                  background: 'rgba(255,255,255,0.8)',
-                  border: `1px solid ${C.softBorder}`,
-                }}
-              >
-                {avatarFile && (
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: C.title,
-                      fontWeight: 600,
-                      fontFamily: FONT_BODY,
-                    }}
-                  >
-                    ✓ {avatarFile.name}
-                  </Typography>
-                )}
-                {removeAvatar && (
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: '#b45309',
-                      fontFamily: FONT_BODY,
-                    }}
-                  >
-                    L'avatar sera supprimé.
-                  </Typography>
-                )}
-                {avatarError && (
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: C.accent,
-                      fontFamily: FONT_BODY,
-                    }}
-                  >
-                    {avatarError}
-                  </Typography>
-                )}
-              </Box>
-            )}
-
-            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.5 }}>
-              <Button
-                variant="outlined"
-                onClick={() => modalAvatarInputRef.current?.click()}
-                sx={{
-                  borderRadius: 999,
-                  px: 2.5,
-                  py: 0.9,
-                  borderColor: C.border,
-                  color: C.muted,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textTransform: 'none',
-                  fontFamily: FONT_BODY,
-                  '&:hover': {
-                    borderColor: C.accent,
-                    color: C.accent,
-                    backgroundColor: C.accentGlow,
-                  },
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Changer l'avatar
-              </Button>
-              <Button
-                variant="text"
-                onClick={handleRemoveAvatar}
-                sx={{
-                  borderRadius: 999,
-                  px: 2.5,
-                  py: 0.9,
-                  color: C.muted,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textTransform: 'none',
-                  fontFamily: FONT_BODY,
-                  '&:hover': { color: C.accent, backgroundColor: C.accentGlow },
-                }}
-              >
-                Supprimer
-              </Button>
-            </Box>
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3.5, pb: 3, pt: 1, gap: 1 }}>
-          <Button
-            onClick={handleEditClose}
-            sx={{
-              borderRadius: 999,
-              color: C.muted,
-              px: 2.5,
-              py: 0.9,
-              fontWeight: 500,
-              fontSize: 14,
-              textTransform: 'none',
-              fontFamily: FONT_BODY,
-              '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
-            }}
-          >
-            Annuler
-          </Button>
-          <Button
-            onClick={handleSave}
-            variant="contained"
-            sx={{
-              borderRadius: 999,
-              px: 3.5,
-              py: 1,
-              fontWeight: 700,
-              fontSize: 14,
-              textTransform: 'none',
-              fontFamily: FONT_BODY,
-              background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
-              boxShadow: `0 4px 18px ${C.accentGlow}`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-                boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
-                transform: 'translateY(-1px)',
-              },
-              transition: 'all 0.18s ease',
-            }}
-          >
-            Enregistrer
-          </Button>
-        </DialogActions>
-      </Dialog>
+        user={user}
+        form={form}
+        avatarSrc={avatarSrc}
+        avatarBusy={avatarBusy}
+        avatarError={avatarError}
+        onAvatarChange={handleModalAvatarChange}
+        onAvatarRemove={handleAvatarRemoveNow}
+        onFieldChange={handleChange}
+        onSave={handleSave}
+      />
     </Box>
   );
 }
