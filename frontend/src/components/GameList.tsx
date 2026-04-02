@@ -44,14 +44,62 @@ export default function GameList({
   return (
     <Box>
       {title && (
-        <Typography
-          variant="h6"
-          fontWeight="bold"
-          mb={2}
-          sx={{ textAlign: 'left !important', width: '100%', display: 'block' }}
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1.5,
+            mb: 2,
+          }}
         >
-          {title}
-        </Typography>
+          {/* Accent bar */}
+          <Box
+            sx={{
+              width: 4,
+              height: 22,
+              borderRadius: 999,
+              background: 'linear-gradient(180deg, #d32f2f, #ff8a80)',
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            sx={{
+              fontFamily: "'DM Sans', system-ui, sans-serif",
+              fontWeight: 700,
+              fontSize: 15,
+              color: '#0f0f0f',
+              letterSpacing: -0.2,
+              lineHeight: 1,
+            }}
+          >
+            {/* Split title and count */}
+            {title.replace(/\s*\(\d+\)$/, '')}
+          </Typography>
+          {/* Count badge */}
+          {/\((\d+)\)$/.test(title) && (
+            <Box
+              sx={{
+                px: 1,
+                py: 0.25,
+                borderRadius: 999,
+                background: 'rgba(211,47,47,0.1)',
+                border: '1px solid rgba(211,47,47,0.2)',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: "'DM Sans', system-ui, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 11,
+                  color: '#d32f2f',
+                  lineHeight: 1,
+                }}
+              >
+                {title.match(/\((\d+)\)$/)?.[1]}
+              </Typography>
+            </Box>
+          )}
+        </Box>
       )}
       <Box display="flex" gap={2} flexWrap="wrap">
         {games.length === 0 ? (
