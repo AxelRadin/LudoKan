@@ -951,7 +951,7 @@ export default function ProfilePage() {
               }}
             />
 
-            <GameList games={gamesFavoris} />
+            <GameList games={gamesFavoris} showStatus={false} />
           </Paper>
         )}
 
@@ -1034,25 +1034,19 @@ export default function ProfilePage() {
           />
 
           {/* ── Game lists stacked vertically ── */}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3,
-            }}
-          >
-            <GameList
-              games={gamesEnCours}
-              title={`En cours (${gamesEnCours.length})`}
-            />
-            <GameList
-              games={gamesTermines}
-              title={`Terminés (${gamesTermines.length})`}
-            />
-            <GameList
-              games={gamesEnvie}
-              title={`Envie d'y jouer (${gamesEnvie.length})`}
-            />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {[
+              { games: gamesEnCours, label: 'En cours' },
+              { games: gamesTermines, label: 'Terminés' },
+              { games: gamesEnvie, label: "Envie d'y jouer" },
+            ].map(({ games, label }) => (
+              <GameList
+                key={label}
+                games={games}
+                title={`${label} (${games.length})`}
+                showStatus={false}
+              />
+            ))}
           </Box>
         </Paper>
       </Box>
