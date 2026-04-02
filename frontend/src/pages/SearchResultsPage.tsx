@@ -84,15 +84,6 @@ export default function SearchResultsPage() {
     setPage(1);
   };
 
-  const gridGames = games.map(game => ({
-    id: game.igdb_id,
-    title: game.name,
-    image: game.cover_url ?? '',
-    coverUrl: game.cover_url,
-    releaseDate: game.release_date,
-    user_library: game.user_library,
-  }));
-
   return (
     <PageLayout title={<>Résultats pour : «&nbsp;{query}&nbsp;»</>}>
       {/* Chips licences/collections */}
@@ -137,10 +128,9 @@ export default function SearchResultsPage() {
       )}
 
       <GamesGrid
-        games={gridGames}
+        games={games}
         loading={loading}
         emptyMessage={`Aucun jeu trouvé pour « ${query} ».`}
-        igdb
       />
 
       {!loading && (page > 1 || hasMore) && (

@@ -36,22 +36,22 @@ class Platform(models.Model):
     # IGDB ID pour la recherche sur IGDB
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
-    nom_plateforme = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, default="")
 
     def __str__(self):
-        return self.nom_plateforme
+        return self.name
 
 
 class Genre(models.Model):
     # IGDB ID pour la recherche sur IGDB
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
 
-    nom_genre = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, default="")
 
     def __str__(self):
-        return self.nom_genre
+        return self.name
 
 
 class Game(models.Model):

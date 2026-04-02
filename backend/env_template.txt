@@ -1,7 +1,8 @@
 # ===========================================
-# CONFIGURATION LUDOKAN - FICHIER EXEMPLE
+# CONFIGURATION LUDOKAN - TEMPLATE DOCKER / DEV
 # ===========================================
-# Copiez ce fichier vers .env à la racine du projet et modifiez les valeurs
+# Copiez vers .env à la racine : cp backend/env_template.txt .env
+# Référence complète (placeholders) : .env.example à la racine du dépôt
 
 # ===========================================
 # BASE DE DONNÉES
@@ -9,6 +10,8 @@
 POSTGRES_DB=tesp_db
 POSTGRES_USER=tesp_user
 POSTGRES_PASSWORD=tesp_password
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
 DATABASE_URL=postgresql://tesp_user:tesp_password@db:5432/tesp_db
 
 # ===========================================
@@ -18,15 +21,76 @@ SECRET_KEY=your-secret-key-here-change-this-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 
+# ---------------------------------------------------------------------------
+# Multi-environnement (quotas email / Redis, contexte logs — voir backend/config/settings.py)
+# ---------------------------------------------------------------------------
+# Valeurs typiques : local | staging | production
+# - local      : dev — console ou Mailpit, quotas souvent désactivés
+# - staging    : préprod — SMTP réel (ex. Resend), sujets préfixés, allowlist possible
+# - production : trafic réel — quotas recommandés, domaine et expéditeurs vérifiés chez le fournisseur SMTP
+ENVIRONMENT=local
+
 # ===========================================
-# EMAIL (pour les tâches Celery)
+# SITE (django.contrib.sites / allauth — liens dans les e-mails)
+# ===========================================
+# Après modification : docker compose exec web python manage.py sync_site
+SITE_ID=1
+SITE_DOMAIN=ludokan-local.fr
+SITE_NAME=LudoKan Local
+
+# ===========================================
+# EMAIL (allauth / reset / Celery / rapports)
 # ===========================================
 DEFAULT_FROM_EMAIL=noreply@ludokan.com
+SERVER_EMAIL=noreply@ludokan.com
+
+EMAIL_SUBJECT_PREFIX="[LudoKan] "
+# Préfixe des sujets django-allauth (confirmation d’e-mail, etc.). Exemples par environnement :
+#   local / docker dev  → "[LOCAL] "   ou   "[LudoKan Local] "
+#   staging / préprod   → "[LudoKan Staging] "
+#   production          → "[LudoKan] "
+ACCOUNT_EMAIL_SUBJECT_PREFIX="[LOCAL] "
+ACCOUNT_EMAIL_VERIFICATION=mandatory
+
+# local sans SMTP : logs uniquement
 EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+# local avec Mailpit (service docker-compose « mailpit », ports 1025 SMTP / 8025 UI web) :
+# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# EMAIL_HOST=mailpit
+# EMAIL_PORT=1025
+# EMAIL_HOST_USER=
+# EMAIL_HOST_PASSWORD=
+# EMAIL_USE_TLS=False
+# EMAIL_USE_SSL=False
+# EMAIL_TIMEOUT=10
+
+EMAIL_HOST=
+EMAIL_PORT=587
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+EMAIL_USE_TLS=True
+EMAIL_USE_SSL=False
+EMAIL_TIMEOUT=10
+
+# Resend (staging / production) — https://resend.com/docs/send-with-django-smtp
+# EMAIL_HOST=smtp.resend.com
+# EMAIL_PORT=587
+# EMAIL_HOST_USER=resend
+# EMAIL_HOST_PASSWORD=<resend_api_key>
+
+EMAIL_QUOTA_ENABLED=False
+EMAIL_DAILY_LIMIT=80
+EMAIL_MONTHLY_LIMIT=2500
+
+EMAIL_ALLOWLIST_ENABLED=False
+EMAIL_ALLOWLIST=
 
 # ===========================================
 # REDIS
 # ===========================================
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_DB=0
 REDIS_URL=redis://redis:6379/0
 
 # ===========================================
@@ -38,11 +102,11 @@ CELERY_RESULT_BACKEND=redis://redis:6379/1
 # ===========================================
 # CORS (Cross-Origin Resource Sharing)
 # ===========================================
-CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 CORS_ALLOW_CREDENTIALS=True
 
 # ===========================================
-# STATIC FILES
+# STATIC & MEDIA
 # ===========================================
 STATIC_URL=/static/
 STATIC_ROOT=/app/static
@@ -50,19 +114,27 @@ MEDIA_URL=/media/
 MEDIA_ROOT=/app/media
 
 # ===========================================
+# Frontend Vite
+# ===========================================
+VITE_API_BASE_URL=http://localhost:8000
+
+JWT_ACCESS_TOKEN_LIFETIME=15
+JWT_REFRESH_TOKEN_LIFETIME=10080
+FRONTEND_URL=http://localhost:3000
+VITE_FRONTEND_URL=http://localhost:5173
+CSRF_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# ===========================================
 # IGDB / TWITCH (proxy API jeux - endpoints /api/igdb/...)
 # ===========================================
-# Option 1 (prioritaire) : Twitch OAuth - le backend récupère le token automatiquement
 TWITCH_CLIENT_ID=
 TWITCH_CLIENT_SECRET=
-# Option 2 : token manuel (uniquement si Option 1 non utilisée)
 # IGDB_CLIENT_ID=
 # IGDB_ACCESS_TOKEN=
 
 # ===========================================
 # SENTRY
 # ===========================================
-# Laisser vide en local si vous ne souhaitez pas envoyer d'événements
 SENTRY_DSN=
 SENTRY_ENVIRONMENT=development
 SENTRY_TRACES_SAMPLE_RATE=1.0

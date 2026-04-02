@@ -4,7 +4,7 @@ import { searchIgdbGames, type IgdbGame } from '../api/igdb';
 function normalizeQuery(q: string) {
   return q
     .normalize('NFD')
-    .replaceAll(/[\u0300-\u036f]/g, '') // enlève les accents
+    .replaceAll(/[\u0300-\u036f]/g, '')
     .trim();
 }
 
@@ -13,14 +13,12 @@ export function useIgdbSuggestions(query: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // permet d'ignorer les réponses en retard
   const requestIdRef = useRef(0);
 
   useEffect(() => {
     const raw = query ?? '';
     const q = raw.trim();
 
-    // ✅ suggestions dès 1 caractère (au lieu de 2)
     if (q.length < 1) {
       setSuggestions([]);
       setLoading(false);
@@ -34,7 +32,6 @@ export function useIgdbSuggestions(query: string) {
       setLoading(true);
       setError(null);
 
-      // ✅ on normalise côté front (accents) pour aider les matchs
       const qNormalized = normalizeQuery(q);
 
       searchIgdbGames(qNormalized, 8, true)
@@ -51,7 +48,7 @@ export function useIgdbSuggestions(query: string) {
           if (currentRequestId !== requestIdRef.current) return;
           setLoading(false);
         });
-    }, 200); // ✅ un peu plus réactif que 250ms
+    }, 200);
 
     return () => clearTimeout(t);
   }, [query]);

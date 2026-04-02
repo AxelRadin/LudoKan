@@ -152,3 +152,21 @@ class TestQueryPerformanceCommand:
 
         # Doit mentionner Index Scan ou Seq Scan
         assert "Index Scan" in output or "Seq Scan" in output
+
+    def test_query_performance_with_mocked_index_scan(self):
+        """Force le passage dans la branche 'Index Scan' (ligne 82) via un mock."""
+        out = StringIO()
+        mock_cursor = MagicMock()
+        # On simule un output EXPLAIN avec un Index Scan
+        mock_cursor.fetchall.return_value = [["Index Scan on games_game_min_age_idx"]]
+        mock_cursor.__enter__ = MagicMock(return_value=mock_cursor)
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+
+        with patch("apps.games.management.commands.test_query_performance.connection") as mock_conn:
+            mock_conn.cursor.return_value = mock_cursor
+            call_command("test_query_performance", stdout=out)
+
+        output = out.getvalue()
+        # Vérifie que le symbole ✓ (style.SUCCESS) est présent dans l'output
+        assert "✓" in output
+        assert "Index Scan" in output

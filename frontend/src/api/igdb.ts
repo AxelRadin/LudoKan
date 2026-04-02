@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '../services/api';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
 export type IgdbPlatform = {
@@ -162,26 +162,59 @@ export async function translateDescription(text: string): Promise<string> {
 }
 
 // ---------------------------------------------------------------------------
-// Django : import jeu IGDB + ajout à la ludothèque (api/games/..., api/me/...)
+// Django : résolution/import jeu IGDB + ajout à la ludothèque
 // ---------------------------------------------------------------------------
 
-export async function importIgdbGameToDjango(
+export async function resolveIgdbGame(
   igdbId: number,
-  name: string,
-  coverUrl: string | null,
-  releaseDate: string | null
-): Promise<{ id: number }> {
-  return apiPost('/api/games/igdb-import/', {
+  name?: string,
+  coverUrl?: string | null,
+  releaseDate?: string | null
+): Promise<{
+  game_id: number;
+  normalized_game: NormalizedGame;
+  created: boolean;
+}> {
+  return apiPost('/api/games/resolve-from-igdb/', {
     igdb_id: igdbId,
     name,
     cover_url: coverUrl,
     release_date: releaseDate,
   });
 }
+/**
+ * Resolves the Django game ID from a NormalizedGame.
+ *
+ * - If the game already has a `django_id`, returns it immediately (no network call).
+ * - Otherwise calls `POST /api/games/resolve-from-igdb/` to create/find the game.
+ *
+ * ⚠️  Must only be called when a **persistent action** requires a Django ID
+ *     (e.g. adding to library, rating, favouriting).
+ *     Never call during a read-only consultation.
+ */
+export async function resolveGameIdIfNeeded(game: NormalizedGame): Promise<{
+  game_id: number;
+  normalized_game: NormalizedGame;
+}> {
+  if (game.django_id) {
+    return { game_id: game.django_id, normalized_game: game };
+  }
+  if (!game.igdb_id) {
+    throw new Error(
+      '[resolveGameIdIfNeeded] Game has neither django_id nor igdb_id.'
+    );
+  }
+  return resolveIgdbGame(
+    game.igdb_id,
+    game.name,
+    game.cover_url ?? null,
+    game.release_date ?? null
+  );
+}
 
 export async function addGameToLibrary(djangoGameId: number): Promise<void> {
-  await apiPost('/api/me/games/', {
-    game_id: djangoGameId,
+  // Use PATCH for "upsert" logic on the backend
+  await apiPatch(`/api/me/games/${djangoGameId}/`, {
     status: 'EN_COURS',
   });
 }

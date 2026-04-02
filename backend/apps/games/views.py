@@ -1,7 +1,9 @@
 from datetime import timedelta
+from typing import Optional
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Avg, Count, Max, Prefetch
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -16,7 +18,9 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_games_csv, build_games_pdf
+from apps.games import igdb_client
 from apps.games.filters import GameFilter
+from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
 from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
 from apps.games.serializers import (
@@ -24,6 +28,7 @@ from apps.games.serializers import (
     GameReadSerializer,
     GameWriteSerializer,
     GenreCRUDSerializer,
+    IgdbResolveSerializer,
     PlatformCRUDSerializer,
     PublisherCRUDSerializer,
     RatingSerializer,
@@ -81,6 +86,45 @@ class GameViewSet(ModelViewSet):
             return GameDetailSerializer
         return GameWriteSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # Healing Strategy: If the game is a "stub" (missing description or M2M),
+        # trigger an update from IGDB.
+        is_stub = not instance.description or (instance.genres.count() == 0 and instance.platforms.count() == 0)
+
+        if is_stub and instance.igdb_id:
+            try:
+                # Fetch rich data from IGDB
+                query = f"{FIELDS_GAME_DETAIL} where id = {instance.igdb_id}; limit 1;"
+                igdb_data = igdb_client.igdb_request("games", query)
+                if igdb_data and isinstance(igdb_data, list):
+                    from apps.games.igdb_wikidata import enrich_with_wikidata_display_name
+                    from apps.games.services import get_or_create_game_from_igdb
+
+                    # Normalize & Enrich (Wikidata for name_fr)
+                    enriched = enrich_with_wikidata_display_name(igdb_data)
+                    norm = enriched[0]  # normalize_igdb_game is already called inside enrich_...
+
+                    # Update local record using the service (which now handles updates)
+                    get_or_create_game_from_igdb(
+                        igdb_id=instance.igdb_id,
+                        name=norm.get("name"),
+                        cover_url=norm.get("cover_url"),
+                        release_date=norm.get("release_date"),
+                        summary=norm.get("summary"),
+                        platforms=norm.get("platforms"),
+                        genres=norm.get("genres"),
+                    )
+                    # Refresh instance to get updated data
+                    instance.refresh_from_db()
+            except Exception:
+                # If IGDB fails, we still return the stub to avoid breaking the page
+                pass
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
 
 class PublisherViewSet(ModelViewSet):
     queryset = Publisher.objects.order_by("name")
@@ -89,13 +133,13 @@ class PublisherViewSet(ModelViewSet):
 
 
 class GenreViewSet(ModelViewSet):
-    queryset = Genre.objects.order_by("nom_genre")
+    queryset = Genre.objects.order_by("name")
     serializer_class = GenreCRUDSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class PlatformViewSet(ModelViewSet):
-    queryset = Platform.objects.order_by("nom_plateforme")
+    queryset = Platform.objects.order_by("name")
     serializer_class = PlatformCRUDSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -137,6 +181,13 @@ class RatingCreateView(APIView):
                 "rating_type": rating_type,
                 "value": value,
             },
+        )
+
+        # Auto-create UserGame with TERMINE status on first persistent action
+        UserGame.objects.get_or_create(
+            user=request.user,
+            game=game,
+            defaults={"status": UserGame.GameStatus.TERMINE},
         )
 
         output = RatingSerializer(rating).data
@@ -196,16 +247,95 @@ class RatingListView(ListAPIView):
 
 class GameByIgdbIdView(APIView):
     """
-    Retrieve a game by its IGDB ID.
+    GET /api/games/igdb/<igdb_id>/
+
+    Lecture pure d'un jeu par son IGDB ID. Retourne toujours un NormalizedGame.
+    Ne crée jamais de Game, ne déclenche aucune persistance.
+
+    Stratégie en cascade :
+      1. Si le jeu existe en base → GameReadSerializer (NormalizedGame complet avec django_id).
+      2. Sinon → appel IGDB, normalisation, enrichissement (django_id=null).
+      3. Introuvable partout → 404.
     """
 
     permission_classes = [AllowAny]
 
-    def get(self, request, igdb_id):
-        game = get_object_or_404(Game, igdb_id=igdb_id)
+    def _get_local_game(self, igdb_id: int) -> Optional[Game]:
+        """Fetch game from local DB with necessary relations."""
+        return Game.objects.filter(igdb_id=igdb_id).select_related("publisher").prefetch_related("genres", "platforms").first()
 
-        serializer = GameDetailSerializer(game, context={"request": request})
-        return Response(serializer.data)
+    def _is_stub_game(self, game: Game) -> bool:
+        """Check if the local record is a stub (missing metadata)."""
+        return not game.description or (game.genres.count() == 0 and game.platforms.count() == 0)
+
+    def _handle_igdb_result(self, game: Optional[Game], norm: dict, request) -> Response:
+        """Heal existing stub or return proxy data for new game."""
+        if game is not None:
+            # Case 1: Game in DB as stub -> HEAL
+            from apps.games.services import get_or_create_game_from_igdb
+
+            game_obj, _ = get_or_create_game_from_igdb(
+                igdb_id=game.igdb_id,
+                name=norm.get("name"),
+                cover_url=norm.get("cover_url"),
+                release_date=norm.get("release_date"),
+                summary=norm.get("summary"),
+                platforms=norm.get("platforms"),
+                genres=norm.get("genres"),
+            )
+            serializer = GameReadSerializer(game_obj, context={"request": request})
+            return Response(serializer.data)
+
+        # Case 2: Game not in DB -> PROXY ONLY (Read-Only)
+        from apps.games.igdb_normalizer import enrich_normalized_games
+
+        final_arr = enrich_normalized_games([norm], request.user)
+        return Response(final_arr[0])
+
+    def _handle_igdb_error(self, game: Optional[Game], e: Exception, request) -> Response:
+        """Common error handling logic for IGDB failures."""
+        if isinstance(e, ImproperlyConfigured):
+            if game:
+                return Response(GameReadSerializer(game, context={"request": request}).data)
+            return Response(
+                {"error": "IGDB connection not configured"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if game:
+            return Response(GameReadSerializer(game, context={"request": request}).data)
+        return Response(
+            {"error": "Game not found or error fetching"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    def get(self, request, igdb_id):
+        # --- 1. Lookup in local DB ---
+        game = self._get_local_game(igdb_id)
+
+        if game is not None and not self._is_stub_game(game):
+            # Complete record found
+            serializer = GameReadSerializer(game, context={"request": request})
+            return Response(serializer.data)
+
+        # --- 2. Fallback to IGDB ---
+        query = f"{FIELDS_GAME_DETAIL} where id = {igdb_id}; limit 1;"
+        try:
+            data = igdb_client.igdb_request("games", query)
+            arr = data if isinstance(data, list) else []
+            if not arr:
+                if game:
+                    return Response(GameReadSerializer(game, context={"request": request}).data)
+                return Response({"error": "Game not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # Normalization + Enrichment
+            from apps.games.igdb_wikidata import enrich_with_wikidata_display_name
+
+            enriched = enrich_with_wikidata_display_name(arr)
+            return self._handle_igdb_result(game, enriched[0], request)
+
+        except Exception as e:
+            return self._handle_igdb_error(game, e, request)
 
 
 class ImportIgdbGameView(APIView):
@@ -217,22 +347,60 @@ class ImportIgdbGameView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        igdb_id = request.data.get("igdb_id")
-        name = request.data.get("name", "")
-        cover_url = request.data.get("cover_url") or None
-        release_date = request.data.get("release_date") or None
+        serializer = IgdbResolveSerializer(data=request.data)
+        if not serializer.is_valid():
+            # Maintain backward compatibility with legacy error format for this endpoint
+            if "igdb_id" in serializer.errors:
+                return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        if not igdb_id:
-            return Response({"error": "igdb_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        game = get_or_create_game_from_igdb(
-            igdb_id=igdb_id,
-            name=name,
-            cover_url=cover_url,
-            release_date=release_date,
+        game, _ = get_or_create_game_from_igdb(
+            igdb_id=serializer.validated_data["igdb_id"],
+            name=serializer.validated_data.get("name"),
+            cover_url=serializer.validated_data.get("cover_url"),
+            release_date=serializer.validated_data.get("release_date"),
+            summary=serializer.validated_data.get("summary"),
+            platforms=serializer.validated_data.get("platforms"),
+            genres=serializer.validated_data.get("genres"),
         )
 
         return Response({"id": game.id}, status=status.HTTP_200_OK)
+
+
+class IgdbResolveView(APIView):
+    """
+    Resolves a game from an IGDB ID, creating it if it doesn't exist.
+    Returns the Django ID and the NormalizedGame structure.
+    Used for preparing actions like library addition or rating.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = IgdbResolveSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        game, created = get_or_create_game_from_igdb(
+            igdb_id=serializer.validated_data["igdb_id"],
+            name=serializer.validated_data.get("name"),
+            cover_url=serializer.validated_data.get("cover_url"),
+            release_date=serializer.validated_data.get("release_date"),
+            summary=serializer.validated_data.get("summary"),
+            platforms=serializer.validated_data.get("platforms"),
+            genres=serializer.validated_data.get("genres"),
+        )
+
+        # Build normalized response
+        read_serializer = GameReadSerializer(game, context={"request": request})
+
+        return Response(
+            {
+                "game_id": game.id,
+                "normalized_game": read_serializer.data,
+                "created": created,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class AdminGameListView(ListAPIView):
@@ -375,7 +543,7 @@ def _build_games_report_payload():
     popular_games = list(
         Game.objects.annotate(owners_count=Count("user_games")).order_by("-owners_count")[:10].values("id", "name", "average_rating", "owners_count")
     )
-    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "nom_genre", "games_count"))
+    top_genres = list(Genre.objects.annotate(games_count=Count("games")).order_by("-games_count")[:10].values("id", "name", "games_count"))
     ratings_agg = Rating.objects.aggregate(
         average=Avg("normalized_value"),
         total_count=Count("id"),
@@ -385,9 +553,7 @@ def _build_games_report_payload():
         "total_count": ratings_agg["total_count"] or 0,
     }
     reviews_recent = Review.objects.filter(date_created__gte=month_ago).count()
-    platforms_breakdown = list(
-        Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "nom_plateforme", "games_count")
-    )
+    platforms_breakdown = list(Platform.objects.annotate(games_count=Count("games")).order_by("-games_count").values("id", "name", "games_count"))
     return {
         "popular_games": popular_games,
         "top_genres": top_genres,
@@ -426,10 +592,10 @@ class AdminReportsGamesView(APIView):
     Réponse :
     {
       "popular_games": [ { "id", "name", "owners_count", "average_rating" }, ... ],
-      "top_genres": [ { "id", "nom_genre", "games_count" }, ... ],
+      "top_genres": [ { "id", "name", "games_count" }, ... ],
       "ratings_summary": { "average": 7.2, "total_count": 500 },
       "reviews_recent": 120,
-      "platforms_breakdown": [ { "id", "nom_plateforme", "games_count" }, ... ]
+      "platforms_breakdown": [ { "id", "name", "games_count" }, ... ]
     }
     """
 

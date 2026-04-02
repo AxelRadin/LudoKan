@@ -144,7 +144,7 @@ export default function ProfilePage() {
     }));
 
   const gamesEnvie: GameListItem[] = userGames
-    .filter(ug => ug.status === 'ENVIE')
+    .filter(ug => ug.status === 'ENVIE_DE_JOUER')
     .map(ug => ({
       id: ug.game.id,
       name: ug.game.name,
