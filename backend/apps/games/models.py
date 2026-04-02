@@ -252,3 +252,33 @@ def update_game_rating_on_save(sender, instance, **kwargs):
 def update_game_rating_on_delete(sender, instance, **kwargs):
     """Update game's average_rating and rating_count after delete."""
     _update_game_rating_stats(instance.game)
+
+
+class GameScreenshot(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="screenshots")
+    url = models.URLField(max_length=500)
+    position = models.PositiveSmallIntegerField(help_text="Ordre d'affichage (0 = première image)")
+    igdb_id = models.PositiveBigIntegerField(null=True, blank=True, help_text="ID IGDB pour déduplication")
+
+    class Meta:
+        ordering = ["position", "pk"]
+        verbose_name = "Game Screenshot"
+        verbose_name_plural = "Game Screenshots"
+
+    def __str__(self):
+        return f"Screenshot for {self.game.name} at position {self.position}"
+
+
+class GameVideo(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="game_videos")
+    igdb_id = models.PositiveBigIntegerField(help_text="ID vidéo côté IGDB")
+    name = models.CharField(max_length=255, blank=True)
+    video_id = models.CharField(max_length=32, help_text="Identifiant YouTube pour l'embed")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["game", "igdb_id"], name="unique_game_video_igdb_id")]
+        verbose_name = "Game Video"
+        verbose_name_plural = "Game Videos"
+
+    def __str__(self):
+        return f"Video {self.video_id} for {self.game.name}"

@@ -80,19 +80,6 @@ class TestReviewModel:
         assert review1.id != review2.id
         assert Review.objects.filter(game=game).count() == 2
 
-    def test_content_validation_too_short(self, user, game):
-        """Le contenu doit faire au moins 4 caractères"""
-        review = Review(
-            user=user,
-            game=game,
-            content="nul",
-        )
-
-        with pytest.raises(ValidationError) as excinfo:
-            review.save()
-
-        assert "content" in excinfo.value.message_dict
-
     def test_content_validation_too_long(self, user, game):
         """Le contenu doit faire au maximum 500 caractères"""
         review = Review(

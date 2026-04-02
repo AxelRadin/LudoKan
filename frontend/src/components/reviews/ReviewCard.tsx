@@ -12,6 +12,14 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+const RATING_LABELS: Record<number, string> = {
+  1: 'Mauvais',
+  2: 'Médiocre',
+  3: 'Correct',
+  4: 'Bon',
+  5: 'Excellent',
+};
+
 type Review = {
   id: number;
   title?: string;
@@ -19,7 +27,12 @@ type Review = {
   rating?: { value: number };
   created_at?: string;
   date_created?: string;
-  user?: { id: number; pseudo?: string; username?: string };
+  user?: {
+    id: number;
+    pseudo?: string;
+    username?: string;
+    review_count?: number;
+  };
 };
 
 type ReviewCardProps = Readonly<{
@@ -40,7 +53,6 @@ export default function ReviewCard({
   const handleOpenMenu = (e: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(e.currentTarget);
   };
-
   const handleCloseMenu = () => setAnchorEl(null);
 
   const dateStr = review.date_created ?? review.created_at;
@@ -51,7 +63,12 @@ export default function ReviewCard({
         year: 'numeric',
       })
     : null;
+
   const authorName = review.user?.pseudo ?? review.user?.username ?? 'Anonyme';
+  const reviewCount = review.user?.review_count ?? null;
+  const ratingValue = review.rating?.value
+    ? Math.round(Number(review.rating.value))
+    : null;
 
   return (
     <Box
@@ -71,18 +88,37 @@ export default function ReviewCard({
           alignItems: 'flex-start',
         }}
       >
-        <Box>
-          {review.rating?.value && (
-            <Rating
-              value={review.rating.value}
-              readOnly
-              size="small"
-              sx={{ mb: 0.5 }}
-            />
-          )}
-          <Typography variant="caption" color="text.secondary">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {/* Nom de l'utilisateur */}
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
             {authorName}
           </Typography>
+
+          {/* Nombre d'avis */}
+          {reviewCount !== null && (
+            <Typography variant="caption" color="text.secondary">
+              {reviewCount} avis publié{reviewCount > 1 ? 's' : ''}
+            </Typography>
+          )}
+
+          {/* Label */}
+          {ratingValue && (
+            <Typography variant="caption" color="text.secondary">
+              {RATING_LABELS[ratingValue]}
+            </Typography>
+          )}
+
+          {/* Étoiles */}
+          {ratingValue && (
+            <Rating
+              value={ratingValue}
+              readOnly
+              size="small"
+              sx={{ marginLeft: '-2px' }}
+            />
+          )}
+
+          {/* Titre */}
           {review.title && (
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
               {review.title}
@@ -126,14 +162,18 @@ export default function ReviewCard({
 
       <Divider sx={{ my: 1 }} />
 
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ lineHeight: 1.6 }}
-      >
-        {review.content}
-      </Typography>
+      {/* Commentaire */}
+      {review.content && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ lineHeight: 1.6 }}
+        >
+          {review.content}
+        </Typography>
+      )}
 
+      {/* Date */}
       {formattedDate && (
         <Typography
           variant="caption"
