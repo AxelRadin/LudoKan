@@ -26,6 +26,25 @@ export type GameListProps = {
   onRemove?: (userGameId: number) => void;
 };
 
+function parseTrailingCountTitle(title: string): {
+  base: string;
+  count: string | undefined;
+} {
+  if (!title.endsWith(')')) {
+    return { base: title, count: undefined };
+  }
+  const open = title.lastIndexOf('(');
+  if (open < 0) {
+    return { base: title, count: undefined };
+  }
+  const inner = title.slice(open + 1, -1);
+  if (!/^\d+$/.test(inner)) {
+    return { base: title, count: undefined };
+  }
+  const base = title.slice(0, open).replace(/\s+$/, '');
+  return { base, count: inner };
+}
+
 function getGameImage(game: GameListItem) {
   let image = game.cover_url || game.image;
 
@@ -41,9 +60,11 @@ export default function GameList({
   showStatus = true,
   onRemove,
 }: GameListProps) {
+  const titleParts = title ? parseTrailingCountTitle(title) : null;
+
   return (
     <Box>
-      {title && (
+      {titleParts && (
         <Box
           sx={{
             display: 'flex',
@@ -74,10 +95,10 @@ export default function GameList({
             }}
           >
             {/* Split title and count */}
-            {title.replace(/\s*\(\d+\)$/, '')}
+            {titleParts.base}
           </Typography>
           {/* Count badge */}
-          {/\((\d+)\)$/.test(title) && (
+          {titleParts.count != null && (
             <Box
               sx={{
                 px: 1,
@@ -96,7 +117,7 @@ export default function GameList({
                   lineHeight: 1,
                 }}
               >
-                {title.match(/\((\d+)\)$/)?.[1]}
+                {titleParts.count}
               </Typography>
             </Box>
           )}
