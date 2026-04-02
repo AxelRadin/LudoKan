@@ -933,10 +933,11 @@ export default function ProfilePage() {
             }}
           />
 
+          {/* ── Game lists stacked vertically ── */}
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              display: 'flex',
+              flexDirection: 'column',
               gap: 3,
             }}
           >
