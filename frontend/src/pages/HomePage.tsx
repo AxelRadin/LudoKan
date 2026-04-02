@@ -66,37 +66,10 @@ const C = {
 };
 
 /* ── Section header ── */
-function SectionLabel({
-  index,
-  label,
-  title,
-}: {
-  index: string;
-  label: string;
-  title: string;
-}) {
+function SectionLabel({ label, title }: { label: string; title: string }) {
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
-      {/* Index number */}
-      <Typography
-        sx={{
-          fontFamily: FD,
-          fontWeight: 300,
-          fontStyle: 'italic',
-          fontSize: { xs: 40, md: 52 },
-          lineHeight: 1,
-          color: C.accentSoft,
-          opacity: 0.25,
-          flexShrink: 0,
-          letterSpacing: -1,
-          mb: '-4px',
-        }}
-      >
-        {index}
-      </Typography>
-
       <Box sx={{ flex: 1, pb: '4px' }}>
-        {/* Overline */}
         <Typography
           sx={{
             fontFamily: FB,
@@ -110,7 +83,6 @@ function SectionLabel({
         >
           {label}
         </Typography>
-        {/* Title */}
         <Typography
           sx={{
             fontFamily: FD,
@@ -124,8 +96,6 @@ function SectionLabel({
           {title}
         </Typography>
       </Box>
-
-      {/* Decorative dash */}
       <Box
         sx={{
           width: { xs: 32, md: 64 },
@@ -342,11 +312,7 @@ export const HomePage = () => {
 
         {/* ── Trending sections ── */}
         <Section className="lux-s1">
-          <SectionLabel
-            index="01"
-            label="Découverte"
-            title="Jeux les plus récents"
-          />
+          <SectionLabel label="Découverte" title="Jeux les plus récents" />
           <TrendingGames
             games={sections.recent.games}
             loading={sections.recent.loading}
@@ -355,11 +321,7 @@ export const HomePage = () => {
         </Section>
 
         <Section className="lux-s2">
-          <SectionLabel
-            index="02"
-            label="Excellence"
-            title="Jeux les mieux notés"
-          />
+          <SectionLabel label="Excellence" title="Jeux les mieux notés" />
           <TrendingGames
             games={sections.rating.games}
             loading={sections.rating.loading}
@@ -368,11 +330,7 @@ export const HomePage = () => {
         </Section>
 
         <Section className="lux-s3">
-          <SectionLabel
-            index="03"
-            label="Tendances"
-            title="Jeux les plus populaires"
-          />
+          <SectionLabel label="Tendances" title="Jeux les plus populaires" />
           <TrendingGames
             games={sections.popularity.games}
             loading={sections.popularity.loading}
@@ -385,7 +343,6 @@ export const HomePage = () => {
           <Box ref={genreResultRef}>
             <Section className="lux-s3">
               <SectionLabel
-                index="—"
                 label="Genre sélectionné"
                 title={selectedGenre.name}
               />
