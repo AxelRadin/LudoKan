@@ -705,9 +705,6 @@ export default function GamePage() {
                 </Typography>
                 {game.videos && game.videos.length > 0 && (
                   <Box sx={{ mb: 4 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      Trailer
-                    </Typography>
                     <Box
                       sx={{
                         position: 'relative',
@@ -760,9 +757,6 @@ export default function GamePage() {
                 )}
                 {game.screenshots && game.screenshots.length > 0 && (
                   <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                      Screenshots
-                    </Typography>
                     <Box
                       sx={{
                         display: 'flex',
