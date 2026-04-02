@@ -28,9 +28,9 @@ export type GameListProps = {
 
 function isAllDigits(s: string): boolean {
   if (s.length === 0) return false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    if (c < 48 || c > 57) return false;
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (cp === undefined || cp < 48 || cp > 57) return false;
   }
   return true;
 }
