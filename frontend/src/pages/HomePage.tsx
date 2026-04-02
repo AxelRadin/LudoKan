@@ -6,113 +6,142 @@ import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
 
-/* ─── Google Fonts ─── */
+/* ─── Fonts ─── */
 const fontLink = document.createElement('link');
 fontLink.rel = 'stylesheet';
 fontLink.href =
-  'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap';
-if (!document.head.querySelector('link[href*="Bebas"]')) {
+  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap';
+if (!document.head.querySelector('link[href*="Cormorant"]')) {
   document.head.appendChild(fontLink);
 }
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
-styleEl.setAttribute('data-home-noir', '1');
+styleEl.setAttribute('data-home-lux', '1');
 styleEl.textContent = `
-  @keyframes fadeUpNoir {
-    from { opacity: 0; transform: translateY(20px); }
+  @keyframes luxFadeUp {
+    from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes glowPulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(211,47,47,0.4), 0 0 24px rgba(211,47,47,0.15); }
-    50%       { box-shadow: 0 0 16px rgba(211,47,47,0.7), 0 0 40px rgba(211,47,47,0.25); }
+  @keyframes luxFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
   }
-  @keyframes flicker {
-    0%, 95%, 100% { opacity: 1; }
-    96%            { opacity: 0.82; }
-    97%            { opacity: 1; }
-    98%            { opacity: 0.88; }
+  @keyframes luxLineGrow {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
   }
-  .noir-0 { animation: fadeUpNoir 0.5s ease 0.05s both; }
-  .noir-1 { animation: fadeUpNoir 0.5s ease 0.15s both; }
-  .noir-2 { animation: fadeUpNoir 0.5s ease 0.25s both; }
-  .noir-3 { animation: fadeUpNoir 0.5s ease 0.35s both; }
-  .noir-4 { animation: fadeUpNoir 0.5s ease 0.45s both; }
-  .flicker { animation: flicker 8s linear infinite; }
-  .glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+  @keyframes luxDotPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%       { transform: scale(1.4); opacity: 0.7; }
+  }
+  .lux-hero    { animation: luxFadeIn  0.9s ease 0s both; }
+  .lux-s0      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
+  .lux-s1      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
+  .lux-s2      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
+  .lux-s3      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
+  .lux-s4      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
+  .lux-line    { animation: luxLineGrow 1s cubic-bezier(0.16,1,0.3,1) 0.3s both; transform-origin: left; }
+  .lux-dot     { animation: luxDotPulse 3s ease-in-out infinite; }
 `;
-if (!document.head.querySelector('style[data-home-noir]')) {
+if (!document.head.querySelector('style[data-home-lux]')) {
   document.head.appendChild(styleEl);
 }
 
-const FONT_DISPLAY = "'Bebas Neue', Impact, sans-serif";
-const FONT_BODY = "'DM Sans', system-ui, sans-serif";
+const FD = "'Cormorant Garamond', Georgia, serif";
+const FB = "'DM Sans', system-ui, sans-serif";
 
 const C = {
   bg: '#ffd3d3',
-  bgCard: 'rgba(255,255,255,0.6)',
-  bgCardHover: 'rgba(255,255,255,0.78)',
-  border: 'rgba(241,199,199,0.6)',
-  borderRed: 'rgba(211,47,47,0.35)',
-  accent: '#d32f2f',
-  accentGlow: 'rgba(211,47,47,0.45)',
-  text: '#0f0f0f',
-  muted: '#7a4040',
+  card: 'rgba(255,255,255,0.52)',
+  cardHover: 'rgba(255,255,255,0.72)',
+  border: 'rgba(211,47,47,0.12)',
+  borderHover: 'rgba(211,47,47,0.28)',
+  accent: '#c62828',
+  accentSoft: '#d32f2f',
+  accentGlow: 'rgba(198,40,40,0.18)',
+  ink: '#1a0a0a',
+  muted: '#8a5a5a',
+  light: '#c09090',
 };
 
-function NeonHeader({ label, title }: { label: string; title: string }) {
+/* ── Section header ── */
+function SectionLabel({
+  index,
+  label,
+  title,
+}: {
+  index: string;
+  label: string;
+  title: string;
+}) {
   return (
-    <Box sx={{ mb: 2.5 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.75 }}>
-        <Box
-          sx={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            bgcolor: C.accent,
-            flexShrink: 0,
-            boxShadow: `0 0 8px ${C.accentGlow}, 0 0 16px ${C.accentGlow}`,
-          }}
-        />
+    <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
+      {/* Index number */}
+      <Typography
+        sx={{
+          fontFamily: FD,
+          fontWeight: 300,
+          fontStyle: 'italic',
+          fontSize: { xs: 40, md: 52 },
+          lineHeight: 1,
+          color: C.accentSoft,
+          opacity: 0.25,
+          flexShrink: 0,
+          letterSpacing: -1,
+          mb: '-4px',
+        }}
+      >
+        {index}
+      </Typography>
+
+      <Box sx={{ flex: 1, pb: '4px' }}>
+        {/* Overline */}
         <Typography
           sx={{
-            fontFamily: FONT_BODY,
-            fontSize: 10,
-            fontWeight: 700,
+            fontFamily: FB,
+            fontSize: 9,
+            fontWeight: 600,
             letterSpacing: 3,
             textTransform: 'uppercase',
-            color: C.accent,
+            color: C.accentSoft,
+            mb: 0.5,
           }}
         >
           {label}
         </Typography>
-        <Box
+        {/* Title */}
+        <Typography
           sx={{
-            flex: 1,
-            height: '1px',
-            background: `linear-gradient(to right, ${C.accent}, transparent)`,
-            boxShadow: `0 0 6px ${C.accentGlow}`,
+            fontFamily: FD,
+            fontWeight: 600,
+            fontSize: { xs: 22, md: 28 },
+            color: C.ink,
+            letterSpacing: -0.5,
+            lineHeight: 1.1,
           }}
-        />
+        >
+          {title}
+        </Typography>
       </Box>
-      <Typography
-        className="flicker"
+
+      {/* Decorative dash */}
+      <Box
         sx={{
-          fontFamily: FONT_DISPLAY,
-          fontSize: { xs: 28, md: 36 },
-          color: C.text,
-          letterSpacing: 2,
-          lineHeight: 1,
-          textTransform: 'uppercase',
+          width: { xs: 32, md: 64 },
+          height: '1px',
+          background: C.accentSoft,
+          opacity: 0.3,
+          flexShrink: 0,
+          mb: '12px',
         }}
-      >
-        {title}
-      </Typography>
+      />
     </Box>
   );
 }
 
-function NeonCard({
+/* ── Section wrapper ── */
+function Section({
   children,
   className,
 }: {
@@ -123,14 +152,20 @@ function NeonCard({
     <Box
       className={className}
       sx={{
-        background: C.bgCard,
+        background: C.card,
+        backdropFilter: 'blur(24px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(160%)',
         border: `1px solid ${C.border}`,
-        borderRadius: '4px',
-        p: { xs: 2, md: 3 },
+        borderRadius: '2px',
+        p: { xs: '24px 20px', md: '32px 36px' },
         mb: 2,
         position: 'relative',
-        overflow: 'hidden',
-        transition: 'border-color 0.3s ease, background 0.3s ease',
+        transition: 'background 0.3s ease, border-color 0.3s ease',
+        '&:hover': {
+          background: C.cardHover,
+          borderColor: C.borderHover,
+        },
+        /* Top accent rule */
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -138,18 +173,9 @@ function NeonCard({
           left: 0,
           right: 0,
           height: '1px',
-          background: `linear-gradient(to right, ${C.accent}, transparent 60%)`,
-          boxShadow: `0 0 8px ${C.accentGlow}`,
+          background: `linear-gradient(to right, ${C.accentSoft} 0%, transparent 55%)`,
+          opacity: 0.6,
         },
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          background:
-            'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.012) 3px, rgba(0,0,0,0.012) 4px)',
-          pointerEvents: 'none',
-        },
-        '&:hover': { borderColor: C.borderRed, background: C.bgCardHover },
       }}
     >
       {children}
@@ -179,174 +205,187 @@ export const HomePage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        fontFamily: FONT_BODY,
+        fontFamily: FB,
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 130% 70% at 10% -5%, rgba(255,190,190,0.65) 0%, transparent 55%),
-          radial-gradient(ellipse 70% 50% at 95% 100%, rgba(211,47,47,0.08) 0%, transparent 50%),
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+          radial-gradient(ellipse 140% 80% at -5% 0%, rgba(255,180,180,0.7) 0%, transparent 50%),
+          radial-gradient(ellipse 80% 60% at 105% 100%, rgba(198,40,40,0.07) 0%, transparent 50%),
+          radial-gradient(ellipse 60% 100% at 50% 50%, rgba(255,220,220,0.2) 0%, transparent 70%),
           #ffd3d3
         `,
-        position: 'relative',
       }}
     >
-      {/* Scanlines overlay */}
       <Box
         sx={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 9999,
-          background:
-            'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.012) 2px, rgba(0,0,0,0.012) 4px)',
-        }}
-      />
-
-      <Box
-        sx={{
-          maxWidth: 1280,
+          maxWidth: 1200,
           mx: 'auto',
-          px: { xs: 2, md: 5, lg: 8 },
-          py: { xs: 3, md: 4 },
+          px: { xs: 2.5, md: 5, lg: 7 },
+          py: { xs: 3, md: 5 },
         }}
       >
-        {/* ── Top bar ── */}
+        {/* ── Masthead ── */}
         <Box
-          className="noir-0"
+          className="lux-hero"
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            mb: 4,
-            pb: 2,
-            borderBottom: `1px solid ${C.border}`,
+            mb: { xs: 4, md: 6 },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Logo */}
+          <Box>
             <Typography
-              className="flicker"
               sx={{
-                fontFamily: FONT_DISPLAY,
-                fontSize: { xs: 32, md: 44 },
-                color: C.accent,
-                letterSpacing: 5,
+                fontFamily: FD,
+                fontWeight: 700,
+                fontStyle: 'italic',
+                fontSize: { xs: 30, md: 40 },
+                color: C.ink,
+                letterSpacing: -1,
                 lineHeight: 1,
-                textShadow: `0 0 20px ${C.accentGlow}, 0 0 60px rgba(211,47,47,0.15)`,
               }}
             >
-              LUDOKAN
+              Ludokan
             </Typography>
             <Box
-              className="glow-pulse"
+              className="lux-line"
               sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                bgcolor: C.accent,
+                height: '1px',
+                background: `linear-gradient(to right, ${C.accentSoft}, transparent)`,
+                mt: 0.5,
               }}
             />
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-            {['Récents', 'Top', 'Genres'].map(nav => (
-              <Typography
-                key={nav}
+          {/* Right meta */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Typography
+              sx={{
+                fontFamily: FB,
+                fontSize: 10,
+                fontWeight: 500,
+                letterSpacing: 2.5,
+                textTransform: 'uppercase',
+                color: C.light,
+                display: { xs: 'none', md: 'block' },
+              }}
+            >
+              Gaming Library
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                className="lux-dot"
                 sx={{
-                  fontFamily: FONT_BODY,
-                  fontSize: 11,
-                  fontWeight: 600,
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  bgcolor: C.accentSoft,
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: FB,
+                  fontSize: 10,
+                  fontWeight: 500,
                   letterSpacing: 2,
                   textTransform: 'uppercase',
                   color: C.muted,
-                  cursor: 'pointer',
-                  transition: 'color 0.2s',
-                  display: { xs: 'none', md: 'block' },
-                  '&:hover': { color: C.accent },
                 }}
               >
-                {nav}
-              </Typography>
-            ))}
-            <Box
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                border: `1px solid ${C.borderRed}`,
-                borderRadius: '2px',
-                boxShadow: `0 0 10px ${C.accentGlow}`,
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: FONT_BODY,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: C.accent,
-                  letterSpacing: 2,
-                  textTransform: 'uppercase',
-                }}
-              >
-                ● Live
+                En ligne
               </Typography>
             </Box>
           </Box>
         </Box>
 
-        {/* ── Banner ── */}
+        {/* ── Hero Banner ── */}
         <Box
-          className="noir-0 glow-pulse"
+          className="lux-s0"
           sx={{
-            mb: 3,
-            borderRadius: '4px',
+            mb: { xs: 3, md: 4 },
+            borderRadius: '2px',
             overflow: 'hidden',
-            border: `1px solid ${C.borderRed}`,
-            position: 'relative',
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              inset: 0,
-              zIndex: 1,
-              background:
-                'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.015) 3px, rgba(0,0,0,0.015) 4px)',
-              pointerEvents: 'none',
-            },
+            border: `1px solid ${C.border}`,
+            boxShadow:
+              '0 32px 80px rgba(198,40,40,0.08), 0 8px 24px rgba(0,0,0,0.06)',
           }}
         >
           <Banner />
         </Box>
 
+        {/* ── Horizontal rule with year ── */}
+        <Box
+          className="lux-s0"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 3,
+            mb: { xs: 3, md: 4 },
+          }}
+        >
+          <Box sx={{ flex: 1, height: '1px', bgcolor: C.border }} />
+          <Typography
+            sx={{
+              fontFamily: FD,
+              fontStyle: 'italic',
+              fontSize: 12,
+              color: C.light,
+              letterSpacing: 1,
+              flexShrink: 0,
+            }}
+          >
+            Sélection 2026
+          </Typography>
+          <Box sx={{ flex: 1, height: '1px', bgcolor: C.border }} />
+        </Box>
+
         {/* ── Trending sections ── */}
-        <NeonCard className="noir-1">
-          <NeonHeader label="Découverte" title="Jeux les plus récents" />
+        <Section className="lux-s1">
+          <SectionLabel
+            index="01"
+            label="Découverte"
+            title="Jeux les plus récents"
+          />
           <TrendingGames
             games={sections.recent.games}
             loading={sections.recent.loading}
             to="/trending/recent"
           />
-        </NeonCard>
+        </Section>
 
-        <NeonCard className="noir-2">
-          <NeonHeader label="Top classement" title="Jeux les mieux notés" />
+        <Section className="lux-s2">
+          <SectionLabel
+            index="02"
+            label="Excellence"
+            title="Jeux les mieux notés"
+          />
           <TrendingGames
             games={sections.rating.games}
             loading={sections.rating.loading}
             to="/trending/rating"
           />
-        </NeonCard>
+        </Section>
 
-        <NeonCard className="noir-3">
-          <NeonHeader label="Tendances" title="Jeux les plus populaires" />
+        <Section className="lux-s3">
+          <SectionLabel
+            index="03"
+            label="Tendances"
+            title="Jeux les plus populaires"
+          />
           <TrendingGames
             games={sections.popularity.games}
             loading={sections.popularity.loading}
             to="/trending/popularity"
           />
-        </NeonCard>
+        </Section>
 
         {/* ── Genre result ── */}
         {selectedGenre && (
           <Box ref={genreResultRef}>
-            <NeonCard>
-              <NeonHeader
+            <Section className="lux-s3">
+              <SectionLabel
+                index="—"
                 label="Genre sélectionné"
                 title={selectedGenre.name}
               />
@@ -356,42 +395,61 @@ export const HomePage = () => {
                 to={`/trending/genre/${selectedGenre.id}`}
                 linkState={{ genreName: selectedGenre.name }}
               />
-            </NeonCard>
+            </Section>
           </Box>
         )}
 
         {/* ── Genre grid ── */}
-        <Box className="noir-4">
-          <NeonHeader label="Explorer" title="Parcourir par genre" />
+        <Box className="lux-s4">
+          {/* Section header outside card for visual break */}
           <Box
             sx={{
-              background: C.bgCard,
-              border: `1px solid ${C.border}`,
-              borderRadius: '4px',
-              p: { xs: 2, md: 3 },
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '1px',
-                background: `linear-gradient(to right, ${C.accent}, transparent 60%)`,
-                boxShadow: `0 0 8px ${C.accentGlow}`,
-              },
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+              mb: 2.5,
+              mt: 1,
             }}
           >
-            <GenreGrid onGenreClick={handleGenreClick} />
+            <Typography
+              sx={{
+                fontFamily: FD,
+                fontStyle: 'italic',
+                fontWeight: 600,
+                fontSize: { xs: 24, md: 30 },
+                color: C.ink,
+                letterSpacing: -0.5,
+                flexShrink: 0,
+              }}
+            >
+              Explorer par genre
+            </Typography>
+            <Box sx={{ flex: 1, height: '1px', bgcolor: C.border }} />
+            <Typography
+              sx={{
+                fontFamily: FB,
+                fontSize: 9,
+                fontWeight: 600,
+                letterSpacing: 2.5,
+                textTransform: 'uppercase',
+                color: C.accentSoft,
+                flexShrink: 0,
+              }}
+            >
+              Tous les genres
+            </Typography>
           </Box>
+
+          <Section>
+            <GenreGrid onGenreClick={handleGenreClick} />
+          </Section>
         </Box>
 
         {/* ── Footer ── */}
         <Box
           sx={{
-            mt: 4,
-            pt: 2,
+            mt: { xs: 4, md: 6 },
+            pt: 3,
             borderTop: `1px solid ${C.border}`,
             display: 'flex',
             justifyContent: 'space-between',
@@ -400,36 +458,28 @@ export const HomePage = () => {
         >
           <Typography
             sx={{
-              fontFamily: FONT_DISPLAY,
-              fontSize: 14,
-              color: C.muted,
-              letterSpacing: 3,
+              fontFamily: FD,
+              fontStyle: 'italic',
+              fontWeight: 300,
+              fontSize: 13,
+              color: C.light,
+              letterSpacing: 0.5,
             }}
           >
-            LUDOKAN © 2026
+            Ludokan — votre collection, maîtrisée.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Box
-              sx={{
-                width: 4,
-                height: 4,
-                borderRadius: '50%',
-                bgcolor: C.accent,
-                boxShadow: `0 0 6px ${C.accentGlow}`,
-              }}
-            />
-            <Typography
-              sx={{
-                fontFamily: FONT_BODY,
-                fontSize: 10,
-                color: C.muted,
-                letterSpacing: 2,
-                textTransform: 'uppercase',
-              }}
-            >
-              Système opérationnel
-            </Typography>
-          </Box>
+          <Typography
+            sx={{
+              fontFamily: FB,
+              fontSize: 9,
+              fontWeight: 500,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              color: C.light,
+            }}
+          >
+            © 2026
+          </Typography>
         </Box>
       </Box>
     </Box>
