@@ -56,7 +56,9 @@ interface PlatformLogosProps {
   platforms: { name: string }[];
 }
 
-export default function PlatformLogos({ platforms }: PlatformLogosProps) {
+export default function PlatformLogos({
+  platforms,
+}: Readonly<PlatformLogosProps>) {
   if (!platforms || platforms.length === 0) {
     return <Typography variant="body1">Non renseigné</Typography>;
   }

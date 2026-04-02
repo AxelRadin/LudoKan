@@ -19,7 +19,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   fetchIgdbGameById,
@@ -34,7 +34,6 @@ import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame, UserLibraryData } from '../types/game';
 
-import React from 'react';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import CasinoIcon from '@mui/icons-material/Casino';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -784,12 +783,16 @@ export default function GamePage() {
                         },
                       }}
                     >
-                      {game.screenshots.map((s: any, i: number) => (
+                      {game.screenshots.map(s => (
                         <Box
-                          key={i}
+                          key={s.url}
                           component="img"
                           src={s.url}
-                          alt={`Screenshot ${i + 1}`}
+                          alt={
+                            game.name
+                              ? `Capture d'écran — ${game.name}`
+                              : "Capture d'écran"
+                          }
                           onClick={() => setSelectedScreenshot(s.url)}
                           sx={{
                             height: { xs: 140, sm: 200 },
