@@ -42,7 +42,6 @@ import ExploreIcon from '@mui/icons-material/Explore';
 import ExtensionIcon from '@mui/icons-material/Extension';
 import BoltIcon from '@mui/icons-material/Bolt';
 import EngineeringIcon from '@mui/icons-material/Engineering';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -186,7 +185,7 @@ export default function GamePage() {
         setUserReview(myReview || null);
       })
       .catch(() => setUserReview(null));
-  }, [djangoId, isAuthenticated]);
+  }, [djangoId, isAuthenticated, currentUserId]);
 
   async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;
