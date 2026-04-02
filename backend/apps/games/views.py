@@ -44,7 +44,7 @@ from apps.users.utils import log_admin_action
 class GameViewSet(ModelViewSet):
     queryset = (
         Game.objects.select_related("publisher")
-        .prefetch_related("genres", "platforms")
+        .prefetch_related("genres", "platforms", "screenshots", "game_videos")
         .order_by("-popularity_score")
         .distinct()  # Éviter les doublons lors de filtrage Many-to-Many
     )
@@ -432,7 +432,7 @@ class AdminGameListView(ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        qs = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").all()
+        qs = Game.objects.select_related("publisher").prefetch_related("genres", "platforms", "screenshots", "game_videos").all()
 
         name = self.request.query_params.get("name")
         publisher_id = self.request.query_params.get("publisher_id")
