@@ -40,14 +40,17 @@ import CasinoIcon from '@mui/icons-material/Casino';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import ExploreIcon from '@mui/icons-material/Explore';
 import ExtensionIcon from '@mui/icons-material/Extension';
+import BoltIcon from '@mui/icons-material/Bolt';
+import EngineeringIcon from '@mui/icons-material/Engineering';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import PaletteIcon from '@mui/icons-material/Palette';
 import PsychologyIcon from '@mui/icons-material/Psychology';
-import ScienceIcon from '@mui/icons-material/Science';
+import SportsMartialArtsIcon from '@mui/icons-material/SportsMartialArts';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
@@ -62,11 +65,13 @@ const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   'Real Time Strategy (RTS)':          <PsychologyIcon fontSize="small" />,
   'Turn-based strategy (TBS)':         <PsychologyIcon fontSize="small" />,
   'Tactical':                          <PsychologyIcon fontSize="small" />,
-  'Simulation':                        <ScienceIcon fontSize="small" />,
+  'Simulation':                        <EngineeringIcon fontSize="small" />,
+  'Simulator':                         <EngineeringIcon fontSize="small" />,
+  'Indie':                             <PaletteIcon fontSize="small" />,
   'Puzzle':                            <ExtensionIcon fontSize="small" />,
   'Racing':                            <DirectionsCarIcon fontSize="small" />,
   'Sport':                             <SportsSoccerIcon fontSize="small" />,
-  "Hack and slash/Beat 'em up":        <FitnessCenterIcon fontSize="small" />,
+  "Hack and slash/Beat 'em up":        <BoltIcon fontSize="small" />,
   'Platform':                          <StairsIcon fontSize="small" />,
   'Music':                             <MusicNoteIcon fontSize="small" />,
   'Card & Board Game':                 <CasinoIcon fontSize="small" />,
@@ -74,7 +79,7 @@ const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   'Visual Novel':                      <MenuBookIcon fontSize="small" />,
   'Massively Multiplayer Online (MMO)':<GroupsIcon fontSize="small" />,
   'MOBA':                              <GroupsIcon fontSize="small" />,
-  'Fighting':                          <FitnessCenterIcon fontSize="small" />,
+  'Fighting':                          <SportsMartialArtsIcon fontSize="small" />,
   'Arcade':                            <SportsEsportsIcon fontSize="small" />,
   // Django (français)
   'Aventure':                          <ExploreIcon fontSize="small" />,
@@ -83,7 +88,7 @@ const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   'TPS':                               <GpsFixedIcon fontSize="small" />,
   'Stratégie':                         <PsychologyIcon fontSize="small" />,
   'Course':                            <DirectionsCarIcon fontSize="small" />,
-  "Hack'n Slash":                      <FitnessCenterIcon fontSize="small" />,
+  "Hack'n Slash":                      <BoltIcon fontSize="small" />,
   'Plateforme':                        <StairsIcon fontSize="small" />,
   'Jeu de cartes':                     <CasinoIcon fontSize="small" />,
 };
