@@ -1,4 +1,5 @@
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -8,10 +9,11 @@ import {
   DialogContent,
   DialogTitle,
   Paper,
+  Snackbar,
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -196,6 +198,9 @@ type ProfilePageModel = {
   gamesFavoris: GameListItem[];
   avatarSrc: string;
   removeGame: (userGameId: number) => Promise<void>;
+  snackbar: { open: boolean; message: string; isError: boolean };
+  handleSnackbarClose: () => void;
+  handleUndo: () => void;
   handleEditOpen: () => void;
   handleEditClose: () => void;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -360,11 +365,65 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    isError: boolean;
+  }>({ open: false, message: '', isError: false });
+  const undoRef = useRef<{ game: UserGame; index: number } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSnackbarClose = () => setSnackbar(s => ({ ...s, open: false }));
+
+  const handleUndo = () => {
+    if (!undoRef.current) return;
+    const { game, index } = undoRef.current;
+    setUserGames(prev => {
+      const next = [...prev];
+      next.splice(index, 0, game);
+      return next;
+    });
+    undoRef.current = null;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setSnackbar({ open: false, message: '', isError: false });
+  };
+
   const removeGame = async (userGameId: number) => {
-    const ug = userGames.find(g => g.id === userGameId);
+    const index = userGames.findIndex(g => g.id === userGameId);
+    const ug = userGames[index];
     if (!ug) return;
-    await deleteUserGame(ug.game.id);
+
+    // Suppression optimiste
     setUserGames(prev => prev.filter(g => g.id !== userGameId));
+    undoRef.current = { game: ug, index };
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setSnackbar({
+      open: true,
+      message: 'Jeu retiré de la bibliothèque.',
+      isError: false,
+    });
+
+    undoTimerRef.current = setTimeout(() => {
+      undoRef.current = null;
+    }, 5000);
+
+    try {
+      await deleteUserGame(ug.game.id);
+    } catch {
+      // Restauration en cas d'erreur API
+      setUserGames(prev => {
+        const next = [...prev];
+        next.splice(index, 0, ug);
+        return next;
+      });
+      undoRef.current = null;
+      setSnackbar({
+        open: true,
+        message: 'Impossible de retirer le jeu. Réessayez plus tard.',
+        isError: true,
+      });
+    }
   };
 
   const gamesForStatus = (status: string): GameListItem[] =>
@@ -407,6 +466,9 @@ function useProfilePageModel(): ProfilePageModel {
     gamesFavoris,
     avatarSrc,
     removeGame,
+    snackbar,
+    handleSnackbarClose,
+    handleUndo,
     handleEditOpen,
     handleEditClose,
     handleChange,
@@ -743,6 +805,9 @@ export default function ProfilePage() {
     gamesFavoris,
     avatarSrc,
     removeGame,
+    snackbar,
+    handleSnackbarClose,
+    handleUndo,
     handleEditOpen,
     handleEditClose,
     handleChange,
@@ -1414,6 +1479,28 @@ export default function ProfilePage() {
           </Box>
         </Paper>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.isError ? 'error' : 'success'}
+          onClose={handleSnackbarClose}
+          action={
+            !snackbar.isError ? (
+              <Button color="inherit" size="small" onClick={handleUndo}>
+                Annuler
+              </Button>
+            ) : undefined
+          }
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       <ProfileEditDialog
         open={editOpen}
