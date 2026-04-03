@@ -51,73 +51,64 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
 
-/* ── Fonts ── */
 const fontLink = document.createElement('link');
 fontLink.rel = 'stylesheet';
 fontLink.href =
   'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap';
 document.head.appendChild(fontLink);
 
-/* ── Keyframes ── */
 const styleEl = document.createElement('style');
 styleEl.textContent = `
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes floatIn {
-    from { opacity: 0; transform: scale(0.96) translateY(12px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-  }
-  @keyframes pulseGlow {
-    0%, 100% { opacity: 0.4; }
-    50%       { opacity: 0.75; }
-  }
-  .gp-hero   { animation: floatIn 0.7s cubic-bezier(0.22,1,0.36,1) both; }
-  .gp-card-0 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.10s both; }
-  .gp-card-1 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.20s both; }
-  .gp-card-2 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.30s both; }
-  .gp-card-3 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.40s both; }
-  .gp-card-4 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.50s both; }
-  .gp-card-5 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.60s both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes heroIn { from { opacity:0; transform:scale(0.98); } to { opacity:1; transform:scale(1); } }
+  .gp-hero   { animation: heroIn  0.65s cubic-bezier(0.22,1,0.36,1) both; }
+  .gp-card-0 { animation: fadeUp  0.5s  cubic-bezier(0.22,1,0.36,1) 0.15s both; }
+  .gp-card-1 { animation: fadeUp  0.5s  cubic-bezier(0.22,1,0.36,1) 0.25s both; }
+  .gp-card-2 { animation: fadeUp  0.5s  cubic-bezier(0.22,1,0.36,1) 0.35s both; }
+  .gp-card-3 { animation: fadeUp  0.5s  cubic-bezier(0.22,1,0.36,1) 0.45s both; }
+  .gp-card-4 { animation: fadeUp  0.5s  cubic-bezier(0.22,1,0.36,1) 0.55s both; }
+  .gp-card-5 { animation: fadeUp  0.5s  cubic-bezier(0.22,1,0.36,1) 0.65s both; }
 `;
 document.head.appendChild(styleEl);
 
-/* ── Tokens ── */
 const C = {
   pageBg: '#ffd3d3',
   accent: '#d32f2f',
   accentDark: '#b71c1c',
-  accentSoft: 'rgba(211,47,47,0.10)',
-  accentGlow: 'rgba(211,47,47,0.22)',
+  accentSoft: 'rgba(211,47,47,0.09)',
+  accentGlow: 'rgba(211,47,47,0.2)',
   title: '#0f0f0f',
   text: '#2b2b2b',
   muted: '#6e6e73',
   light: '#b0b0b8',
-  glass: 'rgba(255,255,255,0.52)',
-  glassBorder: 'rgba(255,255,255,0.72)',
+  cardBg: 'rgba(255,255,255,0.88)',
+  cardBorder: 'rgba(255,255,255,0.95)',
 };
-
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 
-const blob = (override: Record<string, unknown> = {}) => ({
-  background: C.glass,
-  backdropFilter: 'blur(28px) saturate(180%)',
-  WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-  border: `1.5px solid ${C.glassBorder}`,
-  borderRadius: '32px',
-  boxShadow:
-    '0 4px 32px rgba(0,0,0,0.07), inset 0 1.5px 0 rgba(255,255,255,0.85)',
+const card = (ov: Record<string, unknown> = {}) => ({
+  background: C.cardBg,
+  backdropFilter: 'blur(24px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+  border: `1px solid ${C.cardBorder}`,
+  borderRadius: '28px',
+  boxShadow: '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
   transition:
-    'transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease',
+    'transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease',
   '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow:
-      '0 12px 40px rgba(0,0,0,0.11), inset 0 1.5px 0 rgba(255,255,255,0.9)',
+    transform: 'translateY(-3px)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.09), inset 0 1px 0 rgba(255,255,255,1)',
   },
-  ...override,
+  ...ov,
 });
+const noHover = {
+  '&:hover': {
+    transform: 'none',
+    boxShadow:
+      '0 2px 20px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9)',
+  },
+};
 
 const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   Action: <LocalFireDepartmentIcon fontSize="small" />,
@@ -159,32 +150,31 @@ function getHighResImage(url: string | null) {
   if (!url) return '';
   return url.replace('t_thumb', 't_1080p').replace('t_cover_big', 't_1080p');
 }
-
-function formatDate(isoDate: string | null) {
-  if (!isoDate) return '';
-  return new Date(isoDate).toLocaleDateString('fr-FR');
+function formatDate(d: string | null) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('fr-FR');
 }
 
-function PillLabel({ children }: { children: React.ReactNode }) {
+function Pill({ children }: { children: React.ReactNode }) {
   return (
     <Box
       sx={{
         display: 'inline-flex',
         alignItems: 'center',
-        px: 1.5,
-        py: 0.4,
+        px: 1.25,
+        py: 0.35,
         borderRadius: 999,
         background: C.accentSoft,
         border: `1px solid ${C.accentGlow}`,
-        mb: 1,
+        mb: 0.75,
       }}
     >
       <Typography
         sx={{
           fontFamily: FONT_BODY,
-          fontSize: 10,
+          fontSize: 9.5,
           fontWeight: 700,
-          letterSpacing: 2,
+          letterSpacing: 1.8,
           textTransform: 'uppercase',
           color: C.accent,
           lineHeight: 1,
@@ -195,14 +185,13 @@ function PillLabel({ children }: { children: React.ReactNode }) {
     </Box>
   );
 }
-
-function FluidDivider() {
+function Sep() {
   return (
     <Box
       sx={{
         height: '1.5px',
-        mb: 3,
-        background: `linear-gradient(to right, ${C.accentGlow}, rgba(241,199,199,0.3), transparent)`,
+        my: 2.5,
+        background: `linear-gradient(to right,${C.accentGlow},rgba(241,199,199,0.25),transparent)`,
         borderRadius: 99,
       }}
     />
@@ -213,7 +202,6 @@ export default function GamePage() {
   const { id, igdbId } = useParams();
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
   const { startMatchmaking, isMatching } = useMatchmaking();
-
   const [game, setGame] = useState<NormalizedGame | null>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
   const [djangoId, setDjangoId] = useState<number | null>(null);
@@ -231,29 +219,29 @@ export default function GamePage() {
   const DESCRIPTION_LIMIT = 200;
 
   useEffect(() => {
-    const fetchGameData = async () => {
+    const fetch = async () => {
       try {
         if (igdbId) {
-          const data = await fetchIgdbGameById(Number(igdbId));
-          setGame(data);
+          const d = await fetchIgdbGameById(Number(igdbId));
+          setGame(d);
         } else {
-          const data = await apiGet(`/api/games/${id}/`);
-          setGame({ ...data, name: data.name_fr || data.name });
-          setDjangoId(data.id);
-          setUserGame(data.user_library);
+          const d = await apiGet(`/api/games/${id}/`);
+          setGame({ ...d, name: d.name_fr || d.name });
+          setDjangoId(d.id);
+          setUserGame(d.user_library);
         }
       } catch {
         setGameNotFound(true);
       }
     };
-    fetchGameData();
+    fetch();
   }, [id, igdbId]);
 
   useEffect(() => {
     if (!isAuthenticated || !djangoId) return;
     apiGet(`/api/games/${djangoId}/`)
-      .then((data: NormalizedGame) => {
-        if (data.user_library) setUserGame(data.user_library);
+      .then((d: NormalizedGame) => {
+        if (d.user_library) setUserGame(d.user_library);
       })
       .catch(() => {});
   }, [isAuthenticated, djangoId]);
@@ -284,8 +272,8 @@ export default function GamePage() {
       return;
     }
     apiGet(`/api/reviews/?game=${djangoId}`)
-      .then((data: any) => {
-        const reviews = Array.isArray(data) ? data : (data.results ?? []);
+      .then((d: any) => {
+        const reviews = Array.isArray(d) ? d : (d.results ?? []);
         setUserReview(
           reviews.find((r: any) => r.user?.id === currentUserId) || null
         );
@@ -307,7 +295,6 @@ export default function GamePage() {
       return null;
     }
   }
-
   async function handleSetStatus(
     status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
     isPending = false
@@ -331,7 +318,6 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
-
   async function handleToggleFavorite(isPending = false) {
     if (!isAuthenticated && !isPending) {
       setPendingAction(() => () => handleToggleFavorite(true));
@@ -349,7 +335,6 @@ export default function GamePage() {
       alert('Erreur lors de la mise à jour du coup de cœur');
     }
   }
-
   async function handleSetMatchmaking(isPending = false) {
     if (!isAuthenticated && !isPending) {
       setPendingAction(() => () => handleSetMatchmaking(true));
@@ -401,46 +386,31 @@ export default function GamePage() {
       ? fullText.slice(0, DESCRIPTION_LIMIT) + '…'
       : fullText;
 
-  const noHover = {
-    '&:hover': {
-      transform: 'none',
-      boxShadow:
-        '0 4px 32px rgba(0,0,0,0.07), inset 0 1.5px 0 rgba(255,255,255,0.85)',
-    },
-  };
-
   return (
     <Box
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 140% 90% at 10% -15%, rgba(255,190,190,0.7) 0%, transparent 50%),
-          radial-gradient(ellipse 90% 70% at 95% 105%, rgba(211,47,47,0.09) 0%, transparent 45%),
-          radial-gradient(ellipse 60% 50% at 50% 60%, rgba(255,220,220,0.4) 0%, transparent 60%),
-          ${C.pageBg}
-        `,
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse 140% 90% at 10% -15%,rgba(255,190,190,0.7) 0%,transparent 50%),
+        radial-gradient(ellipse 90% 70% at 95% 105%,rgba(211,47,47,0.09) 0%,transparent 45%),
+        radial-gradient(ellipse 60% 50% at 50% 60%,rgba(255,220,220,0.35) 0%,transparent 60%),
+        ${C.pageBg}
+      `,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
     >
       <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
-        {/* ── Top bar ── */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 5,
-          }}
-        >
+        {/* Top bar */}
+        <Box sx={{ mb: 5 }}>
           <Typography
             sx={{
               fontFamily: FONT_DISPLAY,
               fontWeight: 900,
               fontSize: { xs: 22, md: 26 },
-              background: `linear-gradient(135deg, ${C.title} 40%, ${C.accent})`,
+              background: `linear-gradient(135deg,${C.title} 40%,${C.accent})`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               letterSpacing: -0.8,
@@ -450,233 +420,201 @@ export default function GamePage() {
           </Typography>
         </Box>
 
-        {/* ── HERO ── */}
+        {/* ── HERO : image pleine largeur ── */}
         <Box
           className="gp-hero"
-          sx={{ position: 'relative', mb: { xs: 3, md: 5 } }}
+          sx={{
+            position: 'relative',
+            width: '100%',
+            height: { xs: 320, sm: 420, md: 520 },
+            borderRadius: '36px',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.22)',
+            mb: 3,
+          }}
         >
           <Box
+            component="img"
+            src={getHighResImage(game.cover_url)}
+            alt={game.name}
             sx={{
+              position: 'absolute',
+              inset: 0,
               width: '100%',
-              height: { xs: 260, sm: 340, md: 460 },
-              borderRadius: '40px',
-              overflow: 'hidden',
-              boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
-              position: 'relative',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center top',
             }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: `url(${getHighResImage(game.cover_url)})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                filter: 'brightness(0.62) blur(3px)',
-                transform: 'scale(1.06)',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'linear-gradient(180deg, rgba(0,0,0,0) 25%, rgba(0,0,0,0.72) 100%)',
-              }}
-            />
+          />
+          {/* Scrim */}
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'linear-gradient(170deg,rgba(0,0,0,0.04) 0%,rgba(0,0,0,0.15) 35%,rgba(0,0,0,0.78) 100%)',
+            }}
+          />
 
-            {/* Contenu hero */}
+          {/* Favori */}
+          <Tooltip title="Coup de cœur" arrow>
             <Box
+              onClick={() => handleToggleFavorite()}
               sx={{
                 position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                px: { xs: 3, md: 5 },
-                pb: { xs: 3, md: 4 },
+                top: 20,
+                right: 20,
+                zIndex: 3,
+                width: 42,
+                height: 42,
+                borderRadius: '50%',
+                background: 'rgba(0,0,0,0.45)',
+                backdropFilter: 'blur(10px)',
+                border: '1.5px solid rgba(255,255,255,0.25)',
                 display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 2,
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.18s ease,background 0.18s ease',
+                '&:hover': {
+                  transform: 'scale(1.1)',
+                  background: 'rgba(0,0,0,0.6)',
+                },
               }}
             >
-              <Box
+              {userGame?.is_favorite ? (
+                <FavoriteIcon sx={{ color: '#ff4444', fontSize: 20 }} />
+              ) : (
+                <FavoriteBorderIcon sx={{ color: '#fff', fontSize: 20 }} />
+              )}
+            </Box>
+          </Tooltip>
+
+          {/* Titre + actions en bas */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              px: { xs: 3, md: 4 },
+              pb: { xs: 3, md: 4 },
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'flex-end' },
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography
                 sx={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  gap: { xs: 2, md: 3 },
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 900,
+                  fontSize: { xs: 28, sm: 38, md: 50 },
+                  color: '#fff',
+                  lineHeight: 1.0,
+                  letterSpacing: -1,
+                  textShadow: '0 2px 24px rgba(0,0,0,0.5)',
+                  mb: 0.75,
                 }}
               >
-                {/* Cover miniature */}
-                <Box
-                  sx={{
-                    position: 'relative',
-                    flexShrink: 0,
-                    mb: { xs: 0, md: '-28px' },
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={getHighResImage(game.cover_url)}
-                    alt={game.name}
-                    sx={{
-                      width: { xs: 72, md: 110 },
-                      height: { xs: 92, md: 142 },
-                      objectFit: 'cover',
-                      borderRadius: '20px',
-                      border: '3px solid rgba(255,255,255,0.55)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
-                      display: 'block',
-                    }}
-                  />
-                  <Tooltip title="Coup de cœur" arrow>
-                    <Box
-                      onClick={() => handleToggleFavorite()}
-                      sx={{
-                        position: 'absolute',
-                        top: -10,
-                        right: -10,
-                        zIndex: 2,
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(8px)',
-                        border: '1.5px solid rgba(255,255,255,0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'transform 0.18s ease',
-                        '&:hover': { transform: 'scale(1.15)' },
-                      }}
-                    >
-                      {userGame?.is_favorite ? (
-                        <FavoriteIcon sx={{ color: '#ff4444', fontSize: 16 }} />
-                      ) : (
-                        <FavoriteBorderIcon
-                          sx={{ color: '#fff', fontSize: 16 }}
-                        />
-                      )}
-                    </Box>
-                  </Tooltip>
-                </Box>
-
-                {/* Titre */}
-                <Box sx={{ pb: 0.5 }}>
-                  <Typography
-                    sx={{
-                      fontFamily: FONT_DISPLAY,
-                      fontWeight: 900,
-                      fontSize: { xs: 26, md: 40 },
-                      color: '#fff',
-                      lineHeight: 1.05,
-                      letterSpacing: -0.8,
-                      textShadow: '0 2px 20px rgba(0,0,0,0.4)',
-                    }}
-                  >
-                    {game.name}
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      mt: 0.75,
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    {game.publisher?.name && (
-                      <Typography
-                        sx={{
-                          fontFamily: FONT_BODY,
-                          fontSize: 13,
-                          color: 'rgba(255,255,255,0.75)',
-                          fontWeight: 500,
-                        }}
-                      >
-                        {game.publisher.name}
-                      </Typography>
-                    )}
-                    {game.release_date && (
-                      <>
-                        <Box
-                          sx={{
-                            width: 4,
-                            height: 4,
-                            borderRadius: '50%',
-                            bgcolor: 'rgba(255,255,255,0.4)',
-                          }}
-                        />
-                        <Typography
-                          sx={{
-                            fontFamily: FONT_BODY,
-                            fontSize: 13,
-                            color: 'rgba(255,255,255,0.6)',
-                          }}
-                        >
-                          {formatDate(game.release_date)}
-                        </Typography>
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-
-              {/* Actions */}
+                {game.name}
+              </Typography>
               <Box
                 sx={{
                   display: 'flex',
-                  gap: 1.5,
                   alignItems: 'center',
-                  pb: 0.5,
+                  gap: 1.5,
                   flexWrap: 'wrap',
                 }}
               >
-                <SecondaryButton
-                  onClick={() => handleSetMatchmaking()}
-                  disabled={isMatching}
-                >
-                  {isMatching ? 'Recherche…' : 'Matchmaking'}
-                </SecondaryButton>
-                <Button
-                  variant="contained"
-                  onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-                  sx={{
-                    borderRadius: 999,
-                    px: 3,
-                    py: 1.1,
-                    fontWeight: 700,
-                    fontSize: 14,
-                    textTransform: 'none',
-                    fontFamily: FONT_BODY,
-                    background: `linear-gradient(135deg, ${C.accent} 0%, #ef5350 100%)`,
-                    boxShadow: `0 4px 20px ${C.accentGlow}`,
-                    backdropFilter: 'blur(8px)',
-                    '&:hover': {
-                      background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-                      transform: 'translateY(-2px)',
-                      boxShadow: `0 8px 28px rgba(211,47,47,0.35)`,
-                    },
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  + Collection
-                </Button>
+                {game.publisher?.name && (
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 13,
+                      color: 'rgba(255,255,255,0.8)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {game.publisher.name}
+                  </Typography>
+                )}
+                {game.release_date && (
+                  <>
+                    <Box
+                      sx={{
+                        width: 3,
+                        height: 3,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(255,255,255,0.45)',
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        fontFamily: FONT_BODY,
+                        fontSize: 13,
+                        color: 'rgba(255,255,255,0.6)',
+                      }}
+                    >
+                      {formatDate(game.release_date)}
+                    </Typography>
+                  </>
+                )}
               </Box>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1.5,
+                flexShrink: 0,
+                flexWrap: 'wrap',
+              }}
+            >
+              <SecondaryButton
+                onClick={() => handleSetMatchmaking()}
+                disabled={isMatching}
+              >
+                {isMatching ? 'Recherche…' : 'Matchmaking'}
+              </SecondaryButton>
+              <Button
+                variant="contained"
+                onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+                sx={{
+                  borderRadius: 999,
+                  px: 2.5,
+                  py: 1,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  textTransform: 'none',
+                  fontFamily: FONT_BODY,
+                  background: `linear-gradient(135deg,${C.accent} 0%,#ef5350 100%)`,
+                  boxShadow: `0 4px 18px rgba(211,47,47,0.4)`,
+                  '&:hover': {
+                    background: `linear-gradient(135deg,${C.accentDark} 0%,${C.accent} 100%)`,
+                    transform: 'translateY(-2px)',
+                    boxShadow: `0 8px 24px rgba(211,47,47,0.45)`,
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                + Collection
+              </Button>
             </Box>
           </Box>
         </Box>
 
-        <Box sx={{ height: { xs: 8, md: 32 } }} />
-
-        {/* ── 3 CARDS ── */}
+        {/* ── 3 CARDS COMPACTES ── */}
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
-            gap: 2.5,
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: '1fr 1fr',
+              md: '1fr 1fr 1fr',
+            },
+            gap: 2,
             mb: 2.5,
           }}
         >
@@ -684,200 +622,253 @@ export default function GamePage() {
           <Box
             className="gp-card-0"
             sx={{
-              ...blob(),
-              p: '28px 32px',
+              ...card(),
+              px: 2.5,
+              py: 2,
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              textAlign: 'center',
-              gap: 1,
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: -50,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 140,
-                height: 140,
-                borderRadius: '50%',
-                background: C.accentSoft,
-                filter: 'blur(35px)',
-                animation: 'pulseGlow 3s ease-in-out infinite',
-              },
+              gap: 2,
             }}
           >
-            <PillLabel>Communauté</PillLabel>
-            <Typography
+            <Box
               sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
+                width: 44,
+                height: 44,
+                borderRadius: '14px',
+                flexShrink: 0,
+                background: C.accentSoft,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              Note globale
-            </Typography>
-            <Rating
-              value={(game.average_rating || game.rating_avg || 0) / 2}
-              readOnly
-              precision={0.5}
-              sx={{
-                fontSize: 30,
-                '& .MuiRating-iconFilled': { color: C.accent },
-              }}
-            />
-          </Box>
-
-          {/* Statut */}
-          <Box className="gp-card-1" sx={{ ...blob(), p: '28px 32px' }}>
-            <PillLabel>Ma bibliothèque</PillLabel>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-                mb: 2,
-              }}
-            >
-              Statut
-            </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              {[
-                {
-                  icon: <CheckCircleIcon />,
-                  label: 'Terminé',
-                  status: 'TERMINE' as const,
-                  color: '#4caf50',
-                },
-                {
-                  icon: <PlayCircleIcon />,
-                  label: 'En cours',
-                  status: 'EN_COURS' as const,
-                  color: C.accent,
-                },
-                {
-                  icon: <BookmarkIcon />,
-                  label: "Envie d'y jouer",
-                  status: 'ENVIE_DE_JOUER' as const,
-                  color: '#ff9800',
-                },
-              ].map(({ icon, label, status, color }) => {
-                const active = userGame?.status === status;
-                return (
-                  <Box
-                    key={status}
-                    onClick={() => handleSetStatus(status)}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1.5,
-                      cursor: 'pointer',
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: '16px',
-                      background: active ? `${color}18` : 'transparent',
-                      border: active
-                        ? `1px solid ${color}33`
-                        : '1px solid transparent',
-                      transition: 'all 0.18s ease',
-                      '&:hover': {
-                        background: 'rgba(0,0,0,0.04)',
-                        borderColor: 'rgba(0,0,0,0.06)',
-                      },
-                    }}
-                  >
-                    {React.cloneElement(icon, {
-                      sx: { fontSize: 20, color: active ? color : C.muted },
-                    } as any)}
-                    <Typography
-                      sx={{
-                        fontFamily: FONT_BODY,
-                        fontSize: 13.5,
-                        fontWeight: active ? 700 : 400,
-                        color: active ? color : C.text,
-                      }}
-                    >
-                      {label}
-                    </Typography>
-                  </Box>
-                );
-              })}
-              <Tooltip title="Coup de cœur" arrow>
-                <Box
-                  onClick={() => handleToggleFavorite()}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    cursor: 'pointer',
-                    px: 1.5,
-                    py: 1,
-                    borderRadius: '16px',
-                    background: userGame?.is_favorite
-                      ? 'rgba(255,68,68,0.10)'
-                      : 'transparent',
-                    border: userGame?.is_favorite
-                      ? '1px solid rgba(255,68,68,0.25)'
-                      : '1px solid transparent',
-                    transition: 'all 0.18s ease',
-                    '&:hover': { background: 'rgba(0,0,0,0.04)' },
-                  }}
-                >
-                  {userGame?.is_favorite ? (
-                    <FavoriteIcon sx={{ color: '#ff4444', fontSize: 20 }} />
-                  ) : (
-                    <FavoriteBorderIcon sx={{ color: C.muted, fontSize: 20 }} />
-                  )}
-                  <Typography
-                    sx={{
-                      fontFamily: FONT_BODY,
-                      fontSize: 13.5,
-                      fontWeight: userGame?.is_favorite ? 700 : 400,
-                      color: userGame?.is_favorite ? '#ff4444' : C.text,
-                    }}
-                  >
-                    Coup de cœur
-                  </Typography>
-                </Box>
-              </Tooltip>
+              <Typography sx={{ fontSize: 22 }}>⭐</Typography>
+            </Box>
+            <Box>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: C.light,
+                  lineHeight: 1,
+                  mb: 0.6,
+                }}
+              >
+                Note
+              </Typography>
+              <Rating
+                value={(game.average_rating || game.rating_avg || 0) / 2}
+                readOnly
+                precision={0.5}
+                sx={{
+                  fontSize: 18,
+                  '& .MuiRating-iconFilled': { color: C.accent },
+                }}
+              />
             </Box>
           </Box>
 
           {/* Plateformes */}
-          <Box className="gp-card-2" sx={{ ...blob(), p: '28px 32px' }}>
-            <PillLabel>Disponible sur</PillLabel>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-                mb: 2,
-              }}
-            >
-              Plateformes
-            </Typography>
+          <Box
+            className="gp-card-1"
+            sx={{
+              ...card(),
+              px: 2.5,
+              py: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
             <Box
               sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '14px',
+                flexShrink: 0,
+                background: C.accentSoft,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1,
-                flexWrap: 'wrap',
+                justifyContent: 'center',
               }}
             >
-              <DevicesIcon sx={{ color: C.muted, fontSize: 18 }} />
+              <DevicesIcon sx={{ color: C.accent, fontSize: 22 }} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: C.light,
+                  lineHeight: 1,
+                  mb: 0.75,
+                }}
+              >
+                Plateformes
+              </Typography>
               <PlatformLogos platforms={game.platforms ?? []} />
+            </Box>
+          </Box>
+
+          {/* Statut */}
+          <Box
+            className="gp-card-2"
+            sx={{
+              ...card(),
+              px: 2.5,
+              py: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              gridColumn: { xs: 'auto', sm: '1 / -1', md: 'auto' },
+            }}
+          >
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '14px',
+                flexShrink: 0,
+                background: C.accentSoft,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <CheckCircleIcon sx={{ color: C.accent, fontSize: 22 }} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: 1.5,
+                  textTransform: 'uppercase',
+                  color: C.light,
+                  lineHeight: 1,
+                  mb: 0.75,
+                }}
+              >
+                Mon statut
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                {(
+                  [
+                    {
+                      icon: <CheckCircleIcon />,
+                      label: 'Terminé',
+                      status: 'TERMINE' as const,
+                      color: '#4caf50',
+                    },
+                    {
+                      icon: <PlayCircleIcon />,
+                      label: 'En cours',
+                      status: 'EN_COURS' as const,
+                      color: C.accent,
+                    },
+                    {
+                      icon: <BookmarkIcon />,
+                      label: 'Envie',
+                      status: 'ENVIE_DE_JOUER' as const,
+                      color: '#ff9800',
+                    },
+                  ] as const
+                ).map(({ icon, label, status, color }) => {
+                  const active = userGame?.status === status;
+                  return (
+                    <Box
+                      key={status}
+                      onClick={() => handleSetStatus(status)}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        px: 1.2,
+                        py: 0.5,
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        background: active ? `${color}18` : 'rgba(0,0,0,0.04)',
+                        border: `1px solid ${active ? `${color}40` : 'transparent'}`,
+                        color: active ? color : C.muted,
+                        transition: 'all 0.15s ease',
+                        '&:hover': {
+                          background: `${color}12`,
+                          borderColor: `${color}30`,
+                          color,
+                        },
+                      }}
+                    >
+                      {React.cloneElement(icon, {
+                        sx: { fontSize: 13, color: 'inherit' },
+                      } as any)}
+                      <Typography
+                        sx={{
+                          fontFamily: FONT_BODY,
+                          fontSize: 12,
+                          fontWeight: active ? 700 : 500,
+                          color: 'inherit',
+                        }}
+                      >
+                        {label}
+                      </Typography>
+                    </Box>
+                  );
+                })}
+                <Tooltip title="Coup de cœur" arrow>
+                  <Box
+                    onClick={() => handleToggleFavorite()}
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      px: 1.2,
+                      py: 0.5,
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background: userGame?.is_favorite
+                        ? 'rgba(255,68,68,0.1)'
+                        : 'rgba(0,0,0,0.04)',
+                      border: `1px solid ${userGame?.is_favorite ? 'rgba(255,68,68,0.35)' : 'transparent'}`,
+                      color: userGame?.is_favorite ? '#ff4444' : C.muted,
+                      transition: 'all 0.15s ease',
+                      '&:hover': {
+                        background: 'rgba(255,68,68,0.1)',
+                        color: '#ff4444',
+                      },
+                    }}
+                  >
+                    {userGame?.is_favorite ? (
+                      <FavoriteIcon sx={{ fontSize: 13, color: 'inherit' }} />
+                    ) : (
+                      <FavoriteBorderIcon
+                        sx={{ fontSize: 13, color: 'inherit' }}
+                      />
+                    )}
+                    <Typography
+                      sx={{
+                        fontFamily: FONT_BODY,
+                        fontSize: 12,
+                        fontWeight: userGame?.is_favorite ? 700 : 500,
+                        color: 'inherit',
+                      }}
+                    >
+                      Favori
+                    </Typography>
+                  </Box>
+                </Tooltip>
+              </Box>
             </Box>
           </Box>
         </Box>
 
-        {/* ── DESCRIPTION + DETAILS ── */}
+        {/* ── DESCRIPTION + DÉTAILS ── */}
         <Box
           sx={{
             display: 'grid',
@@ -886,17 +877,17 @@ export default function GamePage() {
             mb: 2.5,
           }}
         >
-          <Box className="gp-card-3" sx={{ ...blob(), p: '32px 36px' }}>
-            <PillLabel>Synopsis</PillLabel>
+          <Box className="gp-card-3" sx={{ ...card(), p: '28px 32px' }}>
+            <Pill>Synopsis</Pill>
             <Box
               sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
             >
-              <DescriptionIcon sx={{ color: C.accent, fontSize: 20 }} />
+              <DescriptionIcon sx={{ color: C.accent, fontSize: 18 }} />
               <Typography
                 sx={{
                   fontFamily: FONT_DISPLAY,
                   fontWeight: 700,
-                  fontSize: 20,
+                  fontSize: 19,
                   color: C.title,
                   letterSpacing: -0.3,
                 }}
@@ -937,24 +928,24 @@ export default function GamePage() {
           <Box
             className="gp-card-4"
             sx={{
-              ...blob(),
-              p: '32px 36px',
+              ...card(),
+              p: '28px 32px',
               display: 'flex',
               flexDirection: 'column',
-              gap: 3,
+              gap: 2.5,
             }}
           >
             <Box>
               <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}
               >
-                <CategoryIcon sx={{ color: C.accent, fontSize: 18 }} />
+                <CategoryIcon sx={{ color: C.accent, fontSize: 16 }} />
                 <Typography
                   sx={{
                     fontFamily: FONT_BODY,
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: 700,
-                    letterSpacing: 1.8,
+                    letterSpacing: 1.6,
                     textTransform: 'uppercase',
                     color: C.light,
                   }}
@@ -962,7 +953,7 @@ export default function GamePage() {
                   Genres
                 </Typography>
               </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                 {game.genres && game.genres.length > 0 ? (
                   game.genres.map((g: any) => (
                     <Chip
@@ -973,36 +964,46 @@ export default function GamePage() {
                       sx={{
                         fontFamily: FONT_BODY,
                         fontWeight: 600,
-                        fontSize: 12,
+                        fontSize: 11.5,
                         backgroundColor: C.accentSoft,
                         border: `1px solid ${C.accentGlow}`,
                         color: C.accent,
-                        borderRadius: '12px',
+                        borderRadius: '10px',
                         '& .MuiChip-icon': { color: C.accent },
                       }}
                     />
                   ))
                 ) : (
                   <Typography
-                    sx={{ fontFamily: FONT_BODY, fontSize: 14, color: C.muted }}
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 13.5,
+                      color: C.muted,
+                    }}
                   >
                     Non renseigné
                   </Typography>
                 )}
               </Box>
             </Box>
-
+            <Box
+              sx={{
+                height: '1px',
+                background: 'rgba(0,0,0,0.05)',
+                borderRadius: 99,
+              }}
+            />
             <Box>
               <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.6 }}
               >
-                <CalendarTodayIcon sx={{ color: C.accent, fontSize: 18 }} />
+                <CalendarTodayIcon sx={{ color: C.accent, fontSize: 16 }} />
                 <Typography
                   sx={{
                     fontFamily: FONT_BODY,
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: 700,
-                    letterSpacing: 1.8,
+                    letterSpacing: 1.6,
                     textTransform: 'uppercase',
                     color: C.light,
                   }}
@@ -1014,26 +1015,32 @@ export default function GamePage() {
                 sx={{
                   fontFamily: FONT_DISPLAY,
                   fontWeight: 700,
-                  fontSize: 17,
+                  fontSize: 16,
                   color: C.title,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.2,
                 }}
               >
                 {formatDate(game.release_date) || 'Non renseignée'}
               </Typography>
             </Box>
-
+            <Box
+              sx={{
+                height: '1px',
+                background: 'rgba(0,0,0,0.05)',
+                borderRadius: 99,
+              }}
+            />
             <Box>
               <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.6 }}
               >
-                <BusinessIcon sx={{ color: C.accent, fontSize: 18 }} />
+                <BusinessIcon sx={{ color: C.accent, fontSize: 16 }} />
                 <Typography
                   sx={{
                     fontFamily: FONT_BODY,
-                    fontSize: 11,
+                    fontSize: 10.5,
                     fontWeight: 700,
-                    letterSpacing: 1.8,
+                    letterSpacing: 1.6,
                     textTransform: 'uppercase',
                     color: C.light,
                   }}
@@ -1045,9 +1052,9 @@ export default function GamePage() {
                 sx={{
                   fontFamily: FONT_DISPLAY,
                   fontWeight: 700,
-                  fontSize: 17,
+                  fontSize: 16,
                   color: C.title,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.2,
                 }}
               >
                 {game.publisher?.name || 'Non renseigné'}
@@ -1061,26 +1068,23 @@ export default function GamePage() {
           (game.videos && game.videos.length > 0)) && (
           <Box
             className="gp-card-5"
-            sx={{ ...blob(noHover), p: { xs: 2.5, md: 4 }, mb: 2.5 }}
+            sx={{ ...card(noHover), p: { xs: 2.5, md: '28px 32px' }, mb: 2.5 }}
           >
-            <Box sx={{ mb: 3 }}>
-              <PillLabel>Galerie</PillLabel>
-              <Typography
-                sx={{
-                  fontFamily: FONT_DISPLAY,
-                  fontWeight: 700,
-                  fontSize: 20,
-                  color: C.title,
-                  letterSpacing: -0.3,
-                }}
-              >
-                Médias
-              </Typography>
-            </Box>
-            <FluidDivider />
-
+            <Pill>Galerie</Pill>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 19,
+                color: C.title,
+                letterSpacing: -0.3,
+              }}
+            >
+              Médias
+            </Typography>
+            <Sep />
             {game.videos && game.videos.length > 0 && (
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mb: 2.5 }}>
                 <Box
                   sx={{
                     position: 'relative',
@@ -1088,9 +1092,9 @@ export default function GamePage() {
                     maxWidth: 760,
                     mx: 'auto',
                     aspectRatio: '16/9',
-                    borderRadius: '24px',
+                    borderRadius: '20px',
                     overflow: 'hidden',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+                    boxShadow: '0 6px 28px rgba(0,0,0,0.12)',
                   }}
                 >
                   <iframe
@@ -1109,21 +1113,18 @@ export default function GamePage() {
                 </Box>
               </Box>
             )}
-
             {game.screenshots && game.screenshots.length > 0 && (
               <Box
                 sx={{
                   display: 'flex',
-                  flexDirection: 'row',
-                  gap: 2,
+                  gap: 1.5,
                   overflowX: 'auto',
                   pb: 1,
-                  '&::-webkit-scrollbar': { height: 5 },
+                  '&::-webkit-scrollbar': { height: 4 },
                   '&::-webkit-scrollbar-thumb': {
                     borderRadius: 99,
-                    bgcolor: 'rgba(211,47,47,0.2)',
+                    bgcolor: 'rgba(211,47,47,0.18)',
                   },
-                  '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
                 }}
               >
                 {game.screenshots.map(s => (
@@ -1134,24 +1135,23 @@ export default function GamePage() {
                     alt={game.name ? `Capture — ${game.name}` : 'Capture'}
                     onClick={() => setSelectedScreenshot(s.url)}
                     sx={{
-                      height: { xs: 140, sm: 200 },
-                      minWidth: { xs: 220, sm: 320 },
+                      height: { xs: 130, sm: 190 },
+                      minWidth: { xs: 200, sm: 300 },
                       objectFit: 'cover',
-                      borderRadius: '20px',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+                      borderRadius: '16px',
+                      boxShadow: '0 3px 12px rgba(0,0,0,0.09)',
                       flexShrink: 0,
                       cursor: 'pointer',
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      transition: 'transform 0.2s ease,box-shadow 0.2s ease',
                       '&:hover': {
                         transform: 'scale(1.03)',
-                        boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
+                        boxShadow: '0 7px 24px rgba(0,0,0,0.14)',
                       },
                     }}
                   />
                 ))}
               </Box>
             )}
-
             {selectedScreenshot && (
               <Modal open onClose={() => setSelectedScreenshot(null)}>
                 <Box
@@ -1174,7 +1174,7 @@ export default function GamePage() {
                     sx={{
                       maxWidth: '90vw',
                       maxHeight: '90vh',
-                      borderRadius: '24px',
+                      borderRadius: '20px',
                       boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
                     }}
                   />
@@ -1185,22 +1185,20 @@ export default function GamePage() {
         )}
 
         {/* ── AVIS ── */}
-        <Box sx={{ ...blob(noHover), p: { xs: 2.5, md: 4 } }}>
-          <Box sx={{ mb: 3 }}>
-            <PillLabel>Opinions</PillLabel>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 20,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              Avis de la communauté
-            </Typography>
-          </Box>
-          <FluidDivider />
+        <Box sx={{ ...card(noHover), p: { xs: 2.5, md: '28px 32px' } }}>
+          <Pill>Opinions</Pill>
+          <Typography
+            sx={{
+              fontFamily: FONT_DISPLAY,
+              fontWeight: 700,
+              fontSize: 19,
+              color: C.title,
+              letterSpacing: -0.3,
+            }}
+          >
+            Avis de la communauté
+          </Typography>
+          <Sep />
           <ReviewSection
             gameId={djangoId ? String(djangoId) : ''}
             resolveGameId={ensureDjangoId}
