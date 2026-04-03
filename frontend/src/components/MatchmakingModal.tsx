@@ -36,6 +36,7 @@ interface MatchmakingModalProps {
   readonly matches: Match[];
   readonly startedAt: Date | null;
   readonly game: { readonly name: string; readonly image: string } | null;
+  readonly onContactPlayer?: (targetUserId: number) => void;
 }
 
 export default function MatchmakingModal({
@@ -45,6 +46,7 @@ export default function MatchmakingModal({
   matches,
   startedAt,
   game,
+  onContactPlayer,
 }: MatchmakingModalProps) {
   const elapsedTime = useMatchmakingTimer(startedAt);
 
@@ -132,6 +134,9 @@ export default function MatchmakingModal({
               const user = match.user;
               let userName = `Joueur #${user}`;
 
+              const targetUserId =
+                typeof user === 'object' && user !== null ? user.id : user;
+
               if (typeof user === 'object' && user !== null) {
                 userName = user.username || `Joueur #${user.id}`;
               }
@@ -169,6 +174,9 @@ export default function MatchmakingModal({
                       color="primary"
                       startIcon={<ChatBubbleOutlineIcon />}
                       sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}
+                      onClick={() =>
+                        onContactPlayer && onContactPlayer(targetUserId)
+                      }
                     >
                       Contacter
                     </Button>

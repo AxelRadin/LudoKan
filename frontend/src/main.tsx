@@ -22,7 +22,11 @@ import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: (
+      <MatchmakingProvider>
+        <App />
+      </MatchmakingProvider>
+    ),
     children: [
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
@@ -50,11 +54,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <AuthProvider>
-        <MatchmakingProvider>
-          <Sentry.ErrorBoundary fallback={errorFallback}>
-            <RouterProvider router={router} />
-          </Sentry.ErrorBoundary>
-        </MatchmakingProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>
