@@ -177,8 +177,8 @@ export default function GameList({
                     aria-label="Retirer le jeu"
                     sx={{
                       position: 'absolute',
-                      bottom: 30,
-                      right: 2,
+                      top: 4,
+                      right: 4,
                       color: 'text.secondary',
                       bgcolor: 'rgba(255,255,255,0.85)',
                       '&:hover': {
