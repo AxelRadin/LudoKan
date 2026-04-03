@@ -27,13 +27,9 @@ styleEl.textContent = `
     from { opacity: 0; }
     to   { opacity: 1; }
   }
-  @keyframes luxLineGrow {
-    from { transform: scaleX(0); }
-    to   { transform: scaleX(1); }
-  }
   @keyframes luxDotPulse {
     0%, 100% { transform: scale(1); opacity: 1; }
-    50%       { transform: scale(1.4); opacity: 0.7; }
+    50%      { transform: scale(1.4); opacity: 0.7; }
   }
   .lux-hero    { animation: luxFadeIn  0.9s ease 0s both; }
   .lux-s0      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
@@ -41,7 +37,6 @@ styleEl.textContent = `
   .lux-s2      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
   .lux-s3      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
   .lux-s4      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
-  .lux-line    { animation: luxLineGrow 1s cubic-bezier(0.16,1,0.3,1) 0.3s both; transform-origin: left; }
   .lux-dot     { animation: luxDotPulse 3s ease-in-out infinite; }
 `;
 if (!document.head.querySelector('style[data-home-lux]')) {
@@ -52,17 +47,19 @@ const FD = "'Cormorant Garamond', Georgia, serif";
 const FB = "'DM Sans', system-ui, sans-serif";
 
 const C = {
-  bg: '#ffd3d3',
-  card: 'rgba(255,255,255,0.52)',
-  cardHover: 'rgba(255,255,255,0.72)',
-  border: 'rgba(211,47,47,0.12)',
-  borderHover: 'rgba(211,47,47,0.28)',
+  bgBase: '#fcf8f7',
+  bgSoft: '#f7efee',
+  bgWarm: '#fffbfa',
+  card: 'rgba(255,255,255,0.66)',
+  cardHover: 'rgba(255,255,255,0.82)',
+  border: 'rgba(198,40,40,0.10)',
+  borderHover: 'rgba(198,40,40,0.22)',
   accent: '#c62828',
-  accentSoft: '#d32f2f',
-  accentGlow: 'rgba(198,40,40,0.18)',
-  ink: '#1a0a0a',
-  muted: '#8a5a5a',
-  light: '#c09090',
+  accentSoft: '#d43c3c',
+  accentGlow: 'rgba(198,40,40,0.12)',
+  ink: '#241818',
+  muted: '#7e6464',
+  light: '#b49393',
 };
 
 /* ── Section header ── */
@@ -78,7 +75,7 @@ function SectionLabel({ label, title }: { label: string; title: string }) {
             letterSpacing: 3,
             textTransform: 'uppercase',
             color: C.accentSoft,
-            mb: 0.5,
+            mb: 0.6,
           }}
         >
           {label}
@@ -96,12 +93,13 @@ function SectionLabel({ label, title }: { label: string; title: string }) {
           {title}
         </Typography>
       </Box>
+
       <Box
         sx={{
           width: { xs: 32, md: 64 },
           height: '1px',
-          background: C.accentSoft,
-          opacity: 0.3,
+          background: `linear-gradient(to right, ${C.accentSoft}, transparent)`,
+          opacity: 0.28,
           flexShrink: 0,
           mb: '12px',
         }}
@@ -123,28 +121,31 @@ function Section({
       className={className}
       sx={{
         background: C.card,
-        backdropFilter: 'blur(24px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+        backdropFilter: 'blur(22px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(22px) saturate(160%)',
         border: `1px solid ${C.border}`,
-        borderRadius: '2px',
-        p: { xs: '24px 20px', md: '32px 36px' },
-        mb: 2,
+        borderRadius: '24px',
+        p: { xs: '24px 20px', md: '30px 34px' },
+        mb: 2.5,
         position: 'relative',
-        transition: 'background 0.3s ease, border-color 0.3s ease',
+        transition:
+          'background 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
+        boxShadow: '0 18px 40px rgba(36, 24, 24, 0.04)',
         '&:hover': {
           background: C.cardHover,
           borderColor: C.borderHover,
+          transform: 'translateY(-2px)',
+          boxShadow: '0 24px 50px rgba(198,40,40,0.08)',
         },
-        /* Top accent rule */
         '&::before': {
           content: '""',
           position: 'absolute',
           top: 0,
-          left: 0,
-          right: 0,
+          left: 24,
+          right: 24,
           height: '1px',
           background: `linear-gradient(to right, ${C.accentSoft} 0%, transparent 55%)`,
-          opacity: 0.6,
+          opacity: 0.4,
         },
       }}
     >
@@ -158,6 +159,7 @@ export const HomePage = () => {
     id: number;
     name: string;
   } | null>(null);
+
   const genreResultRef = useRef<HTMLDivElement>(null);
   const { sections, genreSection } = useHomeTrending({ selectedGenre });
 
@@ -177,11 +179,12 @@ export const HomePage = () => {
         minHeight: '100vh',
         fontFamily: FB,
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 140% 80% at -5% 0%, rgba(255,180,180,0.7) 0%, transparent 50%),
-          radial-gradient(ellipse 80% 60% at 105% 100%, rgba(198,40,40,0.07) 0%, transparent 50%),
-          radial-gradient(ellipse 60% 100% at 50% 50%, rgba(255,220,220,0.2) 0%, transparent 70%),
-          #ffd3d3
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
+          radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
+          radial-gradient(circle at 14% 18%, rgba(198,40,40,0.07) 0%, transparent 24%),
+          radial-gradient(circle at 86% 16%, rgba(255,225,225,0.72) 0%, transparent 26%),
+          radial-gradient(circle at 78% 84%, rgba(198,40,40,0.05) 0%, transparent 24%),
+          linear-gradient(180deg, ${C.bgBase} 0%, ${C.bgSoft} 55%, ${C.bgWarm} 100%)
         `,
       }}
     >
@@ -193,18 +196,16 @@ export const HomePage = () => {
           py: { xs: 3, md: 5 },
         }}
       >
-        {/* ── Masthead ── */}
-
         {/* ── Hero Banner ── */}
         <Box
           className="lux-s0"
           sx={{
             mb: { xs: 3, md: 4 },
-            borderRadius: '2px',
+            borderRadius: '28px',
             overflow: 'hidden',
             border: `1px solid ${C.border}`,
             boxShadow:
-              '0 32px 80px rgba(198,40,40,0.08), 0 8px 24px rgba(0,0,0,0.06)',
+              '0 28px 70px rgba(198,40,40,0.08), 0 10px 30px rgba(36,24,24,0.04)',
           }}
         >
           <Banner />
@@ -258,7 +259,6 @@ export const HomePage = () => {
 
         {/* ── Genre grid ── */}
         <Box className="lux-s4">
-          {/* Section header outside card for visual break */}
           <Box
             sx={{
               display: 'flex',
@@ -281,7 +281,15 @@ export const HomePage = () => {
             >
               Explorer par genre
             </Typography>
-            <Box sx={{ flex: 1, height: '1px', bgcolor: C.border }} />
+
+            <Box
+              sx={{
+                flex: 1,
+                height: '1px',
+                background: `linear-gradient(to right, ${C.border}, transparent)`,
+              }}
+            />
+
             <Typography
               sx={{
                 fontFamily: FB,
@@ -311,6 +319,8 @@ export const HomePage = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.5,
           }}
         >
           <Typography
@@ -325,6 +335,7 @@ export const HomePage = () => {
           >
             Ludokan — votre collection, maîtrisée.
           </Typography>
+
           <Typography
             sx={{
               fontFamily: FB,
