@@ -174,9 +174,7 @@ export default function MatchmakingModal({
                       color="primary"
                       startIcon={<ChatBubbleOutlineIcon />}
                       sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}
-                      onClick={() =>
-                        onContactPlayer && onContactPlayer(targetUserId)
-                      }
+                      onClick={() => onContactPlayer?.(targetUserId)}
                     >
                       Contacter
                     </Button>
