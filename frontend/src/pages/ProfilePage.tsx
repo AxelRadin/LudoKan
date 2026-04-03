@@ -11,7 +11,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -80,6 +81,7 @@ type UserProfile = {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
+  banner_url?: string;
   description_courte?: string;
   created_at?: string;
 };
@@ -194,12 +196,14 @@ type ProfilePageModel = {
   gamesEnvie: GameListItem[];
   gamesFavoris: GameListItem[];
   avatarSrc: string;
+  bannerBusy: boolean;
   handleEditOpen: () => void;
   handleEditClose: () => void;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleModalAvatarChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleAvatarRemoveNow: () => Promise<void>;
   handleSave: () => Promise<void>;
+  handleBannerChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
@@ -217,6 +221,7 @@ function useProfilePageModel(): ProfilePageModel {
   });
   const [avatarError, setAvatarError] = useState('');
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [bannerBusy, setBannerBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
 
   useEffect(() => {
@@ -229,6 +234,7 @@ function useProfilePageModel(): ProfilePageModel {
           first_name: data.first_name || '',
           last_name: data.last_name || '',
           avatar_url: data.avatar_url || '',
+          banner_url: data.banner_url || '',
           description_courte: data.description_courte || '',
           created_at: data.created_at || '',
         });
@@ -253,6 +259,7 @@ function useProfilePageModel(): ProfilePageModel {
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
       avatar_url: user?.avatar_url || '',
+      banner_url: user?.banner_url || '',
       description_courte: user?.description_courte || '',
       created_at: user?.created_at || '',
     });
@@ -283,6 +290,7 @@ function useProfilePageModel(): ProfilePageModel {
       first_name: updated.first_name ?? prev.first_name,
       last_name: updated.last_name ?? prev.last_name,
       avatar_url: updated.avatar_url ?? prev.avatar_url,
+      banner_url: updated.banner_url ?? prev.banner_url,
       description_courte: updated.description_courte ?? prev.description_courte,
       created_at: updated.created_at ?? prev.created_at,
     }));
@@ -342,6 +350,33 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const handleBannerChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || bannerBusy) return;
+
+    const err = validateAvatarFile(f);
+    if (err) {
+      alert(err);
+      return;
+    }
+    setBannerBusy(true);
+    try {
+      const body = new FormData();
+      body.append('banner', f);
+      const updated = await apiPatch('/api/me/', body);
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de mettre à jour la bannière.';
+      alert(msg);
+    } finally {
+      setBannerBusy(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const updated = await apiPatch('/api/me/', {
@@ -395,12 +430,14 @@ function useProfilePageModel(): ProfilePageModel {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    bannerBusy,
     handleEditOpen,
     handleEditClose,
     handleChange,
     handleModalAvatarChange,
     handleAvatarRemoveNow,
     handleSave,
+    handleBannerChange,
   };
 }
 
@@ -730,13 +767,17 @@ export default function ProfilePage() {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    bannerBusy,
     handleEditOpen,
     handleEditClose,
     handleChange,
     handleModalAvatarChange,
     handleAvatarRemoveNow,
     handleSave,
+    handleBannerChange,
   } = useProfilePageModel();
+
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <Box
@@ -785,7 +826,7 @@ export default function ProfilePage() {
           {/* Banner */}
           <Box
             component="img"
-            src={zeldaBanner}
+            src={user?.banner_url || zeldaBanner}
             alt="Banner"
             sx={{
               width: '100%',
@@ -796,6 +837,47 @@ export default function ProfilePage() {
               boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
             }}
           />
+          {user && (
+            <>
+              <Box
+                component="button"
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={bannerBusy}
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: bannerBusy ? 'wait' : 'pointer',
+                  zIndex: 2,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                  },
+                }}
+              >
+                {bannerBusy ? (
+                  <CircularProgress size={20} sx={{ color: '#fff' }} />
+                ) : (
+                  <CameraAltIcon fontSize="small" />
+                )}
+              </Box>
+              <input
+                type="file"
+                ref={bannerInputRef}
+                style={{ display: 'none' }}
+                accept="image/png, image/jpeg, image/webp"
+                onChange={handleBannerChange}
+              />
+            </>
+          )}
 
           {/* Gradient scrim */}
           <Box

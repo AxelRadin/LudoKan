@@ -475,14 +475,6 @@ const PageProfile: React.FC = () => {
         {/* Bandeau Zelda + avatar */}
         <section style={styles.hero}>
           <div style={styles.bannerWrapper}>
-            <img
-              style={styles.bannerImg}
-              src={
-                user?.banner_url ||
-                'https://images8.alphacoders.com/948/948964.jpg'
-              }
-              alt="Bannière de profil"
-            />
             {user && (
               <button
                 type="button"
@@ -500,6 +492,14 @@ const PageProfile: React.FC = () => {
               style={{ display: 'none' }}
               accept="image/png, image/jpeg, image/webp"
               onChange={handleBannerChange}
+            />
+            <img
+              style={styles.bannerImg}
+              src={
+                user?.banner_url ||
+                'https://images8.alphacoders.com/948/948964.jpg'
+              }
+              alt="Bannière de profil"
             />
 
             <div style={styles.avatarOverlay}>
