@@ -13,7 +13,6 @@ import {
   Button,
   Chip,
   Modal,
-  Paper,
   Rating,
   Tooltip,
   Typography,
@@ -52,93 +51,74 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
 
-/* ─── Google Fonts injection ─── */
+/* ── Fonts ── */
 const fontLink = document.createElement('link');
 fontLink.rel = 'stylesheet';
 fontLink.href =
   'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap';
 document.head.appendChild(fontLink);
 
-/* ── Keyframes injected once ── */
+/* ── Keyframes ── */
 const styleEl = document.createElement('style');
 styleEl.textContent = `
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(18px); }
+    from { opacity: 0; transform: translateY(24px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.94); }
-    to   { opacity: 1; transform: scale(1); }
+  @keyframes floatIn {
+    from { opacity: 0; transform: scale(0.96) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
   }
-  @keyframes shimmer {
-    0%   { background-position: -200% center; }
-    100% { background-position: 200% center; }
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 0.75; }
   }
-  .game-hero-card  { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both; }
-  .game-info-0     { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.08s both; }
-  .game-info-1     { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.16s both; }
-  .game-stat-0     { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.24s both; }
-  .game-stat-1     { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.32s both; }
-  .game-stat-2     { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.40s both; }
-  .game-media      { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.48s both; }
-  .game-reviews    { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.56s both; }
+  .gp-hero   { animation: floatIn 0.7s cubic-bezier(0.22,1,0.36,1) both; }
+  .gp-card-0 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.10s both; }
+  .gp-card-1 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.20s both; }
+  .gp-card-2 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.30s both; }
+  .gp-card-3 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.40s both; }
+  .gp-card-4 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.50s both; }
+  .gp-card-5 { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) 0.60s both; }
 `;
 document.head.appendChild(styleEl);
 
-/* ─── Design tokens (identiques à ProfilePage) ─── */
+/* ── Tokens ── */
 const C = {
   pageBg: '#ffd3d3',
-  cardBg: 'rgba(255,255,255,0.72)',
-  border: '#f1c7c7',
-  softBorder: 'rgba(241,199,199,0.5)',
+  accent: '#d32f2f',
+  accentDark: '#b71c1c',
+  accentSoft: 'rgba(211,47,47,0.10)',
+  accentGlow: 'rgba(211,47,47,0.22)',
   title: '#0f0f0f',
   text: '#2b2b2b',
   muted: '#6e6e73',
-  light: '#a0a0a8',
-  accent: '#d32f2f',
-  accentDark: '#b71c1c',
-  accentGlow: 'rgba(211,47,47,0.15)',
-  glass: 'rgba(255,250,250,0.78)',
-  glassBorder: 'rgba(255,255,255,0.9)',
+  light: '#b0b0b8',
+  glass: 'rgba(255,255,255,0.52)',
+  glassBorder: 'rgba(255,255,255,0.72)',
 };
 
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 
-const glassCard = {
-  background: C.cardBg,
-  backdropFilter: 'blur(20px) saturate(160%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-  border: `1px solid ${C.glassBorder}`,
-  borderRadius: '20px',
-  boxShadow: '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+const blob = (override: Record<string, unknown> = {}) => ({
+  background: C.glass,
+  backdropFilter: 'blur(28px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+  border: `1.5px solid ${C.glassBorder}`,
+  borderRadius: '32px',
+  boxShadow:
+    '0 4px 32px rgba(0,0,0,0.07), inset 0 1.5px 0 rgba(255,255,255,0.85)',
+  transition:
+    'transform 0.25s cubic-bezier(0.22,1,0.36,1), box-shadow 0.25s ease',
   '&:hover': {
-    transform: 'translateY(-3px)',
+    transform: 'translateY(-4px)',
     boxShadow:
-      '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+      '0 12px 40px rgba(0,0,0,0.11), inset 0 1.5px 0 rgba(255,255,255,0.9)',
   },
-};
+  ...override,
+});
 
-const sectionLabel = {
-  fontSize: 10,
-  fontWeight: 700,
-  letterSpacing: 2,
-  textTransform: 'uppercase' as const,
-  color: C.accent,
-  mb: 0.5,
-  fontFamily: FONT_BODY,
-};
-
-const sectionTitle = {
-  fontFamily: FONT_DISPLAY,
-  fontWeight: 700,
-  fontSize: 20,
-  color: C.title,
-  letterSpacing: -0.3,
-};
-
-/* ─── Genre icons ─── */
 const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   Action: <LocalFireDepartmentIcon fontSize="small" />,
   Adventure: <ExploreIcon fontSize="small" />,
@@ -182,8 +162,51 @@ function getHighResImage(url: string | null) {
 
 function formatDate(isoDate: string | null) {
   if (!isoDate) return '';
-  const date = new Date(isoDate);
-  return date.toLocaleDateString('fr-FR');
+  return new Date(isoDate).toLocaleDateString('fr-FR');
+}
+
+function PillLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        px: 1.5,
+        py: 0.4,
+        borderRadius: 999,
+        background: C.accentSoft,
+        border: `1px solid ${C.accentGlow}`,
+        mb: 1,
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: FONT_BODY,
+          fontSize: 10,
+          fontWeight: 700,
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+          color: C.accent,
+          lineHeight: 1,
+        }}
+      >
+        {children}
+      </Typography>
+    </Box>
+  );
+}
+
+function FluidDivider() {
+  return (
+    <Box
+      sx={{
+        height: '1.5px',
+        mb: 3,
+        background: `linear-gradient(to right, ${C.accentGlow}, rgba(241,199,199,0.3), transparent)`,
+        borderRadius: 99,
+      }}
+    />
+  );
 }
 
 export default function GamePage() {
@@ -205,7 +228,7 @@ export default function GamePage() {
   const [selectedScreenshot, setSelectedScreenshot] = useState<string | null>(
     null
   );
-  const DESCRIPTION_LIMIT = 150;
+  const DESCRIPTION_LIMIT = 200;
 
   useEffect(() => {
     const fetchGameData = async () => {
@@ -263,8 +286,9 @@ export default function GamePage() {
     apiGet(`/api/reviews/?game=${djangoId}`)
       .then((data: any) => {
         const reviews = Array.isArray(data) ? data : (data.results ?? []);
-        const myReview = reviews.find((r: any) => r.user?.id === currentUserId);
-        setUserReview(myReview || null);
+        setUserReview(
+          reviews.find((r: any) => r.user?.id === currentUserId) || null
+        );
       })
       .catch(() => setUserReview(null));
   }, [djangoId, isAuthenticated, currentUserId]);
@@ -279,106 +303,93 @@ export default function GamePage() {
       if (normalized_game.user_library)
         setUserGame(normalized_game.user_library);
       return game_id;
-    } catch (err) {
-      console.error('[ensureDjangoId]', err);
+    } catch {
       return null;
     }
   }
 
   async function handleSetStatus(
     status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
-    isPendingAction = false
+    isPending = false
   ) {
-    if (!isAuthenticated && !isPendingAction) {
+    if (!isAuthenticated && !isPending) {
       setPendingAction(() => () => handleSetStatus(status, true));
       setAuthModalOpen(true);
       return;
     }
-    const currentDjangoId = await ensureDjangoId();
-    if (currentDjangoId === null) return;
+    const did = await ensureDjangoId();
+    if (!did) return;
     try {
       if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
-          status,
-        });
-        setUserGame({ ...userGame, status: updated.status });
+        const u = await apiPatch(`/api/me/games/${did}/`, { status });
+        setUserGame({ ...userGame, status: u.status });
       } else {
-        const created = await apiPost('/api/me/games/', {
-          game_id: currentDjangoId,
-          status,
-        });
-        setUserGame(created);
+        const c = await apiPost('/api/me/games/', { game_id: did, status });
+        setUserGame(c);
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert('Erreur lors de la mise à jour du statut');
     }
   }
 
-  async function handleToggleFavorite(isPendingAction = false) {
-    if (!isAuthenticated && !isPendingAction) {
+  async function handleToggleFavorite(isPending = false) {
+    if (!isAuthenticated && !isPending) {
       setPendingAction(() => () => handleToggleFavorite(true));
       setAuthModalOpen(true);
       return;
     }
-    const currentDjangoId = await ensureDjangoId();
-    if (currentDjangoId === null) return;
+    const did = await ensureDjangoId();
+    if (!did) return;
     try {
-      const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
+      const u = await apiPatch(`/api/me/games/${did}/`, {
         is_favorite: !userGame?.is_favorite,
       });
-      setUserGame(updated);
-    } catch (error) {
-      console.error(error);
+      setUserGame(u);
+    } catch {
       alert('Erreur lors de la mise à jour du coup de cœur');
     }
   }
 
-  async function handleSetMatchmaking(isPendingAction = false) {
-    if (!isAuthenticated && !isPendingAction) {
+  async function handleSetMatchmaking(isPending = false) {
+    if (!isAuthenticated && !isPending) {
       setPendingAction(() => () => handleSetMatchmaking(true));
       setAuthModalOpen(true);
       return;
     }
-    const currentDjangoId = await ensureDjangoId();
-    if (currentDjangoId === null || !game) return;
-    const gameImage = getHighResImage(game.cover_url);
-    await startMatchmaking(String(currentDjangoId), game.name, gameImage);
+    const did = await ensureDjangoId();
+    if (!did || !game) return;
+    await startMatchmaking(
+      String(did),
+      game.name,
+      getHighResImage(game.cover_url)
+    );
   }
 
-  /* ─── États de chargement ─── */
-  const loadingOrNotFound = (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontFamily: FONT_BODY,
-        background: `
-          radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-          ${C.pageBg}
-        `,
-      }}
-    >
-      <Typography
+  if (gameNotFound || !game) {
+    return (
+      <Box
         sx={{
-          fontFamily: FONT_DISPLAY,
-          fontWeight: 700,
-          fontSize: 22,
-          color: C.title,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: C.pageBg,
         }}
       >
-        {gameNotFound
-          ? 'Jeu introuvable dans notre base de données.'
-          : 'Chargement du jeu…'}
-      </Typography>
-    </Box>
-  );
+        <Typography
+          sx={{
+            fontFamily: FONT_DISPLAY,
+            fontWeight: 700,
+            fontSize: 22,
+            color: C.title,
+          }}
+        >
+          {gameNotFound ? 'Jeu introuvable.' : 'Chargement…'}
+        </Typography>
+      </Box>
+    );
+  }
 
-  if (gameNotFound || !game) return loadingOrNotFound;
-
-  /* ─── Données description ─── */
   const fullText = translating
     ? 'Traduction en cours…'
     : (translatedDescription ??
@@ -390,29 +401,38 @@ export default function GamePage() {
       ? fullText.slice(0, DESCRIPTION_LIMIT) + '…'
       : fullText;
 
+  const noHover = {
+    '&:hover': {
+      transform: 'none',
+      boxShadow:
+        '0 4px 32px rgba(0,0,0,0.07), inset 0 1.5px 0 rgba(255,255,255,0.85)',
+    },
+  };
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-          radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+          radial-gradient(ellipse 140% 90% at 10% -15%, rgba(255,190,190,0.7) 0%, transparent 50%),
+          radial-gradient(ellipse 90% 70% at 95% 105%, rgba(211,47,47,0.09) 0%, transparent 45%),
+          radial-gradient(ellipse 60% 50% at 50% 60%, rgba(255,220,220,0.4) 0%, transparent 60%),
           ${C.pageBg}
         `,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
     >
-      <Box sx={{ maxWidth: 1160, mx: 'auto' }}>
+      <Box sx={{ maxWidth: 1100, mx: 'auto' }}>
         {/* ── Top bar ── */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            mb: 4,
+            mb: 5,
           }}
         >
           <Typography
@@ -420,27 +440,28 @@ export default function GamePage() {
               fontFamily: FONT_DISPLAY,
               fontWeight: 900,
               fontSize: { xs: 22, md: 26 },
-              color: C.title,
-              letterSpacing: -0.8,
               background: `linear-gradient(135deg, ${C.title} 40%, ${C.accent})`,
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              letterSpacing: -0.8,
             }}
           >
             Ludokan
           </Typography>
         </Box>
 
-        {/* ── HERO BANNER ── */}
-        <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
-          {/* Image de couverture en bannière */}
+        {/* ── HERO ── */}
+        <Box
+          className="gp-hero"
+          sx={{ position: 'relative', mb: { xs: 3, md: 5 } }}
+        >
           <Box
             sx={{
               width: '100%',
-              height: { xs: 220, sm: 280, md: 380 },
-              borderRadius: '28px',
+              height: { xs: 260, sm: 340, md: 460 },
+              borderRadius: '40px',
               overflow: 'hidden',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.2)',
               position: 'relative',
             }}
           >
@@ -451,151 +472,155 @@ export default function GamePage() {
                 backgroundImage: `url(${getHighResImage(game.cover_url)})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                filter: 'brightness(0.75) blur(2px)',
-                transform: 'scale(1.05)',
+                filter: 'brightness(0.62) blur(3px)',
+                transform: 'scale(1.06)',
               }}
             />
-            {/* Gradient scrim */}
             <Box
               sx={{
                 position: 'absolute',
                 inset: 0,
                 background:
-                  'linear-gradient(160deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.55) 100%)',
+                  'linear-gradient(180deg, rgba(0,0,0,0) 25%, rgba(0,0,0,0.72) 100%)',
               }}
             />
-          </Box>
 
-          {/* Floating identity card (même pattern que ProfilePage) */}
-          <Box
-            className="game-hero-card"
-            sx={{
-              position: 'absolute',
-              left: { xs: 16, md: 28 },
-              right: { xs: 16, md: 28 },
-              bottom: { xs: -100, md: -88 },
-              ...glassCard,
-              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-              px: { xs: 2.5, md: 4 },
-              py: { xs: 2.5, md: 3 },
-            }}
-          >
+            {/* Contenu hero */}
             <Box
               sx={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                px: { xs: 3, md: 5 },
+                pb: { xs: 3, md: 4 },
                 display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                alignItems: { xs: 'flex-start', md: 'center' },
+                alignItems: 'flex-end',
                 justifyContent: 'space-between',
-                gap: { xs: 2, md: 3 },
+                flexWrap: 'wrap',
+                gap: 2,
               }}
             >
-              {/* Cover + titre */}
               <Box
                 sx={{
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'flex-end',
                   gap: { xs: 2, md: 3 },
                 }}
               >
-                <Box sx={{ position: 'relative', flexShrink: 0 }}>
-                  {/* Anneau accent (même shimmer que l'avatar ProfilePage) */}
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: -4,
-                      borderRadius: '16px',
-                      background: `conic-gradient(from 180deg, ${C.accent}, #ff8a80, ${C.accent})`,
-                      opacity: 0.35,
-                      animation: 'shimmer 2s linear infinite',
-                      backgroundSize: '200% auto',
-                      pointerEvents: 'none',
-                    }}
-                  />
+                {/* Cover miniature */}
+                <Box
+                  sx={{
+                    position: 'relative',
+                    flexShrink: 0,
+                    mb: { xs: 0, md: '-28px' },
+                  }}
+                >
                   <Box
                     component="img"
                     src={getHighResImage(game.cover_url)}
                     alt={game.name}
                     sx={{
-                      width: { xs: 70, md: 88 },
-                      height: { xs: 88, md: 112 },
+                      width: { xs: 72, md: 110 },
+                      height: { xs: 92, md: 142 },
                       objectFit: 'cover',
-                      borderRadius: '14px',
-                      border: '3px solid white',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.14)',
-                      position: 'relative',
-                      zIndex: 1,
+                      borderRadius: '20px',
+                      border: '3px solid rgba(255,255,255,0.55)',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
                       display: 'block',
                     }}
                   />
-                  {/* Bouton favori sur la cover */}
-                  <Box
-                    onClick={() => handleToggleFavorite()}
-                    sx={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      zIndex: 10,
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(0,0,0,0.55)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Tooltip title="Coup de cœur" arrow>
+                  <Tooltip title="Coup de cœur" arrow>
+                    <Box
+                      onClick={() => handleToggleFavorite()}
+                      sx={{
+                        position: 'absolute',
+                        top: -10,
+                        right: -10,
+                        zIndex: 2,
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(8px)',
+                        border: '1.5px solid rgba(255,255,255,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'transform 0.18s ease',
+                        '&:hover': { transform: 'scale(1.15)' },
+                      }}
+                    >
                       {userGame?.is_favorite ? (
-                        <FavoriteIcon sx={{ color: '#ff1744', fontSize: 16 }} />
+                        <FavoriteIcon sx={{ color: '#ff4444', fontSize: 16 }} />
                       ) : (
                         <FavoriteBorderIcon
-                          sx={{ color: '#ffffff', fontSize: 16 }}
+                          sx={{ color: '#fff', fontSize: 16 }}
                         />
                       )}
-                    </Tooltip>
-                  </Box>
+                    </Box>
+                  </Tooltip>
                 </Box>
 
-                {/* Titre + meta */}
-                <Box>
+                {/* Titre */}
+                <Box sx={{ pb: 0.5 }}>
                   <Typography
                     sx={{
                       fontFamily: FONT_DISPLAY,
                       fontWeight: 900,
-                      fontSize: { xs: 24, md: 32 },
-                      color: C.title,
+                      fontSize: { xs: 26, md: 40 },
+                      color: '#fff',
                       lineHeight: 1.05,
-                      letterSpacing: -0.6,
+                      letterSpacing: -0.8,
+                      textShadow: '0 2px 20px rgba(0,0,0,0.4)',
                     }}
                   >
                     {game.name}
                   </Typography>
-                  {game.publisher?.name && (
-                    <Typography
-                      sx={{
-                        mt: 0.5,
-                        color: C.muted,
-                        fontSize: 13.5,
-                        fontFamily: FONT_BODY,
-                        fontWeight: 400,
-                      }}
-                    >
-                      {game.publisher.name}
-                    </Typography>
-                  )}
-                  {game.release_date && (
-                    <Typography
-                      sx={{
-                        mt: 0.5,
-                        color: C.light,
-                        fontSize: 12.5,
-                        fontFamily: FONT_BODY,
-                      }}
-                    >
-                      {formatDate(game.release_date)}
-                    </Typography>
-                  )}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      mt: 0.75,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {game.publisher?.name && (
+                      <Typography
+                        sx={{
+                          fontFamily: FONT_BODY,
+                          fontSize: 13,
+                          color: 'rgba(255,255,255,0.75)',
+                          fontWeight: 500,
+                        }}
+                      >
+                        {game.publisher.name}
+                      </Typography>
+                    )}
+                    {game.release_date && (
+                      <>
+                        <Box
+                          sx={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: '50%',
+                            bgcolor: 'rgba(255,255,255,0.4)',
+                          }}
+                        />
+                        <Typography
+                          sx={{
+                            fontFamily: FONT_BODY,
+                            fontSize: 13,
+                            color: 'rgba(255,255,255,0.6)',
+                          }}
+                        >
+                          {formatDate(game.release_date)}
+                        </Typography>
+                      </>
+                    )}
+                  </Box>
                 </Box>
               </Box>
 
@@ -603,10 +628,10 @@ export default function GamePage() {
               <Box
                 sx={{
                   display: 'flex',
-                  flexDirection: { xs: 'row', md: 'column' },
                   gap: 1.5,
-                  flexShrink: 0,
-                  alignSelf: { xs: 'flex-start', md: 'center' },
+                  alignItems: 'center',
+                  pb: 0.5,
+                  flexWrap: 'wrap',
                 }}
               >
                 <SecondaryButton
@@ -621,72 +646,74 @@ export default function GamePage() {
                   sx={{
                     borderRadius: 999,
                     px: 3,
-                    py: 1,
+                    py: 1.1,
                     fontWeight: 700,
                     fontSize: 14,
                     textTransform: 'none',
                     fontFamily: FONT_BODY,
-                    background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
-                    boxShadow: `0 4px 18px ${C.accentGlow}`,
+                    background: `linear-gradient(135deg, ${C.accent} 0%, #ef5350 100%)`,
+                    boxShadow: `0 4px 20px ${C.accentGlow}`,
+                    backdropFilter: 'blur(8px)',
                     '&:hover': {
                       background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-                      boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
-                      transform: 'translateY(-1px)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: `0 8px 28px rgba(211,47,47,0.35)`,
                     },
-                    transition: 'all 0.18s ease',
+                    transition: 'all 0.2s ease',
                   }}
                 >
-                  Ajouter à la collection
+                  + Collection
                 </Button>
               </Box>
             </Box>
           </Box>
         </Box>
 
-        {/* Spacer pour la floating card */}
-        <Box sx={{ height: { xs: 56, md: 44 } }} />
+        <Box sx={{ height: { xs: 8, md: 32 } }} />
 
-        {/* ── STATUTS + NOTE ── */}
+        {/* ── 3 CARDS ── */}
         <Box
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
-            gap: 2,
+            gap: 2.5,
             mb: 2.5,
           }}
         >
-          {/* Note communauté */}
-          <Paper
-            elevation={0}
-            className="game-stat-0"
+          {/* Note */}
+          <Box
+            className="gp-card-0"
             sx={{
-              ...glassCard,
-              p: '26px 28px',
+              ...blob(),
+              p: '28px 32px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
+              textAlign: 'center',
               gap: 1,
               position: 'relative',
               overflow: 'hidden',
               '&::before': {
                 content: '""',
                 position: 'absolute',
-                top: 0,
+                top: -50,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: '40%',
-                height: '2px',
-                background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
+                width: 140,
+                height: 140,
+                borderRadius: '50%',
+                background: C.accentSoft,
+                filter: 'blur(35px)',
+                animation: 'pulseGlow 3s ease-in-out infinite',
               },
             }}
           >
-            <Typography sx={{ ...sectionLabel }}>Communauté</Typography>
+            <PillLabel>Communauté</PillLabel>
             <Typography
               sx={{
                 fontFamily: FONT_DISPLAY,
                 fontWeight: 700,
-                fontSize: 20,
+                fontSize: 18,
                 color: C.title,
                 letterSpacing: -0.3,
               }}
@@ -697,37 +724,21 @@ export default function GamePage() {
               value={(game.average_rating || game.rating_avg || 0) / 2}
               readOnly
               precision={0.5}
-              sx={{ mt: 1, fontSize: 32 }}
+              sx={{
+                fontSize: 30,
+                '& .MuiRating-iconFilled': { color: C.accent },
+              }}
             />
-          </Paper>
+          </Box>
 
-          {/* Statut personnel */}
-          <Paper
-            elevation={0}
-            className="game-stat-1"
-            sx={{
-              ...glassCard,
-              p: '26px 28px',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '40%',
-                height: '2px',
-                background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
-              },
-            }}
-          >
-            <Typography sx={{ ...sectionLabel }}>Ma bibliothèque</Typography>
+          {/* Statut */}
+          <Box className="gp-card-1" sx={{ ...blob(), p: '28px 32px' }}>
+            <PillLabel>Ma bibliothèque</PillLabel>
             <Typography
               sx={{
                 fontFamily: FONT_DISPLAY,
                 fontWeight: 700,
-                fontSize: 20,
+                fontSize: 18,
                 color: C.title,
                 letterSpacing: -0.3,
                 mb: 2,
@@ -735,85 +746,67 @@ export default function GamePage() {
             >
               Statut
             </Typography>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
               {[
                 {
-                  icon: (
-                    <CheckCircleIcon
-                      sx={{
-                        color:
-                          userGame?.status === 'TERMINE' ? '#4caf50' : C.light,
-                        fontSize: 22,
-                        cursor: 'pointer',
-                      }}
-                    />
-                  ),
+                  icon: <CheckCircleIcon />,
                   label: 'Terminé',
-                  active: userGame?.status === 'TERMINE',
-                  onClick: () => handleSetStatus('TERMINE'),
+                  status: 'TERMINE' as const,
+                  color: '#4caf50',
                 },
                 {
-                  icon: (
-                    <PlayCircleIcon
-                      sx={{
-                        color:
-                          userGame?.status === 'EN_COURS' ? C.accent : C.light,
-                        fontSize: 22,
-                        cursor: 'pointer',
-                      }}
-                    />
-                  ),
+                  icon: <PlayCircleIcon />,
                   label: 'En cours',
-                  active: userGame?.status === 'EN_COURS',
-                  onClick: () => handleSetStatus('EN_COURS'),
+                  status: 'EN_COURS' as const,
+                  color: C.accent,
                 },
                 {
-                  icon: (
-                    <BookmarkIcon
-                      sx={{
-                        color:
-                          userGame?.status === 'ENVIE_DE_JOUER'
-                            ? '#ff9800'
-                            : C.light,
-                        fontSize: 22,
-                        cursor: 'pointer',
-                      }}
-                    />
-                  ),
+                  icon: <BookmarkIcon />,
                   label: "Envie d'y jouer",
-                  active: userGame?.status === 'ENVIE_DE_JOUER',
-                  onClick: () => handleSetStatus('ENVIE_DE_JOUER'),
+                  status: 'ENVIE_DE_JOUER' as const,
+                  color: '#ff9800',
                 },
-              ].map(({ icon, label, active, onClick }) => (
-                <Box
-                  key={label}
-                  onClick={onClick}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1.5,
-                    cursor: 'pointer',
-                    px: 1.5,
-                    py: 1,
-                    borderRadius: '12px',
-                    transition: 'background 0.15s ease',
-                    background: active ? `${C.accentGlow}` : 'transparent',
-                    '&:hover': { background: `rgba(0,0,0,0.04)` },
-                  }}
-                >
-                  {icon}
-                  <Typography
+              ].map(({ icon, label, status, color }) => {
+                const active = userGame?.status === status;
+                return (
+                  <Box
+                    key={status}
+                    onClick={() => handleSetStatus(status)}
                     sx={{
-                      fontFamily: FONT_BODY,
-                      fontSize: 14,
-                      fontWeight: active ? 700 : 400,
-                      color: active ? C.accent : C.text,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      cursor: 'pointer',
+                      px: 1.5,
+                      py: 1,
+                      borderRadius: '16px',
+                      background: active ? `${color}18` : 'transparent',
+                      border: active
+                        ? `1px solid ${color}33`
+                        : '1px solid transparent',
+                      transition: 'all 0.18s ease',
+                      '&:hover': {
+                        background: 'rgba(0,0,0,0.04)',
+                        borderColor: 'rgba(0,0,0,0.06)',
+                      },
                     }}
                   >
-                    {label}
-                  </Typography>
-                </Box>
-              ))}
+                    {React.cloneElement(icon, {
+                      sx: { fontSize: 20, color: active ? color : C.muted },
+                    } as any)}
+                    <Typography
+                      sx={{
+                        fontFamily: FONT_BODY,
+                        fontSize: 13.5,
+                        fontWeight: active ? 700 : 400,
+                        color: active ? color : C.text,
+                      }}
+                    >
+                      {label}
+                    </Typography>
+                  </Box>
+                );
+              })}
               <Tooltip title="Coup de cœur" arrow>
                 <Box
                   onClick={() => handleToggleFavorite()}
@@ -824,25 +817,28 @@ export default function GamePage() {
                     cursor: 'pointer',
                     px: 1.5,
                     py: 1,
-                    borderRadius: '12px',
-                    transition: 'background 0.15s ease',
+                    borderRadius: '16px',
                     background: userGame?.is_favorite
-                      ? `${C.accentGlow}`
+                      ? 'rgba(255,68,68,0.10)'
                       : 'transparent',
-                    '&:hover': { background: `rgba(0,0,0,0.04)` },
+                    border: userGame?.is_favorite
+                      ? '1px solid rgba(255,68,68,0.25)'
+                      : '1px solid transparent',
+                    transition: 'all 0.18s ease',
+                    '&:hover': { background: 'rgba(0,0,0,0.04)' },
                   }}
                 >
                   {userGame?.is_favorite ? (
-                    <FavoriteIcon sx={{ color: '#ff1744', fontSize: 22 }} />
+                    <FavoriteIcon sx={{ color: '#ff4444', fontSize: 20 }} />
                   ) : (
-                    <FavoriteBorderIcon sx={{ color: C.light, fontSize: 22 }} />
+                    <FavoriteBorderIcon sx={{ color: C.muted, fontSize: 20 }} />
                   )}
                   <Typography
                     sx={{
                       fontFamily: FONT_BODY,
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight: userGame?.is_favorite ? 700 : 400,
-                      color: userGame?.is_favorite ? C.accent : C.text,
+                      color: userGame?.is_favorite ? '#ff4444' : C.text,
                     }}
                   >
                     Coup de cœur
@@ -850,52 +846,11 @@ export default function GamePage() {
                 </Box>
               </Tooltip>
             </Box>
-          </Paper>
+          </Box>
 
           {/* Plateformes */}
-          <Paper
-            elevation={0}
-            className="game-stat-2"
-            sx={{
-              ...glassCard,
-              p: '26px 28px',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: '40%',
-                height: '2px',
-                background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
-              },
-            }}
-          >
-            <Typography sx={{ ...sectionLabel }}>Disponible sur</Typography>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 20,
-                color: C.title,
-                letterSpacing: -0.3,
-                mb: 2,
-              }}
-            >
-              Plateformes
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <DevicesIcon sx={{ color: C.muted, fontSize: 18, mr: 0.5 }} />
-              <PlatformLogos platforms={game.platforms ?? []} />
-            </Box>
-          </Paper>
-        </Box>
-
-        {/* ── INFOS DÉTAILLÉES ── */}
-        <Box sx={{ mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+          <Box className="gp-card-2" sx={{ ...blob(), p: '28px 32px' }}>
+            <PillLabel>Disponible sur</PillLabel>
             <Typography
               sx={{
                 fontFamily: FONT_DISPLAY,
@@ -903,40 +858,40 @@ export default function GamePage() {
                 fontSize: 18,
                 color: C.title,
                 letterSpacing: -0.3,
+                mb: 2,
               }}
             >
-              Détails
+              Plateformes
             </Typography>
             <Box
               sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${C.border}, transparent)`,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                flexWrap: 'wrap',
               }}
-            />
-          </Box>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
-              gap: 2,
-            }}
-          >
-            {/* Description */}
-            <Paper
-              elevation={0}
-              className="game-info-0"
-              sx={{ ...glassCard, p: '26px 28px' }}
             >
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
-              >
-                <DescriptionIcon sx={{ color: C.accent, fontSize: 18 }} />
-                <Typography sx={{ ...sectionLabel, mb: 0 }}>
-                  Synopsis
-                </Typography>
-              </Box>
+              <DevicesIcon sx={{ color: C.muted, fontSize: 18 }} />
+              <PlatformLogos platforms={game.platforms ?? []} />
+            </Box>
+          </Box>
+        </Box>
+
+        {/* ── DESCRIPTION + DETAILS ── */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+            gap: 2.5,
+            mb: 2.5,
+          }}
+        >
+          <Box className="gp-card-3" sx={{ ...blob(), p: '32px 36px' }}>
+            <PillLabel>Synopsis</PillLabel>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
+            >
+              <DescriptionIcon sx={{ color: C.accent, fontSize: 20 }} />
               <Typography
                 sx={{
                   fontFamily: FONT_DISPLAY,
@@ -944,209 +899,198 @@ export default function GamePage() {
                   fontSize: 20,
                   color: C.title,
                   letterSpacing: -0.3,
-                  mb: 1.5,
                 }}
               >
                 Description
               </Typography>
-              <Typography
-                sx={{
-                  color: translating ? C.muted : C.text,
-                  lineHeight: 1.75,
-                  fontSize: 14,
-                  fontFamily: FONT_BODY,
-                  textAlign: 'justify',
-                }}
-              >
-                {displayText}
-              </Typography>
-              {isTruncatable && (
-                <Button
-                  size="small"
-                  onClick={() => setDescriptionExpanded(prev => !prev)}
-                  sx={{
-                    mt: 1,
-                    p: 0,
-                    textTransform: 'none',
-                    fontFamily: FONT_BODY,
-                    fontWeight: 600,
-                    color: C.accent,
-                    fontSize: 13.5,
-                  }}
-                >
-                  {descriptionExpanded ? 'Voir moins' : 'Voir plus'}
-                </Button>
-              )}
-            </Paper>
-
-            {/* Genres + Éditeur + Date */}
-            <Paper
-              elevation={0}
-              className="game-info-1"
+            </Box>
+            <Typography
               sx={{
-                ...glassCard,
-                p: '26px 28px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
+                fontFamily: FONT_BODY,
+                fontSize: 14.5,
+                lineHeight: 1.8,
+                color: translating ? C.muted : C.text,
+                textAlign: 'justify',
               }}
             >
-              {/* Genres */}
-              <Box>
-                <Box
-                  sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}
+              {displayText}
+            </Typography>
+            {isTruncatable && (
+              <Button
+                size="small"
+                onClick={() => setDescriptionExpanded(p => !p)}
+                sx={{
+                  mt: 1.5,
+                  p: 0,
+                  textTransform: 'none',
+                  fontFamily: FONT_BODY,
+                  fontWeight: 600,
+                  color: C.accent,
+                  fontSize: 13,
+                }}
+              >
+                {descriptionExpanded ? 'Voir moins ↑' : 'Voir plus ↓'}
+              </Button>
+            )}
+          </Box>
+
+          <Box
+            className="gp-card-4"
+            sx={{
+              ...blob(),
+              p: '32px 36px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
+            }}
+          >
+            <Box>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
+              >
+                <CategoryIcon sx={{ color: C.accent, fontSize: 18 }} />
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: 1.8,
+                    textTransform: 'uppercase',
+                    color: C.light,
+                  }}
                 >
-                  <CategoryIcon sx={{ color: C.accent, fontSize: 18 }} />
-                  <Typography sx={{ ...sectionLabel, mb: 0 }}>
-                    Genres
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}
-                >
-                  {game.genres && game.genres.length > 0 ? (
-                    game.genres.map((g: any) => (
-                      <Chip
-                        key={g.name}
-                        label={g.name}
-                        size="small"
-                        icon={GENRE_ICON_MAP[g.name]}
-                        sx={{
-                          fontFamily: FONT_BODY,
-                          fontWeight: 600,
-                          fontSize: 12,
-                          backgroundColor: 'rgba(211,47,47,0.08)',
-                          border: '1px solid rgba(211,47,47,0.2)',
-                          color: C.accent,
-                          '& .MuiChip-icon': { color: C.accent },
-                        }}
-                      />
-                    ))
-                  ) : (
-                    <Typography
+                  Genres
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+                {game.genres && game.genres.length > 0 ? (
+                  game.genres.map((g: any) => (
+                    <Chip
+                      key={g.name}
+                      label={g.name}
+                      size="small"
+                      icon={GENRE_ICON_MAP[g.name]}
                       sx={{
                         fontFamily: FONT_BODY,
-                        fontSize: 14,
-                        color: C.muted,
+                        fontWeight: 600,
+                        fontSize: 12,
+                        backgroundColor: C.accentSoft,
+                        border: `1px solid ${C.accentGlow}`,
+                        color: C.accent,
+                        borderRadius: '12px',
+                        '& .MuiChip-icon': { color: C.accent },
                       }}
-                    >
-                      Non renseigné
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              {/* Date de sortie */}
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    mb: 0.5,
-                  }}
-                >
-                  <CalendarTodayIcon sx={{ color: C.accent, fontSize: 18 }} />
-                  <Typography sx={{ ...sectionLabel, mb: 0 }}>
-                    Date de sortie
+                    />
+                  ))
+                ) : (
+                  <Typography
+                    sx={{ fontFamily: FONT_BODY, fontSize: 14, color: C.muted }}
+                  >
+                    Non renseigné
                   </Typography>
-                </Box>
+                )}
+              </Box>
+            </Box>
+
+            <Box>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}
+              >
+                <CalendarTodayIcon sx={{ color: C.accent, fontSize: 18 }} />
                 <Typography
                   sx={{
-                    fontFamily: FONT_DISPLAY,
+                    fontFamily: FONT_BODY,
+                    fontSize: 11,
                     fontWeight: 700,
-                    fontSize: 18,
-                    color: C.title,
-                    letterSpacing: -0.3,
-                    mt: 0.5,
+                    letterSpacing: 1.8,
+                    textTransform: 'uppercase',
+                    color: C.light,
                   }}
                 >
-                  {formatDate(game.release_date) || 'Non renseignée'}
+                  Sortie
                 </Typography>
               </Box>
+              <Typography
+                sx={{
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 700,
+                  fontSize: 17,
+                  color: C.title,
+                  letterSpacing: -0.3,
+                }}
+              >
+                {formatDate(game.release_date) || 'Non renseignée'}
+              </Typography>
+            </Box>
 
-              {/* Éditeur */}
-              <Box>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    mb: 0.5,
-                  }}
-                >
-                  <BusinessIcon sx={{ color: C.accent, fontSize: 18 }} />
-                  <Typography sx={{ ...sectionLabel, mb: 0 }}>
-                    Éditeur
-                  </Typography>
-                </Box>
+            <Box>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}
+              >
+                <BusinessIcon sx={{ color: C.accent, fontSize: 18 }} />
                 <Typography
                   sx={{
-                    fontFamily: FONT_DISPLAY,
+                    fontFamily: FONT_BODY,
+                    fontSize: 11,
                     fontWeight: 700,
-                    fontSize: 18,
-                    color: C.title,
-                    letterSpacing: -0.3,
-                    mt: 0.5,
+                    letterSpacing: 1.8,
+                    textTransform: 'uppercase',
+                    color: C.light,
                   }}
                 >
-                  {game.publisher?.name || 'Non renseigné'}
+                  Éditeur
                 </Typography>
               </Box>
-            </Paper>
+              <Typography
+                sx={{
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 700,
+                  fontSize: 17,
+                  color: C.title,
+                  letterSpacing: -0.3,
+                }}
+              >
+                {game.publisher?.name || 'Non renseigné'}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 
         {/* ── MÉDIAS ── */}
         {((game.screenshots && game.screenshots.length > 0) ||
           (game.videos && game.videos.length > 0)) && (
-          <Paper
-            elevation={0}
-            className="game-media"
-            sx={{
-              ...glassCard,
-              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-              p: { xs: 2.5, md: 4 },
-              mb: 2.5,
-            }}
+          <Box
+            className="gp-card-5"
+            sx={{ ...blob(noHover), p: { xs: 2.5, md: 4 }, mb: 2.5 }}
           >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 3,
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <Box>
-                <Typography sx={{ ...sectionLabel }}>Galerie</Typography>
-                <Typography sx={{ ...sectionTitle }}>Médias</Typography>
-              </Box>
+            <Box sx={{ mb: 3 }}>
+              <PillLabel>Galerie</PillLabel>
+              <Typography
+                sx={{
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  color: C.title,
+                  letterSpacing: -0.3,
+                }}
+              >
+                Médias
+              </Typography>
             </Box>
+            <FluidDivider />
 
-            <Box
-              sx={{
-                height: '1px',
-                background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
-                mb: 3,
-              }}
-            />
-
-            {/* Vidéo */}
             {game.videos && game.videos.length > 0 && (
               <Box sx={{ mb: 3 }}>
                 <Box
                   sx={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: 800,
+                    maxWidth: 760,
                     mx: 'auto',
                     aspectRatio: '16/9',
-                    borderRadius: '16px',
+                    borderRadius: '24px',
                     overflow: 'hidden',
-                    boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
                   }}
                 >
                   <iframe
@@ -1166,7 +1110,6 @@ export default function GamePage() {
               </Box>
             )}
 
-            {/* Screenshots */}
             {game.screenshots && game.screenshots.length > 0 && (
               <Box
                 sx={{
@@ -1175,11 +1118,12 @@ export default function GamePage() {
                   gap: 2,
                   overflowX: 'auto',
                   pb: 1,
-                  '&::-webkit-scrollbar': { height: 6 },
+                  '&::-webkit-scrollbar': { height: 5 },
                   '&::-webkit-scrollbar-thumb': {
-                    borderRadius: 3,
-                    bgcolor: 'rgba(0,0,0,0.15)',
+                    borderRadius: 99,
+                    bgcolor: 'rgba(211,47,47,0.2)',
                   },
+                  '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
                 }}
               >
                 {game.screenshots.map(s => (
@@ -1187,24 +1131,20 @@ export default function GamePage() {
                     key={s.url}
                     component="img"
                     src={s.url}
-                    alt={
-                      game.name
-                        ? `Capture d'écran — ${game.name}`
-                        : "Capture d'écran"
-                    }
+                    alt={game.name ? `Capture — ${game.name}` : 'Capture'}
                     onClick={() => setSelectedScreenshot(s.url)}
                     sx={{
                       height: { xs: 140, sm: 200 },
                       minWidth: { xs: 220, sm: 320 },
                       objectFit: 'cover',
-                      borderRadius: '14px',
-                      boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
+                      borderRadius: '20px',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
                       flexShrink: 0,
                       cursor: 'pointer',
-                      transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                       '&:hover': {
-                        transform: 'scale(1.02)',
-                        boxShadow: '0 6px 24px rgba(0,0,0,0.16)',
+                        transform: 'scale(1.03)',
+                        boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
                       },
                     }}
                   />
@@ -1212,7 +1152,6 @@ export default function GamePage() {
               </Box>
             )}
 
-            {/* Modal screenshot */}
             {selectedScreenshot && (
               <Modal open onClose={() => setSelectedScreenshot(null)}>
                 <Box
@@ -1220,12 +1159,12 @@ export default function GamePage() {
                   sx={{
                     position: 'fixed',
                     inset: 0,
-                    bgcolor: 'rgba(0,0,0,0.85)',
+                    bgcolor: 'rgba(0,0,0,0.88)',
+                    backdropFilter: 'blur(10px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'zoom-out',
-                    backdropFilter: 'blur(6px)',
                   }}
                 >
                   <Box
@@ -1235,52 +1174,33 @@ export default function GamePage() {
                     sx={{
                       maxWidth: '90vw',
                       maxHeight: '90vh',
-                      borderRadius: '16px',
-                      boxShadow: 8,
+                      borderRadius: '24px',
+                      boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
                     }}
                   />
                 </Box>
               </Modal>
             )}
-          </Paper>
+          </Box>
         )}
 
         {/* ── AVIS ── */}
-        <Paper
-          elevation={0}
-          className="game-reviews"
-          sx={{
-            ...glassCard,
-            '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-            p: { xs: 2.5, md: 4 },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 3,
-              flexWrap: 'wrap',
-              gap: 1,
-            }}
-          >
-            <Box>
-              <Typography sx={{ ...sectionLabel }}>Opinions</Typography>
-              <Typography sx={{ ...sectionTitle }}>
-                Avis de la communauté
-              </Typography>
-            </Box>
+        <Box sx={{ ...blob(noHover), p: { xs: 2.5, md: 4 } }}>
+          <Box sx={{ mb: 3 }}>
+            <PillLabel>Opinions</PillLabel>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 20,
+                color: C.title,
+                letterSpacing: -0.3,
+              }}
+            >
+              Avis de la communauté
+            </Typography>
           </Box>
-
-          <Box
-            sx={{
-              height: '1px',
-              background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
-              mb: 3,
-            }}
-          />
-
+          <FluidDivider />
           <ReviewSection
             gameId={djangoId ? String(djangoId) : ''}
             resolveGameId={ensureDjangoId}
@@ -1288,7 +1208,7 @@ export default function GamePage() {
             currentUserId={currentUserId}
             onReviewChange={review => setUserReview(review)}
           />
-        </Paper>
+        </Box>
       </Box>
     </Box>
   );
