@@ -1,10 +1,6 @@
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import BusinessIcon from '@mui/icons-material/Business';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import CategoryIcon from '@mui/icons-material/Category';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
-import DevicesIcon from '@mui/icons-material/Devices';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
@@ -693,142 +689,34 @@ export default function GamePage() {
 
           {/* ══ COLONNE DROITE ══ */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* ── Boutons en haut ── */}
-            <Box
-              className="gp-c0"
-              sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}
-            >
-              <SecondaryButton
-                onClick={() => handleSetMatchmaking()}
-                disabled={isMatching}
-              >
-                {isMatching ? 'Recherche…' : 'Matchmaking'}
-              </SecondaryButton>
-              <Button
-                variant="contained"
-                onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-                sx={redBtnSx}
-              >
-                + Ajouter à la collection
-              </Button>
-            </Box>
-
-            {/* ── Card Plateformes ── */}
-            <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2 }}>
-              <InfoRow icon={<DevicesIcon />} label="Plateformes">
-                <PlatformLogos platforms={game.platforms ?? []} />
-              </InfoRow>
-            </Box>
-
-            {/* ── Card Infos — genres / date / éditeur ── */}
-            <Box
-              className="gp-c2"
-              sx={{
-                ...card(),
-                px: 2.5,
-                py: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-              }}
-            >
-              {/* Genres */}
-              <InfoRow icon={<CategoryIcon />} label="Genres">
-                <Box
-                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}
+            {/* ── Ligne 1 : Boutons + Statut côte à côte ── */}
+            <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2 }}>
+              {/* Boutons */}
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
+                <SecondaryButton
+                  onClick={() => handleSetMatchmaking()}
+                  disabled={isMatching}
                 >
-                  {game.genres && game.genres.length > 0 ? (
-                    game.genres.map((g: any) => (
-                      <Chip
-                        key={g.name}
-                        label={g.name}
-                        size="small"
-                        icon={GMAP[g.name]}
-                        sx={{
-                          fontFamily: FB,
-                          fontWeight: 600,
-                          fontSize: 11,
-                          backgroundColor: C.accentSoft,
-                          border: `1px solid ${C.accentGlow}`,
-                          color: C.accent,
-                          borderRadius: '9px',
-                          '& .MuiChip-icon': { color: C.accent },
-                        }}
-                      />
-                    ))
-                  ) : (
-                    <Typography
-                      sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
-                    >
-                      Non renseigné
-                    </Typography>
-                  )}
-                </Box>
-              </InfoRow>
-
-              <Box
-                sx={{ height: '1px', background: C.divider, borderRadius: 99 }}
-              />
-
-              {/* Date + Éditeur côte à côte */}
-              <Box
-                sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}
-              >
-                <InfoRow icon={<CalendarTodayIcon />} label="Sortie">
-                  <Typography
-                    sx={{
-                      fontFamily: FD,
-                      fontWeight: 700,
-                      fontSize: 15,
-                      color: C.title,
-                      letterSpacing: -0.2,
-                    }}
-                  >
-                    {fdate(game.release_date) || 'N/A'}
-                  </Typography>
-                </InfoRow>
-                <InfoRow icon={<BusinessIcon />} label="Éditeur">
-                  <Typography
-                    sx={{
-                      fontFamily: FD,
-                      fontWeight: 700,
-                      fontSize: 15,
-                      color: C.title,
-                      letterSpacing: -0.2,
-                    }}
-                  >
-                    {game.publisher?.name || 'N/A'}
-                  </Typography>
-                </InfoRow>
+                  {isMatching ? 'Recherche…' : 'Matchmaking'}
+                </SecondaryButton>
+                <Button
+                  variant="contained"
+                  onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+                  sx={redBtnSx}
+                >
+                  + Ajouter à la collection
+                </Button>
               </Box>
-            </Box>
-
-            {/* ── Card Note communauté (avant-dernière) ── */}
-            <Box className="gp-c3" sx={{ ...card(), px: 2.5, py: 2 }}>
-              <InfoRow
-                icon={
-                  <Typography sx={{ fontSize: 15, lineHeight: 1 }}>
-                    ⭐
-                  </Typography>
-                }
-                label="Note communauté"
-              >
-                <Rating
-                  value={(game.average_rating || game.rating_avg || 0) / 2}
-                  readOnly
-                  precision={0.5}
-                  sx={{
-                    fontSize: 20,
-                    mt: 0.3,
-                    '& .MuiRating-iconFilled': { color: C.accent },
-                  }}
-                />
-              </InfoRow>
-            </Box>
-
-            {/* ── Card Mon statut (dernière) ── */}
-            <Box className="gp-c4" sx={{ ...card(), px: 2.5, py: 2 }}>
-              <InfoRow icon={<CheckCircleIcon />} label="Mon statut">
+              {/* Statut inline */}
+              <Box
+                sx={{
+                  height: '1px',
+                  background: C.divider,
+                  borderRadius: 99,
+                  mb: 1.75,
+                }}
+              />
+              <InfoRow label="Mon statut">
                 <Box
                   sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mt: 0.4 }}
                 >
@@ -898,11 +786,97 @@ export default function GamePage() {
                 </Box>
               </InfoRow>
             </Box>
+
+            {/* ── Card Plateformes ── */}
+            <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2 }}>
+              <InfoRow label="Plateformes">
+                <PlatformLogos platforms={game.platforms ?? []} />
+              </InfoRow>
+            </Box>
+
+            {/* ── Card Genres + date / éditeur ── */}
+            <Box
+              className="gp-c2"
+              sx={{
+                ...card(),
+                px: 2.5,
+                py: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
+              <InfoRow label="Genres">
+                <Box
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}
+                >
+                  {game.genres && game.genres.length > 0 ? (
+                    game.genres.map((g: any) => (
+                      <Chip
+                        key={g.name}
+                        label={g.name}
+                        size="small"
+                        icon={GMAP[g.name]}
+                        sx={{
+                          fontFamily: FB,
+                          fontWeight: 600,
+                          fontSize: 11,
+                          backgroundColor: C.accentSoft,
+                          border: `1px solid ${C.accentGlow}`,
+                          color: C.accent,
+                          borderRadius: '9px',
+                          '& .MuiChip-icon': { color: C.accent },
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <Typography
+                      sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
+                    >
+                      Non renseigné
+                    </Typography>
+                  )}
+                </Box>
+              </InfoRow>
+              <Box
+                sx={{ height: '1px', background: C.divider, borderRadius: 99 }}
+              />
+              <Box
+                sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}
+              >
+                <InfoRow label="Sortie">
+                  <Typography
+                    sx={{
+                      fontFamily: FD,
+                      fontWeight: 700,
+                      fontSize: 15,
+                      color: C.title,
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {fdate(game.release_date) || 'N/A'}
+                  </Typography>
+                </InfoRow>
+                <InfoRow label="Éditeur">
+                  <Typography
+                    sx={{
+                      fontFamily: FD,
+                      fontWeight: 700,
+                      fontSize: 15,
+                      color: C.title,
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {game.publisher?.name || 'N/A'}
+                  </Typography>
+                </InfoRow>
+              </Box>
+            </Box>
           </Box>
         </Box>
 
-        {/* ── DESCRIPTION ── */}
-        <Box className="gp-c5" sx={{ ...card(), p: '26px 30px', mb: 2.5 }}>
+        {/* ── DESCRIPTION (pleine largeur) ── */}
+        <Box className="gp-c3" sx={{ ...card(), p: '26px 30px', mb: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
             <DescriptionIcon sx={{ color: C.accent, fontSize: 17 }} />
             <Typography
@@ -947,11 +921,27 @@ export default function GamePage() {
           )}
         </Box>
 
+        {/* ── NOTE COMMUNAUTÉ (pleine largeur) ── */}
+        <Box className="gp-c4" sx={{ ...card(), p: '22px 30px', mb: 2.5 }}>
+          <InfoRow label="Note communauté">
+            <Rating
+              value={(game.average_rating || game.rating_avg || 0) / 2}
+              readOnly
+              precision={0.5}
+              sx={{
+                fontSize: 22,
+                mt: 0.4,
+                '& .MuiRating-iconFilled': { color: C.accent },
+              }}
+            />
+          </InfoRow>
+        </Box>
+
         {/* ── MÉDIAS ── */}
         {((game.screenshots && game.screenshots.length > 0) ||
           (game.videos && game.videos.length > 0)) && (
           <Box
-            className="gp-c6"
+            className="gp-c5"
             sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2.5 }}
           >
             <Pill>Galerie</Pill>
