@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import ludokanLogo from '../assets/logo.png';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
@@ -8,6 +9,7 @@ type User = {
   last_name?: string;
   email?: string;
   avatar_url?: string;
+  banner_url?: string;
   descriptionCourte?: string;
   preferences?: string;
   comments_count?: number | null;
@@ -71,6 +73,22 @@ const styles: Record<string, CSSProperties> = {
     maxHeight: '40vh',
     objectFit: 'cover',
     display: 'block',
+  },
+  bannerCameraBtn: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '50%',
+    width: 40,
+    height: 40,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    zIndex: 2,
   },
   avatarOverlay: {
     position: 'absolute',
@@ -301,14 +319,17 @@ const PageProfile: React.FC = () => {
     last_name: '',
     email: '',
     avatar_url: '',
+    banner_url: '',
     descriptionCourte: '',
     preferences: '',
   });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const bannerInputRef = React.useRef<HTMLInputElement>(null);
 
   // GET /api/me
   useEffect(() => {
@@ -328,6 +349,7 @@ const PageProfile: React.FC = () => {
           last_name: data.last_name ?? '',
           email: data.email ?? '',
           avatar_url: data.avatar_url ?? '',
+          banner_url: data.banner_url ?? '',
           descriptionCourte: data.descriptionCourte ?? '',
           preferences: data.preferences ?? '',
         });
@@ -377,6 +399,28 @@ const PageProfile: React.FC = () => {
       setError(e.message ?? 'Erreur inattendue.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+
+    const formData = new FormData();
+    formData.append('banner', file);
+
+    try {
+      setUploadingBanner(true);
+      setError(null);
+
+      const updated: User = await apiPatch('/api/me', formData);
+      setUser(updated);
+      setForm(prev => ({ ...prev, banner_url: updated.banner_url ?? '' }));
+      setMessage('Bannière mise à jour ✅');
+    } catch (e: any) {
+      setError(e.message ?? "Erreur lors de l'upload de la bannière.");
+    } finally {
+      setUploadingBanner(false);
     }
   };
 
@@ -433,8 +477,29 @@ const PageProfile: React.FC = () => {
           <div style={styles.bannerWrapper}>
             <img
               style={styles.bannerImg}
-              src="https://images8.alphacoders.com/948/948964.jpg"
-              alt="The Legend of Zelda"
+              src={
+                user?.banner_url ||
+                'https://images8.alphacoders.com/948/948964.jpg'
+              }
+              alt="Bannière de profil"
+            />
+            {user && (
+              <button
+                type="button"
+                style={styles.bannerCameraBtn}
+                onClick={() => bannerInputRef.current?.click()}
+                disabled={uploadingBanner}
+                title="Modifier la bannière"
+              >
+                {uploadingBanner ? '⏳' : <CameraAltIcon fontSize="small" />}
+              </button>
+            )}
+            <input
+              type="file"
+              ref={bannerInputRef}
+              style={{ display: 'none' }}
+              accept="image/png, image/jpeg, image/webp"
+              onChange={handleBannerChange}
             />
 
             <div style={styles.avatarOverlay}>
