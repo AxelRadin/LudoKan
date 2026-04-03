@@ -520,21 +520,6 @@ export default function GamePage() {
       }}
     >
       <Box sx={{ maxWidth: 1140, mx: 'auto' }}>
-        {/* ── Branding ── */}
-        <Box sx={{ mb: 5 }}>
-          <Typography
-            sx={{
-              fontFamily: FD,
-              fontWeight: 900,
-              fontSize: { xs: 22, md: 26 },
-              background: `linear-gradient(135deg,${C.title} 35%,${C.accent})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              letterSpacing: -0.8,
-            }}
-          ></Typography>
-        </Box>
-
         {/* ══════════════════════════════════════════════════════
             HERO : image portrait gauche | colonne droite
         ══════════════════════════════════════════════════════ */}
