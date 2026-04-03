@@ -786,7 +786,6 @@ export default function GamePage() {
                   <StatusPill
                     icon={<CheckCircleIcon />}
                     label="Terminé"
-                    status="TERMINE"
                     active={userGame?.status === 'TERMINE'}
                     color="#4caf50"
                     onClick={() => handleSetStatus('TERMINE')}
@@ -794,7 +793,6 @@ export default function GamePage() {
                   <StatusPill
                     icon={<PlayCircleIcon />}
                     label="En cours"
-                    status="EN_COURS"
                     active={userGame?.status === 'EN_COURS'}
                     color={C.accent}
                     onClick={() => handleSetStatus('EN_COURS')}
@@ -802,7 +800,6 @@ export default function GamePage() {
                   <StatusPill
                     icon={<BookmarkIcon />}
                     label="Envie"
-                    status="ENVIE_DE_JOUER"
                     active={userGame?.status === 'ENVIE_DE_JOUER'}
                     color="#ff9800"
                     onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
