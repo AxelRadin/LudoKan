@@ -12,7 +12,6 @@ import {
   Box,
   Button,
   Chip,
-  Divider,
   Modal,
   Paper,
   Rating,
@@ -35,12 +34,12 @@ import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame, UserLibraryData } from '../types/game';
 
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import BoltIcon from '@mui/icons-material/Bolt';
 import CasinoIcon from '@mui/icons-material/Casino';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import EngineeringIcon from '@mui/icons-material/Engineering';
 import ExploreIcon from '@mui/icons-material/Explore';
 import ExtensionIcon from '@mui/icons-material/Extension';
-import BoltIcon from '@mui/icons-material/Bolt';
-import EngineeringIcon from '@mui/icons-material/Engineering';
 import GpsFixedIcon from '@mui/icons-material/GpsFixed';
 import GroupsIcon from '@mui/icons-material/Groups';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
@@ -53,8 +52,94 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
 
+/* ─── Google Fonts injection ─── */
+const fontLink = document.createElement('link');
+fontLink.rel = 'stylesheet';
+fontLink.href =
+  'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap';
+document.head.appendChild(fontLink);
+
+/* ── Keyframes injected once ── */
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(18px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.94); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .game-hero-card  { animation: fadeUp 0.55s cubic-bezier(0.22,1,0.36,1) both; }
+  .game-info-0     { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.08s both; }
+  .game-info-1     { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.16s both; }
+  .game-stat-0     { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.24s both; }
+  .game-stat-1     { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.32s both; }
+  .game-stat-2     { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.40s both; }
+  .game-media      { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.48s both; }
+  .game-reviews    { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.56s both; }
+`;
+document.head.appendChild(styleEl);
+
+/* ─── Design tokens (identiques à ProfilePage) ─── */
+const C = {
+  pageBg: '#ffd3d3',
+  cardBg: 'rgba(255,255,255,0.72)',
+  border: '#f1c7c7',
+  softBorder: 'rgba(241,199,199,0.5)',
+  title: '#0f0f0f',
+  text: '#2b2b2b',
+  muted: '#6e6e73',
+  light: '#a0a0a8',
+  accent: '#d32f2f',
+  accentDark: '#b71c1c',
+  accentGlow: 'rgba(211,47,47,0.15)',
+  glass: 'rgba(255,250,250,0.78)',
+  glassBorder: 'rgba(255,255,255,0.9)',
+};
+
+const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
+const FONT_BODY = "'DM Sans', system-ui, sans-serif";
+
+const glassCard = {
+  background: C.cardBg,
+  backdropFilter: 'blur(20px) saturate(160%)',
+  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+  border: `1px solid ${C.glassBorder}`,
+  borderRadius: '20px',
+  boxShadow: '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow:
+      '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+  },
+};
+
+const sectionLabel = {
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: 2,
+  textTransform: 'uppercase' as const,
+  color: C.accent,
+  mb: 0.5,
+  fontFamily: FONT_BODY,
+};
+
+const sectionTitle = {
+  fontFamily: FONT_DISPLAY,
+  fontWeight: 700,
+  fontSize: 20,
+  color: C.title,
+  letterSpacing: -0.3,
+};
+
+/* ─── Genre icons ─── */
 const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
-  // IGDB (anglais)
   Action: <LocalFireDepartmentIcon fontSize="small" />,
   Adventure: <ExploreIcon fontSize="small" />,
   'Role-playing (RPG)': <AutoFixHighIcon fontSize="small" />,
@@ -79,7 +164,6 @@ const GENRE_ICON_MAP: Record<string, React.ReactElement> = {
   MOBA: <GroupsIcon fontSize="small" />,
   Fighting: <SportsMartialArtsIcon fontSize="small" />,
   Arcade: <SportsEsportsIcon fontSize="small" />,
-  // Django (français)
   Aventure: <ExploreIcon fontSize="small" />,
   RPG: <AutoFixHighIcon fontSize="small" />,
   FPS: <GpsFixedIcon fontSize="small" />,
@@ -105,7 +189,6 @@ function formatDate(isoDate: string | null) {
 export default function GamePage() {
   const { id, igdbId } = useParams();
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
-
   const { startMatchmaking, isMatching } = useMatchmaking();
 
   const [game, setGame] = useState<NormalizedGame | null>(null);
@@ -140,7 +223,6 @@ export default function GamePage() {
         setGameNotFound(true);
       }
     };
-
     fetchGameData();
   }, [id, igdbId]);
 
@@ -194,9 +276,8 @@ export default function GamePage() {
       const { game_id, normalized_game } = await resolveGameIdIfNeeded(game);
       setDjangoId(game_id);
       setGame(normalized_game);
-      if (normalized_game.user_library) {
+      if (normalized_game.user_library)
         setUserGame(normalized_game.user_library);
-      }
       return game_id;
     } catch (err) {
       console.error('[ensureDjangoId]', err);
@@ -240,10 +321,8 @@ export default function GamePage() {
       setAuthModalOpen(true);
       return;
     }
-
     const currentDjangoId = await ensureDjangoId();
     if (currentDjangoId === null) return;
-
     try {
       const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
         is_favorite: !userGame?.is_favorite,
@@ -261,187 +340,203 @@ export default function GamePage() {
       setAuthModalOpen(true);
       return;
     }
-
     const currentDjangoId = await ensureDjangoId();
     if (currentDjangoId === null || !game) return;
-
     const gameImage = getHighResImage(game.cover_url);
     await startMatchmaking(String(currentDjangoId), game.name, gameImage);
   }
 
-  if (gameNotFound) {
-    return (
-      <Box
+  /* ─── États de chargement ─── */
+  const loadingOrNotFound = (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: FONT_BODY,
+        background: `
+          radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+          ${C.pageBg}
+        `,
+      }}
+    >
+      <Typography
         sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 700,
+          fontSize: 22,
+          color: C.title,
         }}
       >
-        <Typography variant="h5">
-          Jeu introuvable dans notre base de données.
-        </Typography>
-      </Box>
-    );
-  }
+        {gameNotFound
+          ? 'Jeu introuvable dans notre base de données.'
+          : 'Chargement du jeu…'}
+      </Typography>
+    </Box>
+  );
 
-  if (!game) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
-        }}
-      >
-        <Typography variant="h5">Chargement du jeu...</Typography>
-      </Box>
-    );
-  }
+  if (gameNotFound || !game) return loadingOrNotFound;
+
+  /* ─── Données description ─── */
+  const fullText = translating
+    ? 'Traduction en cours…'
+    : (translatedDescription ??
+      game.summary ??
+      'Aucune description disponible.');
+  const isTruncatable = !translating && fullText.length > DESCRIPTION_LIMIT;
+  const displayText =
+    isTruncatable && !descriptionExpanded
+      ? fullText.slice(0, DESCRIPTION_LIMIT) + '…'
+      : fullText;
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#ffd3d3',
-        px: { xs: 1, sm: 4, md: 10, lg: 25 },
+        fontFamily: FONT_BODY,
+        background: `
+          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
+          radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+          radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+          ${C.pageBg}
+        `,
+        px: { xs: 2, md: 4, lg: 6 },
+        py: { xs: 3, md: 5 },
       }}
     >
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          pt: { xs: 2, sm: 4, md: 4 },
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-        }}
-      >
-        <Paper
-          elevation={3}
+      <Box sx={{ maxWidth: 1160, mx: 'auto' }}>
+        {/* ── Top bar ── */}
+        <Box
           sx={{
             display: 'flex',
-            flexDirection: 'column',
-            maxWidth: 1400,
-            mt: { xs: 2, md: 0 },
-            mx: 'auto',
-            width: '100%',
-            boxSizing: 'border-box',
-            bgcolor: '#fafafa',
-            p: { xs: 2, sm: 4, md: 6 },
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 4,
           }}
         >
+          <Typography
+            sx={{
+              fontFamily: FONT_DISPLAY,
+              fontWeight: 900,
+              fontSize: { xs: 22, md: 26 },
+              color: C.title,
+              letterSpacing: -0.8,
+              background: `linear-gradient(135deg, ${C.title} 40%, ${C.accent})`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Ludokan
+          </Typography>
+        </Box>
+
+        {/* ── HERO BANNER ── */}
+        <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
+          {/* Image de couverture en bannière */}
           <Box
             sx={{
               width: '100%',
-              position: 'relative',
-              borderRadius: 3,
-              mb: 4,
-              py: { xs: 2, md: 4 },
-              px: { xs: 2, md: 6 },
-              textAlign: 'center',
-              boxShadow: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: 90,
+              height: { xs: 220, sm: 280, md: 380 },
+              borderRadius: '28px',
               overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              position: 'relative',
             }}
           >
             <Box
               sx={{
                 position: 'absolute',
-                width: '100%',
-                height: '100%',
-                backgroundImage: `linear-gradient(to right, black 20%, transparent 30%, transparent 70%, black 80%),url(${getHighResImage(
-                  game.cover_url
-                )})`,
+                inset: 0,
+                backgroundImage: `url(${getHighResImage(game.cover_url)})`,
+                backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: 'black',
-                filter: 'brightness(0.8) blur(1px)',
+                filter: 'brightness(0.75) blur(2px)',
+                transform: 'scale(1.05)',
               }}
             />
+            {/* Gradient scrim */}
             <Box
               sx={{
                 position: 'absolute',
                 inset: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 1,
+                background:
+                  'linear-gradient(160deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.55) 100%)',
               }}
             />
-            <Typography
-              variant="h3"
-              sx={{
-                letterSpacing: 1,
-                position: 'relative',
-              }}
-            >
-              <span
-                style={{
-                  WebkitTextStroke: '2px #fff',
-                  WebkitTextFillColor: '#fff',
-                  color: '#fff',
-                  padding: '0 8px',
-                  borderRadius: 8,
-                  background: 'rgba(0,0,0,0.25)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                }}
-              >
-                {game.name}
-              </span>
-            </Typography>
           </Box>
+
+          {/* Floating identity card (même pattern que ProfilePage) */}
           <Box
+            className="game-hero-card"
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: { xs: 'center', md: 'stretch' },
-              width: '100%',
+              position: 'absolute',
+              left: { xs: 16, md: 28 },
+              right: { xs: 16, md: 28 },
+              bottom: { xs: -100, md: -88 },
+              ...glassCard,
+              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+              px: { xs: 2.5, md: 4 },
+              py: { xs: 2.5, md: 3 },
             }}
           >
             <Box
               sx={{
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                width: { xs: '100%', md: 350 },
-                mr: { md: 4 },
-                mb: { xs: 2, md: 0 },
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { xs: 'flex-start', md: 'center' },
+                justifyContent: 'space-between',
+                gap: { xs: 2, md: 3 },
               }}
             >
+              {/* Cover + titre */}
               <Box
                 sx={{
-                  width: '100%',
-                  height: { xs: 220, sm: 300, md: 400 },
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2,
-                  position: 'relative',
+                  gap: { xs: 2, md: 3 },
                 }}
               >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 12,
-                    right: 12,
-                    zIndex: 2,
-                  }}
-                >
+                <Box sx={{ position: 'relative', flexShrink: 0 }}>
+                  {/* Anneau accent (même shimmer que l'avatar ProfilePage) */}
                   <Box
                     sx={{
-                      width: 40,
-                      height: 40,
+                      position: 'absolute',
+                      inset: -4,
+                      borderRadius: '16px',
+                      background: `conic-gradient(from 180deg, ${C.accent}, #ff8a80, ${C.accent})`,
+                      opacity: 0.35,
+                      animation: 'shimmer 2s linear infinite',
+                      backgroundSize: '200% auto',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <Box
+                    component="img"
+                    src={getHighResImage(game.cover_url)}
+                    alt={game.name}
+                    sx={{
+                      width: { xs: 70, md: 88 },
+                      height: { xs: 88, md: 112 },
+                      objectFit: 'cover',
+                      borderRadius: '14px',
+                      border: '3px solid white',
+                      boxShadow: '0 4px 16px rgba(0,0,0,0.14)',
+                      position: 'relative',
+                      zIndex: 1,
+                      display: 'block',
+                    }}
+                  />
+                  {/* Bouton favori sur la cover */}
+                  <Box
+                    onClick={() => handleToggleFavorite()}
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      zIndex: 10,
+                      width: 28,
+                      height: 28,
                       borderRadius: '50%',
                       backgroundColor: 'rgba(0,0,0,0.55)',
                       display: 'flex',
@@ -449,386 +544,773 @@ export default function GamePage() {
                       justifyContent: 'center',
                       cursor: 'pointer',
                     }}
-                    onClick={() => handleToggleFavorite()}
                   >
                     <Tooltip title="Coup de cœur" arrow>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {userGame?.is_favorite ? (
-                          <FavoriteIcon sx={{ color: '#ff1744' }} />
-                        ) : (
-                          <FavoriteBorderIcon sx={{ color: '#ffffff' }} />
-                        )}
-                      </Box>
+                      {userGame?.is_favorite ? (
+                        <FavoriteIcon sx={{ color: '#ff1744', fontSize: 16 }} />
+                      ) : (
+                        <FavoriteBorderIcon
+                          sx={{ color: '#ffffff', fontSize: 16 }}
+                        />
+                      )}
                     </Tooltip>
                   </Box>
                 </Box>
-                <img
-                  src={getHighResImage(game.cover_url)}
-                  alt={game.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    borderRadius: 16,
-                  }}
-                />
-              </Box>
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  mt: 2,
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                  Notes de la communauté
-                </Typography>
-                <Rating
-                  value={(game.average_rating || game.rating_avg || 0) / 2}
-                  readOnly
-                  precision={0.5}
-                  sx={{ mb: 2, fontSize: 40 }}
-                />
-                <Box
-                  sx={{
-                    width: '100%',
-                    mt: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckCircleIcon
-                      color={
-                        userGame?.status === 'TERMINE' ? 'success' : 'action'
-                      }
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleSetStatus('TERMINE')}
-                    />
-                    <Typography variant="body2">Terminé</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <BookmarkIcon
-                      color={
-                        userGame?.status === 'ENVIE_DE_JOUER'
-                          ? 'warning'
-                          : 'action'
-                      }
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-                    />
-                    <Typography variant="body2">Envie d'y jouer</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PlayCircleIcon
-                      color={
-                        userGame?.status === 'EN_COURS' ? 'primary' : 'action'
-                      }
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleSetStatus('EN_COURS')}
-                    />
-                    <Typography variant="body2">En cours</Typography>
-                  </Box>
-                  <Tooltip title="Coup de cœur" arrow>
-                    <Box
+
+                {/* Titre + meta */}
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_DISPLAY,
+                      fontWeight: 900,
+                      fontSize: { xs: 24, md: 32 },
+                      color: C.title,
+                      lineHeight: 1.05,
+                      letterSpacing: -0.6,
+                    }}
+                  >
+                    {game.name}
+                  </Typography>
+                  {game.publisher?.name && (
+                    <Typography
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        cursor: 'pointer',
+                        mt: 0.5,
+                        color: C.muted,
+                        fontSize: 13.5,
+                        fontFamily: FONT_BODY,
+                        fontWeight: 400,
                       }}
-                      onClick={() => handleToggleFavorite()}
                     >
-                      {userGame?.is_favorite ? (
-                        <FavoriteIcon color="error" />
-                      ) : (
-                        <FavoriteBorderIcon color="action" />
-                      )}
-                      <Typography variant="body2">Coup de cœur</Typography>
-                    </Box>
-                  </Tooltip>
+                      {game.publisher.name}
+                    </Typography>
+                  )}
+                  {game.release_date && (
+                    <Typography
+                      sx={{
+                        mt: 0.5,
+                        color: C.light,
+                        fontSize: 12.5,
+                        fontFamily: FONT_BODY,
+                      }}
+                    >
+                      {formatDate(game.release_date)}
+                    </Typography>
+                  )}
                 </Box>
               </Box>
-            </Box>
-            <Box
-              sx={{
-                flex: 1.2,
-                pr: { md: 6 },
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                minWidth: 0,
-                mt: { xs: 4, md: 0 },
-              }}
-            >
+
+              {/* Actions */}
               <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'row', md: 'column' },
+                  gap: 1.5,
+                  flexShrink: 0,
+                  alignSelf: { xs: 'flex-start', md: 'center' },
+                }}
               >
-                <DevicesIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Plateformes
-                </Typography>
+                <SecondaryButton
+                  onClick={() => handleSetMatchmaking()}
+                  disabled={isMatching}
+                >
+                  {isMatching ? 'Recherche…' : 'Matchmaking'}
+                </SecondaryButton>
+                <Button
+                  variant="contained"
+                  onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+                  sx={{
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    textTransform: 'none',
+                    fontFamily: FONT_BODY,
+                    background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
+                    boxShadow: `0 4px 18px ${C.accentGlow}`,
+                    '&:hover': {
+                      background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
+                      boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
+                      transform: 'translateY(-1px)',
+                    },
+                    transition: 'all 0.18s ease',
+                  }}
+                >
+                  Ajouter à la collection
+                </Button>
               </Box>
-              <Box sx={{ mb: 3 }}>
-                <PlatformLogos platforms={game.platforms ?? []} />
-              </Box>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <DescriptionIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Description
-                </Typography>
-              </Box>
-              {(() => {
-                const fullText = translating
-                  ? 'Traduction en cours…'
-                  : (translatedDescription ??
-                    game.summary ??
-                    'Aucune description disponible.');
-                const isTruncatable =
-                  !translating && fullText.length > DESCRIPTION_LIMIT;
-                const displayText =
-                  isTruncatable && !descriptionExpanded
-                    ? fullText.slice(0, DESCRIPTION_LIMIT) + '…'
-                    : fullText;
-                return (
-                  <>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        mb: isTruncatable ? 1 : 3,
-                        color: translating ? 'text.secondary' : 'text.primary',
-                        textAlign: 'justify',
-                      }}
-                    >
-                      {displayText}
-                    </Typography>
-                    {isTruncatable && (
-                      <Button
-                        size="small"
-                        onClick={() => setDescriptionExpanded(prev => !prev)}
-                        sx={{ mb: 3, p: 0, textTransform: 'none' }}
-                      >
-                        {descriptionExpanded ? 'Voir moins' : 'Voir plus'}
-                      </Button>
-                    )}
-                  </>
-                );
-              })()}
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <CategoryIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Genres
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-                {game.genres && game.genres.length > 0 ? (
-                  game.genres.map((g: any) => (
-                    <Chip
-                      key={g.name}
-                      label={g.name}
-                      size="small"
-                      icon={GENRE_ICON_MAP[g.name]}
-                      sx={{ fontWeight: 600 }}
-                    />
-                  ))
-                ) : (
-                  <Typography variant="body1">Non renseigné</Typography>
-                )}
-              </Box>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <CalendarTodayIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Date de sortie
-                </Typography>
-              </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {formatDate(game.release_date) || 'Non renseignée'}
-              </Typography>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <BusinessIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Éditeur
-                </Typography>
-              </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.publisher?.name || 'Non renseigné'}
-              </Typography>
             </Box>
           </Box>
+        </Box>
+
+        {/* Spacer pour la floating card */}
+        <Box sx={{ height: { xs: 56, md: 44 } }} />
+
+        {/* ── STATUTS + NOTE ── */}
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+            gap: 2,
+            mb: 2.5,
+          }}
+        >
+          {/* Note communauté */}
+          <Paper
+            elevation={0}
+            className="game-stat-0"
+            sx={{
+              ...glassCard,
+              p: '26px 28px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '40%',
+                height: '2px',
+                background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
+              },
+            }}
+          >
+            <Typography sx={{ ...sectionLabel }}>Communauté</Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 20,
+                color: C.title,
+                letterSpacing: -0.3,
+              }}
+            >
+              Note globale
+            </Typography>
+            <Rating
+              value={(game.average_rating || game.rating_avg || 0) / 2}
+              readOnly
+              precision={0.5}
+              sx={{ mt: 1, fontSize: 32 }}
+            />
+          </Paper>
+
+          {/* Statut personnel */}
+          <Paper
+            elevation={0}
+            className="game-stat-1"
+            sx={{
+              ...glassCard,
+              p: '26px 28px',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '40%',
+                height: '2px',
+                background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
+              },
+            }}
+          >
+            <Typography sx={{ ...sectionLabel }}>Ma bibliothèque</Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 20,
+                color: C.title,
+                letterSpacing: -0.3,
+                mb: 2,
+              }}
+            >
+              Statut
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              {[
+                {
+                  icon: (
+                    <CheckCircleIcon
+                      sx={{
+                        color:
+                          userGame?.status === 'TERMINE' ? '#4caf50' : C.light,
+                        fontSize: 22,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  ),
+                  label: 'Terminé',
+                  active: userGame?.status === 'TERMINE',
+                  onClick: () => handleSetStatus('TERMINE'),
+                },
+                {
+                  icon: (
+                    <PlayCircleIcon
+                      sx={{
+                        color:
+                          userGame?.status === 'EN_COURS' ? C.accent : C.light,
+                        fontSize: 22,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  ),
+                  label: 'En cours',
+                  active: userGame?.status === 'EN_COURS',
+                  onClick: () => handleSetStatus('EN_COURS'),
+                },
+                {
+                  icon: (
+                    <BookmarkIcon
+                      sx={{
+                        color:
+                          userGame?.status === 'ENVIE_DE_JOUER'
+                            ? '#ff9800'
+                            : C.light,
+                        fontSize: 22,
+                        cursor: 'pointer',
+                      }}
+                    />
+                  ),
+                  label: "Envie d'y jouer",
+                  active: userGame?.status === 'ENVIE_DE_JOUER',
+                  onClick: () => handleSetStatus('ENVIE_DE_JOUER'),
+                },
+              ].map(({ icon, label, active, onClick }) => (
+                <Box
+                  key={label}
+                  onClick={onClick}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    cursor: 'pointer',
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: '12px',
+                    transition: 'background 0.15s ease',
+                    background: active ? `${C.accentGlow}` : 'transparent',
+                    '&:hover': { background: `rgba(0,0,0,0.04)` },
+                  }}
+                >
+                  {icon}
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 14,
+                      fontWeight: active ? 700 : 400,
+                      color: active ? C.accent : C.text,
+                    }}
+                  >
+                    {label}
+                  </Typography>
+                </Box>
+              ))}
+              <Tooltip title="Coup de cœur" arrow>
+                <Box
+                  onClick={() => handleToggleFavorite()}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    cursor: 'pointer',
+                    px: 1.5,
+                    py: 1,
+                    borderRadius: '12px',
+                    transition: 'background 0.15s ease',
+                    background: userGame?.is_favorite
+                      ? `${C.accentGlow}`
+                      : 'transparent',
+                    '&:hover': { background: `rgba(0,0,0,0.04)` },
+                  }}
+                >
+                  {userGame?.is_favorite ? (
+                    <FavoriteIcon sx={{ color: '#ff1744', fontSize: 22 }} />
+                  ) : (
+                    <FavoriteBorderIcon sx={{ color: C.light, fontSize: 22 }} />
+                  )}
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 14,
+                      fontWeight: userGame?.is_favorite ? 700 : 400,
+                      color: userGame?.is_favorite ? C.accent : C.text,
+                    }}
+                  >
+                    Coup de cœur
+                  </Typography>
+                </Box>
+              </Tooltip>
+            </Box>
+          </Paper>
+
+          {/* Plateformes */}
+          <Paper
+            elevation={0}
+            className="game-stat-2"
+            sx={{
+              ...glassCard,
+              p: '26px 28px',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '40%',
+                height: '2px',
+                background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
+              },
+            }}
+          >
+            <Typography sx={{ ...sectionLabel }}>Disponible sur</Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 20,
+                color: C.title,
+                letterSpacing: -0.3,
+                mb: 2,
+              }}
+            >
+              Plateformes
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <DevicesIcon sx={{ color: C.muted, fontSize: 18, mr: 0.5 }} />
+              <PlatformLogos platforms={game.platforms ?? []} />
+            </Box>
+          </Paper>
+        </Box>
+
+        {/* ── INFOS DÉTAILLÉES ── */}
+        <Box sx={{ mb: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 18,
+                color: C.title,
+                letterSpacing: -0.3,
+              }}
+            >
+              Détails
+            </Typography>
+            <Box
+              sx={{
+                flex: 1,
+                height: '1px',
+                background: `linear-gradient(to right, ${C.border}, transparent)`,
+              }}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+              gap: 2,
+            }}
+          >
+            {/* Description */}
+            <Paper
+              elevation={0}
+              className="game-info-0"
+              sx={{ ...glassCard, p: '26px 28px' }}
+            >
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
+              >
+                <DescriptionIcon sx={{ color: C.accent, fontSize: 18 }} />
+                <Typography sx={{ ...sectionLabel, mb: 0 }}>
+                  Synopsis
+                </Typography>
+              </Box>
+              <Typography
+                sx={{
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 700,
+                  fontSize: 20,
+                  color: C.title,
+                  letterSpacing: -0.3,
+                  mb: 1.5,
+                }}
+              >
+                Description
+              </Typography>
+              <Typography
+                sx={{
+                  color: translating ? C.muted : C.text,
+                  lineHeight: 1.75,
+                  fontSize: 14,
+                  fontFamily: FONT_BODY,
+                  textAlign: 'justify',
+                }}
+              >
+                {displayText}
+              </Typography>
+              {isTruncatable && (
+                <Button
+                  size="small"
+                  onClick={() => setDescriptionExpanded(prev => !prev)}
+                  sx={{
+                    mt: 1,
+                    p: 0,
+                    textTransform: 'none',
+                    fontFamily: FONT_BODY,
+                    fontWeight: 600,
+                    color: C.accent,
+                    fontSize: 13.5,
+                  }}
+                >
+                  {descriptionExpanded ? 'Voir moins' : 'Voir plus'}
+                </Button>
+              )}
+            </Paper>
+
+            {/* Genres + Éditeur + Date */}
+            <Paper
+              elevation={0}
+              className="game-info-1"
+              sx={{
+                ...glassCard,
+                p: '26px 28px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+              }}
+            >
+              {/* Genres */}
+              <Box>
+                <Box
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}
+                >
+                  <CategoryIcon sx={{ color: C.accent, fontSize: 18 }} />
+                  <Typography sx={{ ...sectionLabel, mb: 0 }}>
+                    Genres
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 0.5 }}
+                >
+                  {game.genres && game.genres.length > 0 ? (
+                    game.genres.map((g: any) => (
+                      <Chip
+                        key={g.name}
+                        label={g.name}
+                        size="small"
+                        icon={GENRE_ICON_MAP[g.name]}
+                        sx={{
+                          fontFamily: FONT_BODY,
+                          fontWeight: 600,
+                          fontSize: 12,
+                          backgroundColor: 'rgba(211,47,47,0.08)',
+                          border: '1px solid rgba(211,47,47,0.2)',
+                          color: C.accent,
+                          '& .MuiChip-icon': { color: C.accent },
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <Typography
+                      sx={{
+                        fontFamily: FONT_BODY,
+                        fontSize: 14,
+                        color: C.muted,
+                      }}
+                    >
+                      Non renseigné
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Date de sortie */}
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 0.5,
+                  }}
+                >
+                  <CalendarTodayIcon sx={{ color: C.accent, fontSize: 18 }} />
+                  <Typography sx={{ ...sectionLabel, mb: 0 }}>
+                    Date de sortie
+                  </Typography>
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_DISPLAY,
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: C.title,
+                    letterSpacing: -0.3,
+                    mt: 0.5,
+                  }}
+                >
+                  {formatDate(game.release_date) || 'Non renseignée'}
+                </Typography>
+              </Box>
+
+              {/* Éditeur */}
+              <Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 0.5,
+                  }}
+                >
+                  <BusinessIcon sx={{ color: C.accent, fontSize: 18 }} />
+                  <Typography sx={{ ...sectionLabel, mb: 0 }}>
+                    Éditeur
+                  </Typography>
+                </Box>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_DISPLAY,
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: C.title,
+                    letterSpacing: -0.3,
+                    mt: 0.5,
+                  }}
+                >
+                  {game.publisher?.name || 'Non renseigné'}
+                </Typography>
+              </Box>
+            </Paper>
+          </Box>
+        </Box>
+
+        {/* ── MÉDIAS ── */}
+        {((game.screenshots && game.screenshots.length > 0) ||
+          (game.videos && game.videos.length > 0)) && (
+          <Paper
+            elevation={0}
+            className="game-media"
+            sx={{
+              ...glassCard,
+              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+              p: { xs: 2.5, md: 4 },
+              mb: 2.5,
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 1,
+              }}
+            >
+              <Box>
+                <Typography sx={{ ...sectionLabel }}>Galerie</Typography>
+                <Typography sx={{ ...sectionTitle }}>Médias</Typography>
+              </Box>
+              {game.screenshots && game.screenshots.length > 0 && (
+                <Box
+                  sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: 999,
+                    background: 'rgba(211,47,47,0.1)',
+                    border: '1px solid rgba(211,47,47,0.25)',
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      color: C.accent,
+                      fontSize: 13,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {game.screenshots.length} capture
+                    {game.screenshots.length > 1 ? 's' : ''}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+
+            <Box
+              sx={{
+                height: '1px',
+                background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
+                mb: 3,
+              }}
+            />
+
+            {/* Vidéo */}
+            {game.videos && game.videos.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: 800,
+                    mx: 'auto',
+                    aspectRatio: '16/9',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
+                  }}
+                >
+                  <iframe
+                    src={`https://www.youtube.com/embed/${game.videos[0].video_id}`}
+                    title={game.videos[0].name || 'Trailer'}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      border: 'none',
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+
+            {/* Screenshots */}
+            {game.screenshots && game.screenshots.length > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: 2,
+                  overflowX: 'auto',
+                  pb: 1,
+                  '&::-webkit-scrollbar': { height: 6 },
+                  '&::-webkit-scrollbar-thumb': {
+                    borderRadius: 3,
+                    bgcolor: 'rgba(0,0,0,0.15)',
+                  },
+                }}
+              >
+                {game.screenshots.map(s => (
+                  <Box
+                    key={s.url}
+                    component="img"
+                    src={s.url}
+                    alt={
+                      game.name
+                        ? `Capture d'écran — ${game.name}`
+                        : "Capture d'écran"
+                    }
+                    onClick={() => setSelectedScreenshot(s.url)}
+                    sx={{
+                      height: { xs: 140, sm: 200 },
+                      minWidth: { xs: 220, sm: 320 },
+                      objectFit: 'cover',
+                      borderRadius: '14px',
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.10)',
+                      flexShrink: 0,
+                      cursor: 'pointer',
+                      transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                      '&:hover': {
+                        transform: 'scale(1.02)',
+                        boxShadow: '0 6px 24px rgba(0,0,0,0.16)',
+                      },
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+
+            {/* Modal screenshot */}
+            {selectedScreenshot && (
+              <Modal open onClose={() => setSelectedScreenshot(null)}>
+                <Box
+                  onClick={() => setSelectedScreenshot(null)}
+                  sx={{
+                    position: 'fixed',
+                    inset: 0,
+                    bgcolor: 'rgba(0,0,0,0.85)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'zoom-out',
+                    backdropFilter: 'blur(6px)',
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={selectedScreenshot}
+                    alt="Screenshot agrandi"
+                    sx={{
+                      maxWidth: '90vw',
+                      maxHeight: '90vh',
+                      borderRadius: '16px',
+                      boxShadow: 8,
+                    }}
+                  />
+                </Box>
+              </Modal>
+            )}
+          </Paper>
+        )}
+
+        {/* ── AVIS ── */}
+        <Paper
+          elevation={0}
+          className="game-reviews"
+          sx={{
+            ...glassCard,
+            '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+            p: { xs: 2.5, md: 4 },
+          }}
+        >
           <Box
             sx={{
               display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: { xs: 'center', sm: 'flex-end' },
               alignItems: 'center',
-              gap: 2,
-              mt: 3,
-              maxWidth: 1400,
-              mx: 'auto',
-              width: '100%',
+              justifyContent: 'space-between',
+              mb: 3,
+              flexWrap: 'wrap',
+              gap: 1,
             }}
           >
-            <SecondaryButton
-              onClick={() => handleSetMatchmaking()}
-              disabled={isMatching}
-            >
-              {isMatching ? 'Recherche...' : 'Matchmaking'}
-            </SecondaryButton>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-            >
-              Ajouter à la collection
-            </Button>
+            <Box>
+              <Typography sx={{ ...sectionLabel }}>Opinions</Typography>
+              <Typography sx={{ ...sectionTitle }}>
+                Avis de la communauté
+              </Typography>
+            </Box>
           </Box>
-          {((game.screenshots && game.screenshots.length > 0) ||
-            (game.videos && game.videos.length > 0)) && (
-            <>
-              <Divider sx={{ my: 4 }} />
-              <Box sx={{ width: '100%' }}>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: 700, mb: 3, textAlign: 'center' }}
-                >
-                  Médias
-                </Typography>
-                {game.videos && game.videos.length > 0 && (
-                  <Box sx={{ mb: 4 }}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        width: '100%',
-                        maxWidth: 800,
-                        mx: 'auto',
-                        aspectRatio: '16/9',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        boxShadow: 3,
-                      }}
-                    >
-                      <iframe
-                        src={`https://www.youtube.com/embed/${game.videos[0].video_id}`}
-                        title={game.videos[0].name || 'Trailer'}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          width: '100%',
-                          height: '100%',
-                          border: 'none',
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                )}
-                {selectedScreenshot && (
-                  <Modal open onClose={() => setSelectedScreenshot(null)}>
-                    <Box
-                      onClick={() => setSelectedScreenshot(null)}
-                      sx={{
-                        position: 'fixed',
-                        inset: 0,
-                        bgcolor: 'rgba(0,0,0,0.85)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'zoom-out',
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={selectedScreenshot}
-                        alt="Screenshot agrandi"
-                        sx={{
-                          maxWidth: '90vw',
-                          maxHeight: '90vh',
-                          borderRadius: 2,
-                          boxShadow: 8,
-                        }}
-                      />
-                    </Box>
-                  </Modal>
-                )}
-                {game.screenshots && game.screenshots.length > 0 && (
-                  <Box>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        gap: 2,
-                        overflowX: 'auto',
-                        pb: 1,
-                        '&::-webkit-scrollbar': { height: 6 },
-                        '&::-webkit-scrollbar-thumb': {
-                          borderRadius: 3,
-                          bgcolor: 'rgba(0,0,0,0.2)',
-                        },
-                      }}
-                    >
-                      {game.screenshots.map(s => (
-                        <Box
-                          key={s.url}
-                          component="img"
-                          src={s.url}
-                          alt={
-                            game.name
-                              ? `Capture d'écran — ${game.name}`
-                              : "Capture d'écran"
-                          }
-                          onClick={() => setSelectedScreenshot(s.url)}
-                          sx={{
-                            height: { xs: 140, sm: 200 },
-                            minWidth: { xs: 220, sm: 320 },
-                            objectFit: 'cover',
-                            borderRadius: 2,
-                            boxShadow: 2,
-                            flexShrink: 0,
-                            cursor: 'pointer',
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </>
-          )}
-          <Divider sx={{ my: 4 }} />
+
           <Box
             sx={{
-              width: '100%',
-              bgcolor: '#fff',
-              borderRadius: 4,
-              p: { xs: 2, sm: 4 },
+              height: '1px',
+              background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
+              mb: 3,
             }}
-          >
-            <ReviewSection
-              gameId={djangoId ? String(djangoId) : ''}
-              resolveGameId={ensureDjangoId}
-              userReview={userReview}
-              currentUserId={currentUserId}
-              onReviewChange={review => setUserReview(review)}
-            />
-          </Box>
+          />
+
+          <ReviewSection
+            gameId={djangoId ? String(djangoId) : ''}
+            resolveGameId={ensureDjangoId}
+            userReview={userReview}
+            currentUserId={currentUserId}
+            onReviewChange={review => setUserReview(review)}
+          />
         </Paper>
       </Box>
     </Box>
