@@ -10,9 +10,12 @@ import {
   Paper,
   TextField,
   Typography,
+  Menu,
+  MenuItem,
+  DialogContentText,
 } from '@mui/material';
 import { useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -204,6 +207,7 @@ type ProfilePageModel = {
   handleAvatarRemoveNow: () => Promise<void>;
   handleSave: () => Promise<void>;
   handleBannerChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleBannerRemoveNow: () => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
@@ -377,6 +381,26 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const handleBannerRemoveNow = async () => {
+    if (bannerBusy || !user?.banner_url) return;
+    setBannerBusy(true);
+    try {
+      const updated = await apiPatch('/api/me/', {
+        ...profileTextPayload(),
+        banner: null,
+      });
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de supprimer la bannière.';
+      alert(msg);
+    } finally {
+      setBannerBusy(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const updated = await apiPatch('/api/me/', {
@@ -438,6 +462,7 @@ function useProfilePageModel(): ProfilePageModel {
     handleAvatarRemoveNow,
     handleSave,
     handleBannerChange,
+    handleBannerRemoveNow,
   };
 }
 
@@ -775,9 +800,15 @@ export default function ProfilePage() {
     handleAvatarRemoveNow,
     handleSave,
     handleBannerChange,
+    handleBannerRemoveNow,
   } = useProfilePageModel();
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const bannerMenuOpen = Boolean(bannerMenuAnchor);
+  const [confirmDeleteBannerOpen, setConfirmDeleteBannerOpen] = useState(false);
 
   return (
     <Box
@@ -858,7 +889,9 @@ export default function ProfilePage() {
             <>
               <Box
                 component="button"
-                onClick={() => bannerInputRef.current?.click()}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                  setBannerMenuAnchor(e.currentTarget)
+                }
                 disabled={bannerBusy}
                 sx={{
                   position: 'absolute',
@@ -883,9 +916,86 @@ export default function ProfilePage() {
                 {bannerBusy ? (
                   <CircularProgress size={20} sx={{ color: '#fff' }} />
                 ) : (
-                  <CameraAltIcon fontSize="small" />
+                  <MoreVertIcon fontSize="small" />
                 )}
               </Box>
+              <Menu
+                anchorEl={bannerMenuAnchor}
+                open={bannerMenuOpen}
+                onClose={() => setBannerMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  sx: {
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    minWidth: 180,
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setBannerMenuAnchor(null);
+                    bannerInputRef.current?.click();
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  Ajouter une image
+                </MenuItem>
+                {user?.banner_url && (
+                  <MenuItem
+                    sx={{
+                      color: 'error.main',
+                      fontFamily: FONT_BODY,
+                      fontSize: 14,
+                    }}
+                    onClick={() => {
+                      setBannerMenuAnchor(null);
+                      setConfirmDeleteBannerOpen(true);
+                    }}
+                  >
+                    Supprimer l'image
+                  </MenuItem>
+                )}
+              </Menu>
+              <Dialog
+                open={confirmDeleteBannerOpen}
+                onClose={() => setConfirmDeleteBannerOpen(false)}
+                PaperProps={{
+                  sx: { borderRadius: '16px', p: 1 },
+                }}
+              >
+                <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
+                  Supprimer la bannière ?
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText sx={{ fontFamily: FONT_BODY }}>
+                    Es-tu sûr de vouloir supprimer ta bannière de profil ? Cette
+                    action remplacera ton image actuelle par l'image par défaut
+                    de Ludokan et est irréversible.
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                  <Button
+                    onClick={() => setConfirmDeleteBannerOpen(false)}
+                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    color="error"
+                    variant="contained"
+                    onClick={() => {
+                      setConfirmDeleteBannerOpen(false);
+                      handleBannerRemoveNow();
+                    }}
+                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+                    disableElevation
+                  >
+                    Supprimer
+                  </Button>
+                </DialogActions>
+              </Dialog>
               <input
                 type="file"
                 ref={bannerInputRef}
