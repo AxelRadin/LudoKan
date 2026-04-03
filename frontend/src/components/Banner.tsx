@@ -8,30 +8,29 @@ export const Banner: React.FC = () => {
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        minHeight: { xs: 220, md: 300 },
+        minHeight: { xs: 180, md: 240 },
         display: 'flex',
         alignItems: 'center',
         px: { xs: 3, sm: 5, md: 8 },
-        py: { xs: 5, md: 6 },
+        py: { xs: 4, md: 5 },
         borderRadius: { xs: 4, md: 6 },
         background:
           'linear-gradient(135deg, #fff7f7 0%, #fffdfd 45%, #fff1f1 100%)',
         border: '1px solid rgba(198,40,40,0.08)',
       }}
     >
-      {/* Background text */}
       <Typography
         aria-hidden
         sx={{
           position: 'absolute',
           top: '50%',
-          left: { xs: '50%', md: '58%' },
-          transform: 'translate(-50%, -50%)',
-          fontSize: { xs: '18vw', md: '11vw' },
+          right: { xs: '-6%', md: '2%' },
+          transform: 'translateY(-50%)',
+          fontSize: { xs: '20vw', md: '10vw' },
           fontWeight: 800,
-          letterSpacing: '-0.06em',
+          letterSpacing: '-0.08em',
           lineHeight: 1,
-          color: 'rgba(198,40,40,0.05)',
+          color: 'rgba(198,40,40,0.04)',
           userSelect: 'none',
           pointerEvents: 'none',
           whiteSpace: 'nowrap',
@@ -40,55 +39,34 @@ export const Banner: React.FC = () => {
         LUDOKAN
       </Typography>
 
-      {/* Content */}
       <Box
         sx={{
           position: 'relative',
           zIndex: 2,
-          maxWidth: { xs: '100%', md: 520 },
+          maxWidth: 420,
         }}
       >
         <Typography
           sx={{
-            fontSize: 12,
+            fontSize: { xs: '1.8rem', md: '2.4rem' },
             fontWeight: 700,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            color: '#c62828',
-            mb: 1.5,
-          }}
-        >
-          Univers gaming
-        </Typography>
-
-        <Typography
-          sx={{
-            fontSize: { xs: '2rem', md: '3.5rem' },
-            fontWeight: 800,
-            lineHeight: 1,
             letterSpacing: '-0.04em',
             color: '#1f1f1f',
-            mb: 2,
+            lineHeight: 1.05,
+            mb: 1,
           }}
         >
-          Votre univers
-          <Box component="span" sx={{ color: '#c62828' }}>
-            {' '}
-            gaming
-          </Box>
-          , simplement.
+          Votre collection gaming
         </Typography>
 
         <Typography
           sx={{
-            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            fontSize: { xs: '0.95rem', md: '1rem' },
             color: '#6b6b6b',
-            lineHeight: 1.7,
-            maxWidth: 460,
+            lineHeight: 1.6,
           }}
         >
-          Explorez vos jeux, découvrez les tendances et organisez votre
-          collection dans une interface claire et élégante.
+          Simple, claire et élégante.
         </Typography>
       </Box>
     </Box>
