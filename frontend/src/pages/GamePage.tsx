@@ -51,7 +51,7 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
 
-/* ── Google Fonts ── */
+/* ── Fonts ── */
 (() => {
   const l = document.createElement('link');
   l.rel = 'stylesheet';
@@ -65,21 +65,20 @@ import StairsIcon from '@mui/icons-material/Stairs';
   const s = document.createElement('style');
   s.textContent = `
     @keyframes fadeUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes slideIn { from{opacity:0;transform:translateX(-18px)} to{opacity:1;transform:translateX(0)} }
     @keyframes scaleIn { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
-    .gp-img  { animation: scaleIn 0.7s cubic-bezier(0.22,1,0.36,1) both }
-    .gp-c0   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.10s both }
-    .gp-c1   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.20s both }
-    .gp-c2   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.30s both }
-    .gp-c3   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.40s both }
-    .gp-c4   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.50s both }
-    .gp-c5   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.60s both }
-    .gp-c6   { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.70s both }
+    .gp-img { animation: scaleIn 0.7s cubic-bezier(0.22,1,0.36,1) both }
+    .gp-c0  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.08s both }
+    .gp-c1  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.16s both }
+    .gp-c2  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.24s both }
+    .gp-c3  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.32s both }
+    .gp-c4  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.40s both }
+    .gp-c5  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.48s both }
+    .gp-c6  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.56s both }
   `;
   document.head.appendChild(s);
 })();
 
-/* ── Design tokens ── */
+/* ── Tokens ── */
 const C = {
   pageBg: '#ffd3d3',
   accent: '#d32f2f',
@@ -90,8 +89,8 @@ const C = {
   text: '#2b2b2b',
   muted: '#6e6e73',
   light: '#b0b0b8',
-  white88: 'rgba(255,255,255,0.88)',
-  white95: 'rgba(255,255,255,0.95)',
+  w88: 'rgba(255,255,255,0.88)',
+  w95: 'rgba(255,255,255,0.95)',
   divider: 'rgba(0,0,0,0.05)',
 };
 const FD = "'Playfair Display', Georgia, serif";
@@ -99,10 +98,10 @@ const FB = "'DM Sans', system-ui, sans-serif";
 
 /* ── Glass card ── */
 const card = (ov: Record<string, unknown> = {}) => ({
-  background: C.white88,
+  background: C.w88,
   backdropFilter: 'blur(28px) saturate(170%)',
   WebkitBackdropFilter: 'blur(28px) saturate(170%)',
-  border: `1px solid ${C.white95}`,
+  border: `1px solid ${C.w95}`,
   borderRadius: '22px',
   boxShadow:
     '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92)',
@@ -264,43 +263,54 @@ function StatusChip({
   );
 }
 
-/* ── Icon box ── */
-function IBox({ children }: { children: React.ReactNode }) {
+/* ── Modern info row (icône accent + label + valeur) ── */
+function InfoRow({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactElement;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <Box
-      sx={{
-        width: 38,
-        height: 38,
-        borderRadius: '12px',
-        flexShrink: 0,
-        background: C.accentSoft,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {children}
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      {/* Icône dans un cercle dégradé subtil */}
+      <Box
+        sx={{
+          width: 34,
+          height: 34,
+          borderRadius: '50%',
+          flexShrink: 0,
+          background: `linear-gradient(135deg,${C.accentSoft} 0%,rgba(255,255,255,0.6) 100%)`,
+          border: `1px solid ${C.accentGlow}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {React.cloneElement(icon, {
+          sx: { fontSize: 15, color: C.accent },
+        } as any)}
+      </Box>
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Typography
+          sx={{
+            fontFamily: FB,
+            fontSize: 9.5,
+            fontWeight: 700,
+            letterSpacing: 1.5,
+            textTransform: 'uppercase',
+            color: C.light,
+            lineHeight: 1,
+            mb: 0.3,
+          }}
+        >
+          {label}
+        </Typography>
+        <Box>{children}</Box>
+      </Box>
     </Box>
-  );
-}
-
-/* ── Section label ── */
-function SLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <Typography
-      sx={{
-        fontFamily: FB,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: 1.6,
-        textTransform: 'uppercase',
-        color: C.light,
-        lineHeight: 1,
-        mb: 0.6,
-      }}
-    >
-      {children}
-    </Typography>
   );
 }
 
@@ -315,7 +325,7 @@ export default function GamePage() {
   const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
   const [userReview, setUserReview] = useState<any>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [translatedDescription, setTranslated] = useState<string | null>(null);
+  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
   const [translating, setTranslating] = useState(false);
   const [descExpanded, setDescExpanded] = useState(false);
   const [selectedShot, setSelectedShot] = useState<string | null>(null);
@@ -350,9 +360,9 @@ export default function GamePage() {
   useEffect(() => {
     if (!game?.summary) return;
     setTranslating(true);
-    setTranslated(null);
+    setTranslatedDesc(null);
     translateDescription(game.summary)
-      .then(setTranslated)
+      .then(setTranslatedDesc)
       .catch(() => {})
       .finally(() => setTranslating(false));
   }, [game?.summary]);
@@ -470,9 +480,7 @@ export default function GamePage() {
 
   const fullText = translating
     ? 'Traduction en cours…'
-    : (translatedDescription ??
-      game.summary ??
-      'Aucune description disponible.');
+    : (translatedDesc ?? game.summary ?? 'Aucune description disponible.');
   const isTrunc = !translating && fullText.length > DLIMIT;
   const dispText =
     isTrunc && !descExpanded ? fullText.slice(0, DLIMIT) + '…' : fullText;
@@ -524,37 +532,35 @@ export default function GamePage() {
               WebkitTextFillColor: 'transparent',
               letterSpacing: -0.8,
             }}
-          ></Typography>
+          >
+            Ludokan
+          </Typography>
         </Box>
 
-        {/* ══════════════════════════════════════════════════════════════
-            HERO LAYOUT
-            desktop : image portrait pleine hauteur gauche | cards droite
-            mobile  : empilé
-        ══════════════════════════════════════════════════════════════ */}
+        {/* ══════════════════════════════════════════════════════
+            HERO : image portrait gauche | colonne droite
+        ══════════════════════════════════════════════════════ */}
         <Box
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: '380px 1fr' },
-            gridTemplateRows: { md: '1fr' },
             gap: 2.5,
             mb: 2.5,
+            alignItems: 'stretch',
           }}
         >
-          {/* ════ IMAGE PORTRAIT — pleine hauteur ════ */}
+          {/* ── IMAGE PORTRAIT pleine hauteur ── */}
           <Box
             className="gp-img"
             sx={{
               position: 'relative',
               borderRadius: '28px',
               overflow: 'hidden',
-              /* mobile : hauteur fixe / desktop : s'étire sur toute la hauteur de la grille */
               height: { xs: 380, md: '100%' },
               minHeight: { md: 520 },
               boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
             }}
           >
-            {/* Photo pleine taille */}
             <Box
               component="img"
               src={hi(game.cover_url)}
@@ -569,28 +575,28 @@ export default function GamePage() {
               }}
             />
 
-            {/* Vignette latérale droite pour la transition vers les cards */}
+            {/* Scrim bas */}
             <Box
               sx={{
                 position: 'absolute',
                 inset: 0,
                 background:
-                  'linear-gradient(180deg, rgba(0,0,0,0) 38%, rgba(0,0,0,0.78) 100%)',
+                  'linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(0,0,0,0.78) 100%)',
               }}
             />
 
-            {/* Grain subtil sur l'image */}
+            {/* Grain */}
             <Box
               sx={{
                 position: 'absolute',
                 inset: 0,
                 opacity: 0.18,
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
                 pointerEvents: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
               }}
             />
 
-            {/* Badge favori top-right */}
+            {/* Favori */}
             <Tooltip title="Coup de cœur" arrow>
               <Box
                 onClick={() => handleToggleFavorite()}
@@ -609,7 +615,7 @@ export default function GamePage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   cursor: 'pointer',
-                  transition: 'transform 0.18s ease, background 0.18s ease',
+                  transition: 'transform 0.18s ease,background 0.18s ease',
                   '&:hover': {
                     transform: 'scale(1.12)',
                     background: 'rgba(10,10,10,0.7)',
@@ -626,7 +632,7 @@ export default function GamePage() {
               </Box>
             </Tooltip>
 
-            {/* Titre + meta — collés en bas */}
+            {/* Titre + meta bas */}
             <Box
               sx={{
                 position: 'absolute',
@@ -636,7 +642,6 @@ export default function GamePage() {
                 p: '20px 22px 22px',
               }}
             >
-              {/* Petite pill genre si dispo */}
               {game.genres && game.genres.length > 0 && (
                 <Box
                   sx={{
@@ -665,7 +670,6 @@ export default function GamePage() {
                   </Typography>
                 </Box>
               )}
-
               <Typography
                 sx={{
                   fontFamily: FD,
@@ -680,7 +684,6 @@ export default function GamePage() {
               >
                 {game.name}
               </Typography>
-
               <Box
                 sx={{
                   display: 'flex',
@@ -726,170 +729,52 @@ export default function GamePage() {
             </Box>
           </Box>
 
-          {/* ════ COLONNE DROITE ════ */}
+          {/* ══ COLONNE DROITE ══ */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Card Note communauté */}
+            {/* ── Boutons en haut ── */}
             <Box
               className="gp-c0"
-              sx={{
-                ...card(),
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                px: 2.5,
-                py: 1.8,
-              }}
+              sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}
             >
-              <IBox>
-                <Typography sx={{ fontSize: 19 }}>⭐</Typography>
-              </IBox>
-              <Box>
-                <SLabel>Note communauté</SLabel>
-                <Rating
-                  value={(game.average_rating || game.rating_avg || 0) / 2}
-                  readOnly
-                  precision={0.5}
-                  sx={{
-                    fontSize: 19,
-                    '& .MuiRating-iconFilled': { color: C.accent },
-                  }}
-                />
-              </Box>
+              <SecondaryButton
+                onClick={() => handleSetMatchmaking()}
+                disabled={isMatching}
+              >
+                {isMatching ? 'Recherche…' : 'Matchmaking'}
+              </SecondaryButton>
+              <Button
+                variant="contained"
+                onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+                sx={redBtnSx}
+              >
+                + Ajouter à la collection
+              </Button>
             </Box>
 
-            {/* Card Plateformes */}
-            <Box
-              className="gp-c1"
-              sx={{
-                ...card(),
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                px: 2.5,
-                py: 1.8,
-              }}
-            >
-              <IBox>
-                <DevicesIcon sx={{ color: C.accent, fontSize: 19 }} />
-              </IBox>
-              <Box sx={{ minWidth: 0 }}>
-                <SLabel>Plateformes</SLabel>
+            {/* ── Card Plateformes ── */}
+            <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2 }}>
+              <InfoRow icon={<DevicesIcon />} label="Plateformes">
                 <PlatformLogos platforms={game.platforms ?? []} />
-              </Box>
+              </InfoRow>
             </Box>
 
-            {/* Card Statut */}
-            <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 1.8 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                <IBox>
-                  <CheckCircleIcon sx={{ color: C.accent, fontSize: 19 }} />
-                </IBox>
-                <Box sx={{ flex: 1 }}>
-                  <SLabel>Mon statut</SLabel>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 0.65,
-                      mt: 0.5,
-                    }}
-                  >
-                    <StatusChip
-                      icon={<CheckCircleIcon />}
-                      label="Terminé"
-                      active={userGame?.status === 'TERMINE'}
-                      color="#43a047"
-                      onClick={() => handleSetStatus('TERMINE')}
-                    />
-                    <StatusChip
-                      icon={<PlayCircleIcon />}
-                      label="En cours"
-                      active={userGame?.status === 'EN_COURS'}
-                      color={C.accent}
-                      onClick={() => handleSetStatus('EN_COURS')}
-                    />
-                    <StatusChip
-                      icon={<BookmarkIcon />}
-                      label="Envie"
-                      active={userGame?.status === 'ENVIE_DE_JOUER'}
-                      color="#fb8c00"
-                      onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-                    />
-                    <Tooltip title="Coup de cœur" arrow>
-                      <Box
-                        onClick={() => handleToggleFavorite()}
-                        sx={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 0.6,
-                          px: 1.3,
-                          py: 0.55,
-                          borderRadius: '11px',
-                          cursor: 'pointer',
-                          background: userGame?.is_favorite
-                            ? 'rgba(255,61,61,0.12)'
-                            : 'rgba(0,0,0,0.035)',
-                          border: `1px solid ${userGame?.is_favorite ? 'rgba(255,61,61,0.35)' : 'transparent'}`,
-                          color: userGame?.is_favorite ? '#ff3d3d' : C.muted,
-                          transition: 'all 0.15s ease',
-                          '&:hover': {
-                            background: 'rgba(255,61,61,0.1)',
-                            color: '#ff3d3d',
-                          },
-                        }}
-                      >
-                        {userGame?.is_favorite ? (
-                          <FavoriteIcon
-                            sx={{ fontSize: 13, color: 'inherit' }}
-                          />
-                        ) : (
-                          <FavoriteBorderIcon
-                            sx={{ fontSize: 13, color: 'inherit' }}
-                          />
-                        )}
-                        <Typography
-                          sx={{
-                            fontFamily: FB,
-                            fontSize: 12,
-                            fontWeight: userGame?.is_favorite ? 700 : 500,
-                            color: 'inherit',
-                          }}
-                        >
-                          Favori
-                        </Typography>
-                      </Box>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              </Box>
-            </Box>
-
-            {/* Card infos compactes — genres / date / éditeur */}
+            {/* ── Card Infos — genres / date / éditeur ── */}
             <Box
-              className="gp-c3"
+              className="gp-c2"
               sx={{
                 ...card(),
                 px: 2.5,
-                py: 1.8,
+                py: 2,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 1.6,
+                gap: 2,
               }}
             >
               {/* Genres */}
-              <Box>
+              <InfoRow icon={<CategoryIcon />} label="Genres">
                 <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.8,
-                    mb: 0.8,
-                  }}
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}
                 >
-                  <CategoryIcon sx={{ color: C.accent, fontSize: 14 }} />
-                  <SLabel>Genres</SLabel>
-                </Box>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
                   {game.genres && game.genres.length > 0 ? (
                     game.genres.map((g: any) => (
                       <Chip
@@ -917,7 +802,7 @@ export default function GamePage() {
                     </Typography>
                   )}
                 </Box>
-              </Box>
+              </InfoRow>
 
               <Box
                 sx={{ height: '1px', background: C.divider, borderRadius: 99 }}
@@ -927,18 +812,7 @@ export default function GamePage() {
               <Box
                 sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}
               >
-                <Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.7,
-                      mb: 0.5,
-                    }}
-                  >
-                    <CalendarTodayIcon sx={{ color: C.accent, fontSize: 13 }} />
-                    <SLabel>Sortie</SLabel>
-                  </Box>
+                <InfoRow icon={<CalendarTodayIcon />} label="Sortie">
                   <Typography
                     sx={{
                       fontFamily: FD,
@@ -950,19 +824,8 @@ export default function GamePage() {
                   >
                     {fdate(game.release_date) || 'N/A'}
                   </Typography>
-                </Box>
-                <Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0.7,
-                      mb: 0.5,
-                    }}
-                  >
-                    <BusinessIcon sx={{ color: C.accent, fontSize: 13 }} />
-                    <SLabel>Éditeur</SLabel>
-                  </Box>
+                </InfoRow>
+                <InfoRow icon={<BusinessIcon />} label="Éditeur">
                   <Typography
                     sx={{
                       fontFamily: FD,
@@ -974,33 +837,110 @@ export default function GamePage() {
                   >
                     {game.publisher?.name || 'N/A'}
                   </Typography>
-                </Box>
+                </InfoRow>
               </Box>
             </Box>
 
-            {/* ── Boutons d'action ── */}
-            <Box
-              sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mt: 'auto' }}
-            >
-              <SecondaryButton
-                onClick={() => handleSetMatchmaking()}
-                disabled={isMatching}
+            {/* ── Card Note communauté (avant-dernière) ── */}
+            <Box className="gp-c3" sx={{ ...card(), px: 2.5, py: 2 }}>
+              <InfoRow
+                icon={
+                  <Typography sx={{ fontSize: 15, lineHeight: 1 }}>
+                    ⭐
+                  </Typography>
+                }
+                label="Note communauté"
               >
-                {isMatching ? 'Recherche…' : 'Matchmaking'}
-              </SecondaryButton>
-              <Button
-                variant="contained"
-                onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-                sx={redBtnSx}
-              >
-                + Ajouter à la collection
-              </Button>
+                <Rating
+                  value={(game.average_rating || game.rating_avg || 0) / 2}
+                  readOnly
+                  precision={0.5}
+                  sx={{
+                    fontSize: 20,
+                    mt: 0.3,
+                    '& .MuiRating-iconFilled': { color: C.accent },
+                  }}
+                />
+              </InfoRow>
+            </Box>
+
+            {/* ── Card Mon statut (dernière) ── */}
+            <Box className="gp-c4" sx={{ ...card(), px: 2.5, py: 2 }}>
+              <InfoRow icon={<CheckCircleIcon />} label="Mon statut">
+                <Box
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.65, mt: 0.4 }}
+                >
+                  <StatusChip
+                    icon={<CheckCircleIcon />}
+                    label="Terminé"
+                    active={userGame?.status === 'TERMINE'}
+                    color="#43a047"
+                    onClick={() => handleSetStatus('TERMINE')}
+                  />
+                  <StatusChip
+                    icon={<PlayCircleIcon />}
+                    label="En cours"
+                    active={userGame?.status === 'EN_COURS'}
+                    color={C.accent}
+                    onClick={() => handleSetStatus('EN_COURS')}
+                  />
+                  <StatusChip
+                    icon={<BookmarkIcon />}
+                    label="Envie"
+                    active={userGame?.status === 'ENVIE_DE_JOUER'}
+                    color="#fb8c00"
+                    onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
+                  />
+                  <Tooltip title="Coup de cœur" arrow>
+                    <Box
+                      onClick={() => handleToggleFavorite()}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.6,
+                        px: 1.3,
+                        py: 0.55,
+                        borderRadius: '11px',
+                        cursor: 'pointer',
+                        background: userGame?.is_favorite
+                          ? 'rgba(255,61,61,0.12)'
+                          : 'rgba(0,0,0,0.035)',
+                        border: `1px solid ${userGame?.is_favorite ? 'rgba(255,61,61,0.35)' : 'transparent'}`,
+                        color: userGame?.is_favorite ? '#ff3d3d' : C.muted,
+                        transition: 'all 0.15s ease',
+                        '&:hover': {
+                          background: 'rgba(255,61,61,0.1)',
+                          color: '#ff3d3d',
+                        },
+                      }}
+                    >
+                      {userGame?.is_favorite ? (
+                        <FavoriteIcon sx={{ fontSize: 13, color: 'inherit' }} />
+                      ) : (
+                        <FavoriteBorderIcon
+                          sx={{ fontSize: 13, color: 'inherit' }}
+                        />
+                      )}
+                      <Typography
+                        sx={{
+                          fontFamily: FB,
+                          fontSize: 12,
+                          fontWeight: userGame?.is_favorite ? 700 : 500,
+                          color: 'inherit',
+                        }}
+                      >
+                        Favori
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                </Box>
+              </InfoRow>
             </Box>
           </Box>
         </Box>
 
         {/* ── DESCRIPTION ── */}
-        <Box className="gp-c4" sx={{ ...card(), p: '26px 30px', mb: 2.5 }}>
+        <Box className="gp-c5" sx={{ ...card(), p: '26px 30px', mb: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
             <DescriptionIcon sx={{ color: C.accent, fontSize: 17 }} />
             <Typography
@@ -1049,7 +989,7 @@ export default function GamePage() {
         {((game.screenshots && game.screenshots.length > 0) ||
           (game.videos && game.videos.length > 0)) && (
           <Box
-            className="gp-c5"
+            className="gp-c6"
             sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2.5 }}
           >
             <Pill>Galerie</Pill>
@@ -1126,7 +1066,7 @@ export default function GamePage() {
                       boxShadow: '0 3px 10px rgba(0,0,0,0.08)',
                       flexShrink: 0,
                       cursor: 'pointer',
-                      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                      transition: 'transform 0.2s ease,box-shadow 0.2s ease',
                       '&:hover': {
                         transform: 'scale(1.03)',
                         boxShadow: '0 7px 20px rgba(0,0,0,0.13)',
@@ -1170,10 +1110,7 @@ export default function GamePage() {
         )}
 
         {/* ── AVIS ── */}
-        <Box
-          className="gp-c6"
-          sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}
-        >
+        <Box sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}>
           <Pill>Opinions</Pill>
           <Typography
             sx={{
