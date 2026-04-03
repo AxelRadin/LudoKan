@@ -1,7 +1,6 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useRef, useState } from 'react';
-import Banner from '../components/Banner';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
@@ -23,21 +22,11 @@ styleEl.textContent = `
     from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  @keyframes luxFadeIn {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-  @keyframes luxDotPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.4); opacity: 0.7; }
-  }
-  .lux-hero    { animation: luxFadeIn  0.9s ease 0s both; }
-  .lux-s0      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
-  .lux-s1      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
-  .lux-s2      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
-  .lux-s3      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
-  .lux-s4      { animation: luxFadeUp  0.7s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
-  .lux-dot     { animation: luxDotPulse 3s ease-in-out infinite; }
+
+  .lux-s1 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
+  .lux-s2 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
+  .lux-s3 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
+  .lux-s4 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
 `;
 if (!document.head.querySelector('style[data-home-lux]')) {
   document.head.appendChild(styleEl);
@@ -56,9 +45,7 @@ const C = {
   borderHover: 'rgba(198,40,40,0.22)',
   accent: '#c62828',
   accentSoft: '#d43c3c',
-  accentGlow: 'rgba(198,40,40,0.12)',
   ink: '#241818',
-  muted: '#7e6464',
   light: '#b49393',
 };
 
@@ -193,25 +180,10 @@ export const HomePage = () => {
           maxWidth: 1200,
           mx: 'auto',
           px: { xs: 2.5, md: 5, lg: 7 },
-          py: { xs: 3, md: 5 },
+          pt: { xs: 4, md: 6 },
+          pb: { xs: 4, md: 5 },
         }}
       >
-        {/* ── Hero Banner ── */}
-        <Box
-          className="lux-s0"
-          sx={{
-            mb: { xs: 3, md: 4 },
-            borderRadius: '28px',
-            overflow: 'hidden',
-            border: `1px solid ${C.border}`,
-            boxShadow:
-              '0 28px 70px rgba(198,40,40,0.08), 0 10px 30px rgba(36,24,24,0.04)',
-          }}
-        >
-          <Banner />
-        </Box>
-
-        {/* ── Trending sections ── */}
         <Section className="lux-s1">
           <SectionLabel label="Découverte" title="Jeux les plus récents" />
           <TrendingGames
@@ -239,7 +211,6 @@ export const HomePage = () => {
           />
         </Section>
 
-        {/* ── Genre result ── */}
         {selectedGenre && (
           <Box ref={genreResultRef}>
             <Section className="lux-s3">
@@ -257,7 +228,6 @@ export const HomePage = () => {
           </Box>
         )}
 
-        {/* ── Genre grid ── */}
         <Box className="lux-s4">
           <Box
             sx={{
@@ -310,7 +280,6 @@ export const HomePage = () => {
           </Section>
         </Box>
 
-        {/* ── Footer ── */}
         <Box
           sx={{
             mt: { xs: 4, md: 6 },
