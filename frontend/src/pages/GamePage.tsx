@@ -1124,29 +1124,6 @@ export default function GamePage() {
                 <Typography sx={{ ...sectionLabel }}>Galerie</Typography>
                 <Typography sx={{ ...sectionTitle }}>Médias</Typography>
               </Box>
-              {game.screenshots && game.screenshots.length > 0 && (
-                <Box
-                  sx={{
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 999,
-                    background: 'rgba(211,47,47,0.1)',
-                    border: '1px solid rgba(211,47,47,0.25)',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: FONT_BODY,
-                      color: C.accent,
-                      fontSize: 13,
-                      fontWeight: 700,
-                    }}
-                  >
-                    {game.screenshots.length} capture
-                    {game.screenshots.length > 1 ? 's' : ''}
-                  </Typography>
-                </Box>
-              )}
             </Box>
 
             <Box
