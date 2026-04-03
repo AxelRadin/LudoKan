@@ -794,131 +794,129 @@ export default function GamePage() {
               </InfoRow>
             </Box>
 
-            {/* ── Card Genres + date / éditeur ── */}
-            <Box
-              className="gp-c2"
-              sx={{
-                ...card(),
-                px: 2.5,
-                py: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-              }}
-            >
-              <InfoRow label="Genres">
-                <Box
-                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}
-                >
-                  {game.genres && game.genres.length > 0 ? (
-                    game.genres.map((g: any) => (
-                      <Chip
-                        key={g.name}
-                        label={g.name}
-                        size="small"
-                        icon={GMAP[g.name]}
-                        sx={{
-                          fontFamily: FB,
-                          fontWeight: 600,
-                          fontSize: 11,
-                          backgroundColor: C.accentSoft,
-                          border: `1px solid ${C.accentGlow}`,
-                          color: C.accent,
-                          borderRadius: '9px',
-                          '& .MuiChip-icon': { color: C.accent },
-                        }}
-                      />
-                    ))
-                  ) : (
-                    <Typography
-                      sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
-                    >
-                      Non renseigné
-                    </Typography>
-                  )}
-                </Box>
-              </InfoRow>
+            {/* ── Card Description ── */}
+            <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 2 }}>
               <Box
-                sx={{ height: '1px', background: C.divider, borderRadius: 99 }}
-              />
-              <Box
-                sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}
               >
-                <InfoRow label="Sortie">
-                  <Typography
-                    sx={{
-                      fontFamily: FD,
-                      fontWeight: 700,
-                      fontSize: 15,
-                      color: C.title,
-                      letterSpacing: -0.2,
-                    }}
-                  >
-                    {fdate(game.release_date) || 'N/A'}
-                  </Typography>
-                </InfoRow>
-                <InfoRow label="Éditeur">
-                  <Typography
-                    sx={{
-                      fontFamily: FD,
-                      fontWeight: 700,
-                      fontSize: 15,
-                      color: C.title,
-                      letterSpacing: -0.2,
-                    }}
-                  >
-                    {game.publisher?.name || 'N/A'}
-                  </Typography>
-                </InfoRow>
+                <DescriptionIcon sx={{ color: C.accent, fontSize: 16 }} />
+                <Typography
+                  sx={{
+                    fontFamily: FD,
+                    fontWeight: 700,
+                    fontSize: 16,
+                    color: C.title,
+                    letterSpacing: -0.3,
+                  }}
+                >
+                  Description
+                </Typography>
               </Box>
+              <Typography
+                sx={{
+                  fontFamily: FB,
+                  fontSize: 13.5,
+                  lineHeight: 1.8,
+                  color: translating ? C.muted : C.text,
+                }}
+              >
+                {dispText}
+              </Typography>
+              {isTrunc && (
+                <Button
+                  size="small"
+                  onClick={() => setDescExpanded(p => !p)}
+                  sx={{
+                    mt: 1,
+                    p: 0,
+                    textTransform: 'none',
+                    fontFamily: FB,
+                    fontWeight: 600,
+                    color: C.accent,
+                    fontSize: 12,
+                  }}
+                >
+                  {descExpanded ? 'Voir moins ↑' : 'Voir plus ↓'}
+                </Button>
+              )}
             </Box>
           </Box>
         </Box>
 
-        {/* ── DESCRIPTION (pleine largeur) ── */}
-        <Box className="gp-c3" sx={{ ...card(), p: '26px 30px', mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            <DescriptionIcon sx={{ color: C.accent, fontSize: 17 }} />
-            <Typography
-              sx={{
-                fontFamily: FD,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              Description
-            </Typography>
+        {/* ── GENRES + DATE / ÉDITEUR (pleine largeur) ── */}
+        <Box
+          className="gp-c3"
+          sx={{
+            ...card(),
+            px: 2.5,
+            py: 2,
+            mb: 2.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+          }}
+        >
+          <InfoRow label="Genres">
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}>
+              {game.genres && game.genres.length > 0 ? (
+                game.genres.map((g: any) => (
+                  <Chip
+                    key={g.name}
+                    label={g.name}
+                    size="small"
+                    icon={GMAP[g.name]}
+                    sx={{
+                      fontFamily: FB,
+                      fontWeight: 600,
+                      fontSize: 11,
+                      backgroundColor: C.accentSoft,
+                      border: `1px solid ${C.accentGlow}`,
+                      color: C.accent,
+                      borderRadius: '9px',
+                      '& .MuiChip-icon': { color: C.accent },
+                    }}
+                  />
+                ))
+              ) : (
+                <Typography
+                  sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
+                >
+                  Non renseigné
+                </Typography>
+              )}
+            </Box>
+          </InfoRow>
+          <Box
+            sx={{ height: '1px', background: C.divider, borderRadius: 99 }}
+          />
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+            <InfoRow label="Sortie">
+              <Typography
+                sx={{
+                  fontFamily: FD,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: C.title,
+                  letterSpacing: -0.2,
+                }}
+              >
+                {fdate(game.release_date) || 'N/A'}
+              </Typography>
+            </InfoRow>
+            <InfoRow label="Éditeur">
+              <Typography
+                sx={{
+                  fontFamily: FD,
+                  fontWeight: 700,
+                  fontSize: 15,
+                  color: C.title,
+                  letterSpacing: -0.2,
+                }}
+              >
+                {game.publisher?.name || 'N/A'}
+              </Typography>
+            </InfoRow>
           </Box>
-          <Typography
-            sx={{
-              fontFamily: FB,
-              fontSize: 14.5,
-              lineHeight: 1.85,
-              color: translating ? C.muted : C.text,
-              textAlign: 'justify',
-            }}
-          >
-            {dispText}
-          </Typography>
-          {isTrunc && (
-            <Button
-              size="small"
-              onClick={() => setDescExpanded(p => !p)}
-              sx={{
-                mt: 1.5,
-                p: 0,
-                textTransform: 'none',
-                fontFamily: FB,
-                fontWeight: 600,
-                color: C.accent,
-                fontSize: 13,
-              }}
-            >
-              {descExpanded ? 'Voir moins ↑' : 'Voir plus ↓'}
-            </Button>
-          )}
         </Box>
 
         {/* ── NOTE COMMUNAUTÉ (pleine largeur) ── */}
