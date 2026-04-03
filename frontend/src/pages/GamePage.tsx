@@ -794,8 +794,44 @@ export default function GamePage() {
               </InfoRow>
             </Box>
 
-            {/* ── Card Description ── */}
+            {/* ── Card Genres ── */}
             <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 2 }}>
+              <InfoRow label="Genres">
+                <Box
+                  sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}
+                >
+                  {game.genres && game.genres.length > 0 ? (
+                    game.genres.map((g: any) => (
+                      <Chip
+                        key={g.name}
+                        label={g.name}
+                        size="small"
+                        icon={GMAP[g.name]}
+                        sx={{
+                          fontFamily: FB,
+                          fontWeight: 600,
+                          fontSize: 11,
+                          backgroundColor: C.accentSoft,
+                          border: `1px solid ${C.accentGlow}`,
+                          color: C.accent,
+                          borderRadius: '9px',
+                          '& .MuiChip-icon': { color: C.accent },
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <Typography
+                      sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
+                    >
+                      Non renseigné
+                    </Typography>
+                  )}
+                </Box>
+              </InfoRow>
+            </Box>
+
+            {/* ── Card Description ── */}
+            <Box className="gp-c3" sx={{ ...card(), px: 2.5, py: 2, flex: 1 }}>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}
               >
@@ -843,52 +879,8 @@ export default function GamePage() {
           </Box>
         </Box>
 
-        {/* ── GENRES + DATE / ÉDITEUR (pleine largeur) ── */}
-        <Box
-          className="gp-c3"
-          sx={{
-            ...card(),
-            px: 2.5,
-            py: 2,
-            mb: 2.5,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 2,
-          }}
-        >
-          <InfoRow label="Genres">
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, mt: 0.2 }}>
-              {game.genres && game.genres.length > 0 ? (
-                game.genres.map((g: any) => (
-                  <Chip
-                    key={g.name}
-                    label={g.name}
-                    size="small"
-                    icon={GMAP[g.name]}
-                    sx={{
-                      fontFamily: FB,
-                      fontWeight: 600,
-                      fontSize: 11,
-                      backgroundColor: C.accentSoft,
-                      border: `1px solid ${C.accentGlow}`,
-                      color: C.accent,
-                      borderRadius: '9px',
-                      '& .MuiChip-icon': { color: C.accent },
-                    }}
-                  />
-                ))
-              ) : (
-                <Typography
-                  sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
-                >
-                  Non renseigné
-                </Typography>
-              )}
-            </Box>
-          </InfoRow>
-          <Box
-            sx={{ height: '1px', background: C.divider, borderRadius: 99 }}
-          />
+        {/* ── DATE / ÉDITEUR (pleine largeur) ── */}
+        <Box className="gp-c4" sx={{ ...card(), px: 2.5, py: 2, mb: 2.5 }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <InfoRow label="Sortie">
               <Typography
