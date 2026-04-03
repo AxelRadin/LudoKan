@@ -17,6 +17,7 @@ import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
+import UserLibraryPage from './pages/userLibraryPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 
 const router = createBrowserRouter([
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsPage /> },
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
+      { path: 'library', element: <UserLibraryPage /> },
     ],
   },
 ]);

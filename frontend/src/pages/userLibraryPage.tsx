@@ -1,7 +1,9 @@
+import { Box, Typography } from '@mui/material';
+import LibraryGameCard from '../components/LibraryGameCard';
 import { useUserGames } from '../hooks/useUserGames';
 
 export default function UserLibraryPage() {
-  const { games, loading, error, removeGame, updateGame } = useUserGames();
+  const { games, loading, error, removeGame } = useUserGames();
 
   if (loading) return <p>Chargement de ta bibliothèque…</p>;
   if (error) return <p>Erreur : {error}</p>;
@@ -11,44 +13,21 @@ export default function UserLibraryPage() {
   }
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>Ma bibliothèque de jeux</h1>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h4" fontWeight="bold" mb={3}>
+        Ma bibliothèque de jeux
+      </Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+          gap: 2,
+        }}
+      >
         {games.map(g => (
-          <li
-            key={g.id}
-            style={{
-              marginBottom: 12,
-              padding: 10,
-              border: '1px solid #ddd',
-              borderRadius: 8,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <div>
-              <div>
-                <strong>Jeu :</strong> #{g.game?.id ?? g.igdb_game_id ?? g.id}
-              </div>
-              <div>
-                <strong>Statut :</strong> {g.status}
-              </div>
-              {g.hours_played != null && (
-                <div>
-                  <strong>Heures jouées :</strong> {g.hours_played}
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => updateGame(g.id, { status: 'finished' })}>
-                Marquer comme terminé
-              </button>
-              <button onClick={() => removeGame(g.id)}>Supprimer</button>
-            </div>
-          </li>
+          <LibraryGameCard key={g.id} userGame={g} onRemove={removeGame} />
         ))}
-      </ul>
-    </div>
+      </Box>
+    </Box>
   );
 }

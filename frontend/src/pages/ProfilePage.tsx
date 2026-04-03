@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
+import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch } from '../services/api';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
@@ -194,6 +195,7 @@ type ProfilePageModel = {
   gamesEnvie: GameListItem[];
   gamesFavoris: GameListItem[];
   avatarSrc: string;
+  removeGame: (userGameId: number) => Promise<void>;
   handleEditOpen: () => void;
   handleEditClose: () => void;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -358,6 +360,13 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const removeGame = async (userGameId: number) => {
+    const ug = userGames.find(g => g.id === userGameId);
+    if (!ug) return;
+    await deleteUserGame(ug.game.id);
+    setUserGames(prev => prev.filter(g => g.id !== userGameId));
+  };
+
   const gamesForStatus = (status: string): GameListItem[] =>
     userGames
       .filter(g => g.status === status)
@@ -367,6 +376,7 @@ function useProfilePageModel(): ProfilePageModel {
         cover_url: g.game.cover_url,
         image: g.game.image,
         status: g.status,
+        userGameId: g.id,
       }));
 
   const gamesEnCours = gamesForStatus('EN_COURS');
@@ -380,6 +390,7 @@ function useProfilePageModel(): ProfilePageModel {
       cover_url: g.game.cover_url,
       image: g.game.image,
       status: g.status,
+      userGameId: g.id,
     }));
 
   return {
@@ -395,6 +406,7 @@ function useProfilePageModel(): ProfilePageModel {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    removeGame,
     handleEditOpen,
     handleEditClose,
     handleChange,
@@ -730,6 +742,7 @@ export default function ProfilePage() {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    removeGame,
     handleEditOpen,
     handleEditClose,
     handleChange,
@@ -1297,7 +1310,11 @@ export default function ProfilePage() {
               }}
             />
 
-            <GameList games={gamesFavoris} showStatus={false} />
+            <GameList
+              games={gamesFavoris}
+              showStatus={false}
+              onRemove={removeGame}
+            />
           </Paper>
         )}
 
@@ -1391,6 +1408,7 @@ export default function ProfilePage() {
                 games={games}
                 title={`${label} (${games.length})`}
                 showStatus={false}
+                onRemove={removeGame}
               />
             ))}
           </Box>

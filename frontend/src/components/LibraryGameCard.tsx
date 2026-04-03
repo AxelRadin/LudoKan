@@ -36,7 +36,7 @@ export default function LibraryGameCard({
           borderColor: 'divider',
         }}
       >
-        <CardContent>
+        <CardContent sx={{ pb: 5 }}>
           <Typography variant="subtitle1" fontWeight="bold">
             Jeu #{userGame.game?.id ?? userGame.igdb_game_id ?? userGame.id}
           </Typography>
@@ -58,7 +58,7 @@ export default function LibraryGameCard({
               position: 'absolute',
               bottom: 8,
               right: 8,
-              color: 'text.disabled',
+              color: 'text.secondary',
               '&:hover': {
                 color: 'error.main',
                 bgcolor: 'error.light',
