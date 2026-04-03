@@ -43,30 +43,41 @@ export const Banner: React.FC = () => {
         sx={{
           position: 'relative',
           zIndex: 2,
-          maxWidth: 420,
+          maxWidth: 320,
         }}
       >
+        <Box
+          sx={{
+            width: 48,
+            height: '2px',
+            backgroundColor: '#c62828',
+            borderRadius: '999px',
+            mb: 1.5,
+          }}
+        />
+
         <Typography
           sx={{
-            fontSize: { xs: '1.8rem', md: '2.4rem' },
+            fontSize: '0.72rem',
             fontWeight: 700,
-            letterSpacing: '-0.04em',
-            color: '#1f1f1f',
-            lineHeight: 1.05,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: '#c62828',
             mb: 1,
           }}
         >
-          Votre collection gaming
+          Bibliothèque gaming
         </Typography>
 
         <Typography
           sx={{
-            fontSize: { xs: '0.95rem', md: '1rem' },
-            color: '#6b6b6b',
+            fontSize: { xs: '1rem', md: '1.15rem' },
+            fontWeight: 500,
+            color: '#3a3a3a',
             lineHeight: 1.6,
           }}
         >
-          Simple, claire et élégante.
+          Pensée simplement.
         </Typography>
       </Box>
     </Box>
