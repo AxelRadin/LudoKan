@@ -40,6 +40,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=150, blank=True)
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True, validators=[validate_avatar])
     avatar_url = models.URLField(blank=True)
+    banner = models.ImageField(upload_to="banners/", null=True, blank=True, validators=[validate_avatar])
+    banner_url = models.URLField(blank=True)
     description_courte = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
