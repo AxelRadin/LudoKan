@@ -524,9 +524,7 @@ export default function GamePage() {
               WebkitTextFillColor: 'transparent',
               letterSpacing: -0.8,
             }}
-          >
-            Ludokan
-          </Typography>
+          ></Typography>
         </Box>
 
         {/* ══════════════════════════════════════════════════════════════
