@@ -876,7 +876,6 @@ export default function GamePage() {
           }}
         >
           <Box className="gp-card-3" sx={{ ...card(), p: '28px 32px' }}>
-            <Pill>Synopsis</Pill>
             <Box
               sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}
             >
