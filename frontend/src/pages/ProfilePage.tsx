@@ -824,19 +824,36 @@ export default function ProfilePage() {
         {/* ── HERO SECTION ── */}
         <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
           {/* Banner */}
-          <Box
-            component="img"
-            src={user?.banner_url || zeldaBanner}
-            alt="Banner"
-            sx={{
-              width: '100%',
-              height: { xs: 220, sm: 280, md: 380 },
-              objectFit: 'cover',
-              borderRadius: '28px',
-              display: 'block',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-            }}
-          />
+          {loading ? (
+            <Box
+              sx={{
+                width: '100%',
+                height: { xs: 220, sm: 280, md: 380 },
+                borderRadius: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              }}
+            >
+              <CircularProgress sx={{ color: C.accent }} />
+            </Box>
+          ) : (
+            <Box
+              component="img"
+              src={user?.banner_url || zeldaBanner}
+              alt="Banner"
+              sx={{
+                width: '100%',
+                height: { xs: 220, sm: 280, md: 380 },
+                objectFit: 'cover',
+                borderRadius: '28px',
+                display: 'block',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              }}
+            />
+          )}
           {user && (
             <>
               <Box
