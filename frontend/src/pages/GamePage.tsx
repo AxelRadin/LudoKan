@@ -263,53 +263,32 @@ function StatusChip({
   );
 }
 
-/* ── Modern info row (icône accent + label + valeur) ── */
+/* ── Info row (label + valeur, sans icône) ── */
 function InfoRow({
-  icon,
   label,
   children,
 }: {
-  icon: React.ReactElement;
+  icon?: React.ReactElement;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      {/* Icône dans un cercle dégradé subtil */}
-      <Box
+    <Box>
+      <Typography
         sx={{
-          width: 34,
-          height: 34,
-          borderRadius: '50%',
-          flexShrink: 0,
-          background: `linear-gradient(135deg,${C.accentSoft} 0%,rgba(255,255,255,0.6) 100%)`,
-          border: `1px solid ${C.accentGlow}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          fontFamily: FB,
+          fontSize: 9.5,
+          fontWeight: 700,
+          letterSpacing: 1.5,
+          textTransform: 'uppercase',
+          color: C.light,
+          lineHeight: 1,
+          mb: 0.4,
         }}
       >
-        {React.cloneElement(icon, {
-          sx: { fontSize: 15, color: C.accent },
-        } as any)}
-      </Box>
-      <Box sx={{ minWidth: 0, flex: 1 }}>
-        <Typography
-          sx={{
-            fontFamily: FB,
-            fontSize: 9.5,
-            fontWeight: 700,
-            letterSpacing: 1.5,
-            textTransform: 'uppercase',
-            color: C.light,
-            lineHeight: 1,
-            mb: 0.3,
-          }}
-        >
-          {label}
-        </Typography>
-        <Box>{children}</Box>
-      </Box>
+        {label}
+      </Typography>
+      <Box>{children}</Box>
     </Box>
   );
 }
