@@ -1001,7 +1001,6 @@ export default function GamePage() {
 
         {/* ── DESCRIPTION ── */}
         <Box className="gp-c4" sx={{ ...card(), p: '26px 30px', mb: 2.5 }}>
-          <Pill>Synopsis</Pill>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
             <DescriptionIcon sx={{ color: C.accent, fontSize: 17 }} />
             <Typography
