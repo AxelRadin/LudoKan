@@ -197,7 +197,7 @@ type ProfilePageModel = {
   gamesEnvie: GameListItem[];
   gamesFavoris: GameListItem[];
   avatarSrc: string;
-  removeGame: (userGameId: number) => Promise<void>;
+  removeGame: (userGameId: number) => void;
   snackbar: { open: boolean; message: string; isError: boolean };
   handleSnackbarClose: () => void;
   handleUndo: () => void;
@@ -388,7 +388,7 @@ function useProfilePageModel(): ProfilePageModel {
     setSnackbar({ open: false, message: '', isError: false });
   };
 
-  const removeGame = async (userGameId: number) => {
+  const removeGame = (userGameId: number) => {
     const index = userGames.findIndex(g => g.id === userGameId);
     const ug = userGames[index];
     if (!ug) return;
@@ -404,26 +404,26 @@ function useProfilePageModel(): ProfilePageModel {
       isError: false,
     });
 
-    undoTimerRef.current = setTimeout(() => {
+    // L'appel API est retardé : si l'utilisateur annule avant 5s, le timer est
+    // annulé et la suppression n'est jamais envoyée au backend.
+    undoTimerRef.current = setTimeout(async () => {
       undoRef.current = null;
+      try {
+        await deleteUserGame(ug.game.id);
+      } catch {
+        // Restauration en cas d'erreur API
+        setUserGames(prev => {
+          const next = [...prev];
+          next.splice(index, 0, ug);
+          return next;
+        });
+        setSnackbar({
+          open: true,
+          message: 'Impossible de retirer le jeu. Réessayez plus tard.',
+          isError: true,
+        });
+      }
     }, 5000);
-
-    try {
-      await deleteUserGame(ug.game.id);
-    } catch {
-      // Restauration en cas d'erreur API
-      setUserGames(prev => {
-        const next = [...prev];
-        next.splice(index, 0, ug);
-        return next;
-      });
-      undoRef.current = null;
-      setSnackbar({
-        open: true,
-        message: 'Impossible de retirer le jeu. Réessayez plus tard.',
-        isError: true,
-      });
-    }
   };
 
   const gamesForStatus = (status: string): GameListItem[] =>
