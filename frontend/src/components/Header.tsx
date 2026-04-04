@@ -142,7 +142,7 @@ export const Header: React.FC = () => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           zIndex: theme.zIndex.appBar,
           width: '100%',
-          overflow: 'hidden',
+          overflow: 'visible',
         }}
       >
         <Toolbar
