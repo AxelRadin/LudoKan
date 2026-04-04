@@ -433,7 +433,7 @@ export default function ReviewForm({
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.5 : 1,
                 transition: 'border-color 0.15s',
-                '&:hover': !loading ? { borderColor: 'rgba(0,0,0,0.35)' } : {},
+                '&:hover': loading ? {} : { borderColor: 'rgba(0,0,0,0.35)' },
               }}
             >
               Annuler
