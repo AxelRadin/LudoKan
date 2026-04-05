@@ -10,8 +10,12 @@ import {
   Paper,
   TextField,
   Typography,
+  Menu,
+  MenuItem,
+  DialogContentText,
 } from '@mui/material';
-import { useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
@@ -80,6 +84,7 @@ type UserProfile = {
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
+  banner_url?: string;
   description_courte?: string;
   created_at?: string;
 };
@@ -194,12 +199,15 @@ type ProfilePageModel = {
   gamesEnvie: GameListItem[];
   gamesFavoris: GameListItem[];
   avatarSrc: string;
+  bannerBusy: boolean;
   handleEditOpen: () => void;
   handleEditClose: () => void;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   handleModalAvatarChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleAvatarRemoveNow: () => Promise<void>;
   handleSave: () => Promise<void>;
+  handleBannerChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleBannerRemoveNow: () => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
@@ -217,6 +225,7 @@ function useProfilePageModel(): ProfilePageModel {
   });
   const [avatarError, setAvatarError] = useState('');
   const [avatarBusy, setAvatarBusy] = useState(false);
+  const [bannerBusy, setBannerBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
 
   useEffect(() => {
@@ -229,6 +238,7 @@ function useProfilePageModel(): ProfilePageModel {
           first_name: data.first_name || '',
           last_name: data.last_name || '',
           avatar_url: data.avatar_url || '',
+          banner_url: data.banner_url || '',
           description_courte: data.description_courte || '',
           created_at: data.created_at || '',
         });
@@ -253,6 +263,7 @@ function useProfilePageModel(): ProfilePageModel {
       first_name: user?.first_name || '',
       last_name: user?.last_name || '',
       avatar_url: user?.avatar_url || '',
+      banner_url: user?.banner_url || '',
       description_courte: user?.description_courte || '',
       created_at: user?.created_at || '',
     });
@@ -283,6 +294,7 @@ function useProfilePageModel(): ProfilePageModel {
       first_name: updated.first_name ?? prev.first_name,
       last_name: updated.last_name ?? prev.last_name,
       avatar_url: updated.avatar_url ?? prev.avatar_url,
+      banner_url: updated.banner_url ?? prev.banner_url,
       description_courte: updated.description_courte ?? prev.description_courte,
       created_at: updated.created_at ?? prev.created_at,
     }));
@@ -342,6 +354,53 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const handleBannerChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f || bannerBusy) return;
+
+    const err = validateAvatarFile(f);
+    if (err) {
+      alert(err);
+      return;
+    }
+    setBannerBusy(true);
+    try {
+      const body = new FormData();
+      body.append('banner', f);
+      const updated = await apiPatch('/api/me/', body);
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de mettre à jour la bannière.';
+      alert(msg);
+    } finally {
+      setBannerBusy(false);
+    }
+  };
+
+  const handleBannerRemoveNow = async () => {
+    if (bannerBusy || !user?.banner_url) return;
+    setBannerBusy(true);
+    try {
+      const updated = await apiPatch('/api/me/', {
+        ...profileTextPayload(),
+        banner: null,
+      });
+      mergeUpdatedUser(updated);
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : 'Impossible de supprimer la bannière.';
+      alert(msg);
+    } finally {
+      setBannerBusy(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       const updated = await apiPatch('/api/me/', {
@@ -395,12 +454,15 @@ function useProfilePageModel(): ProfilePageModel {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    bannerBusy,
     handleEditOpen,
     handleEditClose,
     handleChange,
     handleModalAvatarChange,
     handleAvatarRemoveNow,
     handleSave,
+    handleBannerChange,
+    handleBannerRemoveNow,
   };
 }
 
@@ -730,13 +792,23 @@ export default function ProfilePage() {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    bannerBusy,
     handleEditOpen,
     handleEditClose,
     handleChange,
     handleModalAvatarChange,
     handleAvatarRemoveNow,
     handleSave,
+    handleBannerChange,
+    handleBannerRemoveNow,
   } = useProfilePageModel();
+
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const bannerMenuOpen = Boolean(bannerMenuAnchor);
+  const [confirmDeleteBannerOpen, setConfirmDeleteBannerOpen] = useState(false);
 
   return (
     <Box
@@ -783,19 +855,156 @@ export default function ProfilePage() {
         {/* ── HERO SECTION ── */}
         <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
           {/* Banner */}
-          <Box
-            component="img"
-            src={zeldaBanner}
-            alt="Banner"
-            sx={{
-              width: '100%',
-              height: { xs: 220, sm: 280, md: 380 },
-              objectFit: 'cover',
-              borderRadius: '28px',
-              display: 'block',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-            }}
-          />
+          {loading ? (
+            <Box
+              sx={{
+                width: '100%',
+                height: { xs: 220, sm: 280, md: 380 },
+                borderRadius: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              }}
+            >
+              <CircularProgress sx={{ color: C.accent }} />
+            </Box>
+          ) : (
+            <Box
+              component="img"
+              src={user?.banner_url || zeldaBanner}
+              alt="Banner"
+              sx={{
+                width: '100%',
+                height: { xs: 220, sm: 280, md: 380 },
+                objectFit: 'cover',
+                borderRadius: '28px',
+                display: 'block',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+              }}
+            />
+          )}
+          {user && (
+            <>
+              <Box
+                component="button"
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                  setBannerMenuAnchor(e.currentTarget)
+                }
+                disabled={bannerBusy}
+                sx={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: bannerBusy ? 'wait' : 'pointer',
+                  zIndex: 2,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                  },
+                }}
+              >
+                {bannerBusy ? (
+                  <CircularProgress size={20} sx={{ color: '#fff' }} />
+                ) : (
+                  <MoreVertIcon fontSize="small" />
+                )}
+              </Box>
+              <Menu
+                anchorEl={bannerMenuAnchor}
+                open={bannerMenuOpen}
+                onClose={() => setBannerMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  sx: {
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    minWidth: 180,
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setBannerMenuAnchor(null);
+                    bannerInputRef.current?.click();
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  Ajouter une image
+                </MenuItem>
+                {user?.banner_url && (
+                  <MenuItem
+                    sx={{
+                      color: 'error.main',
+                      fontFamily: FONT_BODY,
+                      fontSize: 14,
+                    }}
+                    onClick={() => {
+                      setBannerMenuAnchor(null);
+                      setConfirmDeleteBannerOpen(true);
+                    }}
+                  >
+                    Supprimer l'image
+                  </MenuItem>
+                )}
+              </Menu>
+              <Dialog
+                open={confirmDeleteBannerOpen}
+                onClose={() => setConfirmDeleteBannerOpen(false)}
+                PaperProps={{
+                  sx: { borderRadius: '16px', p: 1 },
+                }}
+              >
+                <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
+                  Supprimer la bannière ?
+                </DialogTitle>
+                <DialogContent>
+                  <DialogContentText sx={{ fontFamily: FONT_BODY }}>
+                    Es-tu sûr de vouloir supprimer ta bannière de profil ? Cette
+                    action remplacera ton image actuelle par l'image par défaut
+                    de Ludokan et est irréversible.
+                  </DialogContentText>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                  <Button
+                    onClick={() => setConfirmDeleteBannerOpen(false)}
+                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    color="error"
+                    variant="contained"
+                    onClick={() => {
+                      setConfirmDeleteBannerOpen(false);
+                      handleBannerRemoveNow();
+                    }}
+                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+                    disableElevation
+                  >
+                    Supprimer
+                  </Button>
+                </DialogActions>
+              </Dialog>
+              <input
+                type="file"
+                ref={bannerInputRef}
+                style={{ display: 'none' }}
+                accept="image/png, image/jpeg, image/webp"
+                onChange={handleBannerChange}
+              />
+            </>
+          )}
 
           {/* Gradient scrim */}
           <Box

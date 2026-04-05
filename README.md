@@ -73,6 +73,7 @@ docker compose ps
 - [Configuration Celery](docs/backend/CELERY.md)
 - [Guide des tests](docs/backend/TESTING.md)
 - [Guide Docker](docs/backend/DOCKER.md)
+- [Commandes de Gestion](docs/backend/COMMANDS.md)
 
 ### Frontend
 - [Frontend README](frontend/README.md) - Guide du frontend React + Vite
