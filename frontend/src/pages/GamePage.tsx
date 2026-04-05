@@ -160,7 +160,7 @@ const fdate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('fr-FR') : '';
 
 /* ── Pill tag ── */
-function Pill({ children }: { children: React.ReactNode }) {
+function Pill({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <Box
       sx={{
@@ -205,20 +205,17 @@ function Sep() {
   );
 }
 
-/* ── Compact status chip ── */
-function StatusChip({
-  icon,
-  label,
-  active,
-  color,
-  onClick,
-}: {
+type StatusChipProps = Readonly<{
   icon: React.ReactElement;
   label: string;
   active: boolean;
   color: string;
   onClick: () => void;
-}) {
+}>;
+
+/* ── Compact status chip ── */
+function StatusChip({ icon, label, active, color, onClick }: StatusChipProps) {
+  const borderColor = active ? `${color}38` : 'transparent';
   return (
     <Box
       onClick={onClick}
@@ -231,7 +228,7 @@ function StatusChip({
         borderRadius: '11px',
         cursor: 'pointer',
         background: active ? `${color}15` : 'rgba(0,0,0,0.035)',
-        border: `1px solid ${active ? `${color}38` : 'transparent'}`,
+        border: '1px solid ' + borderColor,
         color: active ? color : C.muted,
         transition: 'all 0.15s ease',
         '&:hover': {
@@ -259,15 +256,13 @@ function StatusChip({
   );
 }
 
-/* ── Info row (label + valeur, sans icône) ── */
-function InfoRow({
-  label,
-  children,
-}: {
-  icon?: React.ReactElement;
+type InfoRowProps = Readonly<{
   label: string;
   children: React.ReactNode;
-}) {
+}>;
+
+/* ── Info row (label + valeur, sans icône) ── */
+function InfoRow({ label, children }: InfoRowProps) {
   return (
     <Box>
       <Typography
@@ -289,194 +284,96 @@ function InfoRow({
   );
 }
 
-export default function GamePage() {
-  const { id, igdbId } = useParams();
-  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
-  const { startMatchmaking, isMatching } = useMatchmaking();
+const DLIMIT = 220;
 
-  const [game, setGame] = useState<NormalizedGame | null>(null);
-  const [gameNotFound, setGameNotFound] = useState(false);
-  const [djangoId, setDjangoId] = useState<number | null>(null);
-  const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
-  const [userReview, setUserReview] = useState<any>(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
-  const [translating, setTranslating] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [selectedShot, setSelectedShot] = useState<string | null>(null);
-  const DLIMIT = 220;
+const redBtnSx = {
+  borderRadius: 999,
+  px: 2.5,
+  py: 1,
+  fontWeight: 700,
+  fontSize: 13,
+  textTransform: 'none' as const,
+  fontFamily: FB,
+  background: `linear-gradient(135deg,${C.accent} 0%,#ef5350 100%)`,
+  boxShadow: `0 4px 16px rgba(211,47,47,0.36)`,
+  '&:hover': {
+    background: `linear-gradient(135deg,${C.accentDark} 0%,${C.accent} 100%)`,
+    transform: 'translateY(-2px)',
+    boxShadow: `0 8px 22px rgba(211,47,47,0.42)`,
+  },
+  transition: 'all 0.2s ease',
+};
 
-  useEffect(() => {
-    (async () => {
-      try {
-        if (igdbId) {
-          setGame(await fetchIgdbGameById(Number(igdbId)));
-        } else {
-          const d = await apiGet(`/api/games/${id}/`);
-          setGame({ ...d, name: d.name_fr || d.name });
-          setDjangoId(d.id);
-          setUserGame(d.user_library);
-        }
-      } catch {
-        setGameNotFound(true);
-      }
-    })();
-  }, [id, igdbId]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !djangoId) return;
-    apiGet(`/api/games/${djangoId}/`)
-      .then((d: NormalizedGame) => {
-        if (d.user_library) setUserGame(d.user_library);
-      })
-      .catch(() => {});
-  }, [isAuthenticated, djangoId]);
-
-  useEffect(() => {
-    if (!game?.summary) return;
-    setTranslating(true);
-    setTranslatedDesc(null);
-    translateDescription(game.summary)
-      .then(setTranslatedDesc)
-      .catch(() => {})
-      .finally(() => setTranslating(false));
-  }, [game?.summary]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setCurrentUserId(null);
-      return;
-    }
-    apiGet('/api/me')
-      .then((m: { id: number }) => setCurrentUserId(m.id))
-      .catch(() => setCurrentUserId(null));
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!djangoId || !isAuthenticated) {
-      setUserReview(null);
-      return;
-    }
-    apiGet(`/api/reviews/?game=${djangoId}`)
-      .then((d: any) => {
-        const l = Array.isArray(d) ? d : (d.results ?? []);
-        setUserReview(l.find((r: any) => r.user?.id === currentUserId) || null);
-      })
-      .catch(() => setUserReview(null));
-  }, [djangoId, isAuthenticated, currentUserId]);
-
-  async function ensureDjangoId(): Promise<number | null> {
-    if (djangoId) return djangoId;
-    if (!game) return null;
-    try {
-      const { game_id, normalized_game } = await resolveGameIdIfNeeded(game);
-      setDjangoId(game_id);
-      setGame(normalized_game);
-      if (normalized_game.user_library)
-        setUserGame(normalized_game.user_library);
-      return game_id;
-    } catch {
-      return null;
-    }
-  }
-
-  async function handleSetStatus(
-    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
-    p = false
-  ) {
-    if (!isAuthenticated && !p) {
-      setPendingAction(() => () => handleSetStatus(s, true));
-      setAuthModalOpen(true);
-      return;
-    }
-    const did = await ensureDjangoId();
-    if (!did) return;
-    try {
-      if (userGame) {
-        const u = await apiPatch(`/api/me/games/${did}/`, { status: s });
-        setUserGame({ ...userGame, status: u.status });
-      } else {
-        const c = await apiPost('/api/me/games/', { game_id: did, status: s });
-        setUserGame(c);
-      }
-    } catch {
-      alert('Erreur lors de la mise à jour du statut');
-    }
-  }
-
-  async function handleToggleFavorite(p = false) {
-    if (!isAuthenticated && !p) {
-      setPendingAction(() => () => handleToggleFavorite(true));
-      setAuthModalOpen(true);
-      return;
-    }
-    const did = await ensureDjangoId();
-    if (!did) return;
-    try {
-      const u = await apiPatch(`/api/me/games/${did}/`, {
-        is_favorite: !userGame?.is_favorite,
-      });
-      setUserGame(u);
-    } catch {
-      alert('Erreur lors de la mise à jour du coup de cœur');
-    }
-  }
-
-  async function handleSetMatchmaking(p = false) {
-    if (!isAuthenticated && !p) {
-      setPendingAction(() => () => handleSetMatchmaking(true));
-      setAuthModalOpen(true);
-      return;
-    }
-    const did = await ensureDjangoId();
-    if (!did || !game) return;
-    await startMatchmaking(String(did), game.name, hi(game.cover_url));
-  }
-
-  if (gameNotFound || !game) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: C.pageBg,
-        }}
+function GamePagePlaceholder({
+  gameNotFound,
+}: Readonly<{ gameNotFound: boolean }>) {
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: C.pageBg,
+      }}
+    >
+      <Typography
+        sx={{ fontFamily: FD, fontWeight: 700, fontSize: 22, color: C.title }}
       >
-        <Typography
-          sx={{ fontFamily: FD, fontWeight: 700, fontSize: 22, color: C.title }}
-        >
-          {gameNotFound ? 'Jeu introuvable.' : 'Chargement…'}
-        </Typography>
-      </Box>
-    );
-  }
+        {gameNotFound ? 'Jeu introuvable.' : 'Chargement…'}
+      </Typography>
+    </Box>
+  );
+}
 
+type GamePageContentProps = Readonly<{
+  game: NormalizedGame;
+  djangoId: number | null;
+  userGame: UserLibraryData | null;
+  userReview: any;
+  currentUserId: number | null;
+  translatedDesc: string | null;
+  translating: boolean;
+  descExpanded: boolean;
+  setDescExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedShot: string | null;
+  setSelectedShot: React.Dispatch<React.SetStateAction<string | null>>;
+  isMatching: boolean;
+  ensureDjangoId: () => Promise<number | null>;
+  handleSetStatus: (
+    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
+    p?: boolean
+  ) => Promise<void>;
+  handleToggleFavorite: (p?: boolean) => Promise<void>;
+  handleSetMatchmaking: (p?: boolean) => Promise<void>;
+  setUserReview: React.Dispatch<React.SetStateAction<any>>;
+}>;
+
+function GamePageContent({
+  game,
+  djangoId,
+  userGame,
+  userReview,
+  currentUserId,
+  translatedDesc,
+  translating,
+  descExpanded,
+  setDescExpanded,
+  selectedShot,
+  setSelectedShot,
+  isMatching,
+  ensureDjangoId,
+  handleSetStatus,
+  handleToggleFavorite,
+  handleSetMatchmaking,
+  setUserReview,
+}: GamePageContentProps) {
   const fullText = translating
     ? 'Traduction en cours…'
     : (translatedDesc ?? game.summary ?? 'Aucune description disponible.');
   const isTrunc = !translating && fullText.length > DLIMIT;
   const dispText =
     isTrunc && !descExpanded ? fullText.slice(0, DLIMIT) + '…' : fullText;
-
-  const redBtnSx = {
-    borderRadius: 999,
-    px: 2.5,
-    py: 1,
-    fontWeight: 700,
-    fontSize: 13,
-    textTransform: 'none' as const,
-    fontFamily: FB,
-    background: `linear-gradient(135deg,${C.accent} 0%,#ef5350 100%)`,
-    boxShadow: `0 4px 16px rgba(211,47,47,0.36)`,
-    '&:hover': {
-      background: `linear-gradient(135deg,${C.accentDark} 0%,${C.accent} 100%)`,
-      transform: 'translateY(-2px)',
-      boxShadow: `0 8px 22px rgba(211,47,47,0.42)`,
-    },
-    transition: 'all 0.2s ease',
-  };
 
   return (
     <Box
@@ -1076,5 +973,198 @@ export default function GamePage() {
         </Box>
       </Box>
     </Box>
+  );
+}
+
+function useGamePageModel() {
+  const { id, igdbId } = useParams();
+  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+  const { startMatchmaking, isMatching } = useMatchmaking();
+
+  const [game, setGame] = useState<NormalizedGame | null>(null);
+  const [gameNotFound, setGameNotFound] = useState(false);
+  const [djangoId, setDjangoId] = useState<number | null>(null);
+  const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
+  const [userReview, setUserReview] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [translatedDesc, setTranslatedDesc] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [selectedShot, setSelectedShot] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        if (igdbId) {
+          setGame(await fetchIgdbGameById(Number(igdbId)));
+        } else {
+          const d = await apiGet(`/api/games/${id}/`);
+          setGame({ ...d, name: d.name_fr || d.name });
+          setDjangoId(d.id);
+          setUserGame(d.user_library);
+        }
+      } catch {
+        setGameNotFound(true);
+      }
+    })();
+  }, [id, igdbId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !djangoId) return;
+    apiGet(`/api/games/${djangoId}/`)
+      .then((d: NormalizedGame) => {
+        if (d.user_library) setUserGame(d.user_library);
+      })
+      .catch(() => {});
+  }, [isAuthenticated, djangoId]);
+
+  useEffect(() => {
+    if (!game?.summary) return;
+    setTranslating(true);
+    setTranslatedDesc(null);
+    translateDescription(game.summary)
+      .then(setTranslatedDesc)
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  }, [game?.summary]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setCurrentUserId(null);
+      return;
+    }
+    apiGet('/api/me')
+      .then((m: { id: number }) => setCurrentUserId(m.id))
+      .catch(() => setCurrentUserId(null));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!djangoId || !isAuthenticated) {
+      setUserReview(null);
+      return;
+    }
+    apiGet(`/api/reviews/?game=${djangoId}`)
+      .then((d: any) => {
+        const l = Array.isArray(d) ? d : (d.results ?? []);
+        setUserReview(l.find((r: any) => r.user?.id === currentUserId) || null);
+      })
+      .catch(() => setUserReview(null));
+  }, [djangoId, isAuthenticated, currentUserId]);
+
+  async function ensureDjangoId(): Promise<number | null> {
+    if (djangoId) return djangoId;
+    if (!game) return null;
+    try {
+      const { game_id, normalized_game } = await resolveGameIdIfNeeded(game);
+      setDjangoId(game_id);
+      setGame(normalized_game);
+      if (normalized_game.user_library)
+        setUserGame(normalized_game.user_library);
+      return game_id;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleSetStatus(
+    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
+    p = false
+  ) {
+    if (!isAuthenticated && !p) {
+      setPendingAction(() => () => handleSetStatus(s, true));
+      setAuthModalOpen(true);
+      return;
+    }
+    const did = await ensureDjangoId();
+    if (!did) return;
+    try {
+      if (userGame) {
+        const u = await apiPatch(`/api/me/games/${did}/`, { status: s });
+        setUserGame({ ...userGame, status: u.status });
+      } else {
+        const c = await apiPost('/api/me/games/', { game_id: did, status: s });
+        setUserGame(c);
+      }
+    } catch {
+      alert('Erreur lors de la mise à jour du statut');
+    }
+  }
+
+  async function handleToggleFavorite(p = false) {
+    if (!isAuthenticated && !p) {
+      setPendingAction(() => () => handleToggleFavorite(true));
+      setAuthModalOpen(true);
+      return;
+    }
+    const did = await ensureDjangoId();
+    if (!did) return;
+    try {
+      const u = await apiPatch(`/api/me/games/${did}/`, {
+        is_favorite: !userGame?.is_favorite,
+      });
+      setUserGame(u);
+    } catch {
+      alert('Erreur lors de la mise à jour du coup de cœur');
+    }
+  }
+
+  async function handleSetMatchmaking(p = false) {
+    if (!isAuthenticated && !p) {
+      setPendingAction(() => () => handleSetMatchmaking(true));
+      setAuthModalOpen(true);
+      return;
+    }
+    const did = await ensureDjangoId();
+    if (!did || !game) return;
+    await startMatchmaking(String(did), game.name, hi(game.cover_url));
+  }
+
+  return {
+    game,
+    gameNotFound,
+    djangoId,
+    userGame,
+    userReview,
+    currentUserId,
+    translatedDesc,
+    translating,
+    descExpanded,
+    setDescExpanded,
+    selectedShot,
+    setSelectedShot,
+    isMatching,
+    ensureDjangoId,
+    handleSetStatus,
+    handleToggleFavorite,
+    handleSetMatchmaking,
+    setUserReview,
+  };
+}
+
+export default function GamePage() {
+  const m = useGamePageModel();
+  if (m.gameNotFound || !m.game) {
+    return <GamePagePlaceholder gameNotFound={m.gameNotFound} />;
+  }
+  return (
+    <GamePageContent
+      game={m.game}
+      djangoId={m.djangoId}
+      userGame={m.userGame}
+      userReview={m.userReview}
+      currentUserId={m.currentUserId}
+      translatedDesc={m.translatedDesc}
+      translating={m.translating}
+      descExpanded={m.descExpanded}
+      setDescExpanded={m.setDescExpanded}
+      selectedShot={m.selectedShot}
+      setSelectedShot={m.setSelectedShot}
+      isMatching={m.isMatching}
+      ensureDjangoId={m.ensureDjangoId}
+      handleSetStatus={m.handleSetStatus}
+      handleToggleFavorite={m.handleToggleFavorite}
+      handleSetMatchmaking={m.handleSetMatchmaking}
+      setUserReview={m.setUserReview}
+    />
   );
 }
