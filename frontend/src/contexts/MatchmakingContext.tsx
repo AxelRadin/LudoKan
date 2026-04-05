@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
@@ -39,7 +40,6 @@ interface MatchmakingProviderProps {
   readonly children: React.ReactNode;
 }
 
-/** Approximate coordinates for matchmaking radius (IP-based; avoids sensitive Geolocation API). */
 async function getUserLocation(): Promise<{
   latitude: number;
   longitude: number;
@@ -58,6 +58,7 @@ async function getUserLocation(): Promise<{
 
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const [isMatching, setIsMatching] = useState(false);
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
@@ -299,6 +300,20 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         matches={matches}
         startedAt={activeRequestStartedAt}
         game={activeGame}
+        onContactPlayer={async targetUserId => {
+          try {
+            const data = await apiPost('/api/chats/get-or-create/', {
+              target_user_id: targetUserId,
+            });
+
+            const roomId = data.room_id || data.id;
+
+            setIsMatchmakingModalOpen(false);
+            navigate(`/chat/${roomId}`);
+          } catch (error) {
+            console.error('Impossible de contacter le joueur :', error);
+          }
+        }}
       />
       <ConfirmCancelMatchmakingModal
         open={isConfirmModalOpen}
