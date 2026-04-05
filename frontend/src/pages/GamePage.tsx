@@ -349,6 +349,329 @@ type GamePageContentProps = Readonly<{
   setUserReview: React.Dispatch<React.SetStateAction<any>>;
 }>;
 
+function gameHasMedia(g: NormalizedGame): boolean {
+  return (g.screenshots?.length ?? 0) > 0 || (g.videos?.length ?? 0) > 0;
+}
+
+function GameHeroLeftColumn({
+  game,
+  userGame,
+  onToggleFavorite,
+}: Readonly<{
+  game: NormalizedGame;
+  userGame: UserLibraryData | null;
+  onToggleFavorite: () => void;
+}>) {
+  return (
+    <Box
+      className="gp-img"
+      sx={{
+        position: 'relative',
+        borderRadius: '28px',
+        overflow: 'hidden',
+        height: { xs: 380, md: '100%' },
+        minHeight: { md: 520 },
+        boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
+      }}
+    >
+      <Box
+        component="img"
+        src={hi(game.cover_url)}
+        alt={game.name}
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center top',
+        }}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background:
+            'linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(0,0,0,0.78) 100%)',
+        }}
+      />
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.18,
+          pointerEvents: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      <Tooltip title="Coup de cœur" arrow>
+        <Box
+          onClick={onToggleFavorite}
+          sx={{
+            position: 'absolute',
+            top: 14,
+            right: 14,
+            zIndex: 4,
+            width: 36,
+            height: 36,
+            borderRadius: '50%',
+            background: 'rgba(10,10,10,0.5)',
+            backdropFilter: 'blur(12px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'transform 0.18s ease,background 0.18s ease',
+            '&:hover': {
+              transform: 'scale(1.12)',
+              background: 'rgba(10,10,10,0.7)',
+            },
+          }}
+        >
+          {userGame?.is_favorite ? (
+            <FavoriteIcon sx={{ color: '#ff3d3d', fontSize: 17 }} />
+          ) : (
+            <FavoriteBorderIcon
+              sx={{ color: 'rgba(255,255,255,0.9)', fontSize: 17 }}
+            />
+          )}
+        </Box>
+      </Tooltip>
+
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          p: '20px 22px 22px',
+        }}
+      >
+        {game.genres && game.genres.length > 0 && (
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              px: 1.2,
+              py: 0.3,
+              mb: 1,
+              borderRadius: 999,
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.22)',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FB,
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: 1.5,
+                textTransform: 'uppercase',
+                color: 'rgba(255,255,255,0.9)',
+              }}
+            >
+              {game.genres[0].name}
+            </Typography>
+          </Box>
+        )}
+        <Typography
+          sx={{
+            fontFamily: FD,
+            fontWeight: 900,
+            fontSize: { xs: 24, md: 28 },
+            color: '#fff',
+            lineHeight: 1.05,
+            letterSpacing: -0.8,
+            textShadow: '0 2px 18px rgba(0,0,0,0.6)',
+            mb: 0.6,
+          }}
+        >
+          {game.name}
+        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
+          {game.publisher?.name && (
+            <Typography
+              sx={{
+                fontFamily: FB,
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.72)',
+                fontWeight: 500,
+              }}
+            >
+              {game.publisher.name}
+            </Typography>
+          )}
+          {game.release_date && (
+            <>
+              <Box
+                sx={{
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  bgcolor: 'rgba(255,255,255,0.4)',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontFamily: FB,
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.55)',
+                }}
+              >
+                {fdate(game.release_date)}
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+function GameMediaGallery({
+  game,
+  selectedShot,
+  setSelectedShot,
+}: Readonly<{
+  game: NormalizedGame;
+  selectedShot: string | null;
+  setSelectedShot: React.Dispatch<React.SetStateAction<string | null>>;
+}>) {
+  return (
+    <Box
+      className="gp-c5"
+      sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2.5 }}
+    >
+      <Pill>Galerie</Pill>
+      <Typography
+        sx={{
+          fontFamily: FD,
+          fontWeight: 700,
+          fontSize: 18,
+          color: C.title,
+          letterSpacing: -0.3,
+        }}
+      >
+        Médias
+      </Typography>
+      <Sep />
+
+      {game.videos && game.videos.length > 0 && (
+        <Box sx={{ mb: 2.5 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: 760,
+              mx: 'auto',
+              aspectRatio: '16/9',
+              borderRadius: '18px',
+              overflow: 'hidden',
+              boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
+            }}
+          >
+            <iframe
+              src={`https://www.youtube.com/embed/${game.videos[0].video_id}`}
+              title={game.videos[0].name || 'Trailer'}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+            />
+          </Box>
+        </Box>
+      )}
+
+      {game.screenshots && game.screenshots.length > 0 && (
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.5,
+            overflowX: 'auto',
+            pb: 1,
+            '&::-webkit-scrollbar': { height: 4 },
+            '&::-webkit-scrollbar-thumb': {
+              borderRadius: 99,
+              bgcolor: 'rgba(211,47,47,0.2)',
+            },
+          }}
+        >
+          {game.screenshots.map(s => (
+            <Box
+              key={s.url}
+              component="img"
+              src={s.url}
+              alt={game.name ? `Capture — ${game.name}` : 'Capture'}
+              onClick={() => setSelectedShot(s.url)}
+              sx={{
+                height: { xs: 130, sm: 185 },
+                minWidth: { xs: 200, sm: 295 },
+                objectFit: 'cover',
+                borderRadius: '14px',
+                boxShadow: '0 3px 10px rgba(0,0,0,0.08)',
+                flexShrink: 0,
+                cursor: 'pointer',
+                transition: 'transform 0.2s ease,box-shadow 0.2s ease',
+                '&:hover': {
+                  transform: 'scale(1.03)',
+                  boxShadow: '0 7px 20px rgba(0,0,0,0.13)',
+                },
+              }}
+            />
+          ))}
+        </Box>
+      )}
+
+      {selectedShot && (
+        <Modal open onClose={() => setSelectedShot(null)}>
+          <Box
+            onClick={() => setSelectedShot(null)}
+            sx={{
+              position: 'fixed',
+              inset: 0,
+              bgcolor: 'rgba(0,0,0,0.9)',
+              backdropFilter: 'blur(12px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'zoom-out',
+            }}
+          >
+            <Box
+              component="img"
+              src={selectedShot}
+              alt="Screenshot agrandi"
+              sx={{
+                maxWidth: '90vw',
+                maxHeight: '90vh',
+                borderRadius: '18px',
+                boxShadow: '0 28px 80px rgba(0,0,0,0.55)',
+              }}
+            />
+          </Box>
+        </Modal>
+      )}
+    </Box>
+  );
+}
+
 function GamePageContent({
   game,
   djangoId,
@@ -404,185 +727,11 @@ function GamePageContent({
             alignItems: 'stretch',
           }}
         >
-          {/* ── IMAGE PORTRAIT pleine hauteur ── */}
-          <Box
-            className="gp-img"
-            sx={{
-              position: 'relative',
-              borderRadius: '28px',
-              overflow: 'hidden',
-              height: { xs: 380, md: '100%' },
-              minHeight: { md: 520 },
-              boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
-            }}
-          >
-            <Box
-              component="img"
-              src={hi(game.cover_url)}
-              alt={game.name}
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                objectPosition: 'center top',
-              }}
-            />
-
-            {/* Scrim bas */}
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                background:
-                  'linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(0,0,0,0.78) 100%)',
-              }}
-            />
-
-            {/* Grain */}
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                opacity: 0.18,
-                pointerEvents: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
-              }}
-            />
-
-            {/* Favori */}
-            <Tooltip title="Coup de cœur" arrow>
-              <Box
-                onClick={() => handleToggleFavorite()}
-                sx={{
-                  position: 'absolute',
-                  top: 14,
-                  right: 14,
-                  zIndex: 4,
-                  width: 36,
-                  height: 36,
-                  borderRadius: '50%',
-                  background: 'rgba(10,10,10,0.5)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'transform 0.18s ease,background 0.18s ease',
-                  '&:hover': {
-                    transform: 'scale(1.12)',
-                    background: 'rgba(10,10,10,0.7)',
-                  },
-                }}
-              >
-                {userGame?.is_favorite ? (
-                  <FavoriteIcon sx={{ color: '#ff3d3d', fontSize: 17 }} />
-                ) : (
-                  <FavoriteBorderIcon
-                    sx={{ color: 'rgba(255,255,255,0.9)', fontSize: 17 }}
-                  />
-                )}
-              </Box>
-            </Tooltip>
-
-            {/* Titre + meta bas */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                p: '20px 22px 22px',
-              }}
-            >
-              {game.genres && game.genres.length > 0 && (
-                <Box
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    px: 1.2,
-                    py: 0.3,
-                    mb: 1,
-                    borderRadius: 999,
-                    background: 'rgba(255,255,255,0.15)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(255,255,255,0.22)',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: FB,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      letterSpacing: 1.5,
-                      textTransform: 'uppercase',
-                      color: 'rgba(255,255,255,0.9)',
-                    }}
-                  >
-                    {game.genres[0].name}
-                  </Typography>
-                </Box>
-              )}
-              <Typography
-                sx={{
-                  fontFamily: FD,
-                  fontWeight: 900,
-                  fontSize: { xs: 24, md: 28 },
-                  color: '#fff',
-                  lineHeight: 1.05,
-                  letterSpacing: -0.8,
-                  textShadow: '0 2px 18px rgba(0,0,0,0.6)',
-                  mb: 0.6,
-                }}
-              >
-                {game.name}
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  flexWrap: 'wrap',
-                }}
-              >
-                {game.publisher?.name && (
-                  <Typography
-                    sx={{
-                      fontFamily: FB,
-                      fontSize: 12,
-                      color: 'rgba(255,255,255,0.72)',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {game.publisher.name}
-                  </Typography>
-                )}
-                {game.release_date && (
-                  <>
-                    <Box
-                      sx={{
-                        width: 3,
-                        height: 3,
-                        borderRadius: '50%',
-                        bgcolor: 'rgba(255,255,255,0.4)',
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        fontFamily: FB,
-                        fontSize: 12,
-                        color: 'rgba(255,255,255,0.55)',
-                      }}
-                    >
-                      {fdate(game.release_date)}
-                    </Typography>
-                  </>
-                )}
-              </Box>
-            </Box>
-          </Box>
+          <GameHeroLeftColumn
+            game={game}
+            userGame={userGame}
+            onToggleFavorite={() => handleToggleFavorite()}
+          />
 
           {/* ══ COLONNE DROITE ══ */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -825,127 +974,12 @@ function GamePageContent({
         </Box>
 
         {/* ── MÉDIAS ── */}
-        {((game.screenshots && game.screenshots.length > 0) ||
-          (game.videos && game.videos.length > 0)) && (
-          <Box
-            className="gp-c5"
-            sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2.5 }}
-          >
-            <Pill>Galerie</Pill>
-            <Typography
-              sx={{
-                fontFamily: FD,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              Médias
-            </Typography>
-            <Sep />
-
-            {game.videos && game.videos.length > 0 && (
-              <Box sx={{ mb: 2.5 }}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    width: '100%',
-                    maxWidth: 760,
-                    mx: 'auto',
-                    aspectRatio: '16/9',
-                    borderRadius: '18px',
-                    overflow: 'hidden',
-                    boxShadow: '0 6px 24px rgba(0,0,0,0.12)',
-                  }}
-                >
-                  <iframe
-                    src={`https://www.youtube.com/embed/${game.videos[0].video_id}`}
-                    title={game.videos[0].name || 'Trailer'}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      border: 'none',
-                    }}
-                  />
-                </Box>
-              </Box>
-            )}
-
-            {game.screenshots && game.screenshots.length > 0 && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 1.5,
-                  overflowX: 'auto',
-                  pb: 1,
-                  '&::-webkit-scrollbar': { height: 4 },
-                  '&::-webkit-scrollbar-thumb': {
-                    borderRadius: 99,
-                    bgcolor: 'rgba(211,47,47,0.2)',
-                  },
-                }}
-              >
-                {game.screenshots.map(s => (
-                  <Box
-                    key={s.url}
-                    component="img"
-                    src={s.url}
-                    alt={game.name ? `Capture — ${game.name}` : 'Capture'}
-                    onClick={() => setSelectedShot(s.url)}
-                    sx={{
-                      height: { xs: 130, sm: 185 },
-                      minWidth: { xs: 200, sm: 295 },
-                      objectFit: 'cover',
-                      borderRadius: '14px',
-                      boxShadow: '0 3px 10px rgba(0,0,0,0.08)',
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease,box-shadow 0.2s ease',
-                      '&:hover': {
-                        transform: 'scale(1.03)',
-                        boxShadow: '0 7px 20px rgba(0,0,0,0.13)',
-                      },
-                    }}
-                  />
-                ))}
-              </Box>
-            )}
-
-            {selectedShot && (
-              <Modal open onClose={() => setSelectedShot(null)}>
-                <Box
-                  onClick={() => setSelectedShot(null)}
-                  sx={{
-                    position: 'fixed',
-                    inset: 0,
-                    bgcolor: 'rgba(0,0,0,0.9)',
-                    backdropFilter: 'blur(12px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'zoom-out',
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={selectedShot}
-                    alt="Screenshot agrandi"
-                    sx={{
-                      maxWidth: '90vw',
-                      maxHeight: '90vh',
-                      borderRadius: '18px',
-                      boxShadow: '0 28px 80px rgba(0,0,0,0.55)',
-                    }}
-                  />
-                </Box>
-              </Modal>
-            )}
-          </Box>
+        {gameHasMedia(game) && (
+          <GameMediaGallery
+            game={game}
+            selectedShot={selectedShot}
+            setSelectedShot={setSelectedShot}
+          />
         )}
 
         {/* ── AVIS ── */}
