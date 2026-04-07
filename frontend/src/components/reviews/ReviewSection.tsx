@@ -1,4 +1,11 @@
-import { Box, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogTitle,
+  Typography,
+} from '@mui/material';
 import { useState } from 'react';
 import { apiDelete } from '../../services/api';
 import { useReviews } from '../../hooks/useReviews';
@@ -32,18 +39,22 @@ export default function ReviewSection({
   onReviewChange,
 }: ReviewSectionProps) {
   const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
   const { reviews, isLoading, error, addReview, updateReview, removeReview } =
     useReviews(gameId || null);
 
-  async function handleDeleteReview(reviewId: number) {
+  async function confirmDeleteReview() {
+    if (reviewToDelete === null) return;
     try {
-      await apiDelete(`/api/reviews/${reviewId}/`);
-      if (userReview?.id === reviewId) {
+      await apiDelete(`/api/reviews/${reviewToDelete}/`);
+      if (userReview?.id === reviewToDelete) {
         onReviewChange(null);
       }
-      removeReview(reviewId);
+      removeReview(reviewToDelete);
     } catch {
       alert("Erreur lors de la suppression de l'avis.");
+    } finally {
+      setReviewToDelete(null);
     }
   }
 
@@ -74,7 +85,7 @@ export default function ReviewSection({
           review={userReview}
           isOwner={userReview.user?.id === currentUserId}
           onEdit={review => setEditingReview(review as Review)}
-          onDelete={handleDeleteReview}
+          onDelete={setReviewToDelete}
         />
       ) : (
         <ReviewForm
@@ -102,8 +113,34 @@ export default function ReviewSection({
         error={error}
         currentUserId={currentUserId}
         onEditReview={review => setEditingReview(review as Review)}
-        onDeleteReview={handleDeleteReview}
+        onDeleteReview={setReviewToDelete}
       />
+
+      <Dialog
+        open={reviewToDelete !== null}
+        onClose={() => setReviewToDelete(null)}
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle>Supprimer votre avis ?</DialogTitle>
+        <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'center' }}>
+          <Button
+            size="small"
+            onClick={() => setReviewToDelete(null)}
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Annuler
+          </Button>
+          <Button
+            size="small"
+            onClick={confirmDeleteReview}
+            color="error"
+            variant="contained"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Supprimer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
