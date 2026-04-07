@@ -1,4 +1,5 @@
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -8,17 +9,19 @@ import {
   DialogContent,
   DialogTitle,
   Paper,
+  Snackbar,
   TextField,
   Typography,
   Menu,
   MenuItem,
   DialogContentText,
 } from '@mui/material';
-import { useEffect, useMemo, useState, useRef, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
+import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch } from '../services/api';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
@@ -199,6 +202,10 @@ type ProfilePageModel = {
   gamesEnvie: GameListItem[];
   gamesFavoris: GameListItem[];
   avatarSrc: string;
+  removeGame: (userGameId: number) => void;
+  snackbar: { open: boolean; message: string; isError: boolean };
+  handleSnackbarClose: () => void;
+  handleUndo: () => void;
   bannerBusy: boolean;
   handleEditOpen: () => void;
   handleEditClose: () => void;
@@ -417,6 +424,67 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    isError: boolean;
+  }>({ open: false, message: '', isError: false });
+  const undoRef = useRef<{ game: UserGame; index: number } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSnackbarClose = () => setSnackbar(s => ({ ...s, open: false }));
+
+  const handleUndo = () => {
+    if (!undoRef.current) return;
+    const { game, index } = undoRef.current;
+    setUserGames(prev => {
+      const next = [...prev];
+      next.splice(index, 0, game);
+      return next;
+    });
+    undoRef.current = null;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setSnackbar({ open: false, message: '', isError: false });
+  };
+
+  const removeGame = (userGameId: number) => {
+    const index = userGames.findIndex(g => g.id === userGameId);
+    const ug = userGames[index];
+    if (!ug) return;
+
+    // Suppression optimiste
+    setUserGames(prev => prev.filter(g => g.id !== userGameId));
+    undoRef.current = { game: ug, index };
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setSnackbar({
+      open: true,
+      message: 'Jeu retiré de la bibliothèque.',
+      isError: false,
+    });
+
+    // L'appel API est retardé : si l'utilisateur annule avant 5s, le timer est
+    // annulé et la suppression n'est jamais envoyée au backend.
+    undoTimerRef.current = setTimeout(async () => {
+      undoRef.current = null;
+      try {
+        await deleteUserGame(ug.game.id);
+      } catch {
+        // Restauration en cas d'erreur API
+        setUserGames(prev => {
+          const next = [...prev];
+          next.splice(index, 0, ug);
+          return next;
+        });
+        setSnackbar({
+          open: true,
+          message: 'Impossible de retirer le jeu. Réessayez plus tard.',
+          isError: true,
+        });
+      }
+    }, 5000);
+  };
+
   const gamesForStatus = (status: string): GameListItem[] =>
     userGames
       .filter(g => g.status === status)
@@ -426,6 +494,7 @@ function useProfilePageModel(): ProfilePageModel {
         cover_url: g.game.cover_url,
         image: g.game.image,
         status: g.status,
+        userGameId: g.id,
       }));
 
   const gamesEnCours = gamesForStatus('EN_COURS');
@@ -439,6 +508,7 @@ function useProfilePageModel(): ProfilePageModel {
       cover_url: g.game.cover_url,
       image: g.game.image,
       status: g.status,
+      userGameId: g.id,
     }));
 
   return {
@@ -454,6 +524,10 @@ function useProfilePageModel(): ProfilePageModel {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    removeGame,
+    snackbar,
+    handleSnackbarClose,
+    handleUndo,
     bannerBusy,
     handleEditOpen,
     handleEditClose,
@@ -792,6 +866,10 @@ export default function ProfilePage() {
     gamesEnvie,
     gamesFavoris,
     avatarSrc,
+    removeGame,
+    snackbar,
+    handleSnackbarClose,
+    handleUndo,
     bannerBusy,
     handleEditOpen,
     handleEditClose,
@@ -1506,7 +1584,11 @@ export default function ProfilePage() {
               }}
             />
 
-            <GameList games={gamesFavoris} showStatus={false} />
+            <GameList
+              games={gamesFavoris}
+              showStatus={false}
+              onRemove={removeGame}
+            />
           </Paper>
         )}
 
@@ -1600,11 +1682,34 @@ export default function ProfilePage() {
                 games={games}
                 title={`${label} (${games.length})`}
                 showStatus={false}
+                onRemove={removeGame}
               />
             ))}
           </Box>
         </Paper>
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={snackbar.isError ? 'error' : 'success'}
+          onClose={handleSnackbarClose}
+          action={
+            snackbar.isError ? undefined : (
+              <Button color="inherit" size="small" onClick={handleUndo}>
+                Annuler
+              </Button>
+            )
+          }
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
       <ProfileEditDialog
         open={editOpen}
