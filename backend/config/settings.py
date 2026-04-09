@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    "allauth.socialaccount.providers.openid",
+    "allauth.socialaccount.providers.steam",
     "corsheaders",
     "django_filters",
     "notifications",
@@ -484,3 +486,20 @@ if SENTRY_DSN:
 
 # Réduire le bruit : avertissement django-fsm / viewflow (en fin de fichier pour Ruff E402)
 warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
+
+# -------------------------------------------------------------------
+# Steam API & Provider Config
+# -------------------------------------------------------------------
+
+STEAM_API_KEY = config("STEAM_API_KEY", default="")
+STEAM_REDIRECT_URL = config("STEAM_REDIRECT_URL", default="")
+
+SOCIALACCOUNT_PROVIDERS = {
+    "steam": {
+        "APP": {
+            "client_id": STEAM_API_KEY,
+            "secret": "",
+            "key": "",
+        }
+    }
+}
