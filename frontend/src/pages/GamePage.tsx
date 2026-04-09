@@ -1073,18 +1073,18 @@ function useGamePageModel() {
       setUserReview(null);
       return;
     }
-    apiGet('/api/me')
-      .then((m: { id: number }) => {
+    (async () => {
+      try {
+        const m: { id: number } = await apiGet('/api/me');
         setCurrentUserId(m.id);
-        return apiGet(`/api/reviews/?game=${djangoId}`).then((d: any) => {
-          const l = Array.isArray(d) ? d : (d.results ?? []);
-          setUserReview(l.find((r: any) => r.user?.id === m.id) || null);
-        });
-      })
-      .catch(() => {
+        const d: any = await apiGet(`/api/reviews/?game=${djangoId}`);
+        const l = Array.isArray(d) ? d : (d.results ?? []);
+        setUserReview(l.find((r: any) => r.user?.id === m.id) || null);
+      } catch {
         setCurrentUserId(null);
         setUserReview(null);
-      });
+      }
+    })();
   }, [djangoId, isAuthenticated]);
 
   async function ensureDjangoId(): Promise<number | null> {
