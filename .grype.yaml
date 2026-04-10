@@ -47,6 +47,8 @@ ignore:
     reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
   - vulnerability: CVE-2026-4519
     reason: "Won't fix by Debian - python system package"
+  - vulnerability: CVE-2026-4878
+    reason: "Won't fix by Debian - libcap2 system package"
 # Sources de données de vulnérabilités
 db:
   auto-update: true
