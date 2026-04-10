@@ -6,7 +6,6 @@ import apps.users.validators
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("users", "0006_alter_customuser_avatar_url_and_more"),
     ]
