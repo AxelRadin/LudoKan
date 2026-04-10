@@ -226,7 +226,7 @@ Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de 
 - **Axel Epitech** - Lead backend 
 - **André** - Developpeur backend
 - **Victor** - Developpeur backend
-- **Lina** - Sécurité et developpeuse web
+- **Lina** - Sécurité et developpeuse frontend
 - **Omar** - Data ingénieur
 
 ## 📞 Support
