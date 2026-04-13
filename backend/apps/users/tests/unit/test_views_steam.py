@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -31,3 +33,12 @@ class SteamLoginInitiateViewTest(APITestCase):
         self.client.logout()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch("apps.users.views_steam.settings.STEAM_REDIRECT_URL", "")
+    def test_get_steam_login_url_missing_redirect_url(self):
+        """
+        Verify that hitting the endpoint missing STEAM_REDIRECT_URL returns 500 error.
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn("manquante", response.data.get("detail", ""))
