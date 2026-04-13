@@ -80,6 +80,42 @@ def sync_steam_library(user: CustomUser) -> None:
                 user_game.save(update_fields=["playtime_forever", "date_modified"])
 
 
+def _extract_steam_appid(igdb_game: dict) -> int | None:
+    ext_games = igdb_game.get("external_games", [])
+    for ex in ext_games:
+        if ex.get("category") == 1:
+            uid = ex.get("uid")
+            if uid and uid.isdigit():
+                return int(uid)
+    return None
+
+
+def _process_single_igdb_game(igdb_game: dict) -> None:
+    igdb_id = igdb_game.get("id")
+    if not igdb_id:
+        return
+
+    steam_appid = _extract_steam_appid(igdb_game)
+    if not steam_appid:
+        return
+
+    cover_url = None
+    if igdb_game.get("cover") and isinstance(igdb_game["cover"], dict):
+        cover_url = igdb_game["cover"].get("url")
+
+    game, created = get_or_create_game_from_igdb(
+        igdb_id=igdb_id,
+        name=igdb_game.get("name"),
+        cover_url=cover_url,
+        summary=igdb_game.get("summary"),
+        platforms=igdb_game.get("platforms"),
+    )
+
+    if created or not game.steam_appid:
+        game.steam_appid = steam_appid
+        game.save(update_fields=["steam_appid"])
+
+
 def _resolve_and_save_missing_games(appids: List[int]) -> None:
     if not appids:
         return
@@ -101,34 +137,4 @@ def _resolve_and_save_missing_games(appids: List[int]) -> None:
         return
 
     for igdb_game in igdb_games:
-        igdb_id = igdb_game.get("id")
-        if not igdb_id:
-            continue
-
-        steam_appid = None
-        ext_games = igdb_game.get("external_games", [])
-        for ex in ext_games:
-            if ex.get("category") == 1:
-                uid = ex.get("uid")
-                if uid and uid.isdigit():
-                    steam_appid = int(uid)
-                    break
-
-        if not steam_appid:
-            continue
-
-        cover_url = None
-        if igdb_game.get("cover") and isinstance(igdb_game["cover"], dict):
-            cover_url = igdb_game["cover"].get("url")
-
-        game, created = get_or_create_game_from_igdb(
-            igdb_id=igdb_id,
-            name=igdb_game.get("name"),
-            cover_url=cover_url,
-            summary=igdb_game.get("summary"),
-            platforms=igdb_game.get("platforms"),
-        )
-
-        if created or not game.steam_appid:
-            game.steam_appid = steam_appid
-            game.save(update_fields=["steam_appid"])
+        _process_single_igdb_game(igdb_game)
