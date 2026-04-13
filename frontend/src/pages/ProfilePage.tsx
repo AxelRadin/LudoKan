@@ -1699,11 +1699,11 @@ export default function ProfilePage() {
           severity={snackbar.isError ? 'error' : 'success'}
           onClose={handleSnackbarClose}
           action={
-            !snackbar.isError ? (
+            snackbar.isError ? undefined : (
               <Button color="inherit" size="small" onClick={handleUndo}>
                 Annuler
               </Button>
-            ) : undefined
+            )
           }
           sx={{ width: '100%' }}
         >
