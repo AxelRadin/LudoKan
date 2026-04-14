@@ -109,8 +109,9 @@ const GameSearchBar: React.FC = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [localResults, setLocalResults] = useState<SearchSourcedGame[]>([]);
-  const [igdbResults, setIgdbResults] = useState<SearchSourcedGame[]>([]);
+  // Pool of all games fetched across debounced queries — persists across keystrokes
+  // so Fuse.js can still match even when the API returns nothing for a typo.
+  const [gamePool, setGamePool] = useState<SearchSourcedGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -132,8 +133,7 @@ const GameSearchBar: React.FC = () => {
 
   useEffect(() => {
     if (!query) {
-      setLocalResults([]);
-      setIgdbResults([]);
+      setGamePool([]);
       setLoading(false);
       setShowDropdown(false);
       return;
@@ -144,16 +144,13 @@ const GameSearchBar: React.FC = () => {
 
   useEffect(() => {
     if (!debouncedQuery) {
-      setLocalResults([]);
-      setIgdbResults([]);
+      setGamePool([]);
       return;
     }
 
     const controller = new AbortController();
     let cancelled = false;
     setLoading(true);
-    setLocalResults([]);
-    setIgdbResults([]);
 
     const localReq = apiGet(
       `/api/games/?search=${encodeURIComponent(debouncedQuery)}`
@@ -180,8 +177,13 @@ const GameSearchBar: React.FC = () => {
     Promise.all([localReq, igdbReq])
       .then(([local, igdb]) => {
         if (cancelled) return;
-        setLocalResults(local.slice(0, DROPDOWN_LOCAL_MAX));
-        setIgdbResults(igdb);
+        const incoming = [...local.slice(0, DROPDOWN_LOCAL_MAX), ...igdb];
+        // Merge into pool, deduplicating by igdb_id to avoid visual duplicates
+        setGamePool(prev => {
+          const seen = new Set(prev.map(g => g.igdb_id));
+          const fresh = incoming.filter(g => !seen.has(g.igdb_id));
+          return [...prev, ...fresh];
+        });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -203,8 +205,8 @@ const GameSearchBar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const combined = [...localResults, ...igdbResults];
-  const allResults = useFuzzyGames(combined, debouncedQuery);
+  // Re-rank the pool against the live query so typo corrections update instantly
+  const allResults = useFuzzyGames(gamePool, query);
 
   const goToFullSearch = () => {
     const q = query.trim();
