@@ -18,7 +18,7 @@ import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type IgdbGame, searchIgdbGames } from '../api/igdb';
-import { useFuzzyGames } from '../hooks/useFuzzyGames';
+import { useFuzzyGames, type MatchIndices } from '../hooks/useFuzzyGames';
 import { apiGet } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
@@ -78,6 +78,38 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   maxHeight: 'min(420px, 55vh)',
   overflow: 'hidden',
 }));
+
+/** Renders `text` with matched character ranges wrapped in a highlighted mark. */
+function HighlightedText({
+  text,
+  indices,
+}: {
+  text: string;
+  indices: MatchIndices;
+}) {
+  if (!indices.length) return <>{text}</>;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const [start, end] of indices) {
+    if (start > cursor) parts.push(text.slice(cursor, start));
+    parts.push(
+      <mark
+        key={start}
+        style={{
+          background: 'rgba(255, 200, 0, 0.45)',
+          borderRadius: 2,
+          padding: '0 1px',
+          fontWeight: 700,
+        }}
+      >
+        {text.slice(start, end + 1)}
+      </mark>
+    );
+    cursor = end + 1;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+}
 
 /** Un seul debounce puis requêtes locale + IGDB en parallèle, résultats affichés ensemble */
 const SEARCH_DEBOUNCE_MS = 280;
@@ -302,7 +334,7 @@ const GameSearchBar: React.FC = () => {
                 py: 0,
               }}
             >
-              {allResults.map(game => {
+              {allResults.map(({ item: game, nameIndices }) => {
                 const releaseYear = game.release_date
                   ? new Date(game.release_date).getFullYear()
                   : null;
@@ -328,7 +360,12 @@ const GameSearchBar: React.FC = () => {
                         <ListItemText
                           primary={
                             <span>
-                              <b>{game.name}</b>
+                              <b>
+                                <HighlightedText
+                                  text={game.name}
+                                  indices={nameIndices}
+                                />
+                              </b>
                               {releaseYear && (
                                 <span style={{ color: '#888', marginLeft: 8 }}>
                                   ({releaseYear})
