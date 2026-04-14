@@ -18,6 +18,7 @@ import { alpha, styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type IgdbGame, searchIgdbGames } from '../api/igdb';
+import { useFuzzyGames } from '../hooks/useFuzzyGames';
 import { apiGet } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
@@ -202,7 +203,8 @@ const GameSearchBar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const allResults = [...localResults, ...igdbResults];
+  const combined = [...localResults, ...igdbResults];
+  const allResults = useFuzzyGames(combined, debouncedQuery);
 
   const goToFullSearch = () => {
     const q = query.trim();
