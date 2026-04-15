@@ -149,6 +149,7 @@ const GameSearchBar: React.FC = () => {
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
   useEffect(() => {
     if (!query) {
@@ -246,6 +247,15 @@ const GameSearchBar: React.FC = () => {
   useEffect(() => {
     setActiveIndex(-1);
   }, [allResults.length, debouncedQuery]);
+
+  // Scroll active item into view when navigating with keyboard
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(
+      `[data-index="${activeIndex}"]`
+    );
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
 
   const goToFullSearch = () => {
     const q = query.trim();
@@ -347,6 +357,7 @@ const GameSearchBar: React.FC = () => {
             </Box>
           ) : (
             <List
+              ref={listRef}
               dense
               sx={{
                 flex: 1,
@@ -362,7 +373,11 @@ const GameSearchBar: React.FC = () => {
                 const isActive = index === activeIndex;
                 return (
                   <React.Fragment key={`${game.source}-${game.igdb_id}`}>
-                    <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
+                    <ListItem
+                      alignItems="flex-start"
+                      sx={{ py: 1.5 }}
+                      data-index={index}
+                    >
                       <ListItemButton
                         onClick={() => handlePickGame(game)}
                         selected={isActive}
