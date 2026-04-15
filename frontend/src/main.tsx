@@ -1,23 +1,29 @@
-import { ThemeProvider } from '@mui/material/styles';
 import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+
 import App from './App.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import { CustomThemeProvider } from './contexts/ThemeContext'; // ✅ AJOUT
+import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
+
 import './index.css';
 import { initSentry } from './monitoring/sentry';
+
 import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
-import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
-import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
+
+// ❌ SUPPRIMÉ : import theme et ThemeProvider
+// import { ThemeProvider } from '@mui/material/styles';
+// import theme from './theme.ts';
 
 const router = createBrowserRouter([
   {
@@ -48,7 +54,9 @@ const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
+    <CustomThemeProvider>
+      {' '}
+      {/* ✅ DARK MODE GLOBAL */}
       <AuthProvider>
         <MatchmakingProvider>
           <Sentry.ErrorBoundary fallback={errorFallback}>
@@ -56,6 +64,6 @@ createRoot(document.getElementById('root')!).render(
           </Sentry.ErrorBoundary>
         </MatchmakingProvider>
       </AuthProvider>
-    </ThemeProvider>
+    </CustomThemeProvider>
   </StrictMode>
 );
