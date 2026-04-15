@@ -146,6 +146,7 @@ const GameSearchBar: React.FC = () => {
   const [gamePool, setGamePool] = useState<SearchSourcedGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -231,6 +232,7 @@ const GameSearchBar: React.FC = () => {
     const handleClick = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.game-searchbar-root')) {
         setShowDropdown(false);
+        setActiveIndex(-1);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -239,6 +241,11 @@ const GameSearchBar: React.FC = () => {
 
   // Re-rank the pool against the live query so typo corrections update instantly
   const allResults = useFuzzyGames(gamePool, query);
+
+  // Reset active index whenever the result list changes
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [allResults.length, debouncedQuery]);
 
   const goToFullSearch = () => {
     const q = query.trim();
@@ -277,9 +284,23 @@ const GameSearchBar: React.FC = () => {
           }}
           onFocus={() => query && setShowDropdown(true)}
           onKeyDown={e => {
-            if (e.key === 'Enter' && query.trim()) {
+            if (!showDropdown) return;
+            if (e.key === 'ArrowDown') {
               e.preventDefault();
-              goToFullSearch();
+              setActiveIndex(i => Math.min(i + 1, allResults.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setActiveIndex(i => Math.max(i - 1, -1));
+            } else if (e.key === 'Escape') {
+              setShowDropdown(false);
+              setActiveIndex(-1);
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              if (activeIndex >= 0 && allResults[activeIndex]) {
+                handlePickGame(allResults[activeIndex].item);
+              } else if (query.trim()) {
+                goToFullSearch();
+              }
             }
           }}
         />
