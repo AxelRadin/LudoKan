@@ -355,14 +355,21 @@ const GameSearchBar: React.FC = () => {
                 py: 0,
               }}
             >
-              {allResults.map(({ item: game, nameIndices }) => {
+              {allResults.map(({ item: game, nameIndices }, index) => {
                 const releaseYear = game.release_date
                   ? new Date(game.release_date).getFullYear()
                   : null;
+                const isActive = index === activeIndex;
                 return (
                   <React.Fragment key={`${game.source}-${game.igdb_id}`}>
                     <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
-                      <ListItemButton onClick={() => handlePickGame(game)}>
+                      <ListItemButton
+                        onClick={() => handlePickGame(game)}
+                        selected={isActive}
+                        sx={
+                          isActive ? { bgcolor: 'action.selected' } : undefined
+                        }
+                      >
                         <ListItemAvatar>
                           <Avatar
                             variant="rounded"
