@@ -18,6 +18,11 @@ import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
 
+const rippleSx = {
+  color: 'inherit',
+  '& .MuiTouchRipple-root': { color: '#FF3D3D !important' },
+} as const;
+
 export const Header: React.FC = () => {
   const navigate = useNavigate();
 
@@ -92,16 +97,16 @@ export const Header: React.FC = () => {
           <Box display="flex" alignItems="center" gap={2}>
             {isAuthenticated ? (
               <>
-                <Button color="inherit" href="/profile">
+                <Button href="/profile" sx={rippleSx}>
                   Profile
                 </Button>
-                <Button color="inherit" onClick={handleLogout}>
+                <Button onClick={handleLogout} sx={rippleSx}>
                   Se déconnecter
                 </Button>
               </>
             ) : (
               <>
-                <Button color="inherit" onClick={handleLoginOpen}>
+                <Button onClick={handleLoginOpen} sx={rippleSx}>
                   Se connecter
                 </Button>
                 <SecondaryButton onClick={handleRegisterOpen}>
@@ -110,7 +115,7 @@ export const Header: React.FC = () => {
               </>
             )}
 
-            <IconButton color="inherit">
+            <IconButton sx={rippleSx}>
               <LanguageIcon />
             </IconButton>
           </Box>

@@ -26,12 +26,9 @@ export const muiTheme = createTheme({
     },
     MuiTouchRipple: {
       styleOverrides: {
-        ripple: {
-          borderRadius: '12px',
-          '&.MuiTouchRipple-rippleVisible': {
-            color: '#FF3D3D',
-            opacity: 0.3,
-          },
+        root: {
+          color: '#FF3D3D',
+          opacity: 0.3,
         },
       },
     },
