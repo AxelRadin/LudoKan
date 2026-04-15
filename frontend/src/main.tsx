@@ -1,3 +1,5 @@
+import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -16,6 +18,7 @@ import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
+import { muiTheme } from './muiTheme';
 
 const router = createBrowserRouter([
   {
@@ -46,12 +49,17 @@ const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <MatchmakingProvider>
-        <Sentry.ErrorBoundary fallback={errorFallback}>
-          <RouterProvider router={router} />
-        </Sentry.ErrorBoundary>
-      </MatchmakingProvider>
-    </AuthProvider>
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <AuthProvider>
+          <MatchmakingProvider>
+            <Sentry.ErrorBoundary fallback={errorFallback}>
+              <RouterProvider router={router} />
+            </Sentry.ErrorBoundary>
+          </MatchmakingProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </StyledEngineProvider>
   </StrictMode>
 );
