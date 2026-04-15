@@ -76,7 +76,7 @@ export const Header: React.FC = () => {
               sx={{
                 fontWeight: 800,
                 letterSpacing: '-0.5px',
-                background: 'linear-gradient(135deg, #6C63FF 0%, #3ECFCF 100%)',
+                background: 'linear-gradient(135deg, #FF3D3D 0%, #FF8C42 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
