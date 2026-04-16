@@ -22,7 +22,7 @@ export interface TrendingGamesProps {
 export const TrendingGames: React.FC<TrendingGamesProps> = ({
   games,
   loading = false,
-  title = 'Jeux tendances ➜',
+  title = 'Jeux tendances',
   to,
   linkState,
 }) => {
@@ -55,7 +55,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   useEffect(() => {
     if (games.length === 0) return;
 
-    const SCROLL_SPEED = 0.18; // px par frame (~11px/s à 60fps)
+    const SCROLL_SPEED = 0.18;
 
     const animate = () => {
       if (!isPausedRef.current && scrollRef.current) {
@@ -127,8 +127,6 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     },
   });
 
-  const titleText = title.endsWith('➜') ? title : `${title} ➜`;
-
   return (
     <Box px={4} py={4} position="relative">
       {to ? (
@@ -147,11 +145,11 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             '&:hover': { textDecoration: 'underline' },
           }}
         >
-          {titleText}
+          {title}
         </Typography>
       ) : (
         <Typography variant="h6" fontWeight="bold" mb={2}>
-          {titleText}
+          {title}
         </Typography>
       )}
 
