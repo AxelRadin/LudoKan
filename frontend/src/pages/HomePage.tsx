@@ -37,9 +37,9 @@ const FD = "'Cormorant Garamond', Georgia, serif";
 const FB = "'DM Sans', system-ui, sans-serif";
 
 const C = {
-  bgBase: '#fcf8f7',
-  bgSoft: '#f7efee',
-  bgWarm: '#fffbfa',
+  bgBase: '#fdf4f4',
+  bgSoft: '#f9ecec',
+  bgWarm: '#fef6f6',
   card: 'rgba(255,255,255,0.66)',
   cardHover: 'rgba(255,255,255,0.82)',
   border: 'rgba(198,40,40,0.10)',
@@ -79,7 +79,6 @@ function SectionLabel({
 
   return (
     <Box sx={{ mb: 3, position: 'relative' }}>
-      {/* Barre verticale gauche */}
       <Box
         sx={{
           position: 'absolute',
@@ -95,7 +94,6 @@ function SectionLabel({
       />
 
       <Box sx={{ pl: '18px' }}>
-        {/* Label */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
           <Box
             sx={{
@@ -121,7 +119,6 @@ function SectionLabel({
           </Typography>
         </Box>
 
-        {/* Titre */}
         <Box sx={{ position: 'relative', display: 'inline-block' }}>
           <Typography
             {...(to ? { component: Link, to, state: linkState } : {})}
@@ -169,7 +166,6 @@ function SectionLabel({
           )}
         </Box>
 
-        {/* Sous-ligne déco */}
         <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
@@ -240,15 +236,15 @@ function Section({
         border: `1px solid ${isDark ? C.darkBorder : C.border}`,
         boxShadow: isDark
           ? '0 18px 40px rgba(0,0,0,0.28)'
-          : '0 18px 40px rgba(36,24,24,0.04)',
+          : '0 18px 40px rgba(198,40,40,0.06)',
         transition:
           'border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
         '&:hover': {
           borderColor: isDark ? C.darkBorderHover : C.borderHover,
           transform: 'translateY(-2px)',
           boxShadow: isDark
-            ? '0 24px 50px rgba(239,83,80,0.10)'
-            : '0 24px 50px rgba(198,40,40,0.08)',
+            ? '0 24px 50px rgba(239,83,80,0.14)'
+            : '0 24px 50px rgba(198,40,40,0.12)',
         },
       }}
     >
@@ -263,21 +259,21 @@ function Section({
             backgroundPosition: 'center',
             filter: 'blur(28px) saturate(1.6)',
             transform: 'scale(1.15)',
-            opacity: visible ? (isDark ? 0.35 : 0.25) : 0,
+            opacity: visible ? (isDark ? 0.45 : 0.35) : 0,
             transition: 'opacity 1.4s cubic-bezier(0.16,1,0.3,1)',
             zIndex: 0,
           }}
         />
       )}
 
-      {/* Overlay glassmorphism */}
+      {/* Overlay rouge */}
       <Box
         sx={{
           position: 'absolute',
           inset: 0,
           background: isDark
-            ? `linear-gradient(135deg, rgba(198,40,40,0.08) 0%, transparent 60%), rgba(40,20,20,0.55)`
-            : `linear-gradient(135deg, rgba(198,40,40,0.05) 0%, transparent 60%), rgba(255,255,255,0.50)`,
+            ? `linear-gradient(135deg, rgba(198,40,40,0.18) 0%, rgba(120,20,20,0.65) 100%)`
+            : `linear-gradient(135deg, rgba(198,40,40,0.12) 0%, rgba(255,240,240,0.60) 100%)`,
           backdropFilter: 'blur(8px) saturate(140%)',
           WebkitBackdropFilter: 'blur(8px) saturate(140%)',
           zIndex: 1,
@@ -293,7 +289,7 @@ function Section({
           right: 24,
           height: '1px',
           background: `linear-gradient(to right, ${isDark ? C.darkAccentSoft : C.accentSoft} 0%, transparent 55%)`,
-          opacity: isDark ? 0.5 : 0.4,
+          opacity: isDark ? 0.6 : 0.5,
           zIndex: 2,
         }}
       />
@@ -350,9 +346,9 @@ export const HomePage = () => {
           : `
               url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
               radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
-              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.07) 0%, transparent 24%),
-              radial-gradient(circle at 86% 16%, rgba(255,225,225,0.72) 0%, transparent 26%),
-              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.05) 0%, transparent 24%),
+              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 24%),
+              radial-gradient(circle at 86% 16%, rgba(255,210,210,0.80) 0%, transparent 26%),
+              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.08) 0%, transparent 24%),
               linear-gradient(180deg, ${C.bgBase} 0%, ${C.bgSoft} 55%, ${C.bgWarm} 100%)
             `,
       }}
