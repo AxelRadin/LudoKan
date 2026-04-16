@@ -20,7 +20,7 @@ const GoogleCallbackPage: React.FC = () => {
     exchangeStarted.current = true;
 
     const run = async () => {
-      const url = new URL(window.location.href);
+      const url = new URL(globalThis.location.href);
       const code = url.searchParams.get('code');
       const googleError = url.searchParams.get('error');
 
