@@ -432,45 +432,6 @@ export const HomePage = () => {
             <GenreGrid onGenreClick={handleGenreClick} />
           </Section>
         </Box>
-
-        <Box
-          sx={{
-            mt: { xs: 4, md: 6 },
-            pt: 3,
-            borderTop: `1px solid ${isDark ? C.darkBorder : C.border}`,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 1.5,
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontWeight: 300,
-              fontSize: 13,
-              color: isDark ? C.darkLight : C.light,
-              letterSpacing: 0.5,
-              transition: 'color 0.3s ease',
-            }}
-          >
-            Ludokan — votre collection, maîtrisée.
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontSize: 11,
-              fontWeight: 500,
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: isDark ? C.darkLight : C.light,
-              transition: 'color 0.3s ease',
-            }}
-          >
-            © 2026
-          </Typography>
-        </Box>
       </Box>
     </Box>
   );
