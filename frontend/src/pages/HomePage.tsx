@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
@@ -50,7 +51,17 @@ const C = {
 };
 
 /* ── Section header ── */
-function SectionLabel({ label, title }: { label: string; title: string }) {
+function SectionLabel({
+  label,
+  title,
+  to,
+  linkState,
+}: {
+  label: string;
+  title: string;
+  to?: string;
+  linkState?: object;
+}) {
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
       <Box sx={{ flex: 1, pb: '4px' }}>
@@ -68,6 +79,7 @@ function SectionLabel({ label, title }: { label: string; title: string }) {
           {label}
         </Typography>
         <Typography
+          {...(to ? { component: Link, to, state: linkState } : {})}
           sx={{
             fontFamily: FD,
             fontWeight: 600,
@@ -75,6 +87,9 @@ function SectionLabel({ label, title }: { label: string; title: string }) {
             color: C.ink,
             letterSpacing: -0.5,
             lineHeight: 1.1,
+            textDecoration: 'none',
+            cursor: to ? 'pointer' : 'default',
+            '&:hover': to ? { textDecoration: 'underline' } : {},
           }}
         >
           {title}
@@ -185,29 +200,38 @@ export const HomePage = () => {
         }}
       >
         <Section className="lux-s1">
-          <SectionLabel label="Découverte" title="Jeux les plus récents" />
+          <SectionLabel
+            label="Découverte"
+            title="Jeux les plus récents"
+            to="/trending/recent"
+          />
           <TrendingGames
             games={sections.recent.games}
             loading={sections.recent.loading}
-            to="/trending/recent"
           />
         </Section>
 
         <Section className="lux-s2">
-          <SectionLabel label="Excellence" title="Jeux les mieux notés" />
+          <SectionLabel
+            label="Excellence"
+            title="Jeux les mieux notés"
+            to="/trending/rating"
+          />
           <TrendingGames
             games={sections.rating.games}
             loading={sections.rating.loading}
-            to="/trending/rating"
           />
         </Section>
 
         <Section className="lux-s3">
-          <SectionLabel label="Tendances" title="Jeux les plus populaires" />
+          <SectionLabel
+            label="Tendances"
+            title="Jeux les plus populaires"
+            to="/trending/popularity"
+          />
           <TrendingGames
             games={sections.popularity.games}
             loading={sections.popularity.loading}
-            to="/trending/popularity"
           />
         </Section>
 
@@ -217,12 +241,12 @@ export const HomePage = () => {
               <SectionLabel
                 label="Genre sélectionné"
                 title={selectedGenre.name}
+                to={`/trending/genre/${selectedGenre.id}`}
+                linkState={{ genreName: selectedGenre.name }}
               />
               <TrendingGames
                 games={genreSection?.games ?? []}
                 loading={genreSection?.loading ?? true}
-                to={`/trending/genre/${selectedGenre.id}`}
-                linkState={{ genreName: selectedGenre.name }}
               />
             </Section>
           </Box>
