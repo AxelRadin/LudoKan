@@ -39,6 +39,9 @@ ALLOWED_HOSTS = config(
     default="localhost,127.0.0.1,testserver",
 ).split(",")
 
+RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", default="")
+RECAPTCHA_SEND_REMOTEIP = config("RECAPTCHA_SEND_REMOTEIP", default=False, cast=bool)
+
 
 # -------------------------------------------------------------------
 # Applications
