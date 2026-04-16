@@ -101,6 +101,25 @@ def trending_fetch_games_array(
     return igdb_response_as_list(igdb_request("games", query))
 
 
+def trending_fetch_total_count(
+    igdb_request: IgdbRequestFn,
+    genre_id: int | None,
+    sort: str,
+) -> int:
+    try:
+        if genre_id is not None:
+            query = f"fields id; " f"where genres = ({genre_id}) & total_rating_count > 0; " f"limit 500;"
+            raw = igdb_response_as_list(igdb_request("games", query))
+            return len(raw)
+        sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0;")
+        where_part = sort_clause.split("sort")[0].strip()
+        query = f"fields id; {where_part} limit 500;"
+        raw = igdb_response_as_list(igdb_request("games", query))
+        return len(raw)
+    except Exception:
+        return 0
+
+
 def trending_enrich_for_response(arr: list, enrich: bool, enrich_fn, user=None) -> list:
     """`enrich_fn` est passé par la vue (pour que les monkeypatch sur views_igdb s'appliquent)."""
     if enrich:

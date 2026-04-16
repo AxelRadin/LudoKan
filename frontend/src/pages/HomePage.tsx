@@ -1,8 +1,8 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useRef, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useRef, useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
@@ -248,7 +248,6 @@ function Section({
         },
       }}
     >
-      {/* Fond jaquette floutée */}
       {coverUrl && (
         <Box
           sx={{
@@ -266,7 +265,6 @@ function Section({
         />
       )}
 
-      {/* Overlay rouge */}
       <Box
         sx={{
           position: 'absolute',
@@ -280,7 +278,6 @@ function Section({
         }}
       />
 
-      {/* Ligne rouge haut */}
       <Box
         sx={{
           position: 'absolute',
@@ -294,7 +291,6 @@ function Section({
         }}
       />
 
-      {/* Contenu */}
       <Box
         sx={{
           position: 'relative',
@@ -311,23 +307,12 @@ function Section({
 export const HomePage = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const navigate = useNavigate();
 
-  const [selectedGenre, setSelectedGenre] = useState<{
-    id: number;
-    name: string;
-  } | null>(null);
-
-  const genreResultRef = useRef<HTMLDivElement>(null);
-  const { sections, genreSection } = useHomeTrending({ selectedGenre });
+  const { sections } = useHomeTrending({ selectedGenre: null });
 
   const handleGenreClick = (id: number, name: string) => {
-    setSelectedGenre({ id, name });
-    setTimeout(() => {
-      genreResultRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }, 100);
+    navigate(`/trending/genre/${id}`, { state: { genreName: name } });
   };
 
   return (
@@ -406,26 +391,6 @@ export const HomePage = () => {
             loading={sections.popularity.loading}
           />
         </Section>
-
-        {selectedGenre && (
-          <Box ref={genreResultRef}>
-            <Section
-              className="lux-s3"
-              coverUrl={genreSection?.games[0]?.cover_url ?? undefined}
-            >
-              <SectionLabel
-                label="Genre sélectionné"
-                title={selectedGenre.name}
-                to={`/trending/genre/${selectedGenre.id}`}
-                linkState={{ genreName: selectedGenre.name }}
-              />
-              <TrendingGames
-                games={genreSection?.games ?? []}
-                loading={genreSection?.loading ?? true}
-              />
-            </Section>
-          </Box>
-        )}
 
         <Box className="lux-s4">
           <Box
