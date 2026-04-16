@@ -2,6 +2,7 @@ from allauth.account.views import ConfirmEmailView
 from django.urls import include, path, re_path
 
 from apps.users.views import SuspensionAwareUserDetailsView
+from apps.users.views_steam import SteamLoginInitiateView
 
 urlpatterns = [
     re_path(
@@ -13,6 +14,7 @@ urlpatterns = [
     # Override du endpoint /api/auth/user/ pour intégrer le contrôle de suspension
     path("user/", SuspensionAwareUserDetailsView.as_view(), name="rest_user_details"),
     # Auth
+    path("steam/login/", SteamLoginInitiateView.as_view(), name="steam_login_init"),
     path("", include("dj_rest_auth.urls")),
     path("registration/", include("dj_rest_auth.registration.urls")),
 ]
