@@ -243,7 +243,9 @@ function useProfilePageModel(): ProfilePageModel {
     try {
       const res = await apiGet('/api/auth/steam/login/');
       if (res.auth_url) {
-        window.location.href = res.auth_url;
+        window.open(res.auth_url, '_blank', 'noopener,noreferrer');
+        // On arrête le spinner vu qu'on ouvre un nouvel onglet
+        setSteamBusy(false);
       }
     } catch (err: any) {
       alert(
