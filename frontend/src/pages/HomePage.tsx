@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GenreGrid from '../components/GenreGrid';
@@ -48,6 +49,18 @@ const C = {
   accentSoft: '#d43c3c',
   ink: '#241818',
   light: '#b49393',
+
+  // Dark mode
+  darkBgBase: '#1a1010',
+  darkBgSoft: '#221414',
+  darkBgWarm: '#1e1212',
+  darkCard: 'rgba(40,20,20,0.72)',
+  darkCardHover: 'rgba(50,25,25,0.85)',
+  darkBorder: 'rgba(239,83,80,0.12)',
+  darkBorderHover: 'rgba(239,83,80,0.28)',
+  darkAccentSoft: '#ef5350',
+  darkInk: '#f5e6e6',
+  darkLight: '#9e7070',
 };
 
 /* ── Section header ── */
@@ -62,6 +75,12 @@ function SectionLabel({
   to?: string;
   linkState?: object;
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const inkColor = isDark ? C.darkInk : C.ink;
+  const accentColor = isDark ? C.darkAccentSoft : C.accentSoft;
+
   return (
     <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
       <Box sx={{ flex: 1, pb: '4px' }}>
@@ -72,8 +91,9 @@ function SectionLabel({
             fontWeight: 600,
             letterSpacing: 3,
             textTransform: 'uppercase',
-            color: C.accentSoft,
+            color: accentColor,
             mb: 0.6,
+            transition: 'color 0.3s ease',
           }}
         >
           {label}
@@ -84,19 +104,20 @@ function SectionLabel({
             fontFamily: FD,
             fontWeight: 600,
             fontSize: { xs: 22, md: 28 },
-            color: C.ink,
+            color: inkColor,
             letterSpacing: -0.5,
             lineHeight: 1.1,
             textDecoration: 'none',
             cursor: to ? 'pointer' : 'default',
-            '&:link': { color: C.ink },
-            '&:visited': { color: C.ink },
+            transition: 'color 0.3s ease',
+            '&:link': { color: inkColor },
+            '&:visited': { color: inkColor },
             '&:hover': {
-              color: C.ink,
+              color: accentColor,
               textDecoration: to ? 'underline' : 'none',
             },
-            '&:active': { color: C.ink },
-            '&:focus': { color: C.ink, outline: 'none' },
+            '&:active': { color: inkColor },
+            '&:focus': { color: inkColor, outline: 'none' },
           }}
         >
           {title}
@@ -107,10 +128,11 @@ function SectionLabel({
         sx={{
           width: { xs: 32, md: 64 },
           height: '1px',
-          background: `linear-gradient(to right, ${C.accentSoft}, transparent)`,
-          opacity: 0.28,
+          background: `linear-gradient(to right, ${accentColor}, transparent)`,
+          opacity: isDark ? 0.45 : 0.28,
           flexShrink: 0,
           mb: '12px',
+          transition: 'opacity 0.3s ease',
         }}
       />
     </Box>
@@ -125,26 +147,33 @@ function Section({
   children: React.ReactNode;
   className?: string;
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   return (
     <Box
       className={className}
       sx={{
-        background: C.card,
+        background: isDark ? C.darkCard : C.card,
         backdropFilter: 'blur(22px) saturate(160%)',
         WebkitBackdropFilter: 'blur(22px) saturate(160%)',
-        border: `1px solid ${C.border}`,
+        border: `1px solid ${isDark ? C.darkBorder : C.border}`,
         borderRadius: '24px',
         p: { xs: '24px 20px', md: '30px 34px' },
         mb: 2.5,
         position: 'relative',
         transition:
           'background 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
-        boxShadow: '0 18px 40px rgba(36, 24, 24, 0.04)',
+        boxShadow: isDark
+          ? '0 18px 40px rgba(0,0,0,0.28)'
+          : '0 18px 40px rgba(36,24,24,0.04)',
         '&:hover': {
-          background: C.cardHover,
-          borderColor: C.borderHover,
+          background: isDark ? C.darkCardHover : C.cardHover,
+          borderColor: isDark ? C.darkBorderHover : C.borderHover,
           transform: 'translateY(-2px)',
-          boxShadow: '0 24px 50px rgba(198,40,40,0.08)',
+          boxShadow: isDark
+            ? '0 24px 50px rgba(239,83,80,0.10)'
+            : '0 24px 50px rgba(198,40,40,0.08)',
         },
         '&::before': {
           content: '""',
@@ -153,8 +182,8 @@ function Section({
           left: 24,
           right: 24,
           height: '1px',
-          background: `linear-gradient(to right, ${C.accentSoft} 0%, transparent 55%)`,
-          opacity: 0.4,
+          background: `linear-gradient(to right, ${isDark ? C.darkAccentSoft : C.accentSoft} 0%, transparent 55%)`,
+          opacity: isDark ? 0.5 : 0.4,
         },
       }}
     >
@@ -164,6 +193,9 @@ function Section({
 }
 
 export const HomePage = () => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const [selectedGenre, setSelectedGenre] = useState<{
     id: number;
     name: string;
@@ -187,14 +219,22 @@ export const HomePage = () => {
       sx={{
         minHeight: '100vh',
         fontFamily: FB,
-        background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
-          radial-gradient(circle at 14% 18%, rgba(198,40,40,0.07) 0%, transparent 24%),
-          radial-gradient(circle at 86% 16%, rgba(255,225,225,0.72) 0%, transparent 26%),
-          radial-gradient(circle at 78% 84%, rgba(198,40,40,0.05) 0%, transparent 24%),
-          linear-gradient(180deg, ${C.bgBase} 0%, ${C.bgSoft} 55%, ${C.bgWarm} 100%)
-        `,
+        background: isDark
+          ? `
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 28%),
+              radial-gradient(circle at 86% 16%, rgba(120,20,20,0.18) 0%, transparent 28%),
+              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.07) 0%, transparent 24%),
+              linear-gradient(180deg, ${C.darkBgBase} 0%, ${C.darkBgSoft} 55%, ${C.darkBgWarm} 100%)
+            `
+          : `
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
+              radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
+              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.07) 0%, transparent 24%),
+              radial-gradient(circle at 86% 16%, rgba(255,225,225,0.72) 0%, transparent 26%),
+              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.05) 0%, transparent 24%),
+              linear-gradient(180deg, ${C.bgBase} 0%, ${C.bgSoft} 55%, ${C.bgWarm} 100%)
+            `,
       }}
     >
       <Box
@@ -275,9 +315,10 @@ export const HomePage = () => {
                 fontStyle: 'italic',
                 fontWeight: 600,
                 fontSize: { xs: 24, md: 30 },
-                color: C.ink,
+                color: isDark ? C.darkInk : C.ink,
                 letterSpacing: -0.5,
                 flexShrink: 0,
+                transition: 'color 0.3s ease',
               }}
             >
               Explorer par genre
@@ -287,7 +328,7 @@ export const HomePage = () => {
               sx={{
                 flex: 1,
                 height: '1px',
-                background: `linear-gradient(to right, ${C.border}, transparent)`,
+                background: `linear-gradient(to right, ${isDark ? C.darkBorder : C.border}, transparent)`,
               }}
             />
 
@@ -298,8 +339,9 @@ export const HomePage = () => {
                 fontWeight: 600,
                 letterSpacing: 2.5,
                 textTransform: 'uppercase',
-                color: C.accentSoft,
+                color: isDark ? C.darkAccentSoft : C.accentSoft,
                 flexShrink: 0,
+                transition: 'color 0.3s ease',
               }}
             >
               Tous les genres
@@ -315,7 +357,7 @@ export const HomePage = () => {
           sx={{
             mt: { xs: 4, md: 6 },
             pt: 3,
-            borderTop: `1px solid ${C.border}`,
+            borderTop: `1px solid ${isDark ? C.darkBorder : C.border}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -329,8 +371,9 @@ export const HomePage = () => {
               fontStyle: 'italic',
               fontWeight: 300,
               fontSize: 13,
-              color: C.light,
+              color: isDark ? C.darkLight : C.light,
               letterSpacing: 0.5,
+              transition: 'color 0.3s ease',
             }}
           >
             Ludokan — votre collection, maîtrisée.
@@ -343,7 +386,8 @@ export const HomePage = () => {
               fontWeight: 500,
               letterSpacing: 2,
               textTransform: 'uppercase',
-              color: C.light,
+              color: isDark ? C.darkLight : C.light,
+              transition: 'color 0.3s ease',
             }}
           >
             © 2026
@@ -353,5 +397,4 @@ export const HomePage = () => {
     </Box>
   );
 };
-
 export default HomePage;
