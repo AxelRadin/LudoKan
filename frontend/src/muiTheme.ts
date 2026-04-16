@@ -2,18 +2,18 @@ import { createTheme } from '@mui/material/styles';
 
 export const muiTheme = createTheme({
   typography: {
-    fontFamily: "'Rajdhani', sans-serif",
-    h1: { fontFamily: "'Rajdhani', sans-serif" },
-    h2: { fontFamily: "'Rajdhani', sans-serif" },
-    h3: { fontFamily: "'Rajdhani', sans-serif" },
-    h4: { fontFamily: "'Rajdhani', sans-serif" },
-    h5: { fontFamily: "'Rajdhani', sans-serif" },
-    h6: { fontFamily: "'Rajdhani', sans-serif" },
-    body1: { fontFamily: "'Rajdhani', sans-serif" },
-    body2: { fontFamily: "'Rajdhani', sans-serif" },
-    button: { fontFamily: "'Rajdhani', sans-serif" },
-    caption: { fontFamily: "'Rajdhani', sans-serif" },
-    overline: { fontFamily: "'Rajdhani', sans-serif" },
+    fontFamily: "'Outfit', sans-serif",
+    h1: { fontFamily: "'Outfit', sans-serif" },
+    h2: { fontFamily: "'Outfit', sans-serif" },
+    h3: { fontFamily: "'Outfit', sans-serif" },
+    h4: { fontFamily: "'Outfit', sans-serif" },
+    h5: { fontFamily: "'Outfit', sans-serif" },
+    h6: { fontFamily: "'Outfit', sans-serif" },
+    body1: { fontFamily: "'Outfit', sans-serif" },
+    body2: { fontFamily: "'Outfit', sans-serif" },
+    button: { fontFamily: "'Outfit', sans-serif" },
+    caption: { fontFamily: "'Outfit', sans-serif" },
+    overline: { fontFamily: "'Outfit', sans-serif" },
   },
   palette: {
     primary: {

@@ -24,7 +24,7 @@ if (!document.head.querySelector('style[data-home-lux]')) {
   document.head.appendChild(styleEl);
 }
 
-const F = "'Rajdhani', sans-serif";
+const F = "'Outfit', sans-serif";
 
 const C = {
   bgBase: '#fdf4f4',
@@ -98,7 +98,7 @@ function SectionLabel({
               fontFamily: F,
               fontSize: 11,
               fontWeight: 700,
-              letterSpacing: 4,
+              letterSpacing: 3,
               textTransform: 'uppercase',
               color: accentColor,
               opacity: 0.85,
@@ -115,10 +115,10 @@ function SectionLabel({
             sx={{
               fontFamily: F,
               fontWeight: 700,
-              fontSize: { xs: 26, md: 34 },
+              fontSize: { xs: 24, md: 32 },
               color: inkColor,
-              letterSpacing: 0.5,
-              lineHeight: 1.1,
+              letterSpacing: -0.3,
+              lineHeight: 1.15,
               textDecoration: 'none',
               cursor: to ? 'pointer' : 'default',
               transition: 'color 0.25s ease, letter-spacing 0.25s ease',
@@ -130,7 +130,7 @@ function SectionLabel({
               ...(to && {
                 '&:hover': {
                   color: accentColor,
-                  letterSpacing: 1,
+                  letterSpacing: 0,
                 },
               }),
             }}
@@ -396,9 +396,9 @@ export const HomePage = () => {
               sx={{
                 fontFamily: F,
                 fontWeight: 600,
-                fontSize: { xs: 24, md: 30 },
+                fontSize: { xs: 22, md: 28 },
                 color: isDark ? C.darkInk : C.ink,
-                letterSpacing: 0.5,
+                letterSpacing: -0.3,
                 flexShrink: 0,
                 transition: 'color 0.3s ease',
               }}
