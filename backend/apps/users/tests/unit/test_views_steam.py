@@ -44,3 +44,31 @@ class SteamLoginInitiateViewTest(APITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
         self.assertIn("manquante", response.data.get("detail", ""))
+
+
+class SteamDisconnectViewTest(APITestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(email="test_steam_disco@example.com", pseudo="steam_disco", password="password123")
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("steam_disconnect")
+
+    def test_disconnect_success(self):
+        from apps.users.models import SteamProfile
+
+        SteamProfile.objects.create(user=self.user, steam_id="12345")
+
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        self.user.refresh_from_db()
+        self.assertFalse(hasattr(self.user, "steam_profile"))
+
+    def test_disconnect_not_found(self):
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["detail"], "Aucun compte Steam n'est lié.")
+
+    def test_disconnect_unauthenticated(self):
+        self.client.logout()
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
