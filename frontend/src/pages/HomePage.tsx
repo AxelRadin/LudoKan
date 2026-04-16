@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
@@ -24,7 +24,6 @@ styleEl.textContent = `
     from { opacity: 0; transform: translateY(28px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-
   .lux-s1 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
   .lux-s2 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
   .lux-s3 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
@@ -49,8 +48,6 @@ const C = {
   accentSoft: '#d43c3c',
   ink: '#241818',
   light: '#b49393',
-
-  // Dark mode
   darkBgBase: '#1a1010',
   darkBgSoft: '#221414',
   darkBgWarm: '#1e1212',
@@ -77,106 +74,219 @@ function SectionLabel({
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
-
   const inkColor = isDark ? C.darkInk : C.ink;
   const accentColor = isDark ? C.darkAccentSoft : C.accentSoft;
 
   return (
-    <Box sx={{ mb: 3, display: 'flex', alignItems: 'flex-end', gap: 3 }}>
-      <Box sx={{ flex: 1, pb: '4px' }}>
-        <Typography
-          sx={{
-            fontFamily: FB,
-            fontSize: 9,
-            fontWeight: 600,
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            color: accentColor,
-            mb: 0.6,
-            transition: 'color 0.3s ease',
-          }}
-        >
-          {label}
-        </Typography>
-        <Typography
-          {...(to ? { component: Link, to, state: linkState } : {})}
-          sx={{
-            fontFamily: FD,
-            fontWeight: 600,
-            fontSize: { xs: 22, md: 28 },
-            color: inkColor,
-            letterSpacing: -0.5,
-            lineHeight: 1.1,
-            textDecoration: 'none',
-            cursor: to ? 'pointer' : 'default',
-            transition: 'color 0.3s ease',
-            '&:link': { color: inkColor },
-            '&:visited': { color: inkColor },
-            '&:hover': {
-              color: accentColor,
-              textDecoration: to ? 'underline' : 'none',
-            },
-            '&:active': { color: inkColor },
-            '&:focus': { color: inkColor, outline: 'none' },
-          }}
-        >
-          {title}
-        </Typography>
-      </Box>
-
+    <Box sx={{ mb: 3, position: 'relative' }}>
+      {/* Barre verticale gauche */}
       <Box
         sx={{
-          width: { xs: 32, md: 64 },
-          height: '1px',
-          background: `linear-gradient(to right, ${accentColor}, transparent)`,
-          opacity: isDark ? 0.45 : 0.28,
-          flexShrink: 0,
-          mb: '12px',
-          transition: 'opacity 0.3s ease',
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '3px',
+          height: '70%',
+          background: `linear-gradient(to bottom, transparent, ${accentColor}, transparent)`,
+          borderRadius: '2px',
+          opacity: 0.7,
         }}
       />
+
+      <Box sx={{ pl: '18px' }}>
+        {/* Label */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+          <Box
+            sx={{
+              width: 18,
+              height: '1px',
+              background: accentColor,
+              opacity: 0.6,
+            }}
+          />
+          <Typography
+            sx={{
+              fontFamily: FB,
+              fontSize: 8.5,
+              fontWeight: 700,
+              letterSpacing: 4,
+              textTransform: 'uppercase',
+              color: accentColor,
+              opacity: 0.85,
+              transition: 'color 0.3s ease',
+            }}
+          >
+            {label}
+          </Typography>
+        </Box>
+
+        {/* Titre */}
+        <Box sx={{ position: 'relative', display: 'inline-block' }}>
+          <Typography
+            {...(to ? { component: Link, to, state: linkState } : {})}
+            sx={{
+              fontFamily: FD,
+              fontWeight: 700,
+              fontSize: { xs: 24, md: 32 },
+              color: inkColor,
+              letterSpacing: -0.8,
+              lineHeight: 1.1,
+              textDecoration: 'none',
+              cursor: to ? 'pointer' : 'default',
+              transition: 'color 0.25s ease, letter-spacing 0.25s ease',
+              display: 'inline-block',
+              '&:link': { color: inkColor },
+              '&:visited': { color: inkColor },
+              '&:active': { color: inkColor },
+              '&:focus': { color: inkColor, outline: 'none' },
+              ...(to && {
+                '&:hover': {
+                  color: accentColor,
+                  letterSpacing: -0.3,
+                },
+              }),
+            }}
+          >
+            {title}
+          </Typography>
+          {to && (
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: -3,
+                left: 0,
+                width: '0%',
+                height: '1.5px',
+                background: `linear-gradient(to right, ${accentColor}, transparent)`,
+                transition:
+                  'width 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease',
+                opacity: 0,
+                borderRadius: '1px',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+        </Box>
+
+        {/* Sous-ligne déco */}
+        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: '1px',
+              background: `linear-gradient(to right, ${accentColor}, transparent)`,
+              opacity: isDark ? 0.5 : 0.35,
+            }}
+          />
+          <Box
+            sx={{
+              width: 4,
+              height: 4,
+              borderRadius: '50%',
+              background: accentColor,
+              opacity: isDark ? 0.5 : 0.35,
+            }}
+          />
+          <Box
+            sx={{
+              width: 20,
+              height: '1px',
+              background: `linear-gradient(to right, ${accentColor}, transparent)`,
+              opacity: isDark ? 0.25 : 0.18,
+            }}
+          />
+        </Box>
+      </Box>
     </Box>
   );
 }
 
-/* ── Section wrapper ── */
+/* ── Section avec fond jaquette ── */
 function Section({
   children,
   className,
+  coverUrl,
 }: {
   children: React.ReactNode;
   className?: string;
+  coverUrl?: string;
 }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <Box
+      ref={sectionRef}
       className={className}
       sx={{
-        background: isDark ? C.darkCard : C.card,
-        backdropFilter: 'blur(22px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(22px) saturate(160%)',
-        border: `1px solid ${isDark ? C.darkBorder : C.border}`,
-        borderRadius: '24px',
-        p: { xs: '24px 20px', md: '30px 34px' },
-        mb: 2.5,
         position: 'relative',
-        transition:
-          'background 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease',
+        borderRadius: '24px',
+        mb: 2.5,
+        overflow: 'hidden',
+        border: `1px solid ${isDark ? C.darkBorder : C.border}`,
         boxShadow: isDark
           ? '0 18px 40px rgba(0,0,0,0.28)'
           : '0 18px 40px rgba(36,24,24,0.04)',
+        transition:
+          'border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease',
         '&:hover': {
-          background: isDark ? C.darkCardHover : C.cardHover,
           borderColor: isDark ? C.darkBorderHover : C.borderHover,
           transform: 'translateY(-2px)',
           boxShadow: isDark
             ? '0 24px 50px rgba(239,83,80,0.10)'
             : '0 24px 50px rgba(198,40,40,0.08)',
         },
-        '&::before': {
-          content: '""',
+      }}
+    >
+      {/* Fond jaquette floutée */}
+      {coverUrl && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${coverUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(28px) saturate(1.6)',
+            transform: 'scale(1.15)',
+            opacity: visible ? (isDark ? 0.35 : 0.25) : 0,
+            transition: 'opacity 1.4s cubic-bezier(0.16,1,0.3,1)',
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Overlay glassmorphism */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          background: isDark
+            ? `linear-gradient(135deg, rgba(198,40,40,0.08) 0%, transparent 60%), rgba(40,20,20,0.55)`
+            : `linear-gradient(135deg, rgba(198,40,40,0.05) 0%, transparent 60%), rgba(255,255,255,0.50)`,
+          backdropFilter: 'blur(8px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(8px) saturate(140%)',
+          zIndex: 1,
+        }}
+      />
+
+      {/* Ligne rouge haut */}
+      <Box
+        sx={{
           position: 'absolute',
           top: 0,
           left: 24,
@@ -184,10 +294,20 @@ function Section({
           height: '1px',
           background: `linear-gradient(to right, ${isDark ? C.darkAccentSoft : C.accentSoft} 0%, transparent 55%)`,
           opacity: isDark ? 0.5 : 0.4,
-        },
-      }}
-    >
-      {children}
+          zIndex: 2,
+        }}
+      />
+
+      {/* Contenu */}
+      <Box
+        sx={{
+          position: 'relative',
+          zIndex: 3,
+          p: { xs: '24px 20px', md: '30px 34px' },
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   );
 }
@@ -246,7 +366,10 @@ export const HomePage = () => {
           pb: { xs: 4, md: 5 },
         }}
       >
-        <Section className="lux-s1">
+        <Section
+          className="lux-s1"
+          coverUrl={sections.recent.games[0]?.cover_url ?? undefined}
+        >
           <SectionLabel
             label="Découverte"
             title="Jeux les plus récents"
@@ -258,7 +381,10 @@ export const HomePage = () => {
           />
         </Section>
 
-        <Section className="lux-s2">
+        <Section
+          className="lux-s2"
+          coverUrl={sections.rating.games[0]?.cover_url ?? undefined}
+        >
           <SectionLabel
             label="Excellence"
             title="Jeux les mieux notés"
@@ -270,7 +396,10 @@ export const HomePage = () => {
           />
         </Section>
 
-        <Section className="lux-s3">
+        <Section
+          className="lux-s3"
+          coverUrl={sections.popularity.games[0]?.cover_url ?? undefined}
+        >
           <SectionLabel
             label="Tendances"
             title="Jeux les plus populaires"
@@ -284,7 +413,10 @@ export const HomePage = () => {
 
         {selectedGenre && (
           <Box ref={genreResultRef}>
-            <Section className="lux-s3">
+            <Section
+              className="lux-s3"
+              coverUrl={genreSection?.games[0]?.cover_url ?? undefined}
+            >
               <SectionLabel
                 label="Genre sélectionné"
                 title={selectedGenre.name}
@@ -323,7 +455,6 @@ export const HomePage = () => {
             >
               Explorer par genre
             </Typography>
-
             <Box
               sx={{
                 flex: 1,
@@ -331,7 +462,6 @@ export const HomePage = () => {
                 background: `linear-gradient(to right, ${isDark ? C.darkBorder : C.border}, transparent)`,
               }}
             />
-
             <Typography
               sx={{
                 fontFamily: FB,
@@ -378,7 +508,6 @@ export const HomePage = () => {
           >
             Ludokan — votre collection, maîtrisée.
           </Typography>
-
           <Typography
             sx={{
               fontFamily: FB,
@@ -397,4 +526,5 @@ export const HomePage = () => {
     </Box>
   );
 };
+
 export default HomePage;
