@@ -40,8 +40,8 @@ const C = {
   bgBase: '#fdf4f4',
   bgSoft: '#f9ecec',
   bgWarm: '#fef6f6',
-  card: 'rgba(255,255,255,0.95)',
-  cardHover: 'rgba(255,255,255,0.98)',
+  card: 'rgba(255,255,255,0.66)',
+  cardHover: 'rgba(255,255,255,0.82)',
   border: 'rgba(198,40,40,0.10)',
   borderHover: 'rgba(198,40,40,0.22)',
   accent: '#c62828',
@@ -51,8 +51,8 @@ const C = {
   darkBgBase: '#1a1010',
   darkBgSoft: '#221414',
   darkBgWarm: '#1e1212',
-  darkCard: 'rgba(50,25,25,0.60)',
-  darkCardHover: 'rgba(60,30,30,0.75)',
+  darkCard: 'rgba(40,20,20,0.72)',
+  darkCardHover: 'rgba(50,25,25,0.85)',
   darkBorder: 'rgba(239,83,80,0.12)',
   darkBorderHover: 'rgba(239,83,80,0.28)',
   darkAccentSoft: '#ef5350',
@@ -248,7 +248,6 @@ function Section({
         },
       }}
     >
-      {/* Fond jaquette floutée */}
       {coverUrl && (
         <Box
           sx={{
@@ -266,17 +265,19 @@ function Section({
         />
       )}
 
-      {/* Overlay */}
       <Box
         sx={{
           position: 'absolute',
           inset: 0,
-          background: isDark ? 'rgba(30,12,12,0.55)' : 'rgba(255,250,250,0.80)',
+          background: isDark
+            ? `linear-gradient(135deg, rgba(198,40,40,0.18) 0%, rgba(120,20,20,0.65) 100%)`
+            : `linear-gradient(135deg, rgba(198,40,40,0.12) 0%, rgba(255,240,240,0.60) 100%)`,
+          backdropFilter: 'blur(8px) saturate(140%)',
+          WebkitBackdropFilter: 'blur(8px) saturate(140%)',
           zIndex: 1,
         }}
       />
 
-      {/* Ligne rouge haut */}
       <Box
         sx={{
           position: 'absolute',
@@ -290,7 +291,6 @@ function Section({
         }}
       />
 
-      {/* Contenu */}
       <Box
         sx={{
           position: 'relative',
