@@ -900,12 +900,12 @@ function ProfileEditDialog({
   );
 }
 
-type ProfileIntegrationsProps = {
+type ProfileIntegrationsProps = Readonly<{
   steam_id?: string | null;
   steamBusy: boolean;
   onSteamConnect: () => void;
   onSteamDisconnect: () => void;
-};
+}>;
 
 function ProfileIntegrations({
   steam_id,
@@ -1048,10 +1048,10 @@ function ProfileIntegrations({
   );
 }
 
-type ProfileFavoriteGamesProps = {
+type ProfileFavoriteGamesProps = Readonly<{
   gamesFavoris: GameListItem[];
   removeGame: (userGameId: number) => void;
-};
+}>;
 
 function ProfileFavoriteGames({
   gamesFavoris,
