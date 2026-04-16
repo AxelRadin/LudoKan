@@ -3,6 +3,7 @@ from django.urls import include, path, re_path
 
 from apps.users.login_views import RecaptchaLoginView
 from apps.users.views import SuspensionAwareUserDetailsView
+from apps.users.views_social import GoogleLoginView
 from apps.users.views_steam import SteamDisconnectView, SteamLoginInitiateView
 
 urlpatterns = [
@@ -21,4 +22,6 @@ urlpatterns = [
     path("steam/disconnect/", SteamDisconnectView.as_view(), name="steam_disconnect"),
     path("", include("dj_rest_auth.urls")),
     path("registration/", include("dj_rest_auth.registration.urls")),
+    # Google Login
+    path("google/", GoogleLoginView.as_view(), name="google_login"),
 ]

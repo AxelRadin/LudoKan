@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
+import { startGoogleLogin } from '../auth/googleOAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
@@ -76,6 +77,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
+  const handleGoogleClick = () => {
+    setError(null);
+    try {
+      startGoogleLogin();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Connexion Google indisponible.'
+      );
+    }
+  };
+
   return (
     <AuthFormContainer
       title="Connexion"
@@ -122,7 +134,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </Typography>
 
         <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" />
+          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
           <SocialLoginButton icon="apple" />
           <SocialLoginButton icon="x" />
           <SocialLoginButton icon="instagram" />
