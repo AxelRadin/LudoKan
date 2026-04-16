@@ -41,7 +41,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
             `,
       }}
     >
-      <Box sx={{ px: 4, py: 4, ml: 25, mr: 25 }}>
+      <Box sx={{ px: 4, py: 4, maxWidth: 1400, mx: 'auto' }}>
         <Box mb={3} display="flex" alignItems="center" gap={2} flexWrap="wrap">
           <Link to={backTo} style={{ textDecoration: 'none' }}>
             <Button variant="outlined" size="small">
