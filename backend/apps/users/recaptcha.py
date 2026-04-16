@@ -14,9 +14,7 @@ def verify_recaptcha(token: str, *, remote_ip: str | None = None) -> bool:
     """
     secret = (getattr(settings, "RECAPTCHA_SECRET_KEY", None) or "").strip()
     if not secret:
-        logger.warning(
-            "reCAPTCHA: abandon — RECAPTCHA_SECRET_KEY vide ou absente (vérifier .env / Docker env_file)."
-        )
+        logger.warning("reCAPTCHA: abandon — RECAPTCHA_SECRET_KEY vide ou absente (vérifier .env / Docker env_file).")
         return False
     if not token or not str(token).strip():
         logger.warning("reCAPTCHA: abandon — jeton absent ou vide après strip.")
@@ -27,8 +25,7 @@ def verify_recaptcha(token: str, *, remote_ip: str | None = None) -> bool:
     secret_configured = bool(secret)
     send_ip = bool(remote_ip) and getattr(settings, "RECAPTCHA_SEND_REMOTEIP", False)
     logger.info(
-        "reCAPTCHA: appel siteverify (secret_configuré=%s, longueur_secret=%s, longueur_jeton=%s, "
-        "envoi_remoteip=%s client_ip_connu=%s)",
+        "reCAPTCHA: appel siteverify (secret_configuré=%s, longueur_secret=%s, longueur_jeton=%s, " "envoi_remoteip=%s client_ip_connu=%s)",
         secret_configured,
         len(secret),
         token_len,

@@ -55,12 +55,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
     try {
       setLoading(true);
-      const data = await apiPost('/api/auth/login/', {
+      await apiPost('/api/auth/login/', {
         email: email,
         password: password,
         recaptcha_token: captchaToken,
       });
-      
+
       setAuthenticated(true);
       if (onLoginSuccess) {
         onLoginSuccess();
@@ -105,7 +105,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             />
           ) : (
             <Alert severity="warning" sx={{ width: '100%' }}>
-              Variable VITE_RECAPTCHA_SITE_KEY manquante : le login ne peut pas fonctionner.
+              Variable VITE_RECAPTCHA_SITE_KEY manquante : le login ne peut pas
+              fonctionner.
             </Alert>
           )}
         </Stack>
