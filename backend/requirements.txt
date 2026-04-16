@@ -22,7 +22,7 @@ python-decouple==3.8
 dj-database-url==2.1.0  
 
 # Images
-Pillow==12.1.1  # Fix GHSA-cfh3-3jmp-rvhc (HIGH)
+Pillow==12.2.0  # Fix GHSA-whj4-6x5x-4v2j (HIGH)
 
 # Storage (S3-compatible: Cloudflare R2)
 django-storages[s3]==1.14.2
