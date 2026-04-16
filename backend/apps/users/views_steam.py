@@ -47,12 +47,12 @@ class SteamLoginInitiateView(APIView):
         realm = f"{parsed.scheme}://{parsed.netloc}"
 
         params = {
-            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.ns": "http://specs.openid.net/auth/2.0",  # noqa # nosec # nosonar
             "openid.mode": "checkid_setup",
             "openid.return_to": return_to,
             "openid.realm": realm,
-            "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
-            "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
+            "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",  # noqa # nosec # nosonar
+            "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",  # noqa # nosec # nosonar
         }
 
         auth_url = f"{steam_openid_url}?{urlencode(params)}"
