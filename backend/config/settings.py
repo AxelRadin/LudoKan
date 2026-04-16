@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.openid",
     "allauth.socialaccount.providers.steam",
+    "allauth.socialaccount.providers.google",
     "corsheaders",
     "django_filters",
     "notifications",
@@ -494,6 +495,22 @@ warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
 STEAM_API_KEY = config("STEAM_API_KEY", default="")
 STEAM_REDIRECT_URL = config("STEAM_REDIRECT_URL", default="")
 
+
+# -------------------------------------------------------------------
+# Google API & Provider Config
+# -------------------------------------------------------------------
+
+GOOGLE_CLIENT_ID = config("GOOGLE_CLIENT_ID", default="")
+GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
+GOOGLE_CALLBACK_URL = config(
+    "GOOGLE_CALLBACK_URL",
+    default="http://localhost:5173/auth/google/callback",
+)
+
+# -------------------------------------------------------------------
+# Social Account Providers
+# -------------------------------------------------------------------
+
 SOCIALACCOUNT_PROVIDERS = {
     "steam": {
         "APP": {
@@ -501,5 +518,20 @@ SOCIALACCOUNT_PROVIDERS = {
             "secret": "",
             "key": "",
         }
-    }
+    },
+    "google": {
+        "VERIFIED_EMAIL": True,
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        },
+        "OAUTH_PKCE_ENABLED": True,
+        "APPS": [
+            {
+                "client_id": GOOGLE_CLIENT_ID,
+                "secret": GOOGLE_CLIENT_SECRET,
+                "key": "",
+            }
+        ],
+    },
 }
