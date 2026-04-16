@@ -2,12 +2,8 @@ from allauth.account.views import ConfirmEmailView
 from django.urls import include, path, re_path
 
 from apps.users.views import SuspensionAwareUserDetailsView
-<<<<<<< feat/KAN-362-google-oauth-auth
 from apps.users.views_social import GoogleLoginView
-from apps.users.views_steam import SteamLoginInitiateView
-=======
 from apps.users.views_steam import SteamDisconnectView, SteamLoginInitiateView
->>>>>>> staging
 
 urlpatterns = [
     re_path(
