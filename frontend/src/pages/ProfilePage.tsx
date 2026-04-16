@@ -22,7 +22,7 @@ import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { deleteUserGame } from '../api/userGames';
-import { apiGet, apiPatch } from '../services/api';
+import { apiGet, apiPatch, apiDelete } from '../services/api';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
 /* ─── Google Fonts injection ─── */
@@ -90,6 +90,7 @@ type UserProfile = {
   banner_url?: string;
   description_courte?: string;
   created_at?: string;
+  steam_id?: string | null;
 };
 
 type UserGame = {
@@ -233,7 +234,40 @@ function useProfilePageModel(): ProfilePageModel {
   const [avatarError, setAvatarError] = useState('');
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
+  const [steamBusy, setSteamBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+
+  const handleSteamConnect = async () => {
+    if (steamBusy) return;
+    setSteamBusy(true);
+    try {
+      const res = await apiGet('/api/auth/steam/login/');
+      if (res.auth_url) {
+        window.location.href = res.auth_url;
+      }
+    } catch (err: any) {
+      alert(
+        'Erreur: ' + (err?.message || 'Impossible de se connecter à Steam')
+      );
+      setSteamBusy(false);
+    }
+  };
+
+  const handleSteamDisconnect = async () => {
+    if (steamBusy) return;
+    setSteamBusy(true);
+    try {
+      await apiDelete('/api/auth/steam/disconnect/');
+      setUser(prev => (prev ? { ...prev, steam_id: null } : null));
+    } catch (err: any) {
+      alert(
+        'Erreur: ' +
+          (err?.message || 'Impossible de déconnecter le compte Steam')
+      );
+    } finally {
+      setSteamBusy(false);
+    }
+  };
 
   useEffect(() => {
     apiGet('/api/me/')
@@ -537,6 +571,9 @@ function useProfilePageModel(): ProfilePageModel {
     handleSave,
     handleBannerChange,
     handleBannerRemoveNow,
+    steamBusy,
+    handleSteamConnect,
+    handleSteamDisconnect,
   };
 }
 
@@ -879,6 +916,9 @@ export default function ProfilePage() {
     handleSave,
     handleBannerChange,
     handleBannerRemoveNow,
+    steamBusy,
+    handleSteamConnect,
+    handleSteamDisconnect,
   } = useProfilePageModel();
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -1504,6 +1544,139 @@ export default function ProfilePage() {
               </Paper>
             ))}
           </Box>
+        </Box>
+
+        {/* ── INTÉGRATIONS ── */}
+        <Box sx={{ mb: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 18,
+                color: C.title,
+                letterSpacing: -0.3,
+              }}
+            >
+              Intégrations
+            </Typography>
+            <Box
+              sx={{
+                flex: 1,
+                height: '1px',
+                background: `linear-gradient(to right, ${C.border}, transparent)`,
+              }}
+            />
+          </Box>
+
+          <Paper
+            elevation={0}
+            sx={{
+              ...glassCard,
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+              p: '22px 28px',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Avatar
+                sx={{
+                  bgcolor: '#171a21',
+                  color: '#fff',
+                  width: 48,
+                  height: 48,
+                  fontWeight: 700,
+                  fontFamily: FONT_DISPLAY,
+                }}
+              >
+                S
+              </Avatar>
+              <Box>
+                <Typography
+                  sx={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16 }}
+                >
+                  Steam
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    color: C.muted,
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Importation de ta ludothèque et de tes temps de jeu
+                </Typography>
+              </Box>
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                gap: 1.5,
+              }}
+            >
+              {user?.steam_id ? (
+                <>
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      color: '#43a047',
+                      fontWeight: 700,
+                      fontSize: 13,
+                    }}
+                  >
+                    Connecté
+                  </Typography>
+                  <Button
+                    onClick={handleSteamDisconnect}
+                    disabled={steamBusy}
+                    variant="outlined"
+                    color="error"
+                    sx={{
+                      borderRadius: 999,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontFamily: FONT_BODY,
+                      minWidth: 130,
+                    }}
+                  >
+                    {steamBusy ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      'Déconnecter'
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleSteamConnect}
+                  disabled={steamBusy}
+                  variant="contained"
+                  sx={{
+                    borderRadius: 999,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontFamily: FONT_BODY,
+                    bgcolor: '#171a21',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#2a475e' },
+                    minWidth: 130,
+                  }}
+                >
+                  {steamBusy ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    'Lier Steam'
+                  )}
+                </Button>
+              )}
+            </Box>
+          </Paper>
         </Box>
 
         {/* ── COUPS DE CŒUR ── */}
