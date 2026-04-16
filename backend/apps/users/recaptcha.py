@@ -25,7 +25,7 @@ def verify_recaptcha(token: str, *, remote_ip: str | None = None) -> bool:
     secret_configured = bool(secret)
     send_ip = bool(remote_ip) and getattr(settings, "RECAPTCHA_SEND_REMOTEIP", False)
     logger.info(
-        "reCAPTCHA: appel siteverify (secret_configuré=%s, longueur_secret=%s, longueur_jeton=%s, " "envoi_remoteip=%s client_ip_connu=%s)",
+        "reCAPTCHA: appel siteverify (secret_configuré=%s, longueur_secret=%s, longueur_jeton=%s, envoi_remoteip=%s client_ip_connu=%s)",
         secret_configured,
         len(secret),
         token_len,
