@@ -216,6 +216,9 @@ type ProfilePageModel = {
   handleSave: () => Promise<void>;
   handleBannerChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
   handleBannerRemoveNow: () => Promise<void>;
+  steamBusy: boolean;
+  handleSteamConnect: () => Promise<void>;
+  handleSteamDisconnect: () => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
