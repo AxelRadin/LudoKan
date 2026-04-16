@@ -1032,10 +1032,12 @@ function useGamePageModel() {
         if (igdbId) {
           const igdbGame = await fetchIgdbGameById(Number(igdbId));
           setGame(igdbGame);
-          const { game_id, normalized_game } =
-            await resolveGameIdIfNeeded(igdbGame);
-          setDjangoId(game_id);
-          setGame(normalized_game);
+          if (igdbGame.django_id) {
+            setDjangoId(igdbGame.django_id);
+            if (igdbGame.user_library) {
+              setUserGame(igdbGame.user_library);
+            }
+          }
         } else {
           const d = await apiGet(`/api/games/${id}/`);
           setGame({ ...d, name: d.name_fr || d.name });
