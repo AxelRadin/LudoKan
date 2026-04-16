@@ -35,6 +35,7 @@ export interface BasePublisher {
 export interface UserLibraryData {
   status: string;
   is_favorite: boolean;
+  playtime_forever?: number | null;
 }
 
 /**
@@ -92,4 +93,5 @@ export interface NormalizedGame {
   average_rating?: number;
   rating_count?: number;
   popularity_score?: number;
+  steam_appid?: number | null;
 }

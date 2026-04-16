@@ -57,3 +57,28 @@ class SteamLoginInitiateView(APIView):
 
         auth_url = f"{steam_openid_url}?{urlencode(params)}"
         return Response({"auth_url": auth_url}, status=status.HTTP_200_OK)
+
+
+class SteamDisconnectView(APIView):
+    """
+    Supprime la liaison entre le compte de l'utilisateur et son profil Steam.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Déconnecter le compte Steam",
+        description="Supprime le SteamProfile associé à l'utilisateur.",
+        responses={
+            204: None,
+            404: {"description": "L'utilisateur n'a pas de compte Steam lié."},
+        },
+    )
+    def delete(self, request, *args, **kwargs):
+        if hasattr(request.user, "steam_profile"):
+            request.user.steam_profile.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "Aucun compte Steam n'est lié."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
