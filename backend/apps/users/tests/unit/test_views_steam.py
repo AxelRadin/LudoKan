@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -14,6 +15,7 @@ class SteamLoginInitiateViewTest(APITestCase):
         self.client.force_authenticate(user=self.user)
         self.url = reverse("steam_login_init")
 
+    @override_settings(STEAM_REDIRECT_URL="https://ludokan.com/auth/steam/callback")
     def test_get_steam_login_url_success(self):
         """
         Verify that hitting the endpoint generates a proper auth_url for Steam OpenID.
