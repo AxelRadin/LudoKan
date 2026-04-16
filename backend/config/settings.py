@@ -65,8 +65,6 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
-    "allauth.socialaccount.providers.openid",
-    "allauth.socialaccount.providers.steam",
     "corsheaders",
     "django_filters",
     "notifications",
@@ -447,13 +445,28 @@ SITE_NAME = config("SITE_NAME", default="Ludokane Local")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "users_console": {
+            "format": "%(levelname)s [%(name)s] %(message)s",
+        },
+    },
     "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "users_console",
+        },
         "system_logs": {
             "class": "apps.core.logging_handlers.SystemLogHandler",
             "level": "INFO",
         },
     },
     "loggers": {
+        "apps.users": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "propagate": False,
+        },
         "system_logs": {
             "level": "INFO",
             "handlers": ["system_logs"],
@@ -489,20 +502,3 @@ if SENTRY_DSN:
 
 # Réduire le bruit : avertissement django-fsm / viewflow (en fin de fichier pour Ruff E402)
 warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
-
-# -------------------------------------------------------------------
-# Steam API & Provider Config
-# -------------------------------------------------------------------
-
-STEAM_API_KEY = config("STEAM_API_KEY", default="")
-STEAM_REDIRECT_URL = config("STEAM_REDIRECT_URL", default="")
-
-SOCIALACCOUNT_PROVIDERS = {
-    "steam": {
-        "APP": {
-            "client_id": STEAM_API_KEY,
-            "secret": "",
-            "key": "",
-        }
-    }
-}
