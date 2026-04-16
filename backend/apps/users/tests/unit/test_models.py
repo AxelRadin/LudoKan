@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.users.models import AdminAction, UserRole, UserSuspension
+from apps.users.models import AdminAction, SteamProfile, UserRole, UserSuspension
 
 User = get_user_model()
 
@@ -199,3 +199,24 @@ class TestAdminActionModel:
         )
 
         assert "user.suspend par" in str(action)
+
+
+@pytest.mark.django_db
+class TestSteamProfileModel:
+    """Tests pour le modèle SteamProfile."""
+
+    def test_steam_profile_str_representation(self, user):
+        profile = SteamProfile.objects.create(
+            user=user,
+            steam_id="1234567890",
+            display_name="TestSteam",
+        )
+        assert str(profile) == f"{user.pseudo} (Steam: TestSteam)"
+
+    def test_steam_profile_str_representation_without_display_name(self, user):
+        profile = SteamProfile.objects.create(
+            user=user,
+            steam_id="1234567890",
+            display_name="",
+        )
+        assert str(profile) == f"{user.pseudo} (Steam: 1234567890)"
