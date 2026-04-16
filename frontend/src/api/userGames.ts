@@ -16,7 +16,13 @@ export type UserGameStatus =
 
 export type UserGame = {
   id: number;
-  game: { id: number };
+  game: {
+    id: number;
+    name: string;
+    cover_url?: string;
+    image?: string;
+    steam_appid?: number | null;
+  };
   game_id?: number;
   /** ID du jeu côté IGDB (si disponible). */
   igdb_game_id?: number | null;
@@ -24,6 +30,7 @@ export type UserGame = {
   is_favorite?: boolean;
   date_added?: string;
   hours_played?: number | null;
+  playtime_forever?: number | null;
   created_at?: string;
   updated_at?: string;
 };
