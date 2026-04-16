@@ -22,5 +22,5 @@ export function startGoogleLogin(): void {
     prompt: 'select_account',
   });
 
-  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+  globalThis.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
