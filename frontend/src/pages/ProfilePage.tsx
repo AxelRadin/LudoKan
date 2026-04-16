@@ -98,12 +98,14 @@ type UserGame = {
   status: string;
   is_favorite: boolean;
   date_added: string;
+  playtime_forever?: number | null;
   game: {
     id: number;
     name: string;
     cover_url?: string;
     image?: string;
     publisher?: { name: string };
+    steam_appid?: number | null;
   };
 };
 
@@ -534,6 +536,8 @@ function useProfilePageModel(): ProfilePageModel {
         image: g.game.image,
         status: g.status,
         userGameId: g.id,
+        steam_appid: g.game.steam_appid,
+        playtime_forever: g.playtime_forever,
       }));
 
   const gamesEnCours = gamesForStatus('EN_COURS');
@@ -548,6 +552,8 @@ function useProfilePageModel(): ProfilePageModel {
       image: g.game.image,
       status: g.status,
       userGameId: g.id,
+      steam_appid: g.game.steam_appid,
+      playtime_forever: g.playtime_forever,
     }));
 
   return {
