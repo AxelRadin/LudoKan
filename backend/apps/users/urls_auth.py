@@ -3,6 +3,7 @@ from django.urls import include, path, re_path
 
 from apps.users.login_views import RecaptchaLoginView
 from apps.users.views import SuspensionAwareUserDetailsView
+from apps.users.views_steam import SteamLoginInitiateView
 
 urlpatterns = [
     re_path(
@@ -16,6 +17,7 @@ urlpatterns = [
     # Login avec reCAPTCHA (remplace la route éponyme de dj_rest_auth)
     path("login/", RecaptchaLoginView.as_view(), name="rest_login"),
     # Auth
+    path("steam/login/", SteamLoginInitiateView.as_view(), name="steam_login_init"),
     path("", include("dj_rest_auth.urls")),
     path("registration/", include("dj_rest_auth.registration.urls")),
 ]
