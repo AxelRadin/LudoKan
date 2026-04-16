@@ -15,7 +15,7 @@ if (!document.head.querySelector('link[href*="Cormorant"]')) {
   document.head.appendChild(fontLink);
 }
 
-/* ─── Keyframes + global link fix ─── */
+/* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
 styleEl.setAttribute('data-home-lux', '1');
 styleEl.textContent = `
@@ -28,17 +28,6 @@ styleEl.textContent = `
   .lux-s2 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
   .lux-s3 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
   .lux-s4 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
-
-  a.section-title-link,
-  a.section-title-link:visited,
-  a.section-title-link:active,
-  a.section-title-link:hover {
-    color: #241818 !important;
-    text-decoration: none;
-  }
-  a.section-title-link:hover {
-    text-decoration: underline;
-  }
 `;
 if (!document.head.querySelector('style[data-home-lux]')) {
   document.head.appendChild(styleEl);
@@ -91,7 +80,6 @@ function SectionLabel({
         </Typography>
         <Typography
           {...(to ? { component: Link, to, state: linkState } : {})}
-          className={to ? 'section-title-link' : undefined}
           sx={{
             fontFamily: FD,
             fontWeight: 600,
@@ -101,6 +89,14 @@ function SectionLabel({
             lineHeight: 1.1,
             textDecoration: 'none',
             cursor: to ? 'pointer' : 'default',
+            '&:link': { color: C.ink },
+            '&:visited': { color: C.ink },
+            '&:hover': {
+              color: C.ink,
+              textDecoration: to ? 'underline' : 'none',
+            },
+            '&:active': { color: C.ink },
+            '&:focus': { color: C.ink, outline: 'none' },
           }}
         >
           {title}
