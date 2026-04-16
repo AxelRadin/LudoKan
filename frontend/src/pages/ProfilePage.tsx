@@ -894,6 +894,245 @@ function ProfileEditDialog({
   );
 }
 
+type ProfileIntegrationsProps = {
+  steam_id?: string | null;
+  steamBusy: boolean;
+  onSteamConnect: () => void;
+  onSteamDisconnect: () => void;
+};
+
+function ProfileIntegrations({
+  steam_id,
+  steamBusy,
+  onSteamConnect,
+  onSteamDisconnect,
+}: ProfileIntegrationsProps) {
+  return (
+    <Box sx={{ mb: 2.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+        <Typography
+          sx={{
+            fontFamily: FONT_DISPLAY,
+            fontWeight: 700,
+            fontSize: 18,
+            color: C.title,
+            letterSpacing: -0.3,
+          }}
+        >
+          Intégrations
+        </Typography>
+        <Box
+          sx={{
+            flex: 1,
+            height: '1px',
+            background: `linear-gradient(to right, ${C.border}, transparent)`,
+          }}
+        />
+      </Box>
+
+      <Paper
+        elevation={0}
+        sx={{
+          ...glassCard,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+          p: '22px 28px',
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar
+            sx={{
+              bgcolor: '#171a21',
+              color: '#fff',
+              width: 48,
+              height: 48,
+              fontWeight: 700,
+              fontFamily: FONT_DISPLAY,
+            }}
+          >
+            S
+          </Avatar>
+          <Box>
+            <Typography
+              sx={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16 }}
+            >
+              Steam
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                color: C.muted,
+                fontSize: 13,
+                lineHeight: 1.4,
+              }}
+            >
+              Importation de ta ludothèque et de tes temps de jeu
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            gap: 1.5,
+          }}
+        >
+          {steam_id ? (
+            <>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  color: '#43a047',
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                Connecté
+              </Typography>
+              <Button
+                onClick={onSteamDisconnect}
+                disabled={steamBusy}
+                variant="outlined"
+                color="error"
+                sx={{
+                  borderRadius: 999,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontFamily: FONT_BODY,
+                  minWidth: 130,
+                }}
+              >
+                {steamBusy ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  'Déconnecter'
+                )}
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={onSteamConnect}
+              disabled={steamBusy}
+              variant="contained"
+              sx={{
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontFamily: FONT_BODY,
+                bgcolor: '#171a21',
+                color: '#fff',
+                '&:hover': { bgcolor: '#2a475e' },
+                minWidth: 130,
+              }}
+            >
+              {steamBusy ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                'Lier Steam'
+              )}
+            </Button>
+          )}
+        </Box>
+      </Paper>
+    </Box>
+  );
+}
+
+type ProfileFavoriteGamesProps = {
+  gamesFavoris: GameListItem[];
+  removeGame: (userGameId: number) => void;
+};
+
+function ProfileFavoriteGames({
+  gamesFavoris,
+  removeGame,
+}: ProfileFavoriteGamesProps) {
+  if (gamesFavoris.length === 0) return null;
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        ...glassCard,
+        '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+        p: { xs: 2.5, md: 4 },
+        mb: 2.5,
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          mb: 3,
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              color: C.accent,
+              mb: 0.5,
+            }}
+          >
+            Sélection
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_DISPLAY,
+              fontWeight: 700,
+              fontSize: 20,
+              color: C.title,
+              letterSpacing: -0.3,
+            }}
+          >
+            Coups de cœur ({gamesFavoris.length})
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            px: 1.5,
+            py: 0.5,
+            borderRadius: 999,
+            background: 'rgba(211,47,47,0.1)',
+            border: '1px solid rgba(211,47,47,0.25)',
+          }}
+        >
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              color: C.accent,
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {gamesFavoris.length} jeu{jeuPluralSuffix(gamesFavoris.length)}
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          height: '1px',
+          background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
+          mb: 3,
+        }}
+      />
+
+      <GameList games={gamesFavoris} showStatus={false} onRemove={removeGame} />
+    </Paper>
+  );
+}
+
 export default function ProfilePage() {
   const {
     user,
@@ -1552,223 +1791,18 @@ export default function ProfilePage() {
         </Box>
 
         {/* ── INTÉGRATIONS ── */}
-        <Box sx={{ mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              Intégrations
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${C.border}, transparent)`,
-              }}
-            />
-          </Box>
-
-          <Paper
-            elevation={0}
-            sx={{
-              ...glassCard,
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'stretch', sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 2,
-              p: '22px 28px',
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar
-                sx={{
-                  bgcolor: '#171a21',
-                  color: '#fff',
-                  width: 48,
-                  height: 48,
-                  fontWeight: 700,
-                  fontFamily: FONT_DISPLAY,
-                }}
-              >
-                S
-              </Avatar>
-              <Box>
-                <Typography
-                  sx={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16 }}
-                >
-                  Steam
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    color: C.muted,
-                    fontSize: 13,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  Importation de ta ludothèque et de tes temps de jeu
-                </Typography>
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-                gap: 1.5,
-              }}
-            >
-              {user?.steam_id ? (
-                <>
-                  <Typography
-                    sx={{
-                      fontFamily: FONT_BODY,
-                      color: '#43a047',
-                      fontWeight: 700,
-                      fontSize: 13,
-                    }}
-                  >
-                    Connecté
-                  </Typography>
-                  <Button
-                    onClick={handleSteamDisconnect}
-                    disabled={steamBusy}
-                    variant="outlined"
-                    color="error"
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontFamily: FONT_BODY,
-                      minWidth: 130,
-                    }}
-                  >
-                    {steamBusy ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      'Déconnecter'
-                    )}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={handleSteamConnect}
-                  disabled={steamBusy}
-                  variant="contained"
-                  sx={{
-                    borderRadius: 999,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontFamily: FONT_BODY,
-                    bgcolor: '#171a21',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#2a475e' },
-                    minWidth: 130,
-                  }}
-                >
-                  {steamBusy ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : (
-                    'Lier Steam'
-                  )}
-                </Button>
-              )}
-            </Box>
-          </Paper>
-        </Box>
+        <ProfileIntegrations
+          steam_id={user?.steam_id}
+          steamBusy={steamBusy}
+          onSteamConnect={handleSteamConnect}
+          onSteamDisconnect={handleSteamDisconnect}
+        />
 
         {/* ── COUPS DE CŒUR ── */}
-        {gamesFavoris.length > 0 && (
-          <Paper
-            elevation={0}
-            sx={{
-              ...glassCard,
-              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-              p: { xs: 2.5, md: 4 },
-              mb: 2.5,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 3,
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <Box>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: 2,
-                    textTransform: 'uppercase',
-                    color: C.accent,
-                    mb: 0.5,
-                  }}
-                >
-                  Sélection
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_DISPLAY,
-                    fontWeight: 700,
-                    fontSize: 20,
-                    color: C.title,
-                    letterSpacing: -0.3,
-                  }}
-                >
-                  Coups de cœur ({gamesFavoris.length})
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 999,
-                  background: 'rgba(211,47,47,0.1)',
-                  border: '1px solid rgba(211,47,47,0.25)',
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    color: C.accent,
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}
-                >
-                  {gamesFavoris.length} jeu
-                  {jeuPluralSuffix(gamesFavoris.length)}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box
-              sx={{
-                height: '1px',
-                background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
-                mb: 3,
-              }}
-            />
-
-            <GameList
-              games={gamesFavoris}
-              showStatus={false}
-              onRemove={removeGame}
-            />
-          </Paper>
-        )}
+        <ProfileFavoriteGames
+          gamesFavoris={gamesFavoris}
+          removeGame={removeGame}
+        />
 
         {/* ── LIBRARY ── */}
         <Paper
