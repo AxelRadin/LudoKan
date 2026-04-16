@@ -4,7 +4,6 @@ import { Card, IconButton, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import GameCard from './GameCard';
 
 import type { NormalizedGame } from '../types/game';
@@ -12,19 +11,11 @@ import type { NormalizedGame } from '../types/game';
 export interface TrendingGamesProps {
   games: NormalizedGame[];
   loading?: boolean;
-  title?: string;
-  /** Si défini, le titre devient un lien vers cette URL (liste complète de la catégorie). */
-  to?: string;
-  /** State optionnel passé au navigateur (ex. nom du genre pour la page catégorie). */
-  linkState?: object;
 }
 
 export const TrendingGames: React.FC<TrendingGamesProps> = ({
   games,
   loading = false,
-  title = 'Jeux tendances',
-  to,
-  linkState,
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
@@ -128,31 +119,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   });
 
   return (
-    <Box px={4} py={4} position="relative">
-      {to ? (
-        <Typography
-          component={Link}
-          to={to}
-          state={linkState}
-          variant="h6"
-          fontWeight="bold"
-          mb={2}
-          sx={{
-            display: 'inline-block',
-            color: 'inherit',
-            textDecoration: 'none',
-            cursor: 'pointer',
-            '&:hover': { textDecoration: 'underline' },
-          }}
-        >
-          {title}
-        </Typography>
-      ) : (
-        <Typography variant="h6" fontWeight="bold" mb={2}>
-          {title}
-        </Typography>
-      )}
-
+    <Box position="relative">
       <Box display="flex" alignItems="center" position="relative">
         {canScrollLeft && (
           <IconButton
