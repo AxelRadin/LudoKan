@@ -7,15 +7,6 @@ import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
 
-/* ─── Fonts ─── */
-const fontLink = document.createElement('link');
-fontLink.rel = 'stylesheet';
-fontLink.href =
-  'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,600;0,700;1,300;1,600;1,700&family=DM+Sans:wght@300;400;500;600&display=swap';
-if (!document.head.querySelector('link[href*="Cormorant"]')) {
-  document.head.appendChild(fontLink);
-}
-
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
 styleEl.setAttribute('data-home-lux', '1');
@@ -33,8 +24,7 @@ if (!document.head.querySelector('style[data-home-lux]')) {
   document.head.appendChild(styleEl);
 }
 
-const FD = "'Cormorant Garamond', Georgia, serif";
-const FB = "'DM Sans', system-ui, sans-serif";
+const F = "'Rajdhani', sans-serif";
 
 const C = {
   bgBase: '#fdf4f4',
@@ -105,8 +95,8 @@ function SectionLabel({
           />
           <Typography
             sx={{
-              fontFamily: FB,
-              fontSize: 8.5,
+              fontFamily: F,
+              fontSize: 11,
               fontWeight: 700,
               letterSpacing: 4,
               textTransform: 'uppercase',
@@ -123,11 +113,11 @@ function SectionLabel({
           <Typography
             {...(to ? { component: Link, to, state: linkState } : {})}
             sx={{
-              fontFamily: FD,
+              fontFamily: F,
               fontWeight: 700,
-              fontSize: { xs: 24, md: 32 },
+              fontSize: { xs: 26, md: 34 },
               color: inkColor,
-              letterSpacing: -0.8,
+              letterSpacing: 0.5,
               lineHeight: 1.1,
               textDecoration: 'none',
               cursor: to ? 'pointer' : 'default',
@@ -140,7 +130,7 @@ function SectionLabel({
               ...(to && {
                 '&:hover': {
                   color: accentColor,
-                  letterSpacing: -0.3,
+                  letterSpacing: 1,
                 },
               }),
             }}
@@ -270,8 +260,8 @@ function Section({
           position: 'absolute',
           inset: 0,
           background: isDark
-            ? `linear-gradient(135deg, rgba(198,40,40,0.18) 0%, rgba(120,20,20,0.65) 100%)`
-            : `linear-gradient(135deg, rgba(198,40,40,0.12) 0%, rgba(255,240,240,0.60) 100%)`,
+            ? `linear-gradient(135deg, rgba(198,40,40,0.35) 0%, rgba(120,20,20,0.75) 100%)`
+            : `linear-gradient(135deg, rgba(198,40,40,0.18) 0%, rgba(255,220,220,0.75) 100%)`,
           backdropFilter: 'blur(8px) saturate(140%)',
           WebkitBackdropFilter: 'blur(8px) saturate(140%)',
           zIndex: 1,
@@ -319,7 +309,7 @@ export const HomePage = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        fontFamily: FB,
+        fontFamily: F,
         background: isDark
           ? `
               url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
@@ -404,12 +394,11 @@ export const HomePage = () => {
           >
             <Typography
               sx={{
-                fontFamily: FD,
-                fontStyle: 'italic',
+                fontFamily: F,
                 fontWeight: 600,
                 fontSize: { xs: 24, md: 30 },
                 color: isDark ? C.darkInk : C.ink,
-                letterSpacing: -0.5,
+                letterSpacing: 0.5,
                 flexShrink: 0,
                 transition: 'color 0.3s ease',
               }}
@@ -425,8 +414,8 @@ export const HomePage = () => {
             />
             <Typography
               sx={{
-                fontFamily: FB,
-                fontSize: 9,
+                fontFamily: F,
+                fontSize: 11,
                 fontWeight: 600,
                 letterSpacing: 2.5,
                 textTransform: 'uppercase',
@@ -458,8 +447,7 @@ export const HomePage = () => {
         >
           <Typography
             sx={{
-              fontFamily: FD,
-              fontStyle: 'italic',
+              fontFamily: F,
               fontWeight: 300,
               fontSize: 13,
               color: isDark ? C.darkLight : C.light,
@@ -471,8 +459,8 @@ export const HomePage = () => {
           </Typography>
           <Typography
             sx={{
-              fontFamily: FB,
-              fontSize: 9,
+              fontFamily: F,
+              fontSize: 11,
               fontWeight: 500,
               letterSpacing: 2,
               textTransform: 'uppercase',
