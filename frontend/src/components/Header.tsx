@@ -1,7 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import LanguageIcon from '@mui/icons-material/Language';
 
-import { Button, Dialog, Typography } from '@mui/material';
+import { Button, Dialog } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -76,20 +76,18 @@ export const Header: React.FC = () => {
           sx={{ justifyContent: 'space-between', py: 1, px: 4, minHeight: 64 }}
         >
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Typography
-              variant="h5"
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Ludokan"
               sx={{
-                fontWeight: 800,
-                letterSpacing: '-0.5px',
-                background: 'linear-gradient(135deg, #FF3D3D 0%, #FF8C42 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                userSelect: 'none',
+                height: 44,
+                width: 44,
+                objectFit: 'contain',
+                borderRadius: '50%',
+                display: 'block',
               }}
-            >
-              LudoKan
-            </Typography>
+            />
           </Link>
 
           <SearchBar />
