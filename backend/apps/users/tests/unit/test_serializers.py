@@ -241,3 +241,14 @@ class TestUserSerializer:
             serializer.validate_pseudo(another_user.pseudo)
 
         assert UserErrors.PSEUDO_ALREADY_EXISTS in str(exc.value)
+
+    def test_get_steam_id_with_profile(self, user):
+        from apps.users.models import SteamProfile
+
+        SteamProfile.objects.create(user=user, steam_id="123456789")
+        serializer = UserSerializer(instance=user)
+        assert serializer.data["steam_id"] == "123456789"
+
+    def test_get_steam_id_without_profile(self, user):
+        serializer = UserSerializer(instance=user)
+        assert serializer.data.get("steam_id") is None
