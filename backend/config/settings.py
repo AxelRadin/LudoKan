@@ -39,6 +39,9 @@ ALLOWED_HOSTS = config(
     default="localhost,127.0.0.1,testserver",
 ).split(",")
 
+RECAPTCHA_SECRET_KEY = config("RECAPTCHA_SECRET_KEY", default="")
+RECAPTCHA_SEND_REMOTEIP = config("RECAPTCHA_SEND_REMOTEIP", default=False, cast=bool)
+
 
 # -------------------------------------------------------------------
 # Applications
@@ -444,13 +447,28 @@ SITE_NAME = config("SITE_NAME", default="Ludokane Local")
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "users_console": {
+            "format": "%(levelname)s [%(name)s] %(message)s",
+        },
+    },
     "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "users_console",
+        },
         "system_logs": {
             "class": "apps.core.logging_handlers.SystemLogHandler",
             "level": "INFO",
         },
     },
     "loggers": {
+        "apps.users": {
+            "level": "INFO",
+            "handlers": ["console"],
+            "propagate": False,
+        },
         "system_logs": {
             "level": "INFO",
             "handlers": ["system_logs"],

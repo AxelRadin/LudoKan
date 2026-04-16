@@ -46,6 +46,9 @@ drf-spectacular==0.27.2  # docs OpenAPI/Swagger
 gunicorn==23.0.0
 
 
+# HTTP client (reCAPTCHA siteverify)
+requests>=2.31.0,<3
+
 # Logging
 sentry-sdk[django]==2.20.0
 

@@ -14,7 +14,7 @@ from django.utils import timezone
 from rest_framework import status
 
 from apps.users.models import UserSuspension
-from apps.users.tests.constants import TEST_USER_CREDENTIAL
+from apps.users.tests.constants import RECAPTCHA_POST_FIELD, TEST_USER_CREDENTIAL
 
 User = get_user_model()
 
@@ -108,7 +108,7 @@ class TestAdminReportsUsersView:
         login_url = "/api/auth/login/"
         login_response = api_client.post(
             login_url,
-            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL},
+            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
             format="json",
         )
         assert login_response.status_code == status.HTTP_200_OK

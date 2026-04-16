@@ -12,7 +12,7 @@ from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Publisher, Rating
 from apps.reviews.models import Review
 from apps.users.models import AdminAction
-from apps.users.tests.constants import TEST_USER_CREDENTIAL
+from apps.users.tests.constants import RECAPTCHA_POST_FIELD, TEST_USER_CREDENTIAL
 
 User = get_user_model()
 
@@ -214,7 +214,7 @@ class TestAdminStatsView:
         login_url = "/api/auth/login/"
         login_response = api_client.post(
             login_url,
-            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL},
+            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
             format="json",
         )
 
