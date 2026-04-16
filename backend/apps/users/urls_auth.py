@@ -2,6 +2,7 @@ from allauth.account.views import ConfirmEmailView
 from django.urls import include, path, re_path
 
 from apps.users.views import SuspensionAwareUserDetailsView
+from apps.users.views_social import GoogleLoginView
 from apps.users.views_steam import SteamLoginInitiateView
 
 urlpatterns = [
@@ -17,4 +18,6 @@ urlpatterns = [
     path("steam/login/", SteamLoginInitiateView.as_view(), name="steam_login_init"),
     path("", include("dj_rest_auth.urls")),
     path("registration/", include("dj_rest_auth.registration.urls")),
+    # Google Login
+    path("google/", GoogleLoginView.as_view(), name="google_login"),
 ]
