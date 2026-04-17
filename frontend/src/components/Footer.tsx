@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
   const theme = useTheme();
@@ -25,6 +25,11 @@ const Footer = () => {
 
   const handleHome = () => {
     navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleAbout = () => {
+    navigate('/about');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -127,20 +132,20 @@ const Footer = () => {
             Recherche
           </Typography>
 
-          <Link to="/about" style={{ textDecoration: 'none' }}>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 500,
-                color: muted,
-                letterSpacing: 0.2,
-                transition: 'color 0.2s ease',
-                '&:hover': { color: accent },
-              }}
-            >
-              À propos
-            </Typography>
-          </Link>
+          <Typography
+            onClick={handleAbout}
+            sx={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: muted,
+              letterSpacing: 0.2,
+              cursor: 'pointer',
+              transition: 'color 0.2s ease',
+              '&:hover': { color: accent },
+            }}
+          >
+            À propos
+          </Typography>
         </Box>
 
         {/* Droite — copyright */}
