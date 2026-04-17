@@ -11,12 +11,16 @@ describe('useMatchmakingTimer', () => {
     expect(result.current).toBe('0:00');
   });
 
-  it('formate correctement le temps après 65 secondes', () => {
-    const { result } = renderHook(() => useMatchmakingTimer(new Date()));
+  it('formate correctement le temps après 65 secondes', async () => {
+    const startedAt = new Date();
+    vi.setSystemTime(startedAt);
 
-    act(() => {
+    const { result } = renderHook(() => useMatchmakingTimer(startedAt));
+
+    await act(async () => {
       vi.advanceTimersByTime(65000);
     });
+
     expect(result.current).toBe('1:05');
   });
 });
