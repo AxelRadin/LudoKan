@@ -1,7 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import LanguageIcon from '@mui/icons-material/Language';
 
-import { Button, Dialog } from '@mui/material';
+import { Button, Dialog, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -68,26 +68,38 @@ export const Header: React.FC = () => {
         position="fixed"
         color="inherit"
         elevation={2}
-        sx={{
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        }}
+        sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
       >
         <Toolbar
           sx={{ justifyContent: 'space-between', py: 1, px: 4, minHeight: 64 }}
         >
           <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Box
-              component="img"
-              src="/logo.png"
-              alt="Ludokan"
-              sx={{
-                height: 44,
-                width: 44,
-                objectFit: 'contain',
-                borderRadius: '50%',
-                display: 'block',
-              }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Ludokan"
+                sx={{
+                  height: 44,
+                  width: 44,
+                  objectFit: 'contain',
+                  borderRadius: '50%',
+                  display: 'block',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: 20,
+                  letterSpacing: '-0.5px',
+                  color: 'inherit',
+                  userSelect: 'none',
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                Ludokan
+              </Typography>
+            </Box>
           </Link>
 
           <SearchBar />
