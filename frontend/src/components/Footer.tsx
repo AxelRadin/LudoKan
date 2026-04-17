@@ -74,10 +74,7 @@ const Footer = () => {
               sx={{
                 fontWeight: 800,
                 fontSize: 18,
-                background: 'linear-gradient(135deg, #FF3D3D 0%, #FF8C42 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
+                color: isDark ? '#f5e6e6' : '#241818',
                 fontFamily: "'Outfit', sans-serif",
                 mb: 0.2,
                 lineHeight: 1,
