@@ -467,10 +467,10 @@ export default function GamePage() {
     fontSize: 13,
     textTransform: 'none' as const,
     fontFamily: F,
-    background: `linear-gradient(135deg, ${accent} 0%, #ef5350 100%)`,
+    background: `linear-gradient(135deg,${accent} 0%,#ef5350 100%)`,
     boxShadow: `0 4px 16px rgba(211,47,47,0.36)`,
     '&:hover': {
-      background: `linear-gradient(135deg, ${accentDark} 0%, ${accent} 100%)`,
+      background: `linear-gradient(135deg,${accentDark} 0%,${accent} 100%)`,
       transform: 'translateY(-2px)',
       boxShadow: `0 8px 22px rgba(211,47,47,0.42)`,
     },
@@ -554,6 +554,7 @@ export default function GamePage() {
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
               }}
             />
+
             <Tooltip title="Coup de cœur" arrow>
               <Box
                 onClick={() => handleToggleFavorite()}
