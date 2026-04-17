@@ -48,7 +48,6 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
 
-/* ── Keyframes ── */
 (() => {
   const s = document.createElement('style');
   s.textContent = `
@@ -1031,20 +1030,6 @@ export default function GamePage() {
 
         {/* ── AVIS ── */}
         <Box sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}>
-          <SectionLabel label="Opinions" />
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontWeight: 700,
-              fontSize: 18,
-              color: ink,
-              letterSpacing: -0.3,
-              mb: 0.5,
-            }}
-          >
-            Avis de la communauté
-          </Typography>
-          <Sep />
           <ReviewSection
             gameId={djangoId ? String(djangoId) : ''}
             resolveGameId={ensureDjangoId}
