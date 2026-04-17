@@ -55,24 +55,40 @@ const Footer = () => {
           gap: 3,
         }}
       >
-        {/* Gauche — Logo + tagline */}
-        <Box>
-          <Typography
+        {/* Gauche — Logo + nom + tagline */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+          <Box
+            component="img"
+            src="/logo.png"
+            alt="Ludokan"
             sx={{
-              fontWeight: 800,
-              fontSize: 18,
-              background: 'linear-gradient(135deg, #FF3D3D 0%, #FF8C42 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              mb: 0.4,
+              height: 36,
+              width: 36,
+              objectFit: 'contain',
+              borderRadius: '50%',
+              display: 'block',
             }}
-          >
-            Ludokan
-          </Typography>
-          <Typography sx={{ fontSize: 12, color: muted, letterSpacing: 0.3 }}>
-            Votre collection, maîtrisée.
-          </Typography>
+          />
+          <Box>
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: 18,
+                background: 'linear-gradient(135deg, #FF3D3D 0%, #FF8C42 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+                fontFamily: "'Outfit', sans-serif",
+                mb: 0.2,
+                lineHeight: 1,
+              }}
+            >
+              Ludokan
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: muted, letterSpacing: 0.3 }}>
+              Votre collection, maîtrisée.
+            </Typography>
+          </Box>
         </Box>
 
         {/* Centre — Liens */}
