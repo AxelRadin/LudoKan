@@ -408,32 +408,6 @@ export default function AboutPage() {
           >
             Rejoindre Ludokan
           </Button>
-
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontSize: 11,
-              color: muted,
-              mt: 2,
-              letterSpacing: 0.3,
-            }}
-          >
-            Données fournies par{' '}
-            <Box
-              component="a"
-              href="https://www.igdb.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                color: accent,
-                textDecoration: 'none',
-                fontWeight: 600,
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              IGDB
-            </Box>
-          </Typography>
         </Box>
       </Box>
     </Box>
