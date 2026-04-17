@@ -3,11 +3,13 @@ import { describe, it, expect, vi } from 'vitest';
 import ReviewSection from '../components/reviews/ReviewSection';
 import { useReviews } from '../hooks/useReviews';
 
-vi.mock('../../hooks/useReviews', () => ({ useReviews: vi.fn() }));
-vi.mock('./ReviewForm', () => ({
+vi.mock('../hooks/useReviews', () => ({ useReviews: vi.fn() }));
+vi.mock('../components/reviews/ReviewForm', () => ({
   default: () => <div data-testid="mock-review-form" />,
 }));
-vi.mock('./ReviewsList', () => ({ default: () => <div /> }));
+vi.mock('../components/reviews/ReviewsList', () => ({
+  default: () => <div />,
+}));
 
 describe('ReviewSection', () => {
   it("affiche le formulaire si l'utilisateur n'a pas d'avis", () => {
