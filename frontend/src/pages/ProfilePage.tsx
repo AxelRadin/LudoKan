@@ -925,9 +925,7 @@ export default function ProfilePage() {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
-          >
-            Ludokan
-          </Typography>
+          ></Typography>
         </Box>
 
         {/* ── HERO SECTION ── */}
