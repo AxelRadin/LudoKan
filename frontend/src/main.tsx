@@ -19,6 +19,7 @@ import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 import { muiTheme } from './muiTheme';
+import AboutPage from './pages/AboutPage.tsx';
 
 const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsPage /> },
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
+      { path: 'about', element: <AboutPage /> },
     ],
   },
 ]);
