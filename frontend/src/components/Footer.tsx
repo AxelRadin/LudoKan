@@ -15,11 +15,17 @@ const Footer = () => {
   const handleSearch = () => {
     navigate('/');
     setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       const searchBar = document.querySelector(
         'input[type="text"], input[placeholder*="echerch"]'
       ) as HTMLInputElement;
       if (searchBar) searchBar.focus();
     }, 100);
+  };
+
+  const handleHome = () => {
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -79,14 +85,13 @@ const Footer = () => {
           }}
         >
           <Typography
-            component={Link}
-            to="/"
+            onClick={handleHome}
             sx={{
               fontSize: 13,
               fontWeight: 500,
               color: muted,
-              textDecoration: 'none',
               letterSpacing: 0.2,
+              cursor: 'pointer',
               transition: 'color 0.2s ease',
               '&:hover': { color: accent },
             }}
@@ -100,7 +105,6 @@ const Footer = () => {
               fontSize: 13,
               fontWeight: 500,
               color: muted,
-              textDecoration: 'none',
               letterSpacing: 0.2,
               cursor: 'pointer',
               transition: 'color 0.2s ease',
@@ -110,21 +114,20 @@ const Footer = () => {
             Recherche
           </Typography>
 
-          <Typography
-            component={Link}
-            to="/about"
-            sx={{
-              fontSize: 13,
-              fontWeight: 500,
-              color: muted,
-              textDecoration: 'none',
-              letterSpacing: 0.2,
-              transition: 'color 0.2s ease',
-              '&:hover': { color: accent },
-            }}
-          >
-            À propos
-          </Typography>
+          <Link to="/about" style={{ textDecoration: 'none' }}>
+            <Typography
+              sx={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: muted,
+                letterSpacing: 0.2,
+                transition: 'color 0.2s ease',
+                '&:hover': { color: accent },
+              }}
+            >
+              À propos
+            </Typography>
+          </Link>
         </Box>
 
         {/* Droite — copyright */}
