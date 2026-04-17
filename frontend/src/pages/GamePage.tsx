@@ -27,6 +27,7 @@ import { useMatchmaking } from '../contexts/MatchmakingContext';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame, UserLibraryData } from '../types/game';
+import { useTheme } from '@mui/material/styles';
 
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import BoltIcon from '@mui/icons-material/Bolt';
@@ -47,15 +48,6 @@ import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import SportsSoccerIcon from '@mui/icons-material/SportsSoccer';
 import StairsIcon from '@mui/icons-material/Stairs';
 
-/* ── Fonts ── */
-(() => {
-  const l = document.createElement('link');
-  l.rel = 'stylesheet';
-  l.href =
-    'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap';
-  document.head.appendChild(l);
-})();
-
 /* ── Keyframes ── */
 (() => {
   const s = document.createElement('style');
@@ -74,48 +66,7 @@ import StairsIcon from '@mui/icons-material/Stairs';
   document.head.appendChild(s);
 })();
 
-/* ── Tokens ── */
-const C = {
-  pageBg: '#ffd3d3',
-  accent: '#d32f2f',
-  accentDark: '#b71c1c',
-  accentSoft: 'rgba(211,47,47,0.08)',
-  accentGlow: 'rgba(211,47,47,0.18)',
-  title: '#0f0f0f',
-  text: '#2b2b2b',
-  muted: '#6e6e73',
-  light: '#b0b0b8',
-  w88: 'rgba(255,255,255,0.88)',
-  w95: 'rgba(255,255,255,0.95)',
-  divider: 'rgba(0,0,0,0.05)',
-};
-const FD = "'Playfair Display', Georgia, serif";
-const FB = "'DM Sans', system-ui, sans-serif";
-
-/* ── Glass card ── */
-const card = (ov: Record<string, unknown> = {}) => ({
-  background: C.w88,
-  backdropFilter: 'blur(28px) saturate(170%)',
-  WebkitBackdropFilter: 'blur(28px) saturate(170%)',
-  border: `1px solid ${C.w95}`,
-  borderRadius: '22px',
-  boxShadow:
-    '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92)',
-  transition:
-    'transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease',
-  '&:hover': {
-    transform: 'translateY(-3px)',
-    boxShadow: '0 10px 32px rgba(0,0,0,0.09)',
-  },
-  ...ov,
-});
-const noHov = {
-  '&:hover': {
-    transform: 'none',
-    boxShadow:
-      '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92)',
-  },
-};
+const F = "'Outfit', sans-serif";
 
 /* ── Genre icons ── */
 const GMAP: Record<string, React.ReactElement> = {
@@ -161,6 +112,8 @@ const fdate = (d: string | null) =>
 
 /* ── Pill tag ── */
 function Pill({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   return (
     <Box
       sx={{
@@ -169,19 +122,19 @@ function Pill({ children }: { children: React.ReactNode }) {
         px: 1.25,
         py: 0.35,
         borderRadius: 999,
-        background: C.accentSoft,
-        border: `1px solid ${C.accentGlow}`,
+        background: isDark ? 'rgba(239,83,80,0.18)' : 'rgba(198,40,40,0.08)',
+        border: `1px solid ${isDark ? 'rgba(239,83,80,0.35)' : 'rgba(198,40,40,0.18)'}`,
         mb: 0.75,
       }}
     >
       <Typography
         sx={{
-          fontFamily: FB,
+          fontFamily: F,
           fontSize: 9.5,
           fontWeight: 700,
           letterSpacing: 1.8,
           textTransform: 'uppercase',
-          color: C.accent,
+          color: isDark ? '#ef5350' : '#d43c3c',
           lineHeight: 1,
         }}
       >
@@ -193,12 +146,16 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 /* ── Thin separator ── */
 function Sep() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   return (
     <Box
       sx={{
         height: '1px',
         my: 2.5,
-        background: `linear-gradient(to right,${C.accentGlow},rgba(241,199,199,0.2),transparent)`,
+        background: isDark
+          ? 'linear-gradient(to right, rgba(239,83,80,0.3), rgba(239,83,80,0.1), transparent)'
+          : 'linear-gradient(to right, rgba(198,40,40,0.18), rgba(198,40,40,0.06), transparent)',
         borderRadius: 99,
       }}
     />
@@ -232,7 +189,7 @@ function StatusChip({
         cursor: 'pointer',
         background: active ? `${color}15` : 'rgba(0,0,0,0.035)',
         border: `1px solid ${active ? `${color}38` : 'transparent'}`,
-        color: active ? color : C.muted,
+        color: active ? color : '#b49393',
         transition: 'all 0.15s ease',
         '&:hover': {
           background: `${color}12`,
@@ -246,7 +203,7 @@ function StatusChip({
       } as any)}
       <Typography
         sx={{
-          fontFamily: FB,
+          fontFamily: F,
           fontSize: 12,
           fontWeight: active ? 700 : 500,
           color: 'inherit',
@@ -259,7 +216,7 @@ function StatusChip({
   );
 }
 
-/* ── Info row (label + valeur, sans icône) ── */
+/* ── Info row ── */
 function InfoRow({
   label,
   children,
@@ -268,16 +225,18 @@ function InfoRow({
   label: string;
   children: React.ReactNode;
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   return (
     <Box>
       <Typography
         sx={{
-          fontFamily: FB,
+          fontFamily: F,
           fontSize: 9.5,
           fontWeight: 700,
           letterSpacing: 1.5,
           textTransform: 'uppercase',
-          color: C.light,
+          color: isDark ? '#9e7070' : '#b49393',
           lineHeight: 1,
           mb: 0.4,
         }}
@@ -293,6 +252,46 @@ export default function GamePage() {
   const { id, igdbId } = useParams();
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
   const { startMatchmaking, isMatching } = useMatchmaking();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  const accent = isDark ? '#ef5350' : '#d43c3c';
+  const accentDark = isDark ? '#c62828' : '#b71c1c';
+  const accentSoft = isDark ? 'rgba(239,83,80,0.12)' : 'rgba(198,40,40,0.08)';
+  const accentGlow = isDark ? 'rgba(239,83,80,0.25)' : 'rgba(198,40,40,0.18)';
+  const ink = isDark ? '#f5e6e6' : '#241818';
+  const muted = isDark ? '#9e7070' : '#b49393';
+  const cardBg = isDark ? 'rgba(40,20,20,0.72)' : 'rgba(255,255,255,0.88)';
+  const cardBorder = isDark ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.95)';
+
+  const card = (ov: Record<string, unknown> = {}) => ({
+    background: cardBg,
+    backdropFilter: 'blur(28px) saturate(170%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(170%)',
+    border: `1px solid ${cardBorder}`,
+    borderRadius: '22px',
+    boxShadow: isDark
+      ? '0 2px 16px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)'
+      : '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92)',
+    transition:
+      'transform 0.22s cubic-bezier(0.22,1,0.36,1), box-shadow 0.22s ease',
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: isDark
+        ? '0 10px 32px rgba(239,83,80,0.12)'
+        : '0 10px 32px rgba(0,0,0,0.09)',
+    },
+    ...ov,
+  });
+
+  const noHov = {
+    '&:hover': {
+      transform: 'none',
+      boxShadow: isDark
+        ? '0 2px 16px rgba(0,0,0,0.28)'
+        : '0 2px 16px rgba(0,0,0,0.055)',
+    },
+  };
 
   const [game, setGame] = useState<NormalizedGame | null>(null);
   const [gameNotFound, setGameNotFound] = useState(false);
@@ -441,11 +440,11 @@ export default function GamePage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: C.pageBg,
+          background: isDark ? '#1a1010' : '#fdf4f4',
         }}
       >
         <Typography
-          sx={{ fontFamily: FD, fontWeight: 700, fontSize: 22, color: C.title }}
+          sx={{ fontFamily: F, fontWeight: 700, fontSize: 22, color: ink }}
         >
           {gameNotFound ? 'Jeu introuvable.' : 'Chargement…'}
         </Typography>
@@ -467,11 +466,11 @@ export default function GamePage() {
     fontWeight: 700,
     fontSize: 13,
     textTransform: 'none' as const,
-    fontFamily: FB,
-    background: `linear-gradient(135deg,${C.accent} 0%,#ef5350 100%)`,
+    fontFamily: F,
+    background: `linear-gradient(135deg, ${accent} 0%, #ef5350 100%)`,
     boxShadow: `0 4px 16px rgba(211,47,47,0.36)`,
     '&:hover': {
-      background: `linear-gradient(135deg,${C.accentDark} 0%,${C.accent} 100%)`,
+      background: `linear-gradient(135deg, ${accentDark} 0%, ${accent} 100%)`,
       transform: 'translateY(-2px)',
       boxShadow: `0 8px 22px rgba(211,47,47,0.42)`,
     },
@@ -482,22 +481,28 @@ export default function GamePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        fontFamily: FB,
-        background: `
-        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
-        radial-gradient(ellipse 140% 90% at 8% -10%,rgba(255,185,185,0.75) 0%,transparent 52%),
-        radial-gradient(ellipse 80% 60% at 95% 105%,rgba(211,47,47,0.08) 0%,transparent 48%),
-        radial-gradient(ellipse 55% 45% at 55% 65%,rgba(255,215,215,0.38) 0%,transparent 58%),
-        ${C.pageBg}
-      `,
+        fontFamily: F,
+        background: isDark
+          ? `
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 28%),
+              radial-gradient(circle at 86% 16%, rgba(120,20,20,0.18) 0%, transparent 28%),
+              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.07) 0%, transparent 24%),
+              linear-gradient(180deg, #1a1010 0%, #221414 55%, #1e1212 100%)
+            `
+          : `
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
+              radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
+              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 24%),
+              radial-gradient(circle at 86% 16%, rgba(255,210,210,0.80) 0%, transparent 26%),
+              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.08) 0%, transparent 24%),
+              linear-gradient(180deg, #fdf4f4 0%, #f9ecec 55%, #fef6f6 100%)
+            `,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
     >
       <Box sx={{ maxWidth: 1140, mx: 'auto' }}>
-        {/* ══════════════════════════════════════════════════════
-            HERO : image portrait gauche | colonne droite
-        ══════════════════════════════════════════════════════ */}
         <Box
           sx={{
             display: 'grid',
@@ -507,7 +512,7 @@ export default function GamePage() {
             alignItems: 'stretch',
           }}
         >
-          {/* ── IMAGE PORTRAIT pleine hauteur ── */}
+          {/* ── IMAGE PORTRAIT ── */}
           <Box
             className="gp-img"
             sx={{
@@ -532,8 +537,6 @@ export default function GamePage() {
                 objectPosition: 'center top',
               }}
             />
-
-            {/* Scrim bas */}
             <Box
               sx={{
                 position: 'absolute',
@@ -542,8 +545,6 @@ export default function GamePage() {
                   'linear-gradient(180deg,rgba(0,0,0,0) 38%,rgba(0,0,0,0.78) 100%)',
               }}
             />
-
-            {/* Grain */}
             <Box
               sx={{
                 position: 'absolute',
@@ -553,8 +554,6 @@ export default function GamePage() {
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E")`,
               }}
             />
-
-            {/* Favori */}
             <Tooltip title="Coup de cœur" arrow>
               <Box
                 onClick={() => handleToggleFavorite()}
@@ -581,7 +580,7 @@ export default function GamePage() {
                 }}
               >
                 {userGame?.is_favorite ? (
-                  <FavoriteIcon sx={{ color: '#ff3d3d', fontSize: 17 }} />
+                  <FavoriteIcon sx={{ color: accent, fontSize: 17 }} />
                 ) : (
                   <FavoriteBorderIcon
                     sx={{ color: 'rgba(255,255,255,0.9)', fontSize: 17 }}
@@ -590,7 +589,6 @@ export default function GamePage() {
               </Box>
             </Tooltip>
 
-            {/* Titre + meta bas */}
             <Box
               sx={{
                 position: 'absolute',
@@ -616,7 +614,7 @@ export default function GamePage() {
                 >
                   <Typography
                     sx={{
-                      fontFamily: FB,
+                      fontFamily: F,
                       fontSize: 10,
                       fontWeight: 600,
                       letterSpacing: 1.5,
@@ -630,12 +628,12 @@ export default function GamePage() {
               )}
               <Typography
                 sx={{
-                  fontFamily: FD,
-                  fontWeight: 900,
+                  fontFamily: F,
+                  fontWeight: 800,
                   fontSize: { xs: 24, md: 28 },
                   color: '#fff',
                   lineHeight: 1.05,
-                  letterSpacing: -0.8,
+                  letterSpacing: -0.5,
                   textShadow: '0 2px 18px rgba(0,0,0,0.6)',
                   mb: 0.6,
                 }}
@@ -653,7 +651,7 @@ export default function GamePage() {
                 {game.publisher?.name && (
                   <Typography
                     sx={{
-                      fontFamily: FB,
+                      fontFamily: F,
                       fontSize: 12,
                       color: 'rgba(255,255,255,0.72)',
                       fontWeight: 500,
@@ -674,7 +672,7 @@ export default function GamePage() {
                     />
                     <Typography
                       sx={{
-                        fontFamily: FB,
+                        fontFamily: F,
                         fontSize: 12,
                         color: 'rgba(255,255,255,0.55)',
                       }}
@@ -687,11 +685,9 @@ export default function GamePage() {
             </Box>
           </Box>
 
-          {/* ══ COLONNE DROITE ══ */}
+          {/* ── COLONNE DROITE ── */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* ── Ligne 1 : Boutons + Statut côte à côte ── */}
             <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2 }}>
-              {/* Boutons */}
               <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
                 <SecondaryButton
                   onClick={() => handleSetMatchmaking()}
@@ -707,11 +703,12 @@ export default function GamePage() {
                   + Ajouter à la collection
                 </Button>
               </Box>
-              {/* Statut inline */}
               <Box
                 sx={{
                   height: '1px',
-                  background: C.divider,
+                  background: isDark
+                    ? 'rgba(239,83,80,0.12)'
+                    : 'rgba(0,0,0,0.05)',
                   borderRadius: 99,
                   mb: 1.75,
                 }}
@@ -731,7 +728,7 @@ export default function GamePage() {
                     icon={<PlayCircleIcon />}
                     label="En cours"
                     active={userGame?.status === 'EN_COURS'}
-                    color={C.accent}
+                    color={accent}
                     onClick={() => handleSetStatus('EN_COURS')}
                   />
                   <StatusChip
@@ -756,11 +753,11 @@ export default function GamePage() {
                           ? 'rgba(255,61,61,0.12)'
                           : 'rgba(0,0,0,0.035)',
                         border: `1px solid ${userGame?.is_favorite ? 'rgba(255,61,61,0.35)' : 'transparent'}`,
-                        color: userGame?.is_favorite ? '#ff3d3d' : C.muted,
+                        color: userGame?.is_favorite ? accent : muted,
                         transition: 'all 0.15s ease',
                         '&:hover': {
                           background: 'rgba(255,61,61,0.1)',
-                          color: '#ff3d3d',
+                          color: accent,
                         },
                       }}
                     >
@@ -773,7 +770,7 @@ export default function GamePage() {
                       )}
                       <Typography
                         sx={{
-                          fontFamily: FB,
+                          fontFamily: F,
                           fontSize: 12,
                           fontWeight: userGame?.is_favorite ? 700 : 500,
                           color: 'inherit',
@@ -787,14 +784,12 @@ export default function GamePage() {
               </InfoRow>
             </Box>
 
-            {/* ── Card Plateformes ── */}
             <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2 }}>
               <InfoRow label="Plateformes">
                 <PlatformLogos platforms={game.platforms ?? []} />
               </InfoRow>
             </Box>
 
-            {/* ── Card Genres ── */}
             <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 2 }}>
               <InfoRow label="Genres">
                 <Box
@@ -808,20 +803,20 @@ export default function GamePage() {
                         size="small"
                         icon={GMAP[g.name]}
                         sx={{
-                          fontFamily: FB,
+                          fontFamily: F,
                           fontWeight: 600,
                           fontSize: 11,
-                          backgroundColor: C.accentSoft,
-                          border: `1px solid ${C.accentGlow}`,
-                          color: C.accent,
+                          backgroundColor: accentSoft,
+                          border: `1px solid ${accentGlow}`,
+                          color: accent,
                           borderRadius: '9px',
-                          '& .MuiChip-icon': { color: C.accent },
+                          '& .MuiChip-icon': { color: accent },
                         }}
                       />
                     ))
                   ) : (
                     <Typography
-                      sx={{ fontFamily: FB, fontSize: 13, color: C.muted }}
+                      sx={{ fontFamily: F, fontSize: 13, color: muted }}
                     >
                       Non renseigné
                     </Typography>
@@ -830,18 +825,17 @@ export default function GamePage() {
               </InfoRow>
             </Box>
 
-            {/* ── Card Description ── */}
             <Box className="gp-c3" sx={{ ...card(), px: 2.5, py: 2, flex: 1 }}>
               <Box
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}
               >
-                <DescriptionIcon sx={{ color: C.accent, fontSize: 16 }} />
+                <DescriptionIcon sx={{ color: accent, fontSize: 16 }} />
                 <Typography
                   sx={{
-                    fontFamily: FD,
+                    fontFamily: F,
                     fontWeight: 700,
                     fontSize: 16,
-                    color: C.title,
+                    color: ink,
                     letterSpacing: -0.3,
                   }}
                 >
@@ -850,10 +844,10 @@ export default function GamePage() {
               </Box>
               <Typography
                 sx={{
-                  fontFamily: FB,
+                  fontFamily: F,
                   fontSize: 13.5,
                   lineHeight: 1.8,
-                  color: translating ? C.muted : C.text,
+                  color: translating ? muted : ink,
                 }}
               >
                 {dispText}
@@ -866,9 +860,9 @@ export default function GamePage() {
                     mt: 1,
                     p: 0,
                     textTransform: 'none',
-                    fontFamily: FB,
+                    fontFamily: F,
                     fontWeight: 600,
-                    color: C.accent,
+                    color: accent,
                     fontSize: 12,
                   }}
                 >
@@ -879,16 +873,16 @@ export default function GamePage() {
           </Box>
         </Box>
 
-        {/* ── DATE / ÉDITEUR (pleine largeur) ── */}
+        {/* ── DATE / ÉDITEUR ── */}
         <Box className="gp-c4" sx={{ ...card(), px: 2.5, py: 2, mb: 2.5 }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
             <InfoRow label="Sortie">
               <Typography
                 sx={{
-                  fontFamily: FD,
+                  fontFamily: F,
                   fontWeight: 700,
                   fontSize: 15,
-                  color: C.title,
+                  color: ink,
                   letterSpacing: -0.2,
                 }}
               >
@@ -898,10 +892,10 @@ export default function GamePage() {
             <InfoRow label="Éditeur">
               <Typography
                 sx={{
-                  fontFamily: FD,
+                  fontFamily: F,
                   fontWeight: 700,
                   fontSize: 15,
-                  color: C.title,
+                  color: ink,
                   letterSpacing: -0.2,
                 }}
               >
@@ -911,7 +905,7 @@ export default function GamePage() {
           </Box>
         </Box>
 
-        {/* ── NOTE COMMUNAUTÉ (pleine largeur) ── */}
+        {/* ── NOTE ── */}
         <Box className="gp-c4" sx={{ ...card(), p: '22px 30px', mb: 2.5 }}>
           <InfoRow label="Note communauté">
             <Rating
@@ -921,7 +915,7 @@ export default function GamePage() {
               sx={{
                 fontSize: 22,
                 mt: 0.4,
-                '& .MuiRating-iconFilled': { color: C.accent },
+                '& .MuiRating-iconFilled': { color: accent },
               }}
             />
           </InfoRow>
@@ -937,10 +931,10 @@ export default function GamePage() {
             <Pill>Galerie</Pill>
             <Typography
               sx={{
-                fontFamily: FD,
+                fontFamily: F,
                 fontWeight: 700,
                 fontSize: 18,
-                color: C.title,
+                color: ink,
                 letterSpacing: -0.3,
               }}
             >
@@ -989,7 +983,7 @@ export default function GamePage() {
                   '&::-webkit-scrollbar': { height: 4 },
                   '&::-webkit-scrollbar-thumb': {
                     borderRadius: 99,
-                    bgcolor: 'rgba(211,47,47,0.2)',
+                    bgcolor: accentGlow,
                   },
                 }}
               >
@@ -1056,10 +1050,10 @@ export default function GamePage() {
           <Pill>Opinions</Pill>
           <Typography
             sx={{
-              fontFamily: FD,
+              fontFamily: F,
               fontWeight: 700,
               fontSize: 18,
-              color: C.title,
+              color: ink,
               letterSpacing: -0.3,
             }}
           >
