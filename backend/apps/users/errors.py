@@ -15,4 +15,5 @@ class UserErrors:
     AVATAR_INVALID_FORMAT = "Format non supporté. Formats acceptés : jpg, jpeg, png, webp."
 
     # Sécurité
+    RECAPTCHA_TOKEN_MISSING = "Jeton reCAPTCHA manquant."
     RECAPTCHA_INVALID = "Validation reCAPTCHA échouée."

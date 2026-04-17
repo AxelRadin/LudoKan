@@ -17,12 +17,17 @@ import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
+import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: (
+      <MatchmakingProvider>
+        <App />
+      </MatchmakingProvider>
+    ),
     children: [
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
@@ -35,6 +40,7 @@ const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsPage /> },
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
+      { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
     ],
   },
 ]);
@@ -50,11 +56,9 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <AuthProvider>
-        <MatchmakingProvider>
-          <Sentry.ErrorBoundary fallback={errorFallback}>
-            <RouterProvider router={router} />
-          </Sentry.ErrorBoundary>
-        </MatchmakingProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>

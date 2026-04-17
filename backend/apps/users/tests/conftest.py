@@ -2,6 +2,8 @@
 Fixtures pytest pour les tests de l'app users
 """
 
+from unittest.mock import patch
+
 import pytest
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
@@ -10,9 +12,16 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.users.models import CustomUser, UserRole
 
-from .constants import TEST_USER_CREDENTIAL
+from .constants import RECAPTCHA_POST_FIELD, TEST_USER_CREDENTIAL
 
 User = get_user_model()
+
+
+@pytest.fixture(autouse=True)
+def _mock_recaptcha_verify():
+    """Évite les appels Google et le besoin d'une vraie RECAPTCHA_SECRET_KEY en tests."""
+    with patch("apps.users.recaptcha.verify_recaptcha", return_value=True):
+        yield
 
 
 @pytest.fixture
@@ -108,7 +117,7 @@ def auth_client_with_tokens(api_client, user):
     login_url = "/api/auth/login/"
     response = api_client.post(
         login_url,
-        {"email": user.email, "password": TEST_USER_CREDENTIAL},
+        {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
         format="json",
     )
 
@@ -132,7 +141,7 @@ def auth_admin_client_with_tokens(api_client, admin_user):
     login_url = "/api/auth/login/"
     response = api_client.post(
         login_url,
-        {"email": admin_user.email, "password": TEST_USER_CREDENTIAL},
+        {"email": admin_user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
         format="json",
     )
 

@@ -166,7 +166,43 @@ class TestUserSerializer:
         assert not serializer.is_valid()
         # On vérifie au minimum que le champ avatar est en erreur
         assert "avatar" in serializer.errors
-        assert serializer.errors["avatar"]
+
+    def test_banner_too_large_validation_error(self, user):
+        large_file = self._make_image_file("banner.png", size_bytes=6 * 1024 * 1024)  # 6 Mo
+        serializer = UserSerializer(instance=user)
+        from rest_framework.exceptions import ValidationError
+
+        with pytest.raises(ValidationError) as exc:
+            serializer.validate_banner(large_file)
+        assert "La bannière ne doit pas dépasser 5 Mo." in str(exc.value)
+
+    def test_banner_invalid_extension_validation_error(self, user):
+        invalid_file = self._make_image_file("banner.bmp", size_bytes=1000)
+        serializer = UserSerializer(instance=user)
+        from rest_framework.exceptions import ValidationError
+
+        with pytest.raises(ValidationError) as exc:
+            serializer.validate_banner(invalid_file)
+        assert "Format de bannière invalide" in str(exc.value)
+
+    def test_get_banner_url_with_request(self, user, rf):
+        banner_file = self._make_image_file("banner.png", size_bytes=100)
+        user.banner = banner_file
+        user.save()
+
+        request = rf.get("/")
+        serializer = UserSerializer(instance=user, context={"request": request})
+        assert serializer.data["banner_url"] == request.build_absolute_uri(user.banner.url)
+
+    def test_update_removes_old_banner(self, user):
+        old_banner = self._make_image_file("old_banner.png", size_bytes=100)
+        user.banner = old_banner
+        user.save()
+
+        serializer = UserSerializer(instance=user, data={"banner": None}, partial=True)
+        assert serializer.is_valid()
+        updated_user = serializer.save()
+        assert not updated_user.banner
 
     def test_validate_pseudo_conflict_raises_error(self, user, another_user, rf):
         """Un pseudo déjà utilisé par un autre user doit lever une erreur."""
@@ -205,3 +241,14 @@ class TestUserSerializer:
             serializer.validate_pseudo(another_user.pseudo)
 
         assert UserErrors.PSEUDO_ALREADY_EXISTS in str(exc.value)
+
+    def test_get_steam_id_with_profile(self, user):
+        from apps.users.models import SteamProfile
+
+        SteamProfile.objects.create(user=user, steam_id="123456789")
+        serializer = UserSerializer(instance=user)
+        assert serializer.data["steam_id"] == "123456789"
+
+    def test_get_steam_id_without_profile(self, user):
+        serializer = UserSerializer(instance=user)
+        assert serializer.data.get("steam_id") is None

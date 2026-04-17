@@ -8,7 +8,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ConfirmModal from './ConfirmModal';
+import { FaSteam } from 'react-icons/fa';
 
 export type GameListItem = {
   id: number;
@@ -17,6 +20,8 @@ export type GameListItem = {
   image?: string;
   status?: string;
   userGameId?: number;
+  steam_appid?: number | null;
+  playtime_forever?: number | null;
 };
 
 export type GameListProps = {
@@ -69,6 +74,7 @@ export default function GameList({
   showStatus = true,
   onRemove,
 }: GameListProps) {
+  const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
   const titleParts = title ? parseTrailingCountTitle(title) : null;
 
   return (
@@ -161,6 +167,34 @@ export default function GameList({
                       </Typography>
                     )}
                   </CardContent>
+
+                  {/* Badge Steam */}
+                  {game.steam_appid &&
+                    game.playtime_forever != null &&
+                    game.playtime_forever > 0 && (
+                      <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
+                        <Box
+                          sx={{
+                            bgcolor: 'rgba(23,26,33,0.85)',
+                            color: '#fff',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <FaSteam size={14} />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                          >
+                            {game.playtime_forever}h
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
                 </Card>
               </Link>
               {onRemove && game.userGameId != null && (
@@ -169,14 +203,14 @@ export default function GameList({
                     size="small"
                     onClick={e => {
                       e.preventDefault();
-                      onRemove(game.userGameId!);
+                      setPendingRemoveId(game.userGameId!);
                     }}
                     aria-label="Retirer le jeu"
                     sx={{
                       position: 'absolute',
-                      bottom: 30,
-                      right: 2,
-                      color: 'text.disabled',
+                      top: 4,
+                      right: 4,
+                      color: 'text.secondary',
                       bgcolor: 'rgba(255,255,255,0.85)',
                       '&:hover': {
                         color: 'error.main',
@@ -192,6 +226,20 @@ export default function GameList({
           ))
         )}
       </Box>
+
+      {onRemove && (
+        <ConfirmModal
+          open={pendingRemoveId !== null}
+          title="Confirmer la suppression"
+          message="Voulez-vous vraiment retirer ce jeu de votre ludothèque ?"
+          confirmLabel="Retirer"
+          onConfirm={() => {
+            if (pendingRemoveId !== null) onRemove(pendingRemoveId);
+            setPendingRemoveId(null);
+          }}
+          onCancel={() => setPendingRemoveId(null)}
+        />
+      )}
     </Box>
   );
 }

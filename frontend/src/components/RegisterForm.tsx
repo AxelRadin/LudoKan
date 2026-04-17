@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
+import { startGoogleLogin } from '../auth/googleOAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
@@ -52,10 +53,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     }
   };
 
-  const handleSocialRegister = (provider: 'google' | 'facebook' | 'apple') => {
-    // Redirection identique à la connexion pour déclencher le flux OAuth
-    console.log(`Tentative d'inscription avec ${provider}`);
-    window.location.href = `/api/auth/${provider}/login/`;
+  const handleGoogleClick = () => {
+    setError(null);
+    try {
+      startGoogleLogin();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Connexion Google indisponible.'
+      );
+    }
   };
 
   return (
@@ -104,19 +110,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           S’inscrire avec
         </Typography>
 
-        <Stack direction="row" spacing={3} mt={1.5} justifyContent="center">
-          <SocialLoginButton
-            icon="google"
-            onClick={() => handleSocialRegister('google')}
-          />
-          <SocialLoginButton
-            icon="facebook"
-            onClick={() => handleSocialRegister('facebook')}
-          />
-          <SocialLoginButton
-            icon="apple"
-            onClick={() => handleSocialRegister('apple')}
-          />
+        <Stack direction="row" spacing={3} mt={1.5}>
+          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
+          <SocialLoginButton icon="apple" />
+          <SocialLoginButton icon="x" />
+          <SocialLoginButton icon="instagram" />
         </Stack>
 
         <PrimaryButton
