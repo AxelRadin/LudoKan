@@ -28,8 +28,7 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText(/mot de passe/i), {
       target: { value: 'pass' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /se connecter/i }));
-
+    fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
     await waitFor(() => {
       expect(apiPost).toHaveBeenCalledWith('/api/auth/login/', {
         email: 'a@a.com',
