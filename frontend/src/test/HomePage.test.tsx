@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { describe, expect, it, vi } from 'vitest';
 import { useHomeTrending } from '../hooks/useHomeTrending';
 import { HomePage } from '../pages/HomePage';
 
@@ -27,6 +27,6 @@ describe('HomePage', () => {
     );
 
     expect(screen.getByTestId('banner-mock')).toBeInTheDocument();
-    expect(screen.getByText('Jeux les plus récents')).toBeInTheDocument();
+    expect(screen.getByText('Jeux les plus récents ➜')).toBeInTheDocument();
   });
 });
