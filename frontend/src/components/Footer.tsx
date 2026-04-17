@@ -1,15 +1,26 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Footer = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const navigate = useNavigate();
 
   const muted = isDark ? '#9e7070' : '#b49393';
   const border = isDark ? 'rgba(239,83,80,0.12)' : 'rgba(198,40,40,0.10)';
   const accent = isDark ? '#ef5350' : '#d43c3c';
+
+  const handleSearch = () => {
+    navigate('/');
+    setTimeout(() => {
+      const searchBar = document.querySelector(
+        'input[type="text"], input[placeholder*="echerch"]'
+      ) as HTMLInputElement;
+      if (searchBar) searchBar.focus();
+    }, 100);
+  };
 
   return (
     <Box
@@ -20,7 +31,6 @@ const Footer = () => {
         background: isDark ? 'rgba(26,16,16,0.95)' : 'rgba(253,244,244,0.95)',
       }}
     >
-      {/* Ligne rouge haut */}
       <Box
         sx={{
           height: '2px',
@@ -68,50 +78,57 @@ const Footer = () => {
             justifyContent: 'center',
           }}
         >
-          {[
-            { label: 'Accueil', to: '/' },
-            { label: 'Recherche', to: '/search' },
-            { label: 'Profil', to: '/profile' },
-            { label: 'À propos', to: '/about' },
-          ].map(({ label, to }) => (
-            <Typography
-              key={label}
-              component={Link}
-              to={to}
-              sx={{
-                fontSize: 13,
-                fontWeight: 500,
-                color: muted,
-                textDecoration: 'none',
-                letterSpacing: 0.2,
-                transition: 'color 0.2s ease',
-                '&:hover': { color: accent },
-              }}
-            >
-              {label}
-            </Typography>
-          ))}
+          <Typography
+            component={Link}
+            to="/"
+            sx={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: muted,
+              textDecoration: 'none',
+              letterSpacing: 0.2,
+              transition: 'color 0.2s ease',
+              '&:hover': { color: accent },
+            }}
+          >
+            Accueil
+          </Typography>
+
+          <Typography
+            onClick={handleSearch}
+            sx={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: muted,
+              textDecoration: 'none',
+              letterSpacing: 0.2,
+              cursor: 'pointer',
+              transition: 'color 0.2s ease',
+              '&:hover': { color: accent },
+            }}
+          >
+            Recherche
+          </Typography>
+
+          <Typography
+            component={Link}
+            to="/about"
+            sx={{
+              fontSize: 13,
+              fontWeight: 500,
+              color: muted,
+              textDecoration: 'none',
+              letterSpacing: 0.2,
+              transition: 'color 0.2s ease',
+              '&:hover': { color: accent },
+            }}
+          >
+            À propos
+          </Typography>
         </Box>
 
-        {/* Droite — IGDB + copyright */}
+        {/* Droite — copyright */}
         <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
-          <Typography sx={{ fontSize: 11, color: muted, mb: 0.4 }}>
-            Données fournies par{' '}
-            <Box
-              component="a"
-              href="https://www.igdb.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              sx={{
-                color: accent,
-                textDecoration: 'none',
-                fontWeight: 600,
-                '&:hover': { textDecoration: 'underline' },
-              }}
-            >
-              IGDB
-            </Box>
-          </Typography>
           <Typography
             sx={{
               fontSize: 11,
