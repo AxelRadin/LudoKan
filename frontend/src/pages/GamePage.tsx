@@ -109,7 +109,6 @@ const hi = (u: string | null) =>
 const fdate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('fr-FR') : '';
 
-/* ── Section label avec barre verticale ── */
 function SectionLabel({ label }: { label: string }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -152,7 +151,6 @@ function SectionLabel({ label }: { label: string }) {
   );
 }
 
-/* ── Thin separator ── */
 function Sep() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -170,7 +168,6 @@ function Sep() {
   );
 }
 
-/* ── Status chip ── */
 function StatusChip({
   icon,
   label,
@@ -682,7 +679,6 @@ export default function GamePage() {
 
           {/* ── COLONNE DROITE ── */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Actions + Statut */}
             <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
               <SectionLabel label="Actions" />
               <Box
@@ -772,13 +768,11 @@ export default function GamePage() {
               </Box>
             </Box>
 
-            {/* Plateformes */}
             <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2.5 }}>
               <SectionLabel label="Plateformes" />
               <PlatformLogos platforms={game.platforms ?? []} />
             </Box>
 
-            {/* Genres */}
             <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 2.5 }}>
               <SectionLabel label="Genres" />
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.7 }}>
@@ -813,7 +807,6 @@ export default function GamePage() {
               </Box>
             </Box>
 
-            {/* Description */}
             <Box
               className="gp-c3"
               sx={{ ...card(), px: 2.5, py: 2.5, flex: 1 }}
@@ -940,8 +933,7 @@ export default function GamePage() {
                   sx={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: 760,
-                    mx: 'auto',
+                    maxWidth: '100%',
                     aspectRatio: '16/9',
                     borderRadius: '16px',
                     overflow: 'hidden',
