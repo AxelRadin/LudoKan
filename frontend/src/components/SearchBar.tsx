@@ -186,43 +186,32 @@ const GameSearchBar: React.FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    const collapsedQuery = debouncedQuery.replace(/(.)\1+/g, '$1');
-    const searchQueries =
-      collapsedQuery !== debouncedQuery
-        ? [debouncedQuery, collapsedQuery]
-        : [debouncedQuery];
+    const localReq = apiGet(
+      `/api/games/?search=${encodeURIComponent(debouncedQuery)}`
+    )
+      .then(res => {
+        const rawResults = Array.isArray(res)
+          ? res
+          : ((res as { results?: unknown[] })?.results ?? []);
+        return rawResults.map((g: any) =>
+          mapLocalToSearchGame(g)
+        ) as SearchSourcedGame[];
+      })
+      .catch(() => [] as SearchSourcedGame[]);
 
-    const fetchForQuery = (q: string) => {
-      const localReq = apiGet(`/api/games/?search=${encodeURIComponent(q)}`)
-        .then(res => {
-          const rawResults = Array.isArray(res)
-            ? res
-            : ((res as { results?: unknown[] })?.results ?? []);
-          return rawResults.map((g: any) =>
-            mapLocalToSearchGame(g)
-          ) as SearchSourcedGame[];
-        })
-        .catch(() => [] as SearchSourcedGame[]);
+    const igdbReq = searchIgdbGames(
+      debouncedQuery,
+      DROPDOWN_IGDB_MAX,
+      false,
+      controller.signal
+    )
+      .then(games => games.map(mapIgdbToSearchGame))
+      .catch(() => [] as SearchSourcedGame[]);
 
-      const igdbReq = searchIgdbGames(
-        q,
-        DROPDOWN_IGDB_MAX,
-        false,
-        controller.signal
-      )
-        .then(games => games.map(mapIgdbToSearchGame))
-        .catch(() => [] as SearchSourcedGame[]);
-
-      return Promise.all([localReq, igdbReq]).then(([local, igdb]) => [
-        ...local.slice(0, DROPDOWN_LOCAL_MAX),
-        ...igdb,
-      ]);
-    };
-
-    Promise.all(searchQueries.map(fetchForQuery))
-      .then(results => {
+    Promise.all([localReq, igdbReq])
+      .then(([local, igdb]) => {
         if (cancelled) return;
-        const incoming = results.flat();
+        const incoming = [...local.slice(0, DROPDOWN_LOCAL_MAX), ...igdb];
         // Merge into pool, deduplicating by igdb_id to avoid visual duplicates
         setGamePool(prev => {
           const seen = new Set(prev.map(g => g.igdb_id));

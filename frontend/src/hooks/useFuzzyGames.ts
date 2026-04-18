@@ -16,27 +16,6 @@ function normalize(s: string): string {
     .toLowerCase();
 }
 
-/** "zzelda" → "zelda", "hellllo" → "helo". Preserves single chars. */
-function collapseRepeats(s: string): string {
-  return s.replace(/(.)\1+/g, '$1');
-}
-
-function bigrams(s: string): Set<string> {
-  const result = new Set<string>();
-  for (let i = 0; i < s.length - 1; i++) result.add(s.slice(i, i + 2));
-  return result;
-}
-
-/** Sørensen–Dice coefficient on character bigrams. Range [0, 1]. */
-function bigramSimilarity(a: string, b: string): number {
-  if (a.length < 2 || b.length < 2) return a === b ? 1 : 0;
-  const ba = bigrams(a);
-  const bb = bigrams(b);
-  let shared = 0;
-  for (const bg of ba) if (bb.has(bg)) shared++;
-  return (2 * shared) / (ba.size + bb.size);
-}
-
 /** Indices of matched character ranges, e.g. [[0,2],[5,6]] */
 export type MatchIndices = ReadonlyArray<readonly [number, number]>;
 
@@ -107,9 +86,6 @@ export function useFuzzyGames<T extends NormalizedGame>(
     }));
 
     const normQuery = normalize(trimmed);
-    const collapsedQuery = collapseRepeats(normQuery);
-    const queries =
-      collapsedQuery !== normQuery ? [normQuery, collapsedQuery] : [normQuery];
     const tokens = normQuery.split(/\s+/).filter(t => t.length >= 2);
 
     // ── 1. Full-phrase search ─────────────────────────────────────────────
@@ -117,7 +93,7 @@ export function useFuzzyGames<T extends NormalizedGame>(
       augmented,
       FULL_PHRASE_OPTIONS as IFuseOptions<WithNorm<T>>
     );
-    const fullResults = queries.flatMap(q => fullFuse.search(q));
+    const fullResults = fullFuse.search(normQuery);
 
     const seenItems = new Set<T>();
     const merged: FuzzyResult<T>[] = [];
@@ -189,36 +165,6 @@ export function useFuzzyGames<T extends NormalizedGame>(
         }
       }
     }
-
-    // ── 3. Bigram similarity fallback ─────────────────────────────────────
-    // Catches typos, transpositions and rearrangements that Bitap misses.
-    const BIGRAM_MIN = 0.4;
-    const bigramCandidates: { item: WithNorm<T>; sim: number }[] = [];
-
-    for (const aug of augmented) {
-      if (seenItems.has(aug)) continue;
-      const words = aug._norm.split(/\s+/);
-      const queries =
-        collapsedQuery !== normQuery
-          ? [normQuery, collapsedQuery]
-          : [normQuery];
-      const sim = Math.max(
-        ...queries.flatMap(q => [
-          bigramSimilarity(q, aug._norm),
-          ...words.map(w => bigramSimilarity(q, w)),
-        ])
-      );
-      if (sim >= BIGRAM_MIN) bigramCandidates.push({ item: aug, sim });
-    }
-
-    bigramCandidates
-      .sort((a, b) => b.sim - a.sim)
-      .forEach(({ item }) => {
-        if (!seenItems.has(item)) {
-          seenItems.add(item);
-          merged.push({ item, nameIndices: [] });
-        }
-      });
 
     return merged;
   }, [games, query]);
