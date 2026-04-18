@@ -7,7 +7,7 @@ FIELDS_GAMES_LIST = "fields name,cover.url,first_release_date,summary,platforms.
 FIELDS_GAMES_LIST_WITH_GENRES = "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,genres;"
 FIELDS_GAMES_SEARCH = (
     "fields name,cover.url,first_release_date,summary,platforms.name,total_rating,total_rating_count,"
-    + "alternative_names.name,game_localizations.name,game_localizations.region.name,"
+    + "alternative_names.name,alternative_names.comment,game_localizations.name,game_localizations.region.name,"
     + "franchises.id,franchises.name,collections.id,collections.name;"
 )
 FIELDS_GAME_DETAIL = (
