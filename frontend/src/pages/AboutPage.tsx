@@ -387,6 +387,7 @@ export default function AboutPage() {
             onClick={() => {
               if (isAuthenticated) {
                 navigate('/profile');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               } else {
                 setAuthMode('register');
                 setAuthModalOpen(true);
