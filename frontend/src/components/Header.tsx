@@ -7,8 +7,8 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
@@ -33,9 +33,9 @@ export const Header: React.FC = () => {
     setAuthModalOpen,
     pendingAction,
     setPendingAction,
+    authMode,
+    setAuthMode,
   } = useAuth();
-
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
   const handleLoginOpen = () => {
     setAuthMode('login');
@@ -73,34 +73,43 @@ export const Header: React.FC = () => {
         <Toolbar
           sx={{ justifyContent: 'space-between', py: 1, px: 4, minHeight: 64 }}
         >
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-              <Box
-                component="img"
-                src="/logo.png"
-                alt="Ludokan"
-                sx={{
-                  height: 44,
-                  width: 44,
-                  objectFit: 'contain',
-                  borderRadius: '50%',
-                  display: 'block',
-                }}
-              />
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 20,
-                  letterSpacing: '-0.5px',
-                  color: 'inherit',
-                  userSelect: 'none',
-                  fontFamily: "'Outfit', sans-serif",
-                }}
-              >
-                Ludokan
-              </Typography>
-            </Box>
-          </Link>
+          <Box
+            onClick={() => {
+              navigate('/');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2,
+              cursor: 'pointer',
+            }}
+          >
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Ludokan"
+              sx={{
+                height: 44,
+                width: 44,
+                objectFit: 'contain',
+                borderRadius: '50%',
+                display: 'block',
+              }}
+            />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: 20,
+                letterSpacing: '-0.5px',
+                color: 'inherit',
+                userSelect: 'none',
+                fontFamily: "'Outfit', sans-serif",
+              }}
+            >
+              Ludokan
+            </Typography>
+          </Box>
 
           <SearchBar />
 
