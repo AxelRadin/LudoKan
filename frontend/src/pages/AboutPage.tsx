@@ -103,43 +103,7 @@ export default function AboutPage() {
     >
       <Box sx={{ maxWidth: 900, mx: 'auto' }}>
         {/* ── HERO ── */}
-        <Box sx={{ textAlign: 'center', mb: 8 }}>
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1,
-              px: 1.5,
-              py: 0.4,
-              borderRadius: 999,
-              background: accentSoft,
-              border: `1px solid ${accentGlow}`,
-              mb: 3,
-            }}
-          >
-            <Box
-              sx={{
-                width: 5,
-                height: 5,
-                borderRadius: '50%',
-                background: accent,
-                boxShadow: `0 0 6px ${accent}`,
-              }}
-            />
-            <Typography
-              sx={{
-                fontFamily: F,
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: 2.5,
-                textTransform: 'uppercase',
-                color: accent,
-              }}
-            >
-              À propos
-            </Typography>
-          </Box>
-
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography
             sx={{
               fontFamily: F,
