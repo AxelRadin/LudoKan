@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import { Button, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 
 import SearchIcon from '@mui/icons-material/Search';
@@ -13,7 +14,8 @@ const F = "'Outfit', sans-serif";
 export default function AboutPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
-  const { setAuthModalOpen } = useAuth();
+  const navigate = useNavigate();
+  const { setAuthModalOpen, setAuthMode, isAuthenticated } = useAuth();
 
   const accent = isDark ? '#ef5350' : '#d43c3c';
   const accentSoft = isDark ? 'rgba(239,83,80,0.12)' : 'rgba(198,40,40,0.08)';
@@ -219,7 +221,6 @@ export default function AboutPage() {
               </Typography>
             </Box>
           </Box>
-
           <Typography
             sx={{
               fontFamily: F,
@@ -335,7 +336,6 @@ export default function AboutPage() {
               </Typography>
             </Box>
           </Box>
-
           <Typography
             sx={{
               fontFamily: F,
@@ -360,13 +360,7 @@ export default function AboutPage() {
         </Box>
 
         {/* ── CTA ── */}
-        <Box
-          sx={{
-            ...card,
-            p: { xs: 3, md: 5 },
-            textAlign: 'center',
-          }}
-        >
+        <Box sx={{ ...card, p: { xs: 3, md: 5 }, textAlign: 'center' }}>
           <Typography
             sx={{
               fontFamily: F,
@@ -377,17 +371,27 @@ export default function AboutPage() {
               mb: 1.5,
             }}
           >
-            Prêt à rejoindre la communauté ?
+            {isAuthenticated
+              ? 'Bienvenue sur Ludokan !'
+              : 'Prêt à rejoindre la communauté ?'}
           </Typography>
           <Typography
             sx={{ fontFamily: F, fontSize: 14, color: muted, mb: 3.5 }}
           >
-            Crée ton compte gratuitement et commence à gérer ta collection dès
-            aujourd'hui.
+            {isAuthenticated
+              ? 'Retrouve ta collection et continue à explorer.'
+              : "Crée ton compte gratuitement et commence à gérer ta collection dès aujourd'hui."}
           </Typography>
           <Button
             variant="contained"
-            onClick={() => setAuthModalOpen(true)}
+            onClick={() => {
+              if (isAuthenticated) {
+                navigate('/profile');
+              } else {
+                setAuthMode('register');
+                setAuthModalOpen(true);
+              }
+            }}
             sx={{
               borderRadius: '12px',
               px: 4,
@@ -406,7 +410,7 @@ export default function AboutPage() {
               transition: 'all 0.2s ease',
             }}
           >
-            Rejoindre Ludokan
+            {isAuthenticated ? 'Mon profil' : 'Rejoindre Ludokan'}
           </Button>
         </Box>
       </Box>
