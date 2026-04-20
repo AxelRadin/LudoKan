@@ -3,13 +3,17 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
+import { startGoogleLogin } from '../auth/googleOAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginButton from './SocialLoginButton';
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
 type LoginFormProps = {
   onSwitchToRegister: () => void;
@@ -22,8 +26,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
 
@@ -36,13 +42,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       return;
     }
 
+    if (!RECAPTCHA_SITE_KEY) {
+      setError(
+        'reCAPTCHA non configuré : définissez VITE_RECAPTCHA_SITE_KEY (voir frontend/.env.example).'
+      );
+      return;
+    }
+
+    if (!captchaToken) {
+      setError('Veuillez valider le reCAPTCHA.');
+      return;
+    }
+
     try {
       setLoading(true);
-      const data = await apiPost('/api/auth/login/', {
+      await apiPost('/api/auth/login/', {
         email: email,
         password: password,
+        recaptcha_token: captchaToken,
       });
-      console.log('User connecté', data);
 
       setAuthenticated(true);
       if (onLoginSuccess) {
@@ -52,8 +70,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       }
     } catch (err: any) {
       setError(err.message || 'Une erreur est survenue.');
+      recaptchaRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleClick = () => {
+    setError(null);
+    try {
+      startGoogleLogin();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Connexion Google indisponible.'
+      );
     }
   };
 
@@ -78,6 +109,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             value={password}
             onChange={e => setPassword(e.target.value)}
           />
+          {RECAPTCHA_SITE_KEY ? (
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={token => setCaptchaToken(token)}
+            />
+          ) : (
+            <Alert severity="warning" sx={{ width: '100%' }}>
+              Variable VITE_RECAPTCHA_SITE_KEY manquante : le login ne peut pas
+              fonctionner.
+            </Alert>
+          )}
         </Stack>
 
         {error && (
@@ -91,7 +134,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </Typography>
 
         <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" />
+          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
           <SocialLoginButton icon="apple" />
           <SocialLoginButton icon="x" />
           <SocialLoginButton icon="instagram" />

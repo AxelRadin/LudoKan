@@ -1,7 +1,10 @@
 from allauth.account.views import ConfirmEmailView
 from django.urls import include, path, re_path
 
+from apps.users.login_views import RecaptchaLoginView
 from apps.users.views import SuspensionAwareUserDetailsView
+from apps.users.views_social import GoogleLoginView
+from apps.users.views_steam import SteamDisconnectView, SteamLoginInitiateView
 
 urlpatterns = [
     re_path(
@@ -12,7 +15,13 @@ urlpatterns = [
     path("password/reset/confirm/<uidb64>/<token>/", lambda request, uidb64, token: None, name="password_reset_confirm"),
     # Override du endpoint /api/auth/user/ pour intégrer le contrôle de suspension
     path("user/", SuspensionAwareUserDetailsView.as_view(), name="rest_user_details"),
+    # Login avec reCAPTCHA (remplace la route éponyme de dj_rest_auth)
+    path("login/", RecaptchaLoginView.as_view(), name="rest_login"),
     # Auth
+    path("steam/login/", SteamLoginInitiateView.as_view(), name="steam_login_init"),
+    path("steam/disconnect/", SteamDisconnectView.as_view(), name="steam_disconnect"),
     path("", include("dj_rest_auth.urls")),
     path("registration/", include("dj_rest_auth.registration.urls")),
+    # Google Login
+    path("google/", GoogleLoginView.as_view(), name="google_login"),
 ]
