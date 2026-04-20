@@ -1,6 +1,8 @@
 """
 Fixtures et helpers pour les tests `apps.parties`.
-Réutilise les fixtures jeu / utilisateur de `apps.games.tests`.
+
+Les fixtures `user`, `game`, `api_client` et `authenticated_api_client`
+proviennent du `conftest.py` à la racine du projet de tests (rootdir).
 """
 
 from __future__ import annotations
@@ -12,8 +14,6 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from apps.parties.models import GameParty, GamePartyMember
-
-pytest_plugins = ("apps.games.tests.conftest",)
 
 User = get_user_model()
 
