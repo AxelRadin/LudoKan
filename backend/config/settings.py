@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "import_export",
     "apps.users",
     "apps.games",
+    "apps.parties",
     "apps.core",
     "apps.social",
     "apps.library",
