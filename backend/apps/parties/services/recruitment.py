@@ -6,17 +6,9 @@ from django.db.models import F
 from django.utils import timezone
 
 from apps.games.models import Game
-from apps.parties.constants import (
-    DEFAULT_PARTY_MAX_PLAYERS,
-    MIN_PLAYERS_TO_CONTINUE,
-    OPEN_TIMEOUT,
-    READY_TIMEOUT,
-)
+from apps.parties.constants import DEFAULT_PARTY_MAX_PLAYERS, MIN_PLAYERS_TO_CONTINUE, OPEN_TIMEOUT, READY_TIMEOUT
 from apps.parties.models import GameParty, GamePartyMember
-from apps.parties.services.members import (
-    active_member_count,
-    open_parties_with_active_count_qs,
-)
+from apps.parties.services.members import active_member_count, open_parties_with_active_count_qs
 
 
 def resolve_party_max_players(game: Game, *, max_players_override: int | None = None) -> int:
@@ -43,20 +35,12 @@ def select_open_party_for_recruitment(game: Game) -> GameParty | None:
 
     Pour un join atomique, utiliser `join_or_create_party` (verrous exclusifs).
     """
-    qs = (
-        open_parties_with_active_count_qs(game.id)
-        .filter(_active_member_count__lt=F("max_players"))
-        .order_by("-_active_member_count", "created_at")
-    )
+    qs = open_parties_with_active_count_qs(game.id).filter(_active_member_count__lt=F("max_players")).order_by("-_active_member_count", "created_at")
     return qs.first()
 
 
 def _lock_open_parties_for_game(game_id: int) -> list[GameParty]:
-    return list(
-        GameParty.objects.filter(game_id=game_id, status=GameParty.Status.OPEN)
-        .order_by("id")
-        .select_for_update()
-    )
+    return list(GameParty.objects.filter(game_id=game_id, status=GameParty.Status.OPEN).order_by("id").select_for_update())
 
 
 def _pick_open_party_with_capacity_locked(game_id: int) -> GameParty | None:

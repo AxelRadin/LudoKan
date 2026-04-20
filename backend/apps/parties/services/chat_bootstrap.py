@@ -12,12 +12,7 @@ from apps.parties.services.party_state_helpers import cancel_party
 
 def flow_member_user_ids_for_chat_opening(*, party_id: int) -> list[int]:
     """Identifiants utilisateurs des membres du flow au moment de l’ouverture du chat."""
-    return list(
-        active_members_qs(party_id=party_id)
-        .order_by("user_id")
-        .values_list("user_id", flat=True)
-        .distinct()
-    )
+    return list(active_members_qs(party_id=party_id).order_by("user_id").values_list("user_id", flat=True).distinct())
 
 
 def _create_group_chat_room() -> ChatRoom:

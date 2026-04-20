@@ -1,7 +1,4 @@
-from apps.parties.services.chat_bootstrap import (
-    flow_member_user_ids_for_chat_opening,
-    open_chat_if_eligible,
-)
+from apps.parties.services.chat_bootstrap import flow_member_user_ids_for_chat_opening, open_chat_if_eligible
 from apps.parties.services.lifecycle import (
     finalize_ready_for_chat_phase,
     finalize_ready_phase,

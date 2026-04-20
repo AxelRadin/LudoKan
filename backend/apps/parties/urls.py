@@ -1,13 +1,6 @@
 from django.urls import path
 
-from apps.parties.views import (
-    PartyDetailView,
-    PartyJoinOrCreateView,
-    PartyLeaveView,
-    PartyMeActiveView,
-    PartyReadyForChatView,
-    PartyReadyView,
-)
+from apps.parties.views import PartyDetailView, PartyJoinOrCreateView, PartyLeaveView, PartyMeActiveView, PartyReadyForChatView, PartyReadyView
 
 urlpatterns = [
     path("parties/join-or-create", PartyJoinOrCreateView.as_view(), name="party-join-or-create"),

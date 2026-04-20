@@ -12,11 +12,7 @@ from rest_framework.views import APIView
 from apps.parties.constants import NON_TERMINAL_PARTY_STATUS_VALUES
 from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.permissions import IsPartyFlowMember
-from apps.parties.serializers import (
-    PartyAcceptanceSerializer,
-    PartyJoinOrCreateSerializer,
-    PartyReadSerializer,
-)
+from apps.parties.serializers import PartyAcceptanceSerializer, PartyJoinOrCreateSerializer, PartyReadSerializer
 from apps.parties.services.chat_bootstrap import open_chat_if_eligible
 from apps.parties.services.lifecycle import leave_party, mark_ready, mark_ready_for_chat
 from apps.parties.services.recruitment import join_or_create_party

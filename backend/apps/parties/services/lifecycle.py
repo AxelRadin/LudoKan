@@ -4,11 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import transaction
 from django.utils import timezone
 
-from apps.parties.constants import (
-    CHAT_COUNTDOWN,
-    MIN_PLAYERS_TO_CONTINUE,
-    READY_FOR_CHAT_TIMEOUT,
-)
+from apps.parties.constants import CHAT_COUNTDOWN, MIN_PLAYERS_TO_CONTINUE, READY_FOR_CHAT_TIMEOUT
 from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.services.members import active_member_count, active_members_qs
 from apps.parties.services.party_state_helpers import cancel_party
@@ -16,15 +12,23 @@ from apps.parties.services.recruitment import transition_open_to_waiting_ready
 
 
 def _timeout_pending_ready_states(*, party_id: int) -> int:
-    return active_members_qs(party_id=party_id).filter(
-        ready_state=GamePartyMember.ReadyState.PENDING,
-    ).update(ready_state=GamePartyMember.ReadyState.TIMED_OUT)
+    return (
+        active_members_qs(party_id=party_id)
+        .filter(
+            ready_state=GamePartyMember.ReadyState.PENDING,
+        )
+        .update(ready_state=GamePartyMember.ReadyState.TIMED_OUT)
+    )
 
 
 def _timeout_pending_ready_for_chat_states(*, party_id: int) -> int:
-    return active_members_qs(party_id=party_id).filter(
-        ready_for_chat_state=GamePartyMember.ReadyForChatState.PENDING,
-    ).update(ready_for_chat_state=GamePartyMember.ReadyForChatState.TIMED_OUT)
+    return (
+        active_members_qs(party_id=party_id)
+        .filter(
+            ready_for_chat_state=GamePartyMember.ReadyForChatState.PENDING,
+        )
+        .update(ready_for_chat_state=GamePartyMember.ReadyForChatState.TIMED_OUT)
+    )
 
 
 def _all_flow_members_ready_accepted(*, party_id: int) -> bool:
@@ -76,9 +80,13 @@ def _reconcile_waiting_ready(party: GameParty) -> None:
     deadline_hit = party.ready_deadline_at is not None and now >= party.ready_deadline_at
     if deadline_hit:
         _timeout_pending_ready_states(party_id=party.id)
-        n_valid = active_members_qs(party_id=party.id).filter(
-            ready_state=GamePartyMember.ReadyState.ACCEPTED,
-        ).count()
+        n_valid = (
+            active_members_qs(party_id=party.id)
+            .filter(
+                ready_state=GamePartyMember.ReadyState.ACCEPTED,
+            )
+            .count()
+        )
         if n_valid >= MIN_PLAYERS_TO_CONTINUE:
             _enter_waiting_ready_for_chat_phase(party)
         else:
@@ -98,14 +106,16 @@ def _reconcile_waiting_ready_for_chat(party: GameParty) -> None:
         cancel_party(party)
         return
 
-    deadline_hit = (
-        party.ready_for_chat_deadline_at is not None and now >= party.ready_for_chat_deadline_at
-    )
+    deadline_hit = party.ready_for_chat_deadline_at is not None and now >= party.ready_for_chat_deadline_at
     if deadline_hit:
         _timeout_pending_ready_for_chat_states(party_id=party.id)
-        n_valid = active_members_qs(party_id=party.id).filter(
-            ready_for_chat_state=GamePartyMember.ReadyForChatState.ACCEPTED,
-        ).count()
+        n_valid = (
+            active_members_qs(party_id=party.id)
+            .filter(
+                ready_for_chat_state=GamePartyMember.ReadyForChatState.ACCEPTED,
+            )
+            .count()
+        )
         if n_valid >= MIN_PLAYERS_TO_CONTINUE:
             _start_countdown_on_party(party)
         else:
@@ -156,9 +166,7 @@ def mark_ready(*, party_id: int, user: AbstractBaseUser, accepted: bool) -> Game
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
         raise ValueError("User is not an active participant in this party.")
 
-    member.ready_state = (
-        GamePartyMember.ReadyState.ACCEPTED if accepted else GamePartyMember.ReadyState.DECLINED
-    )
+    member.ready_state = GamePartyMember.ReadyState.ACCEPTED if accepted else GamePartyMember.ReadyState.DECLINED
     member.save(update_fields=["ready_state", "updated_at"])
     reconcile_party_state(party)
     member.refresh_from_db()
@@ -174,11 +182,7 @@ def mark_ready_for_chat(*, party_id: int, user: AbstractBaseUser, accepted: bool
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
         raise ValueError("User is not an active participant in this party.")
 
-    member.ready_for_chat_state = (
-        GamePartyMember.ReadyForChatState.ACCEPTED
-        if accepted
-        else GamePartyMember.ReadyForChatState.DECLINED
-    )
+    member.ready_for_chat_state = GamePartyMember.ReadyForChatState.ACCEPTED if accepted else GamePartyMember.ReadyForChatState.DECLINED
     member.save(update_fields=["ready_for_chat_state", "updated_at"])
     reconcile_party_state(party)
     member.refresh_from_db()
@@ -190,10 +194,7 @@ def leave_party(*, party_id: int, user: AbstractBaseUser) -> tuple[GamePartyMemb
     party = GameParty.objects.select_for_update().get(pk=party_id)
     member = GamePartyMember.objects.select_for_update().get(party_id=party_id, user=user)
 
-    if (
-        member.membership_status == GamePartyMember.MembershipStatus.LEFT
-        or member.left_at is not None
-    ):
+    if member.membership_status == GamePartyMember.MembershipStatus.LEFT or member.left_at is not None:
         reconcile_party_state(party)
         party.refresh_from_db()
         return member, party

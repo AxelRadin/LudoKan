@@ -5,11 +5,7 @@ from django.utils import timezone
 
 from apps.parties.constants import MIN_PLAYERS_TO_CONTINUE
 from apps.parties.models import GameParty, GamePartyMember
-from apps.parties.services.recruitment import (
-    finalize_open_phase,
-    join_or_create_party,
-    select_open_party_for_recruitment,
-)
+from apps.parties.services.recruitment import finalize_open_phase, join_or_create_party, select_open_party_for_recruitment
 from apps.parties.tests.conftest import open_party_factory, party_member_create
 
 

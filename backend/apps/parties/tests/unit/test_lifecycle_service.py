@@ -3,16 +3,8 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from apps.parties.constants import MIN_PLAYERS_TO_CONTINUE
 from apps.parties.models import GameParty, GamePartyMember
-from apps.parties.services.lifecycle import (
-    finalize_ready_for_chat_phase,
-    finalize_ready_phase,
-    leave_party,
-    mark_ready,
-    mark_ready_for_chat,
-    reconcile_party_state,
-)
+from apps.parties.services.lifecycle import finalize_ready_for_chat_phase, finalize_ready_phase, leave_party, mark_ready, mark_ready_for_chat
 from apps.parties.tests.conftest import open_party_factory, party_member_create
 
 

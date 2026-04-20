@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 import pytest
 from django.utils import timezone
 
+from apps.parties.models import GameParty
 from apps.parties.services import lifecycle as lifecycle_services
 from apps.parties.services.chat_bootstrap import open_chat_if_eligible as real_open_chat_if_eligible
-from apps.parties.models import GameParty
 from apps.parties.tasks import (
     process_expired_countdown_parties,
     process_expired_open_parties,
