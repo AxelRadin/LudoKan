@@ -46,6 +46,62 @@ class SteamLoginInitiateViewTest(APITestCase):
         self.assertIn("manquante", response.data.get("detail", ""))
 
 
+class SteamLoginCallbackViewTest(APITestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(email="test_steam_callback@example.com", pseudo="callback_tester", password="password123")
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("steam_callback")
+
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_success(self, mock_post):
+        """
+        Verify that a valid OpenID response from Steam correctly links the account.
+        """
+        # Mock Steam validation response
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+        mock_post.return_value.status_code = 200
+
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": "https://steamcommunity.com/openid/id/76561198031542456",
+            "openid.identity": "https://steamcommunity.com/openid/id/76561198031542456",
+            # ... other parameters are ignored in this simple mock
+        }
+
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["steam_id"], "76561198031542456")
+
+        # Verify SteamProfile was created
+        from apps.users.models import SteamProfile
+
+        profile = SteamProfile.objects.get(user=self.user)
+        self.assertEqual(profile.steam_id, "76561198031542456")
+
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_invalid(self, mock_post):
+        """
+        Verify that an invalid OpenID response from Steam is rejected.
+        """
+        mock_post.return_value.text = "is_valid:false\n"
+
+        data = {
+            "openid.claimed_id": "https://steamcommunity.com/openid/id/76561198031542456",
+        }
+
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Échec de la validation", response.data["detail"])
+
+    def test_post_callback_missing_params(self):
+        """
+        Verify that missing parameters return 400.
+        """
+        response = self.client.post(self.url, data={}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 class SteamDisconnectViewTest(APITestCase):
     def setUp(self):
         self.user = CustomUser.objects.create_user(email="test_steam_disco@example.com", pseudo="steam_disco", password="password123")
