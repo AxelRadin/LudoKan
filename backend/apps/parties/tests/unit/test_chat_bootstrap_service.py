@@ -75,3 +75,22 @@ class TestOpenChatIfEligible:
         assert party.status == GameParty.Status.CANCELLED
         assert party.countdown_started_at is None
         assert party.countdown_ends_at is None
+
+    def test_no_op_when_chat_room_already_set(self, game, user, another_user):
+        room = ChatRoom.objects.create(type=ChatRoom.TYPE_GROUP)
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.COUNTDOWN)
+        party.chat_room = room
+        party.countdown_ends_at = timezone.now() - timedelta(seconds=1)
+        party.save(update_fields=["chat_room", "countdown_ends_at"])
+        party_member_create(party=party, user=user)
+        party_member_create(party=party, user=another_user)
+
+        open_chat_if_eligible(party.id)
+        party.refresh_from_db()
+        assert party.chat_room_id == room.id
+        assert party.status == GameParty.Status.COUNTDOWN
+
+
+@pytest.mark.django_db
+def test_open_chat_if_eligible_returns_none_when_party_missing():
+    assert open_chat_if_eligible(9_999_001) is None

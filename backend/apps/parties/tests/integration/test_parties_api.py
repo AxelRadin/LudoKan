@@ -159,6 +159,16 @@ class TestPartyReadyForChatAPI:
         m = GamePartyMember.objects.get(party=party, user=user)
         assert m.ready_for_chat_state == GamePartyMember.ReadyForChatState.ACCEPTED
 
+    def test_ready_for_chat_returns_400_when_wrong_status(self, authenticated_api_client, user, game):
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.OPEN)
+        party_member_create(party=party, user=user)
+        r = authenticated_api_client.post(
+            f"/api/parties/{party.id}/ready-for-chat",
+            {"accepted": True},
+            format="json",
+        )
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
 
 @pytest.mark.django_db
 class TestPartyLeaveAPI:

@@ -1,3 +1,4 @@
+import logging
 from datetime import timedelta
 from unittest.mock import MagicMock
 
@@ -8,6 +9,7 @@ from apps.parties.models import GameParty
 from apps.parties.services import lifecycle as lifecycle_services
 from apps.parties.services.chat_bootstrap import open_chat_if_eligible as real_open_chat_if_eligible
 from apps.parties.tasks import (
+    _process_party_ids,
     process_expired_countdown_parties,
     process_expired_open_parties,
     process_expired_ready_for_chat_parties,
@@ -98,3 +100,17 @@ def test_process_party_deadlines_orchestrator_returns_summary(game, user, anothe
     assert summary["open"]["selected"] >= 1
     party.refresh_from_db()
     assert party.status != GameParty.Status.OPEN
+
+
+@pytest.mark.django_db
+def test_process_party_ids_logs_and_counts_errors(game, user, caplog):
+    caplog.set_level(logging.ERROR)
+    party = open_party_factory(game=game, max_players=4, status=GameParty.Status.OPEN)
+    party_member_create(party=party, user=user)
+
+    def boom(_pid):
+        raise RuntimeError("forced failure")
+
+    ok, err = _process_party_ids(party_ids=[party.id], process_one=boom, label="unit")
+    assert ok == 0 and err == 1
+    assert "party_deadline_unit_failed" in caplog.text
