@@ -345,6 +345,8 @@ else:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# allauth OpenID: makemigrations cannot write under site-packages (e.g. Docker).
+MIGRATION_MODULES = {"openid": "apps.core.migrations.openid"}
 
 # -------------------------------------------------------------------
 # Celery
