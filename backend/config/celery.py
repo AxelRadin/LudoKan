@@ -49,6 +49,10 @@ app.conf.beat_schedule = {
         "task": "apps.core.tasks.process_due_report_schedules",
         "schedule": crontab(minute="*/15"),  # toutes les 15 min (BACK-021F)
     },
+    "process-party-deadlines": {
+        "task": "apps.parties.tasks.process_party_deadlines",
+        "schedule": crontab(minute="*"),  # chaque minute (MVP parties)
+    },
 }
 
 # Configuration des résultats (optionnel)

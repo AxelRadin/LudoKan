@@ -63,6 +63,10 @@ class CustomRegisterSerializer(RegisterSerializer):
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False, allow_null=True)
     avatar_url = serializers.SerializerMethodField()
+    banner = serializers.ImageField(required=False, allow_null=True)
+    banner_url = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+    steam_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -74,10 +78,22 @@ class UserSerializer(serializers.ModelSerializer):
             "last_name",
             "avatar",
             "avatar_url",
+            "banner",
+            "banner_url",
             "description_courte",
             "created_at",
+            "review_count",
+            "steam_id",
         ]
-        read_only_fields = ["id", "created_at", "email"]
+        read_only_fields = ["id", "created_at", "email", "steam_id"]
+
+    def get_steam_id(self, obj):
+        if hasattr(obj, "steam_profile"):
+            return obj.steam_profile.steam_id
+        return None
+
+    def get_review_count(self, obj):
+        return obj.reviews.count()
 
     def get_avatar_url(self, obj):
         """Retourne l'URL absolue de l'avatar si présent"""
@@ -85,6 +101,14 @@ class UserSerializer(serializers.ModelSerializer):
             request = self.context.get("request")
             if request:
                 return request.build_absolute_uri(obj.avatar.url)
+        return None
+
+    def get_banner_url(self, obj):
+        """Retourne l'URL absolue de la bannière si présente"""
+        if obj.banner:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.banner.url)
         return None
 
     def validate_avatar(self, value):
@@ -101,11 +125,30 @@ class UserSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(UserErrors.AVATAR_INVALID_FORMAT)
         return value
 
+    def validate_banner(self, value):
+        """Valide le fichier bannière uploadé"""
+        if value:
+            # Taille max: 5 Mo (laisser un peu plus grand pour la bannière)
+            if value.size > 5 * 1024 * 1024:
+                raise serializers.ValidationError("La bannière ne doit pas dépasser 5 Mo.")
+
+            # Formats supportés
+            valid_extensions = ["jpg", "jpeg", "png", "webp"]
+            ext = value.name.split(".")[-1].lower()
+            if ext not in valid_extensions:
+                raise serializers.ValidationError("Format de bannière invalide.")
+        return value
+
     def update(self, instance, validated_data):
-        """Supprime l'ancien avatar lors du remplacement"""
+        """Supprime l'ancien avatar/bannière lors du remplacement"""
         new_avatar = validated_data.get("avatar", serializers.empty)
         if new_avatar is not serializers.empty and instance.avatar and (new_avatar is None or instance.avatar != new_avatar):
             instance.avatar.delete(save=False)
+
+        new_banner = validated_data.get("banner", serializers.empty)
+        if new_banner is not serializers.empty and instance.banner and (new_banner is None or instance.banner != new_banner):
+            instance.banner.delete(save=False)
+
         return super().update(instance, validated_data)
 
     def validate_pseudo(self, value):

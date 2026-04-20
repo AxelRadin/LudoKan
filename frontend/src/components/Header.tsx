@@ -1,15 +1,13 @@
 import CloseIcon from '@mui/icons-material/Close';
 import LanguageIcon from '@mui/icons-material/Language';
-
-import { Button, Dialog, Typography } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { Button, Dialog, Drawer, useMediaQuery, useTheme, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
@@ -25,7 +23,8 @@ const rippleSx = {
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const isProfilePage = location.pathname === '/profile';
   const {
     isAuthenticated,
     setAuthenticated,
@@ -36,15 +35,21 @@ export const Header: React.FC = () => {
     authMode,
     setAuthMode,
   } = useAuth();
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // md is 900px
 
   const handleLoginOpen = () => {
     setAuthMode('login');
     setAuthModalOpen(true);
+    setDrawerOpen(false);
   };
 
   const handleRegisterOpen = () => {
     setAuthMode('register');
     setAuthModalOpen(true);
+    setDrawerOpen(false);
   };
 
   const handleAuthClose = () => {
@@ -58,9 +63,87 @@ export const Header: React.FC = () => {
       console.error('Erreur lors du logout', e);
     } finally {
       setAuthenticated(false);
+      setDrawerOpen(false);
       navigate('/');
     }
   };
+
+  const desktopActions = (
+    <>
+      <IconButton color="inherit">
+        <LanguageIcon />
+      </IconButton>
+      {isAuthenticated ? (
+        <>
+          {isProfilePage ? (
+            <Button color="inherit" component={Link} to="/">
+              Accueil
+            </Button>
+          ) : (
+            <Button color="inherit" component={Link} to="/profile">
+              Profile
+            </Button>
+          )}
+          <Button color="inherit" onClick={handleLogout}>
+            Se déconnecter
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button color="inherit" onClick={handleLoginOpen}>
+            Se connecter
+          </Button>
+          <SecondaryButton onClick={handleRegisterOpen}>
+            S’inscrire
+          </SecondaryButton>
+        </>
+      )}
+    </>
+  );
+
+  const mobileActions = (
+    <Box display="flex" flexDirection="column" gap={2} mt={3}>
+      {isAuthenticated ? (
+        <>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => {
+              setDrawerOpen(false);
+              navigate(isProfilePage ? '/' : '/profile');
+            }}
+          >
+            {isProfilePage ? 'Accueil' : 'Profile'}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            fullWidth
+            onClick={handleLogout}
+          >
+            Se déconnecter
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button variant="outlined" fullWidth onClick={handleLoginOpen}>
+            Se connecter
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={handleRegisterOpen}
+          >
+            S’inscrire
+          </Button>
+        </>
+      )}
+      <Button startIcon={<LanguageIcon />} fullWidth variant="text">
+        Langue
+      </Button>
+    </Box>
+  );
 
   return (
     <>
@@ -71,7 +154,14 @@ export const Header: React.FC = () => {
         sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
       >
         <Toolbar
-          sx={{ justifyContent: 'space-between', py: 1, px: 4, minHeight: 64 }}
+          sx={{
+            justifyContent: 'space-between',
+            py: 1,
+            px: { xs: 2, md: 4 },
+            minHeight: 64,
+            width: '100%',
+            boxSizing: 'border-box',
+          }}
         >
           <Box
             onClick={() => {
@@ -111,7 +201,14 @@ export const Header: React.FC = () => {
             </Typography>
           </Box>
 
-          <SearchBar />
+          {!isMobile && (
+            <>
+              <SearchBar />
+              <Box display="flex" alignItems="center" gap={2}>
+                {desktopActions}
+              </Box>
+            </>
+          )}
 
           <Box display="flex" alignItems="center" gap={2}>
             {isAuthenticated ? (
@@ -137,9 +234,34 @@ export const Header: React.FC = () => {
             <IconButton sx={rippleSx}>
               <LanguageIcon />
             </IconButton>
-          </Box>
+          )}
         </Toolbar>
       </AppBar>
+
+      <Drawer
+        anchor="right"
+        open={isDrawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        PaperProps={{
+          sx: { width: '80%', maxWidth: 360, p: 3, boxSizing: 'border-box' },
+        }}
+      >
+        <Box display="flex" justifyContent="flex-end" mb={2}>
+          <IconButton onClick={() => setDrawerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Box
+          onClick={() => {
+            // Need to allow SeachBar inputs, so don't close Drawer on pure Box clicks
+          }}
+        >
+          <Box mb={4}>
+            <SearchBar />
+          </Box>
+          {mobileActions}
+        </Box>
+      </Drawer>
 
       <Dialog open={isAuthModalOpen} onClose={handleAuthClose} keepMounted>
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>

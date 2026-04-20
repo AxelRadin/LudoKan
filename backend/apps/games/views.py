@@ -44,7 +44,7 @@ from apps.users.utils import log_admin_action
 class GameViewSet(ModelViewSet):
     queryset = (
         Game.objects.select_related("publisher")
-        .prefetch_related("genres", "platforms")
+        .prefetch_related("genres", "platforms", "screenshots", "game_videos")
         .order_by("-popularity_score")
         .distinct()  # Éviter les doublons lors de filtrage Many-to-Many
     )
@@ -115,6 +115,8 @@ class GameViewSet(ModelViewSet):
                         summary=norm.get("summary"),
                         platforms=norm.get("platforms"),
                         genres=norm.get("genres"),
+                        screenshots=norm.get("screenshots"),
+                        videos=norm.get("videos"),
                     )
                     # Refresh instance to get updated data
                     instance.refresh_from_db()
@@ -282,6 +284,8 @@ class GameByIgdbIdView(APIView):
                 summary=norm.get("summary"),
                 platforms=norm.get("platforms"),
                 genres=norm.get("genres"),
+                screenshots=norm.get("screenshots"),
+                videos=norm.get("videos"),
             )
             serializer = GameReadSerializer(game_obj, context={"request": request})
             return Response(serializer.data)
@@ -362,6 +366,8 @@ class ImportIgdbGameView(APIView):
             summary=serializer.validated_data.get("summary"),
             platforms=serializer.validated_data.get("platforms"),
             genres=serializer.validated_data.get("genres"),
+            screenshots=serializer.validated_data.get("screenshots"),
+            videos=serializer.validated_data.get("videos"),
         )
 
         return Response({"id": game.id}, status=status.HTTP_200_OK)
@@ -388,6 +394,8 @@ class IgdbResolveView(APIView):
             summary=serializer.validated_data.get("summary"),
             platforms=serializer.validated_data.get("platforms"),
             genres=serializer.validated_data.get("genres"),
+            screenshots=serializer.validated_data.get("screenshots"),
+            videos=serializer.validated_data.get("videos"),
         )
 
         # Build normalized response
@@ -424,7 +432,7 @@ class AdminGameListView(ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        qs = Game.objects.select_related("publisher").prefetch_related("genres", "platforms").all()
+        qs = Game.objects.select_related("publisher").prefetch_related("genres", "platforms", "screenshots", "game_videos").all()
 
         name = self.request.query_params.get("name")
         publisher_id = self.request.query_params.get("publisher_id")
