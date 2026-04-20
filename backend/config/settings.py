@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "import_export",
     "apps.users",
     "apps.games",
+    "apps.parties",
     "apps.core",
     "apps.social",
     "apps.library",
@@ -349,6 +350,8 @@ else:
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# allauth OpenID: makemigrations cannot write under site-packages (e.g. Docker).
+MIGRATION_MODULES = {"openid": "apps.core.migrations.openid"}
 
 # -------------------------------------------------------------------
 # Celery
