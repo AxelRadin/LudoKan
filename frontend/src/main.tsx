@@ -22,6 +22,7 @@ import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 import { muiTheme } from './muiTheme';
 import AboutPage from './pages/AboutPage.tsx';
+import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 
 const router = createBrowserRouter([
   {
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { path: 'about', element: <AboutPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
       { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
+      { path: 'admin/dashboard', element: <AdminDashboard /> },
     ],
   },
 ]);
