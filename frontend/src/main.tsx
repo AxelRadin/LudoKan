@@ -61,11 +61,9 @@ createRoot(document.getElementById('root')!).render(
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
         <AuthProvider>
-          <MatchmakingProvider>
-            <Sentry.ErrorBoundary fallback={errorFallback}>
-              <RouterProvider router={router} />
-            </Sentry.ErrorBoundary>
-          </MatchmakingProvider>
+          <Sentry.ErrorBoundary fallback={errorFallback}>
+            <RouterProvider router={router} />
+          </Sentry.ErrorBoundary>
         </AuthProvider>
       </ThemeProvider>
     </StyledEngineProvider>

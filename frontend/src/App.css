@@ -1,7 +1,10 @@
+/* Full-width app root (Vite default max-width removed — it capped the whole UI at 1280px) */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
   padding: 2rem;
+  margin: 0 auto;
   text-align: center;
 }
 
