@@ -52,10 +52,12 @@ class SteamLoginCallbackViewTest(APITestCase):
         self.client.force_authenticate(user=self.user)
         self.url = reverse("steam_callback")
 
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
     @patch("apps.users.views_steam.requests.post")
-    def test_post_callback_success(self, mock_post):
+    def test_post_callback_success(self, mock_post, mock_delay):
         """
-        Verify that a valid OpenID response from Steam correctly links the account.
+        Verify that a valid OpenID response from Steam correctly links the account
+        and triggers the synchronization task.
         """
         # Mock Steam validation response
         mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
@@ -66,7 +68,6 @@ class SteamLoginCallbackViewTest(APITestCase):
             "openid.mode": "id_res",
             "openid.claimed_id": "https://steamcommunity.com/openid/id/76561198031542456",
             "openid.identity": "https://steamcommunity.com/openid/id/76561198031542456",
-            # ... other parameters are ignored in this simple mock
         }
 
         response = self.client.post(self.url, data=data, format="json")
@@ -79,10 +80,14 @@ class SteamLoginCallbackViewTest(APITestCase):
         profile = SteamProfile.objects.get(user=self.user)
         self.assertEqual(profile.steam_id, "76561198031542456")
 
+        # Verify sync task was triggered
+        mock_delay.assert_called_once_with(self.user.id)
+
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
     @patch("apps.users.views_steam.requests.post")
-    def test_post_callback_invalid(self, mock_post):
+    def test_post_callback_invalid(self, mock_post, mock_delay):
         """
-        Verify that an invalid OpenID response from Steam is rejected.
+        Verify that an invalid OpenID response from Steam is rejected and no sync task is triggered.
         """
         mock_post.return_value.text = "is_valid:false\n"
 
@@ -93,6 +98,9 @@ class SteamLoginCallbackViewTest(APITestCase):
         response = self.client.post(self.url, data=data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("Échec de la validation", response.data["detail"])
+
+        # Verify sync task was NOT triggered
+        mock_delay.assert_not_called()
 
     def test_post_callback_missing_params(self):
         """

@@ -9,6 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.library.tasks import sync_steam_library_task
 from apps.users.models import SteamProfile
 
 
@@ -129,6 +130,9 @@ class SteamLoginCallbackView(APIView):
             user=request.user,
             defaults={"steam_id": steam_id},
         )
+
+        # 4. Lancer la synchronisation initiale en arrière-plan
+        sync_steam_library_task.delay(request.user.id)
 
         return Response({"steam_id": steam_id}, status=status.HTTP_200_OK)
 

@@ -475,8 +475,8 @@ LOGGING = {
         },
         "system_logs": {
             "level": "INFO",
-            "handlers": ["system_logs"],
-            "propagate": False,
+            "handlers": ["console", "system_logs"],
+            "propagate": True,
         },
         "django.request": {
             "level": "ERROR",

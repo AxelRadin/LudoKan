@@ -29,14 +29,17 @@ def sync_steam_library(user: CustomUser) -> None:
         return
 
     try:
+        logger.info(f"Fetching Steam library for user {user.pseudo} (SteamID: {steam_id})")
+        params = {
+            "key": api_key,
+            "steamid": steam_id,
+            "include_appinfo": 1,
+            "include_played_free_games": 1,
+        }
+
         response = requests.get(
             STEAM_API_BASE_URL,
-            params={
-                "key": api_key,
-                "steamid": steam_id,
-                "include_appinfo": 1,
-                "include_played_free_games": 1,
-            },
+            params=params,
             timeout=10,
         )
         response.raise_for_status()
@@ -45,8 +48,11 @@ def sync_steam_library(user: CustomUser) -> None:
         logger.error(f"Failed to fetch Steam library for user {user.pseudo}: {e}")
         return
 
+    logger.info(f"Steam API response for user {user.pseudo}: {data}")
     games_data = data.get("response", {}).get("games", [])
+    logger.info(f"Steam API returned {len(games_data)} games for user {user.pseudo}")
     if not games_data:
+        logger.warning(f"No games found on Steam for user {user.pseudo}. Check if 'Game details' are public in Steam Privacy Settings.")
         return
 
     appids_to_playtime = {int(game["appid"]): int(game.get("playtime_forever", 0)) for game in games_data}
@@ -55,17 +61,21 @@ def sync_steam_library(user: CustomUser) -> None:
     # 1. Match with existing games in DB using steam_appid
     existing_games = list(Game.objects.filter(steam_appid__in=steam_appids))
     existing_appids = {game.steam_appid for game in existing_games}
+    logger.info(f"Found {len(existing_appids)} matching games already in database for user {user.pseudo}")
 
     missing_appids = [appid for appid in steam_appids if appid not in existing_appids]
+    logger.info(f"Need to resolve {len(missing_appids)} missing games from IGDB for user {user.pseudo}")
 
     # 2. Fetch missing games in chunks from IGDB
     chunk_size = 50
     for i in range(0, len(missing_appids), chunk_size):
         chunk = missing_appids[i : i + chunk_size]
+        logger.debug(f"Resolving chunk of {len(chunk)} games from IGDB...")
         _resolve_and_save_missing_games(chunk)
 
     # 3. Reload all matched games (some missing ones are now created)
     all_matched_games = Game.objects.filter(steam_appid__in=steam_appids)
+    logger.info(f"Total matched games in DB after sync for user {user.pseudo}: {all_matched_games.count()}")
 
     # 4. Map to UserGame and update playtimes
     with transaction.atomic():
@@ -78,6 +88,13 @@ def sync_steam_library(user: CustomUser) -> None:
             if not created and playtime_hours > user_game.playtime_forever:
                 user_game.playtime_forever = playtime_hours
                 user_game.save(update_fields=["playtime_forever", "date_modified"])
+
+    # 5. Mettre à jour la date de dernière synchronisation
+    from django.utils import timezone
+
+    user.steam_profile.last_sync_at = timezone.now()
+    user.steam_profile.save(update_fields=["last_sync_at"])
+    logger.info(f"Steam synchronization complete for user {user.pseudo}")
 
 
 def _extract_steam_appid(igdb_game: dict) -> int | None:
