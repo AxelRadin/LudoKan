@@ -1,11 +1,12 @@
 from unittest.mock import patch
 
+import requests
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.users.models import CustomUser
+from apps.users.models import CustomUser, SteamProfile
 
 
 class SteamLoginInitiateViewTest(APITestCase):
@@ -75,7 +76,6 @@ class SteamLoginCallbackViewTest(APITestCase):
         self.assertEqual(response.data["steam_id"], "76561198031542456")
 
         # Verify SteamProfile was created
-        from apps.users.models import SteamProfile
 
         profile = SteamProfile.objects.get(user=self.user)
         self.assertEqual(profile.steam_id, "76561198031542456")
@@ -109,6 +109,31 @@ class SteamLoginCallbackViewTest(APITestCase):
         response = self.client.post(self.url, data={}, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_steam_communication_error(self, mock_post):
+        """
+        Verify that a communication error with Steam returns 500.
+        """
+        mock_post.side_effect = requests.RequestException("Connexion échouée")
+        data = {"openid.mode": "id_res", "openid.claimed_id": "some_id"}
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertIn("Erreur de communication", response.data["detail"])
+
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_invalid_claimed_id_format(self, mock_post):
+        """
+        Verify that an invalid claimed_id format returns 400.
+        """
+        mock_post.return_value.text = "is_valid:true"
+        data = {
+            "openid.mode": "id_res",
+            "openid.claimed_id": "https://not-steam.com/id/123",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("SteamID64 non trouvé", response.data["detail"])
+
 
 class SteamDisconnectViewTest(APITestCase):
     def setUp(self):
@@ -117,7 +142,6 @@ class SteamDisconnectViewTest(APITestCase):
         self.url = reverse("steam_disconnect")
 
     def test_disconnect_success(self):
-        from apps.users.models import SteamProfile
 
         SteamProfile.objects.create(user=self.user, steam_id="12345")
 
