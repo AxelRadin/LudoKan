@@ -66,6 +66,7 @@ class UserSerializer(serializers.ModelSerializer):
     banner = serializers.ImageField(required=False, allow_null=True)
     banner_url = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
+    steam_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -82,8 +83,14 @@ class UserSerializer(serializers.ModelSerializer):
             "description_courte",
             "created_at",
             "review_count",
+            "steam_id",
         ]
-        read_only_fields = ["id", "created_at", "email"]
+        read_only_fields = ["id", "created_at", "email", "steam_id"]
+
+    def get_steam_id(self, obj):
+        if hasattr(obj, "steam_profile"):
+            return obj.steam_profile.steam_id
+        return None
 
     def get_review_count(self, obj):
         return obj.reviews.count()

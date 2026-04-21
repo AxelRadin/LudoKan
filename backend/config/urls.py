@@ -57,6 +57,8 @@ urlpatterns = [
     path("api/", include("apps.reviews.urls")),
     # match
     path("api/", include("apps.matchmaking.urls")),
+    # Parties
+    path("api/", include("apps.parties.urls")),
     # Chat
     path("api/", include("apps.chat.urls")),
     # Game Tickets

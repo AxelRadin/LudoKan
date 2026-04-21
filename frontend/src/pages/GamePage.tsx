@@ -288,7 +288,14 @@ export default function GamePage() {
     (async () => {
       try {
         if (igdbId) {
-          setGame(await fetchIgdbGameById(Number(igdbId)));
+          const igdbGame = await fetchIgdbGameById(Number(igdbId));
+          setGame(igdbGame);
+          if (igdbGame.django_id) {
+            setDjangoId(igdbGame.django_id);
+            if (igdbGame.user_library) {
+              setUserGame(igdbGame.user_library);
+            }
+          }
         } else {
           const d = await apiGet(`/api/games/${id}/`);
           setGame({ ...d, name: d.name_fr || d.name });
@@ -321,27 +328,24 @@ export default function GamePage() {
   }, [game?.summary]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !djangoId) {
       setCurrentUserId(null);
-      return;
-    }
-    apiGet('/api/me')
-      .then((m: { id: number }) => setCurrentUserId(m.id))
-      .catch(() => setCurrentUserId(null));
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!djangoId || !isAuthenticated) {
       setUserReview(null);
       return;
     }
-    apiGet(`/api/reviews/?game=${djangoId}`)
-      .then((d: any) => {
+    (async () => {
+      try {
+        const m: { id: number } = await apiGet('/api/me');
+        setCurrentUserId(m.id);
+        const d: any = await apiGet(`/api/reviews/?game=${djangoId}`);
         const l = Array.isArray(d) ? d : (d.results ?? []);
-        setUserReview(l.find((r: any) => r.user?.id === currentUserId) || null);
-      })
-      .catch(() => setUserReview(null));
-  }, [djangoId, isAuthenticated, currentUserId]);
+        setUserReview(l.find((r: any) => r.user?.id === m.id) || null);
+      } catch {
+        setCurrentUserId(null);
+        setUserReview(null);
+      }
+    })();
+  }, [djangoId, isAuthenticated]);
 
   async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;

@@ -14,6 +14,7 @@ Bienvenue dans la documentation de LudoKan ! Cette section contient tous les gui
 - [Configuration Celery](backend/CELERY.md) - Tâches asynchrones
 - [Guide des tests](backend/TESTING.md) - Tests et qualité du code
 - [Documentation API](API.md) - Référence de l'API REST
+- [Connexion Google (OAuth)](backend/GOOGLE_LOGIN.md) - Flux authorization code, variables d’environnement, dépannage
 
 ### Infrastructure
 - [Guide Docker](backend/DOCKER.md) - Containerisation
