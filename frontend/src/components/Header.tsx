@@ -1,7 +1,14 @@
 import CloseIcon from '@mui/icons-material/Close';
 import LanguageIcon from '@mui/icons-material/Language';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Button, Dialog, Drawer, useMediaQuery, useTheme, Typography } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  Drawer,
+  useMediaQuery,
+  useTheme,
+  Typography,
+} from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -35,7 +42,6 @@ export const Header: React.FC = () => {
     authMode,
     setAuthMode,
   } = useAuth();
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // md is 900px
@@ -201,38 +207,22 @@ export const Header: React.FC = () => {
             </Typography>
           </Box>
 
-          {!isMobile && (
+          {!isMobile ? (
             <>
               <SearchBar />
               <Box display="flex" alignItems="center" gap={2}>
                 {desktopActions}
               </Box>
             </>
-          )}
-
-          <Box display="flex" alignItems="center" gap={2}>
-            {isAuthenticated ? (
-              <>
-                <Button href="/profile" sx={rippleSx}>
-                  Profile
-                </Button>
-                <Button onClick={handleLogout} sx={rippleSx}>
-                  Se déconnecter
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={handleLoginOpen} sx={rippleSx}>
-                  Se connecter
-                </Button>
-                <SecondaryButton onClick={handleRegisterOpen}>
-                  S'inscrire
-                </SecondaryButton>
-              </>
-            )}
-
-            <IconButton sx={rippleSx}>
-              <LanguageIcon />
+          ) : (
+            <IconButton
+              color="inherit"
+              edge="end"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="ouvrir le menu"
+              sx={rippleSx}
+            >
+              <MenuIcon />
             </IconButton>
           )}
         </Toolbar>
