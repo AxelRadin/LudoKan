@@ -34,8 +34,8 @@ const C = {
   cardHover: 'rgba(255,255,255,0.82)',
   border: 'rgba(198,40,40,0.10)',
   borderHover: 'rgba(198,40,40,0.22)',
-  accent: '#c62828',
-  accentSoft: '#d43c3c',
+  accent: '#b71c1c',
+  accentSoft: '#c62828',
   ink: '#241818',
   light: '#b49393',
   darkBgBase: '#1a1010',
@@ -69,7 +69,7 @@ function SectionLabel({
 
   return (
     <Box sx={{ mb: 3, position: 'relative' }}>
-      <Box
+      {/* <Box
         sx={{
           position: 'absolute',
           left: 0,
@@ -81,7 +81,7 @@ function SectionLabel({
           borderRadius: '2px',
           opacity: 0.7,
         }}
-      />
+      /> */}
 
       <Box sx={{ pl: '18px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
@@ -156,7 +156,7 @@ function SectionLabel({
           )}
         </Box>
 
-        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
               width: 40,
@@ -182,7 +182,7 @@ function SectionLabel({
               opacity: isDark ? 0.25 : 0.18,
             }}
           />
-        </Box>
+        </Box> */}
       </Box>
     </Box>
   );
@@ -330,7 +330,7 @@ export const HomePage = () => {
     >
       <Box
         sx={{
-          maxWidth: 1200,
+          maxWidth: { md: '100%', lg: '70%' },
           mx: 'auto',
           px: { xs: 2.5, md: 5, lg: 7 },
           pt: { xs: 4, md: 6 },
