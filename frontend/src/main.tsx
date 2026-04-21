@@ -18,6 +18,7 @@ import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
+import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 
 const router = createBrowserRouter([
@@ -41,6 +42,7 @@ const router = createBrowserRouter([
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
+      { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
     ],
   },
 ]);
