@@ -54,6 +54,7 @@ sentry-sdk[django]==2.20.0
 
 # Runtime tooling (pkg_resources used by rest_framework_simplejwt; removed in setuptools 82+)
 setuptools>=75.0.0,<82.0.0
+jaraco.context>=6.1.0  # GHSA-58pv-8j8x-9vj2 (transitive via setuptools)
 
 # transitions for state tickets
 django-fsm==3.0.1
