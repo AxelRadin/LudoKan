@@ -1195,31 +1195,6 @@ export default function ProfilePage() {
       }}
     >
       <Box sx={{ maxWidth: 1160, mx: 'auto' }}>
-        {/* ── Top bar ── */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 4,
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: FONT_DISPLAY,
-              fontWeight: 900,
-              fontSize: { xs: 22, md: 26 },
-              color: C.title,
-              letterSpacing: -0.8,
-              background: `linear-gradient(135deg, ${C.title} 40%, ${C.accent})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Ludokan
-          </Typography>
-        </Box>
-
         {/* ── HERO SECTION ── */}
         <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
           {/* Banner */}
