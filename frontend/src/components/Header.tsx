@@ -7,7 +7,7 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 import theme from '../theme';
@@ -18,6 +18,8 @@ import SecondaryButton from './SecondaryButton';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isProfilePage = location.pathname === '/profile';
   const {
     isAuthenticated,
     setAuthenticated,
@@ -67,9 +69,15 @@ export const Header: React.FC = () => {
       </IconButton>
       {isAuthenticated ? (
         <>
-          <Button color="inherit" href="/profile">
-            Profile
-          </Button>
+          {isProfilePage ? (
+            <Button color="inherit" component={Link} to="/">
+              Accueil
+            </Button>
+          ) : (
+            <Button color="inherit" component={Link} to="/profile">
+              Profile
+            </Button>
+          )}
           <Button color="inherit" onClick={handleLogout}>
             Se déconnecter
           </Button>
@@ -96,10 +104,10 @@ export const Header: React.FC = () => {
             fullWidth
             onClick={() => {
               setDrawerOpen(false);
-              navigate('/profile');
+              navigate(isProfilePage ? '/' : '/profile');
             }}
           >
-            Profile
+            {isProfilePage ? 'Accueil' : 'Profile'}
           </Button>
           <Button
             variant="contained"

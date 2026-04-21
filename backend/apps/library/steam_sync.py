@@ -4,6 +4,7 @@ from typing import List
 import requests
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
 from apps.games.igdb_client import igdb_request
 from apps.games.igdb_proxy_constants import FIELDS_GAMES_LIST
@@ -47,6 +48,7 @@ def sync_steam_library(user: CustomUser) -> None:
 
     games_data = data.get("response", {}).get("games", [])
     if not games_data:
+        logger.warning(f"No games found on Steam for user {user.pseudo}. Check if 'Game details' are public in Steam Privacy Settings.")
         return
 
     appids_to_playtime = {int(game["appid"]): int(game.get("playtime_forever", 0)) for game in games_data}
@@ -78,6 +80,12 @@ def sync_steam_library(user: CustomUser) -> None:
             if not created and playtime_hours > user_game.playtime_forever:
                 user_game.playtime_forever = playtime_hours
                 user_game.save(update_fields=["playtime_forever", "date_modified"])
+
+    # 5. Mettre à jour la date de dernière synchronisation
+
+    user.steam_profile.last_sync_at = timezone.now()
+    user.steam_profile.save(update_fields=["last_sync_at"])
+    logger.info(f"Steam synchronization complete for user {user.pseudo}")
 
 
 def _extract_steam_appid(igdb_game: dict) -> int | None:
