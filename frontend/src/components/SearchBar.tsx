@@ -114,13 +114,12 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   overflow: 'hidden',
 }));
 
-function HighlightedText({
-  text,
-  indices,
-}: {
+type HighlightedTextProps = Readonly<{
   text: string;
   indices: MatchIndices;
-}) {
+}>;
+
+function HighlightedText({ text, indices }: HighlightedTextProps) {
   if (!indices.length) return <>{text}</>;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -167,6 +166,43 @@ function mapLocalToSearchGame(g: any): SearchSourcedGame {
     user_rating: g.user_rating ?? null,
     source: 'local',
   };
+}
+
+function parseLocalSearchResponse(res: unknown): SearchSourcedGame[] {
+  const rawResults = Array.isArray(res)
+    ? res
+    : ((res as { results?: unknown[] })?.results ?? []);
+  return rawResults.map(mapLocalToSearchGame) as SearchSourcedGame[];
+}
+
+function mapIgdbGamesToSearch(games: IgdbGame[]): SearchSourcedGame[] {
+  return games.map(mapIgdbToSearchGame);
+}
+
+function mergeUniqueIntoPool(
+  prev: SearchSourcedGame[],
+  incoming: SearchSourcedGame[]
+): SearchSourcedGame[] {
+  const seen = new Set(prev.map(g => g.igdb_id));
+  const fresh = incoming.filter(g => !seen.has(g.igdb_id));
+  return [...prev, ...fresh];
+}
+
+async function fetchSearchGameLists(
+  q: string,
+  igdbMax: number,
+  signal: AbortSignal
+): Promise<{ local: SearchSourcedGame[]; igdb: SearchSourcedGame[] }> {
+  const localReq = apiGet(`/api/games/?search=${encodeURIComponent(q)}`)
+    .then(parseLocalSearchResponse)
+    .catch(() => [] as SearchSourcedGame[]);
+
+  const igdbReq = searchIgdbGames(q, igdbMax, false, signal)
+    .then(mapIgdbGamesToSearch)
+    .catch(() => [] as SearchSourcedGame[]);
+
+  const [local, igdb] = await Promise.all([localReq, igdbReq]);
+  return { local, igdb };
 }
 
 const GameSearchBar: React.FC = () => {
@@ -218,42 +254,23 @@ const GameSearchBar: React.FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    const localReq = apiGet(
-      `/api/games/?search=${encodeURIComponent(debouncedQuery)}`
-    )
-      .then(res => {
-        const rawResults = Array.isArray(res)
-          ? res
-          : ((res as { results?: unknown[] })?.results ?? []);
-        return rawResults.map((g: any) =>
-          mapLocalToSearchGame(g)
-        ) as SearchSourcedGame[];
-      })
-      .catch(() => [] as SearchSourcedGame[]);
-
-    const igdbReq = searchIgdbGames(
-      debouncedQuery,
-      DROPDOWN_IGDB_MAX,
-      false,
-      controller.signal
-    )
-      .then(games => games.map(mapIgdbToSearchGame))
-      .catch(() => [] as SearchSourcedGame[]);
-
-    Promise.all([localReq, igdbReq])
-      .then(([local, igdb]) => {
+    const run = async () => {
+      try {
+        const { local, igdb } = await fetchSearchGameLists(
+          debouncedQuery,
+          DROPDOWN_IGDB_MAX,
+          controller.signal
+        );
         if (cancelled) return;
         const incoming = [...local.slice(0, DROPDOWN_LOCAL_MAX), ...igdb];
         // Merge into pool, deduplicating by igdb_id to avoid visual duplicates
-        setGamePool(prev => {
-          const seen = new Set(prev.map(g => g.igdb_id));
-          const fresh = incoming.filter(g => !seen.has(g.igdb_id));
-          return [...prev, ...fresh];
-        });
-      })
-      .finally(() => {
+        setGamePool(prev => mergeUniqueIntoPool(prev, incoming));
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    void run();
 
     return () => {
       cancelled = true;
