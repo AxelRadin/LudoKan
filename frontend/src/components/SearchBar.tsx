@@ -14,22 +14,37 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { alpha, styled } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type IgdbGame, searchIgdbGames } from '../api/igdb';
 import { apiGet } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
-// Local API result mapped to NormalizedGame for a unified type across all sources
 type SearchSourcedGame = NormalizedGame & { source: 'local' | 'igdb' };
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: alpha(theme.palette.common.black, 0.05),
+  borderRadius: '999px',
+  backgroundColor:
+    theme.palette.mode === 'dark'
+      ? 'rgba(255,255,255,0.07)'
+      : 'rgba(0,0,0,0.06)',
+  border: '1.5px solid transparent',
+  transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: alpha(theme.palette.common.black, 0.1),
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? 'rgba(255,255,255,0.11)'
+        : 'rgba(0,0,0,0.09)',
+  },
+  '&:focus-within': {
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? 'rgba(255,255,255,0.13)'
+        : 'rgba(255,255,255,1)',
+    borderColor: '#FF3D3D',
+    boxShadow: '0 0 0 3px rgba(255, 61, 61, 0.15)',
   },
   marginLeft: 0,
   width: '100%',
@@ -46,18 +61,30 @@ const SearchIconWrapper = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  color:
+    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)',
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
   width: '100%',
   '& .MuiInputBase-input': {
-    padding: theme.spacing(1, 1, 1, 0),
+    padding: theme.spacing(1.2, 2, 1.2, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create('width'),
     width: '100%',
     [theme.breakpoints.up('md')]: {
-      width: '30ch',
+      width: '32ch',
+      '&:focus': {
+        width: '40ch',
+      },
+    },
+    '&::placeholder': {
+      color:
+        theme.palette.mode === 'dark'
+          ? 'rgba(255,255,255,0.4)'
+          : 'rgba(0,0,0,0.35)',
+      opacity: 1,
     },
   },
 }));
@@ -68,8 +95,16 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   left: 0,
   width: '100%',
   zIndex: 20,
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: theme.shadows[4],
+  borderRadius: '16px',
+  boxShadow:
+    theme.palette.mode === 'dark'
+      ? '0 8px 32px rgba(0,0,0,0.6)'
+      : '0 8px 32px rgba(0,0,0,0.15)',
+  border: `1px solid ${
+    theme.palette.mode === 'dark'
+      ? 'rgba(255,255,255,0.08)'
+      : 'rgba(0,0,0,0.06)'
+  }`,
   padding: theme.spacing(1, 0),
   marginTop: theme.spacing(1),
   display: 'flex',
@@ -78,9 +113,7 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   overflow: 'hidden',
 }));
 
-/** Un seul debounce puis requêtes locale + IGDB en parallèle, résultats affichés ensemble */
 const SEARCH_DEBOUNCE_MS = 280;
-/** Aperçu dans le menu : la liste complète + filtres licences/collections est sur /search */
 const DROPDOWN_LOCAL_MAX = 5;
 const DROPDOWN_IGDB_MAX = 8;
 
@@ -229,7 +262,7 @@ const GameSearchBar: React.FC = () => {
     >
       <Search>
         <SearchIconWrapper>
-          <SearchIcon />
+          <SearchIcon fontSize="small" />
         </SearchIconWrapper>
         <StyledInputBase
           placeholder="Recherchez des jeux…"
@@ -251,26 +284,28 @@ const GameSearchBar: React.FC = () => {
           <Box
             sx={{
               position: 'absolute',
-              right: 8,
+              right: 12,
               top: '50%',
               transform: 'translateY(-50%)',
             }}
           >
-            <CircularProgress size={20} />
+            <CircularProgress size={16} sx={{ color: '#FF3D3D' }} />
           </Box>
         )}
       </Search>
+
       {showDropdown && query && (
         <Dropdown>
           <Box px={2} pb={1} flexShrink={0}>
             <Typography
-              variant="subtitle2"
+              variant="caption"
               color="text.secondary"
-              sx={{ fontWeight: 700 }}
+              sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
             >
               RÉSULTATS
             </Typography>
           </Box>
+
           {loading ? (
             <Box
               sx={{
@@ -280,7 +315,7 @@ const GameSearchBar: React.FC = () => {
                 flexShrink: 0,
               }}
             >
-              <CircularProgress size={24} />
+              <CircularProgress size={24} sx={{ color: '#FF3D3D' }} />
             </Box>
           ) : allResults.length === 0 ? (
             <Box sx={{ px: 2, py: 1, flexShrink: 0 }}>
@@ -291,12 +326,7 @@ const GameSearchBar: React.FC = () => {
           ) : (
             <List
               dense
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                overflowY: 'auto',
-                py: 0,
-              }}
+              sx={{ flex: 1, minHeight: 0, overflowY: 'auto', py: 0 }}
             >
               {allResults.map(game => {
                 const releaseYear = game.release_date
@@ -304,18 +334,28 @@ const GameSearchBar: React.FC = () => {
                   : null;
                 return (
                   <React.Fragment key={`${game.source}-${game.igdb_id}`}>
-                    <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
-                      <ListItemButton onClick={() => handlePickGame(game)}>
+                    <ListItem disablePadding>
+                      <ListItemButton
+                        onClick={() => handlePickGame(game)}
+                        sx={{
+                          px: 2,
+                          py: 1,
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 61, 61, 0.06)',
+                          },
+                        }}
+                      >
                         <ListItemAvatar>
                           <Avatar
                             variant="rounded"
                             src={game.cover_url ?? undefined}
                             alt={game.name}
                             sx={{
-                              width: 48,
-                              height: 64,
-                              mr: 2,
-                              bgcolor: '#eee',
+                              width: 40,
+                              height: 54,
+                              mr: 1.5,
+                              borderRadius: '6px',
+                              bgcolor: 'rgba(0,0,0,0.1)',
                             }}
                           >
                             {game.name[0]}
@@ -323,36 +363,62 @@ const GameSearchBar: React.FC = () => {
                         </ListItemAvatar>
                         <ListItemText
                           primary={
-                            <span>
-                              <b>{game.name}</b>
+                            <Typography variant="body2" fontWeight={600}>
+                              {game.name}
                               {releaseYear && (
-                                <span style={{ color: '#888', marginLeft: 8 }}>
-                                  ({releaseYear})
-                                </span>
+                                <Typography
+                                  component="span"
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{ ml: 1 }}
+                                >
+                                  {releaseYear}
+                                </Typography>
                               )}
-                            </span>
+                            </Typography>
                           }
                           secondary={
-                            game.source === 'local' ? 'Base locale' : 'IGDB'
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color:
+                                  game.source === 'local'
+                                    ? '#FF3D3D'
+                                    : 'text.secondary',
+                                fontWeight: game.source === 'local' ? 600 : 400,
+                              }}
+                            >
+                              {game.source === 'local'
+                                ? '● Base locale'
+                                : 'IGDB'}
+                            </Typography>
                           }
                         />
                       </ListItemButton>
                     </ListItem>
-                    <Divider component="li" />
+                    <Divider component="li" sx={{ opacity: 0.5 }} />
                   </React.Fragment>
                 );
               })}
             </List>
           )}
+
           {!loading && query.trim() && (
             <>
-              <Divider sx={{ flexShrink: 0 }} />
-              <Box px={1} py={1} flexShrink={0}>
+              <Divider sx={{ flexShrink: 0, opacity: 0.5 }} />
+              <Box px={1} py={0.5} flexShrink={0}>
                 <Button
                   fullWidth
                   size="small"
                   variant="text"
                   onClick={goToFullSearch}
+                  sx={{
+                    borderRadius: '8px',
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: '#FF3D3D',
+                    '&:hover': { backgroundColor: 'rgba(255, 61, 61, 0.08)' },
+                  }}
                 >
                   {allResults.length > 0
                     ? `Voir tous les résultats pour « ${query.trim()} »`

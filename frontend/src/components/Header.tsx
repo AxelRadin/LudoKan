@@ -1,7 +1,14 @@
 import CloseIcon from '@mui/icons-material/Close';
 import LanguageIcon from '@mui/icons-material/Language';
 import MenuIcon from '@mui/icons-material/Menu';
-import { Button, Dialog, Drawer, useMediaQuery, useTheme } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  Drawer,
+  useMediaQuery,
+  useTheme,
+  Typography,
+} from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -10,11 +17,16 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
-import theme from '../theme';
+
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
+
+const rippleSx = {
+  color: 'inherit',
+  '& .MuiTouchRipple-root': { color: '#FF3D3D !important' },
+} as const;
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -27,8 +39,9 @@ export const Header: React.FC = () => {
     setAuthModalOpen,
     pendingAction,
     setPendingAction,
+    authMode,
+    setAuthMode,
   } = useAuth();
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // md is 900px
@@ -53,7 +66,6 @@ export const Header: React.FC = () => {
     try {
       await apiPost('/api/auth/logout/', {});
     } catch (e) {
-      // On ignore l'erreur de logout pour l'UX, mais on peut logguer
       console.error('Erreur lors du logout', e);
     } finally {
       setAuthenticated(false);
@@ -145,13 +157,7 @@ export const Header: React.FC = () => {
         position="fixed"
         color="inherit"
         elevation={2}
-        sx={{
-          backgroundColor: '#fff',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-          zIndex: theme.zIndex.appBar,
-          width: '100%',
-          overflow: 'visible',
-        }}
+        sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
       >
         <Toolbar
           sx={{
@@ -163,33 +169,61 @@ export const Header: React.FC = () => {
             boxSizing: 'border-box',
           }}
         >
-          <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Box display="flex" alignItems="center">
-              <img
-                src="/logo.png"
-                alt="Ludokan Logo"
-                style={{ height: 40, marginRight: 8 }}
-              />
-            </Box>
-          </Link>
+          <Box
+            onClick={() => {
+              navigate('/');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2,
+              cursor: 'pointer',
+            }}
+          >
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="Ludokan"
+              sx={{
+                height: 44,
+                width: 44,
+                objectFit: 'contain',
+                borderRadius: '50%',
+                display: 'block',
+              }}
+            />
+            <Typography
+              sx={{
+                fontWeight: 800,
+                fontSize: 20,
+                letterSpacing: '-0.5px',
+                color: 'inherit',
+                userSelect: 'none',
+                fontFamily: "'Outfit', sans-serif",
+              }}
+            >
+              Ludokan
+            </Typography>
+          </Box>
 
-          {!isMobile && (
+          {isMobile ? (
+            <IconButton
+              color="inherit"
+              edge="end"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="ouvrir le menu"
+              sx={rippleSx}
+            >
+              <MenuIcon />
+            </IconButton>
+          ) : (
             <>
               <SearchBar />
               <Box display="flex" alignItems="center" gap={2}>
                 {desktopActions}
               </Box>
             </>
-          )}
-
-          {isMobile && (
-            <IconButton
-              edge="end"
-              color="inherit"
-              onClick={() => setDrawerOpen(true)}
-            >
-              <MenuIcon />
-            </IconButton>
           )}
         </Toolbar>
       </AppBar>
@@ -220,14 +254,7 @@ export const Header: React.FC = () => {
       </Drawer>
 
       <Dialog open={isAuthModalOpen} onClose={handleAuthClose} keepMounted>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 10,
-          }}
-        >
+        <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
           <IconButton onClick={handleAuthClose}>
             <CloseIcon />
           </IconButton>

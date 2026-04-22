@@ -29,6 +29,7 @@ from apps.games.views_igdb_helpers import (
     translate_request_body_to_french,
     trending_enrich_for_response,
     trending_fetch_games_array,
+    trending_fetch_total_count,
 )
 
 
@@ -92,13 +93,15 @@ class IgdbTrendingView(APIView):
         try:
             arr = trending_fetch_games_array(igdb_client.igdb_request, genre_id, sort, limit, offset)
             enriched = trending_enrich_for_response(arr, enrich, enrich_with_wikidata_display_name, request.user)
-            cache.set(cache_key, enriched, TRENDING_CACHE_TTL)
-            return Response(enriched)
+            total_count = trending_fetch_total_count(igdb_client.igdb_request, genre_id, sort)
+            response_data = {"results": enriched, "total_count": total_count}
+            cache.set(cache_key, response_data, TRENDING_CACHE_TTL)
+            return Response(response_data)
         except Exception as e:
             logger = logging.getLogger(__name__)
             logger.exception("IGDB trending error: %s", e)
             if _is_igdb_unavailable(e):
-                return Response([])
+                return Response({"results": [], "total_count": 0})
             return Response(
                 {"error": "Erreur IGDB trending", "details": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
