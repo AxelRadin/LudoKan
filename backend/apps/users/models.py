@@ -7,20 +7,30 @@ from .validators import validate_avatar
 
 
 class CustomUserManager(BaseUserManager):
+    def generate_unique_pseudo(self, seed: str) -> str:
+        """
+        Produit un pseudo unique à partir d'une base lisible (email, nom, etc.).
+        Utilisé par create_user et par l'inscription sociale (Google, …).
+        """
+        raw = (seed or "").strip() or "user"
+        base_pseudo = (slugify(raw) or "user")[: self.model._meta.get_field("pseudo").max_length]
+        pseudo_candidate = base_pseudo
+        counter = 1
+        max_len = self.model._meta.get_field("pseudo").max_length
+        while self.model.objects.filter(pseudo=pseudo_candidate).exists():
+            suffix = str(counter)
+            truncated = base_pseudo[: max(1, max_len - len(suffix))]
+            pseudo_candidate = f"{truncated}{suffix}"
+            counter += 1
+        return pseudo_candidate
+
     def create_user(self, email, pseudo=None, password=None, **extra_fields):
         if not email:
             raise ValueError("L'email doit être fourni")
         email = self.normalize_email(email)
 
         if not pseudo:
-            # Générer un pseudo basé sur l'email
-            base_pseudo = slugify(email.split("@")[0])
-            pseudo_candidate = base_pseudo
-            counter = 1
-            while self.model.objects.filter(pseudo=pseudo_candidate).exists():
-                pseudo_candidate = f"{base_pseudo}{counter}"
-                counter += 1
-            pseudo = pseudo_candidate
+            pseudo = self.generate_unique_pseudo(email.split("@")[0])
 
         user = self.model(email=email, pseudo=pseudo, **extra_fields)
         user.set_password(password)
