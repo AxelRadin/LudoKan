@@ -109,7 +109,7 @@ type UserGame = {
 };
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_AVATAR_EXT = new Set(['jpg', 'jpeg', 'png', 'webp']);
 
 const fileInputOverlaySx: React.CSSProperties = {
@@ -169,7 +169,7 @@ function validateAvatarFile(file: File): string {
   if (file.size > MAX_AVATAR_SIZE) return 'Fichier trop volumineux. Max 2 MB.';
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
   const mime = file.type;
-  const mimeOk = ALLOWED_AVATAR_TYPES.includes(mime);
+  const mimeOk = ALLOWED_AVATAR_TYPES.has(mime);
   const extOk = ALLOWED_AVATAR_EXT.has(ext);
   const mimeEmptyOrUnknown = mime === '' || mime === 'application/octet-stream';
   if (mimeOk || (mimeEmptyOrUnknown && extOk)) return '';
