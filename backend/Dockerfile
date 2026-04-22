@@ -17,8 +17,7 @@ COPY requirements.txt .
 COPY requirements-dev.txt .
 RUN python -m pip install --upgrade pip \
     && pip install -r requirements.txt \
-    && pip install -r requirements-dev.txt \
-    && pip install --no-cache-dir --upgrade "wheel>=0.46.2" "jaraco.context>=6.1.0"
+    && pip install -r requirements-dev.txt
 
 # Copier le code
 
