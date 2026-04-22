@@ -1,7 +1,7 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PersonIcon from '@mui/icons-material/Person';
 import RadarIcon from '@mui/icons-material/Radar';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   Avatar,
   Box,
@@ -17,38 +17,68 @@ import {
 } from '@mui/material';
 import { keyframes } from '@mui/system';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
+import { useEffect, useState } from 'react';
 
 const pulseRadar = keyframes`
   0% { transform: scale(0.8); opacity: 0.6; }
   100% { transform: scale(2.5); opacity: 0; }
 `;
 
-interface Match {
+export interface PartyMember {
   id: number;
-  user: any;
-  distance_km: number;
+  user: { id: number; username: string };
+  is_me: boolean;
+  ready: boolean;
+  ready_for_chat: boolean;
+}
+
+export interface PartyInfo {
+  id: number;
+  status: string;
+  countdown_ends_at: string | null;
+  chat_room_id: string | null;
+  members: PartyMember[];
 }
 
 interface MatchmakingModalProps {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly onCancel: () => void;
-  readonly matches: Match[];
+  readonly party: PartyInfo | null;
   readonly startedAt: Date | null;
   readonly game: { readonly name: string; readonly image: string } | null;
-  readonly onContactPlayer?: (targetUserId: number) => void;
+  readonly onReady: () => void;
+  readonly onReadyForChat: () => void;
 }
 
 export default function MatchmakingModal({
   open,
   onClose,
   onCancel,
-  matches,
+  party,
   startedAt,
   game,
-  onContactPlayer,
+  onReady,
+  onReadyForChat,
 }: MatchmakingModalProps) {
   const elapsedTime = useMatchmakingTimer(startedAt);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!party?.countdown_ends_at) {
+      setCountdown(null);
+      return;
+    }
+    const interval = setInterval(() => {
+      const remaining = Math.floor(
+        (new Date(party.countdown_ends_at!).getTime() - Date.now()) / 1000
+      );
+      setCountdown(remaining > 0 ? remaining : 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [party?.countdown_ends_at]);
+
+  const me = party?.members.find(m => m.is_me);
 
   return (
     <Dialog
@@ -57,11 +87,7 @@ export default function MatchmakingModal({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: {
-          borderRadius: 4,
-          overflow: 'hidden',
-          maxWidth: 750,
-        },
+        sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 750 },
       }}
     >
       <Box
@@ -102,10 +128,11 @@ export default function MatchmakingModal({
               textShadow: '0 2px 8px rgba(0,0,0,0.8)',
             }}
           >
-            {game?.name || 'Recherche de joueurs'}
+            {party
+              ? `Lobby : ${game?.name}`
+              : game?.name || 'Recherche de joueurs'}
           </Typography>
-
-          {startedAt && (
+          {!party && startedAt && (
             <Box
               sx={{
                 display: 'inline-flex',
@@ -128,62 +155,107 @@ export default function MatchmakingModal({
       </Box>
 
       <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
-        {matches.length > 0 ? (
-          <List sx={{ pt: 0 }}>
-            {matches.map(match => {
-              const user = match.user;
-              let userName = `Joueur #${user}`;
-
-              const targetUserId =
-                typeof user === 'object' && user !== null ? user.id : user;
-
-              if (typeof user === 'object' && user !== null) {
-                userName = user.username || `Joueur #${user.id}`;
-              }
-
-              return (
+        {party ? (
+          /* ----- VUE LOBBY ----- */
+          <Box>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              Joueurs dans le lobby ({party.members.length})
+            </Typography>
+            <List sx={{ pt: 0, mb: 3 }}>
+              {party.members.map(member => (
                 <Paper
-                  key={match.id}
+                  key={member.id}
                   elevation={1}
-                  sx={{ mb: 2, borderRadius: 3, overflow: 'hidden' }}
+                  sx={{ mb: 1.5, borderRadius: 2, overflow: 'hidden' }}
                 >
-                  <ListItem sx={{ py: 2 }}>
+                  <ListItem>
                     <ListItemAvatar>
                       <Avatar
-                        sx={{ bgcolor: 'primary.main', width: 50, height: 50 }}
+                        sx={{
+                          bgcolor: member.ready_for_chat
+                            ? 'success.main'
+                            : 'primary.main',
+                        }}
                       >
                         <PersonIcon />
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
-                      primary={userName}
-                      secondary={`À environ ${match.distance_km} km`}
-                      primaryTypographyProps={{
-                        fontWeight: 700,
-                        variant: 'subtitle1',
-                      }}
+                      primary={member.is_me ? 'Vous' : member.user.username}
+                      secondary={
+                        member.ready_for_chat
+                          ? 'Prêt pour le chat'
+                          : member.ready
+                            ? 'Prêt'
+                            : 'En attente...'
+                      }
+                      primaryTypographyProps={{ fontWeight: 700 }}
                       secondaryTypographyProps={{
-                        color: 'success.main',
+                        color: member.ready_for_chat
+                          ? 'success.main'
+                          : member.ready
+                            ? 'info.main'
+                            : 'text.secondary',
                         fontWeight: 600,
                       }}
-                      sx={{ ml: 1 }}
                     />
-                    <Button
-                      variant="contained"
-                      size="small"
-                      color="primary"
-                      startIcon={<ChatBubbleOutlineIcon />}
-                      sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}
-                      onClick={() => onContactPlayer?.(targetUserId)}
-                    >
-                      Contacter
-                    </Button>
+                    {member.ready && (
+                      <CheckCircleIcon
+                        color={member.ready_for_chat ? 'success' : 'info'}
+                      />
+                    )}
                   </ListItem>
                 </Paper>
-              );
-            })}
-          </List>
+              ))}
+            </List>
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+              }}
+            >
+              {countdown !== null ? (
+                <Typography variant="h5" color="success.main" fontWeight="bold">
+                  Ouverture du chat dans {countdown}s...
+                </Typography>
+              ) : (
+                <>
+                  {!me?.ready ? (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      onClick={onReady}
+                    >
+                      Je suis prêt à jouer
+                    </Button>
+                  ) : !me?.ready_for_chat ? (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      onClick={onReadyForChat}
+                    >
+                      Ouvrir le chat
+                    </Button>
+                  ) : (
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      fontWeight="bold"
+                    >
+                      En attente des autres joueurs...
+                    </Typography>
+                  )}
+                </>
+              )}
+            </Box>
+          </Box>
         ) : (
+          /* ----- VUE RECHERCHE ----- */
           <Box
             sx={{
               py: { xs: 6, md: 10 },
@@ -227,22 +299,21 @@ export default function MatchmakingModal({
                 <RadarIcon sx={{ fontSize: 48 }} />
               </Avatar>
             </Box>
-
             <Typography
               variant="h5"
               fontWeight={700}
               gutterBottom
               sx={{ mb: 2 }}
             >
-              Analyse de la zone...
+              Recherche en cours...
             </Typography>
             <Typography
               variant="body1"
               color="text.secondary"
               sx={{ maxWidth: 450, lineHeight: 1.6 }}
             >
-              Nous élargissons le périmètre de recherche. Vous pouvez fermer
-              cette fenêtre, nous vous avertirons dès qu'un joueur sera trouvé !
+              Nous cherchons d'autres joueurs. Vous pouvez réduire cette
+              fenêtre, nous vous avertirons dès qu'un groupe sera formé !
             </Typography>
           </Box>
         )}
@@ -260,14 +331,14 @@ export default function MatchmakingModal({
         <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
           Réduire en arrière-plan
         </Button>
-        {startedAt && (
+        {(!party || party.status === 'open') && startedAt && (
           <Button
             onClick={onCancel}
             color="error"
             variant="outlined"
             sx={{ fontWeight: 600 }}
           >
-            Annuler la recherche
+            {party ? 'Quitter le lobby' : 'Annuler la recherche'}
           </Button>
         )}
       </Box>

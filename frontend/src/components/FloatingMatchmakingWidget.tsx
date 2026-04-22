@@ -1,22 +1,32 @@
-import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import { Box, Paper, Typography } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 
 interface FloatingMatchmakingWidgetProps {
   readonly startedAt: Date | null;
-  readonly hasNewMatch: boolean;
+  readonly status: 'searching' | 'lobby' | 'chat';
   readonly onClick: () => void;
 }
 
 export default function FloatingMatchmakingWidget({
   startedAt,
-  hasNewMatch,
+  status,
   onClick,
 }: FloatingMatchmakingWidgetProps) {
   const elapsedTime = useMatchmakingTimer(startedAt);
 
   if (!startedAt) return null;
+
+  const isLobby = status === 'lobby';
+  const isChat = status === 'chat';
+
+  const bgColor = isChat ? '#4caf50' : isLobby ? '#1976d2' : '#fff';
+  const textColor = isChat || isLobby ? '#fff' : 'text.primary';
+  const pulseColor = isChat
+    ? 'rgba(76, 175, 80, 0.7)'
+    : 'rgba(25, 118, 210, 0.7)';
 
   return (
     <Paper
@@ -34,29 +44,22 @@ export default function FloatingMatchmakingWidget({
         gap: 2,
         cursor: 'pointer',
         borderRadius: 8,
-        backgroundColor: hasNewMatch ? '#4caf50' : '#fff',
-        color: hasNewMatch ? '#fff' : 'text.primary',
-        border: hasNewMatch ? 'none' : '1px solid #e0e0e0',
-        animation: hasNewMatch ? 'pulse 1.5s infinite' : 'none',
-        '@keyframes pulse': {
-          '0%': {
-            transform: 'scale(1)',
-            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
-          },
-          '70%': {
-            transform: 'scale(1.05)',
-            boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
-          },
-          '100%': {
-            transform: 'scale(1)',
-            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
-          },
+        backgroundColor: bgColor,
+        color: textColor,
+        border: isChat || isLobby ? 'none' : '1px solid #e0e0e0',
+        animation: isChat || isLobby ? 'pulseWidget 2s infinite' : 'none',
+        '@keyframes pulseWidget': {
+          '0%': { boxShadow: `0 0 0 0 ${pulseColor}` },
+          '70%': { boxShadow: `0 0 0 10px rgba(0,0,0,0)` },
+          '100%': { boxShadow: `0 0 0 0 rgba(0,0,0,0)` },
         },
         transition: 'all 0.3s ease',
       }}
     >
-      {hasNewMatch ? (
-        <GroupAddIcon />
+      {isChat ? (
+        <ChatBubbleIcon />
+      ) : isLobby ? (
+        <CheckCircleOutlineIcon />
       ) : (
         <CircularProgress size={20} color="inherit" thickness={5} />
       )}
@@ -65,7 +68,11 @@ export default function FloatingMatchmakingWidget({
           variant="body2"
           sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
         >
-          {hasNewMatch ? 'Joueur trouvé !' : 'Recherche en cours...'}
+          {isChat
+            ? 'Ouvrir le chat'
+            : isLobby
+              ? 'Lobby en cours'
+              : 'Recherche en cours...'}
         </Typography>
         <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: 600 }}>
           {elapsedTime}

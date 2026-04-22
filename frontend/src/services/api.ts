@@ -60,7 +60,7 @@ export async function apiGet(path: string, options: RequestInit = {}) {
 // POST
 export async function apiPost(
   path: string,
-  body: any,
+  body: any = {},
   options: RequestInit = {}
 ) {
   return request(path, {
