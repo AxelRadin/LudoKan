@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
+import { startGoogleLogin } from '../auth/googleOAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
@@ -51,6 +52,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       setLoading(false);
     }
   };
+
+  const handleGoogleClick = () => {
+    setError(null);
+    try {
+      startGoogleLogin();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Connexion Google indisponible.'
+      );
+    }
+  };
+
   return (
     <AuthFormContainer
       title="Inscription"
@@ -98,7 +111,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         </Typography>
 
         <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" />
+          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
           <SocialLoginButton icon="apple" />
           <SocialLoginButton icon="x" />
           <SocialLoginButton icon="instagram" />

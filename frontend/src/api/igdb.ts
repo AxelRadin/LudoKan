@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '../services/api';
+import { apiGet, apiPatch, apiPost } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
 export type IgdbPlatform = {
@@ -30,6 +30,22 @@ export type IgdbCollection = {
 export type IgdbFranchise = {
   id: number;
   name: string;
+};
+
+export type IgdbInvolvedCompany = {
+  publisher: boolean;
+  company: { name: string };
+};
+
+export type IgdbScreenshot = {
+  id: number;
+  url: string;
+};
+
+export type IgdbVideo = {
+  id: number;
+  video_id: string;
+  name?: string;
 };
 
 export type IgdbGame = NormalizedGame;
@@ -104,11 +120,36 @@ export async function fetchTrendingGames(
   });
   if (genre != null) params.set('genre', String(genre));
   if (!enrich) params.set('enrich', '0');
-  return apiGet(`/api/igdb/trending/?${params}`, { signal });
+  const data = (await apiGet(`/api/igdb/trending/?${params}`, { signal })) as {
+    results: IgdbGame[];
+    total_count: number;
+  };
+  return data.results;
+}
+
+export async function fetchTrendingGamesWithCount(
+  sort: string,
+  limit = 25,
+  genre?: number,
+  offset = 0,
+  signal?: AbortSignal
+): Promise<{ games: IgdbGame[]; totalCount: number }> {
+  const params = new URLSearchParams({
+    sort,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (genre != null) params.set('genre', String(genre));
+  params.set('enrich', '0');
+  const data = (await apiGet(`/api/igdb/trending/?${params}`, { signal })) as {
+    results: IgdbGame[];
+    total_count: number;
+  };
+  return { games: data.results, totalCount: data.total_count };
 }
 
 export async function fetchIgdbGameById(igdbId: number): Promise<IgdbGame> {
-  return apiGet(`/api/igdb/games/${igdbId}/`);
+  return apiGet(`/api/games/igdb/${igdbId}/`);
 }
 
 export async function fetchFranchiseGames(
@@ -161,10 +202,6 @@ export async function translateDescription(text: string): Promise<string> {
   return data.translated;
 }
 
-// ---------------------------------------------------------------------------
-// Django : résolution/import jeu IGDB + ajout à la ludothèque
-// ---------------------------------------------------------------------------
-
 export async function resolveIgdbGame(
   igdbId: number,
   name?: string,
@@ -182,16 +219,7 @@ export async function resolveIgdbGame(
     release_date: releaseDate,
   });
 }
-/**
- * Resolves the Django game ID from a NormalizedGame.
- *
- * - If the game already has a `django_id`, returns it immediately (no network call).
- * - Otherwise calls `POST /api/games/resolve-from-igdb/` to create/find the game.
- *
- * ⚠️  Must only be called when a **persistent action** requires a Django ID
- *     (e.g. adding to library, rating, favouriting).
- *     Never call during a read-only consultation.
- */
+
 export async function resolveGameIdIfNeeded(game: NormalizedGame): Promise<{
   game_id: number;
   normalized_game: NormalizedGame;
@@ -213,8 +241,7 @@ export async function resolveGameIdIfNeeded(game: NormalizedGame): Promise<{
 }
 
 export async function addGameToLibrary(djangoGameId: number): Promise<void> {
-  await apiPost('/api/me/games/', {
-    game_id: djangoGameId,
+  await apiPatch(`/api/me/games/${djangoGameId}/`, {
     status: 'EN_COURS',
   });
 }

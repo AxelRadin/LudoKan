@@ -1,5 +1,5 @@
 # Dockerfile DEV pour Django
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -42,7 +42,7 @@ RUN useradd --create-home --shell /bin/bash app && \
 
 # Entrypoint pour faire migrations etc.
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN sed -i 's/\r//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 USER app
 

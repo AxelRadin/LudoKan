@@ -7,6 +7,8 @@ export type AuthContextType = {
   setAuthModalOpen: (open: boolean) => void;
   pendingAction: (() => void) | null;
   setPendingAction: (action: (() => void) | null) => void;
+  authMode: 'login' | 'register';
+  setAuthMode: (mode: 'login' | 'register') => void;
 };
 
 export const AuthContext = createContext<AuthContextType>({
@@ -16,4 +18,6 @@ export const AuthContext = createContext<AuthContextType>({
   setAuthModalOpen: () => {},
   pendingAction: null,
   setPendingAction: () => {},
+  authMode: 'login',
+  setAuthMode: () => {},
 });

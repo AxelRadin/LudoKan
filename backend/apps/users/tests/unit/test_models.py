@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.users.models import AdminAction, UserRole, UserSuspension
+from apps.users.models import AdminAction, SteamProfile, UserRole, UserSuspension
 
 User = get_user_model()
 
@@ -17,6 +17,16 @@ User = get_user_model()
 @pytest.mark.django_db
 class TestUserModel:
     """Tests pour le modèle User (CustomUser)"""
+
+    def test_generate_unique_pseudo(self):
+        """Génération de pseudo unique à partir d'un seed"""
+        assert User.objects.generate_unique_pseudo("Hello World") == "hello-world"
+        User.objects.create_user(
+            email="a@example.com",
+            pseudo="hello-world",
+            password="x",
+        )
+        assert User.objects.generate_unique_pseudo("Hello World") == "hello-world1"
 
     def test_create_user(self):
         """Test de création d'un utilisateur normal"""
@@ -199,3 +209,24 @@ class TestAdminActionModel:
         )
 
         assert "user.suspend par" in str(action)
+
+
+@pytest.mark.django_db
+class TestSteamProfileModel:
+    """Tests pour le modèle SteamProfile."""
+
+    def test_steam_profile_str_representation(self, user):
+        profile = SteamProfile.objects.create(
+            user=user,
+            steam_id="1234567890",
+            display_name="TestSteam",
+        )
+        assert str(profile) == f"{user.pseudo} (Steam: TestSteam)"
+
+    def test_steam_profile_str_representation_without_display_name(self, user):
+        profile = SteamProfile.objects.create(
+            user=user,
+            steam_id="1234567890",
+            display_name="",
+        )
+        assert str(profile) == f"{user.pseudo} (Steam: 1234567890)"

@@ -1,4 +1,5 @@
-import { ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -13,16 +14,23 @@ import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
-import theme from './theme.ts';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
+import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
+import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
+import { muiTheme } from './muiTheme';
+import AboutPage from './pages/AboutPage.tsx';
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: (
+      <MatchmakingProvider>
+        <App />
+      </MatchmakingProvider>
+    ),
     children: [
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
@@ -35,6 +43,9 @@ const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsPage /> },
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
+      { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
     ],
   },
 ]);
@@ -48,14 +59,15 @@ const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider theme={theme}>
-      <AuthProvider>
-        <MatchmakingProvider>
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={muiTheme}>
+        <CssBaseline />
+        <AuthProvider>
           <Sentry.ErrorBoundary fallback={errorFallback}>
             <RouterProvider router={router} />
           </Sentry.ErrorBoundary>
-        </MatchmakingProvider>
-      </AuthProvider>
-    </ThemeProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </StyledEngineProvider>
   </StrictMode>
 );

@@ -31,5 +31,6 @@ python manage.py sync_site
 
 # Lancer le serveur ASGI (Daphne) pour supporter HTTP + WebSockets.
 # On pointe sur config.asgi:application, qui contient ProtocolTypeRouter.
+
 echo "🚀 Démarrage du serveur..."
-watchfiles "daphne -b 0.0.0.0 -p 8000 config.asgi:application" .
+watchfiles --filter python "daphne -b 0.0.0.0 -p 8000 config.asgi:application" .

@@ -1,7 +1,15 @@
-import { Box, Card, CardMedia, IconButton, Tooltip } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardMedia,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import React, { useMemo, useState } from 'react';
+import { FaSteam } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { addGameToLibrary, resolveIgdbGame } from '../api/igdb';
+import { addGameToLibrary, resolveGameIdIfNeeded } from '../api/igdb';
 import { useAuth } from '../contexts/useAuth';
 import type { NormalizedGame } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
@@ -31,12 +39,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
     if (adding || added || !isIgdbOnly) return;
     setAdding(true);
     try {
-      const { game_id } = await resolveIgdbGame(
-        game.igdb_id,
-        game.name,
-        game.cover_url ?? null,
-        game.release_date ?? null
-      );
+      const { game_id } = await resolveGameIdIfNeeded(game);
       await addGameToLibrary(game_id);
       setAdded(true);
     } catch {
@@ -100,6 +103,34 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
           </Tooltip>
         </Box>
       )}
+
+      {/* Badge Steam */}
+      {game.steam_appid &&
+        game.user_library?.playtime_forever != null &&
+        game.user_library.playtime_forever > 0 && (
+          <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
+            <Box
+              sx={{
+                bgcolor: 'rgba(23,26,33,0.85)',
+                color: '#fff',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+              }}
+            >
+              <FaSteam size={14} />
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+              >
+                {game.user_library.playtime_forever}h
+              </Typography>
+            </Box>
+          </Box>
+        )}
     </Card>
   );
 };

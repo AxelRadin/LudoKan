@@ -43,6 +43,7 @@ class GameNestedSerializer(serializers.ModelSerializer):
             "publisher",
             "genres",
             "platforms",
+            "steam_appid",
         ]
 
 
@@ -52,8 +53,8 @@ class UserGameSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserGame
-        fields = ["id", "game", "game_id", "status", "is_favorite", "date_added"]
-        read_only_fields = ["date_added"]
+        fields = ["id", "game", "game_id", "status", "is_favorite", "date_added", "playtime_forever"]
+        read_only_fields = ["date_added", "playtime_forever"]
 
     def validate_status(self, value):
         allowed = ["EN_COURS", "TERMINE", "ABANDONNE", "ENVIE_DE_JOUER"]

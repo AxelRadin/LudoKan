@@ -26,6 +26,18 @@ def _extract_cover_url(cover: Any) -> str | None:
     return None
 
 
+def _extract_screenshots(screenshots: Any) -> list[dict]:
+    out = []
+    for s in screenshots or []:
+        if isinstance(s, dict):
+            url = s.get("url", "")
+            if url.startswith("//"):
+                url = "https:" + url
+            url = url.replace("t_thumb", "t_screenshot_big")
+            out.append({"url": url})
+    return out
+
+
 def _extract_entities(entities: Any) -> list[dict]:
     out = []
     for item in entities or []:
@@ -35,6 +47,15 @@ def _extract_entities(entities: Any) -> list[dict]:
             if item_name:
                 out.append({"id": item_id, "name": item_name})
     return out
+
+
+def _extract_publisher(involved_companies: Any) -> dict | None:
+    for ic in involved_companies or []:
+        if isinstance(ic, dict) and ic.get("publisher"):
+            company = ic.get("company")
+            if isinstance(company, dict) and company.get("name"):
+                return {"name": company["name"]}
+    return None
 
 
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
@@ -59,8 +80,11 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "genres": _extract_entities(g.get("genres")),
         "collections": _extract_entities(g.get("collections")),
         "franchises": _extract_entities(g.get("franchises")),
+        "publisher": _extract_publisher(g.get("involved_companies")),
         "user_library": None,
         "user_rating": None,
+        "screenshots": _extract_screenshots(g.get("screenshots")),
+        "videos": g.get("videos") or [],
     }
 
 

@@ -35,6 +35,7 @@ export interface BasePublisher {
 export interface UserLibraryData {
   status: string;
   is_favorite: boolean;
+  playtime_forever?: number | null;
 }
 
 /**
@@ -79,6 +80,10 @@ export interface NormalizedGame {
   collections?: BasePlatform[];
   franchises?: BasePlatform[];
 
+  // Media fields (from IGDB)
+  screenshots?: { url: string }[];
+  videos?: { id?: number; video_id: string; name?: string }[];
+
   // Django specific fields (Optional)
   id?: number;
   min_players?: number | null;
@@ -88,4 +93,5 @@ export interface NormalizedGame {
   average_rating?: number;
   rating_count?: number;
   popularity_score?: number;
+  steam_appid?: number | null;
 }

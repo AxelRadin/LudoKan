@@ -1,8 +1,22 @@
 from rest_framework import serializers
 
-from apps.games.models import Game, Genre, Platform, Publisher, Rating
+from apps.games.models import Game, GameScreenshot, GameVideo, Genre, Platform, Publisher, Rating
 from apps.library.models import UserGame
 from apps.library.serializers import GenreSerializer, PlatformSerializer, PublisherSerializer
+
+
+class GameScreenshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameScreenshot
+        fields = ["url"]
+
+
+class GameVideoSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="igdb_id")
+
+    class Meta:
+        model = GameVideo
+        fields = ["id", "name", "video_id"]
 
 
 class GameReadSerializer(serializers.ModelSerializer):
@@ -16,6 +30,8 @@ class GameReadSerializer(serializers.ModelSerializer):
     franchises = serializers.ReadOnlyField(default=[])
     user_library = serializers.SerializerMethodField()
     user_rating = serializers.SerializerMethodField()
+    screenshots = GameScreenshotSerializer(many=True, read_only=True)
+    videos = GameVideoSerializer(many=True, read_only=True, source="game_videos")
 
     class Meta:
         model = Game
@@ -42,6 +58,8 @@ class GameReadSerializer(serializers.ModelSerializer):
             "average_rating",
             "rating_count",
             "popularity_score",
+            "screenshots",
+            "videos",
             "created_at",
             "updated_at",
         ]
@@ -230,3 +248,8 @@ class IgdbResolveSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, allow_blank=True)
     cover_url = serializers.URLField(required=False, allow_null=True)
     release_date = serializers.DateField(required=False, allow_null=True)
+    summary = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    platforms = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
+    genres = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
+    screenshots = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
+    videos = serializers.ListField(child=serializers.DictField(), required=False, allow_empty=True)
