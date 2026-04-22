@@ -55,6 +55,10 @@ ignore:
     reason: "Python core vulnerability - no patch available for current slim image"
   - vulnerability: CVE-2025-13836
     reason: "CPython 3.11.15 includes fix (gh-119451 / http.client); Grype/NVD fixed-in omits 3.11.x maintenance releases"
+  - vulnerability: CVE-2026-5928
+    reason: "Won't fix by Debian - python system package"
+  - vulnerability: CVE-2026-5929
+    reason: "Won't fix by Debian - python system package"
 # Sources de données de vulnérabilités
 db:
   auto-update: true
