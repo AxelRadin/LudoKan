@@ -1748,91 +1748,6 @@ export default function ProfilePage() {
           </Box>
         </Box>
 
-<<<<<<< feat/KAN-94-page-jeux
-        {/* ── COUPS DE CŒUR ── */}
-        {gamesFavoris.length > 0 && (
-          <Paper
-            elevation={0}
-            sx={{
-              ...glassCard,
-              '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-              p: { xs: 2.5, md: 4 },
-              mb: 2.5,
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                mb: 3,
-                flexWrap: 'wrap',
-                gap: 1,
-              }}
-            >
-              <Box>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: 2,
-                    textTransform: 'uppercase',
-                    color: C.accent,
-                    mb: 0.5,
-                  }}
-                >
-                  Sélection
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_DISPLAY,
-                    fontWeight: 700,
-                    fontSize: 20,
-                    color: C.title,
-                    letterSpacing: -0.3,
-                  }}
-                >
-                  Coups de cœur ({gamesFavoris.length})
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 999,
-                  background: 'rgba(211,47,47,0.1)',
-                  border: '1px solid rgba(211,47,47,0.25)',
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    color: C.accent,
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}
-                >
-                  {gamesFavoris.length} jeu
-                  {jeuPluralSuffix(gamesFavoris.length)}
-                </Typography>
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                height: '1px',
-                background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
-                mb: 3,
-              }}
-            />
-            <GameList
-              games={gamesFavoris}
-              showStatus={false}
-              onRemove={removeGame}
-            />
-          </Paper>
-        )}
-=======
         {/* ── INTÉGRATIONS ── */}
         <ProfileIntegrations
           steam_id={user?.steam_id}
@@ -1846,7 +1761,6 @@ export default function ProfilePage() {
           gamesFavoris={gamesFavoris}
           removeGame={removeGame}
         />
->>>>>>> staging
 
         {/* ── LIBRARY ── */}
         <Paper

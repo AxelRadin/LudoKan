@@ -25,6 +25,7 @@ describe('GameList', () => {
     );
 
     fireEvent.click(screen.getByLabelText('Retirer le jeu'));
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer' }));
     expect(mockRemove).toHaveBeenCalledWith(99);
   });
 });
