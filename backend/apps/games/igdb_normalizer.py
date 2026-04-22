@@ -77,8 +77,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     if igdb_id is None:
         igdb_id = 0
 
-    # Normalisation du nom (g.get("display_name") provient éventuellement de l'enrichissement Wikidata)
-    name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("name") or "Unknown"
+    # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
+    name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
 
     return {
         "igdb_id": igdb_id,
