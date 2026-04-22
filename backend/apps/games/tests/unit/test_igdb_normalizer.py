@@ -5,6 +5,29 @@ from apps.games.models import Rating
 from apps.library.models import UserGame
 
 
+def test_normalize_igdb_game_french_title_from_alternative_names():
+    """alternative_names : ignore les entrées non-dict, puis titre avec commentaire 'French'."""
+    raw_game = {
+        "id": 40,
+        "name": "English Title",
+        "alternative_names": [
+            "not a dict",
+            {"comment": "Official French title", "name": "Titre français"},
+        ],
+    }
+    assert normalize_igdb_game(raw_game)["name"] == "Titre français"
+
+
+def test_normalize_igdb_game_alternative_names_french_comment_but_no_name():
+    """Entrée 'French' sans nom exploitable : pas de retour depuis alternative_names, fallback sur name."""
+    raw_game = {
+        "id": 41,
+        "name": "Fallback",
+        "alternative_names": [{"comment": "French title", "name": ""}],
+    }
+    assert normalize_igdb_game(raw_game)["name"] == "Fallback"
+
+
 def test_normalize_igdb_game_basic():
     """Vérifie la normalisation avec tous les champs présents idéaux (mock d'une réponse de vue détails)."""
     raw_game = {
