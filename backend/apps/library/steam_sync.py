@@ -51,14 +51,18 @@ def sync_steam_library(user: CustomUser) -> None:
         logger.warning(f"No games found on Steam for user {user.pseudo}. Check if 'Game details' are public in Steam Privacy Settings.")
         return
 
+    logger.info(f"Steam API returned {len(games_data)} games for user {user.pseudo}")
+
     appids_to_playtime = {int(game["appid"]): int(game.get("playtime_forever", 0)) for game in games_data}
     steam_appids = list(appids_to_playtime.keys())
 
     # 1. Match with existing games in DB using steam_appid
     existing_games = list(Game.objects.filter(steam_appid__in=steam_appids))
     existing_appids = {game.steam_appid for game in existing_games}
+    logger.info(f"Found {len(existing_games)} games already in local DB out of {len(steam_appids)}")
 
     missing_appids = [appid for appid in steam_appids if appid not in existing_appids]
+    logger.info(f"Missing {len(missing_appids)} games to fetch from IGDB")
 
     # 2. Fetch missing games in chunks from IGDB
     chunk_size = 50
@@ -68,6 +72,7 @@ def sync_steam_library(user: CustomUser) -> None:
 
     # 3. Reload all matched games (some missing ones are now created)
     all_matched_games = Game.objects.filter(steam_appid__in=steam_appids)
+    logger.info(f"Total matched games in DB ready to map: {all_matched_games.count()} out of {len(steam_appids)}")
 
     # 4. Map to UserGame and update playtimes
     with transaction.atomic():
@@ -88,22 +93,15 @@ def sync_steam_library(user: CustomUser) -> None:
     logger.info(f"Steam synchronization complete for user {user.pseudo}")
 
 
-def _extract_steam_appid(igdb_game: dict) -> int | None:
-    ext_games = igdb_game.get("external_games", [])
-    for ex in ext_games:
-        if ex.get("category") == 1:
-            uid = ex.get("uid")
-            if uid and uid.isdigit():
-                return int(uid)
-    return None
+# Removed _extract_steam_appid as it is replaced by mapping
 
 
-def _process_single_igdb_game(igdb_game: dict) -> None:
+def _process_single_igdb_game(igdb_game: dict, igdb_id_to_steam: dict) -> None:
     igdb_id = igdb_game.get("id")
     if not igdb_id:
         return
 
-    steam_appid = _extract_steam_appid(igdb_game)
+    steam_appid = igdb_id_to_steam.get(igdb_id)
     if not steam_appid:
         return
 
@@ -128,21 +126,47 @@ def _resolve_and_save_missing_games(appids: List[int]) -> None:
     if not appids:
         return
 
-    uid_list = ", ".join(f'"{appid}"' for appid in appids)
-    # Include external_games array to parse the steam appid back via category 1
-    query = (
-        f"{FIELDS_GAMES_LIST},external_games.category,external_games.uid "
-        f"where external_games.category = 1 & external_games.uid = ({uid_list}); "
-        f"limit {len(appids)};"
-    )
+    # 1. Obtenir les IDs IGDB via l'endpoint external_games
+    uid_conditions = " | ".join(f'uid="{appid}"' for appid in appids)
+    ext_query = f"fields game,uid; where {uid_conditions}; limit {len(appids)};"
 
     try:
-        igdb_games = igdb_request("games", query)
+        ext_games = igdb_request("external_games", ext_query)
+        if not isinstance(ext_games, list):
+            ext_games = []
+    except Exception as e:
+        logger.error(f"IGDB external_games resolution error: {e}")
+        return
+
+    steam_to_igdb_id = {}
+    for ext in ext_games:
+        game_id = ext.get("game")
+        if isinstance(game_id, dict):
+            game_id = game_id.get("id")
+        uid = ext.get("uid")
+        if game_id and uid and uid.isdigit():
+            appid = int(uid)
+            if appid not in steam_to_igdb_id:
+                steam_to_igdb_id[appid] = game_id
+
+    if not steam_to_igdb_id:
+        logger.warning(f"Could not map any of the {len(appids)} Steam AppIDs to IGDB.")
+        return
+
+    igdb_id_to_steam = {v: k for k, v in steam_to_igdb_id.items()}
+
+    # 2. Récupérer les données des jeux
+    game_ids_str = ", ".join(str(gid) for gid in igdb_id_to_steam.keys())
+    game_query = f"{FIELDS_GAMES_LIST} where id = ({game_ids_str}); limit {len(igdb_id_to_steam)};"
+
+    try:
+        igdb_games = igdb_request("games", game_query)
         if not isinstance(igdb_games, list):
             igdb_games = []
+        logger.info(f"IGDB request for {len(appids)} missing appids returned {len(igdb_games)} mapped games")
     except Exception as e:
-        logger.error(f"IGDB Steam AppID resolution error: {e}")
+        logger.error(f"IGDB games resolution error: {e}")
         return
 
     for igdb_game in igdb_games:
-        _process_single_igdb_game(igdb_game)
+        _process_single_igdb_game(igdb_game, igdb_id_to_steam)
