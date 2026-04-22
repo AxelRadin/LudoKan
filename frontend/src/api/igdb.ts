@@ -149,7 +149,7 @@ export async function fetchTrendingGamesWithCount(
 }
 
 export async function fetchIgdbGameById(igdbId: number): Promise<IgdbGame> {
-  return apiGet(`/api/igdb/games/${igdbId}/`);
+  return apiGet(`/api/games/igdb/${igdbId}/`);
 }
 
 export async function fetchFranchiseGames(

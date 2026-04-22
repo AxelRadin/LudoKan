@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import type { ReactNode } from 'react';
 import { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GenreGrid from '../components/GenreGrid';
@@ -9,7 +10,7 @@ import { useHomeTrending } from '../hooks/useHomeTrending';
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
-styleEl.setAttribute('data-home-lux', '1');
+styleEl.dataset.homeLux = '1';
 styleEl.textContent = `
   @keyframes luxFadeUp {
     from { opacity: 0; transform: translateY(28px); }
@@ -34,8 +35,8 @@ const C = {
   cardHover: 'rgba(255,255,255,0.82)',
   border: 'rgba(198,40,40,0.10)',
   borderHover: 'rgba(198,40,40,0.22)',
-  accent: '#c62828',
-  accentSoft: '#d43c3c',
+  accent: '#b71c1c',
+  accentSoft: '#c62828',
   ink: '#241818',
   light: '#b49393',
   darkBgBase: '#1a1010',
@@ -50,18 +51,15 @@ const C = {
   darkLight: '#9e7070',
 };
 
-/* ── Section header ── */
-function SectionLabel({
-  label,
-  title,
-  to,
-  linkState,
-}: {
+type SectionLabelProps = Readonly<{
   label: string;
   title: string;
   to?: string;
   linkState?: object;
-}) {
+}>;
+
+/* ── Section header ── */
+function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const inkColor = isDark ? C.darkInk : C.ink;
@@ -69,7 +67,7 @@ function SectionLabel({
 
   return (
     <Box sx={{ mb: 3, position: 'relative' }}>
-      <Box
+      {/* <Box
         sx={{
           position: 'absolute',
           left: 0,
@@ -81,7 +79,7 @@ function SectionLabel({
           borderRadius: '2px',
           opacity: 0.7,
         }}
-      />
+      /> */}
 
       <Box sx={{ pl: '18px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
@@ -156,7 +154,7 @@ function SectionLabel({
           )}
         </Box>
 
-        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+        {/* <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
               width: 40,
@@ -182,22 +180,20 @@ function SectionLabel({
               opacity: isDark ? 0.25 : 0.18,
             }}
           />
-        </Box>
+        </Box> */}
       </Box>
     </Box>
   );
 }
 
-/* ── Section avec fond jaquette ── */
-function Section({
-  children,
-  className,
-  coverUrl,
-}: {
-  children: React.ReactNode;
+type SectionProps = Readonly<{
+  children: ReactNode;
   className?: string;
   coverUrl?: string;
-}) {
+}>;
+
+/* ── Section avec fond jaquette ── */
+function Section({ children, className, coverUrl }: SectionProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -213,6 +209,11 @@ function Section({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  let coverOverlayOpacity = 0;
+  if (visible) {
+    coverOverlayOpacity = isDark ? 0.45 : 0.35;
+  }
 
   return (
     <Box
@@ -248,7 +249,7 @@ function Section({
             backgroundPosition: 'center',
             filter: 'blur(28px) saturate(1.6)',
             transform: 'scale(1.15)',
-            opacity: visible ? (isDark ? 0.45 : 0.35) : 0,
+            opacity: coverOverlayOpacity,
             transition: 'opacity 1.4s cubic-bezier(0.16,1,0.3,1)',
             zIndex: 0,
           }}
@@ -331,7 +332,7 @@ export const HomePage = () => {
     >
       <Box
         sx={{
-          maxWidth: 1200,
+          maxWidth: { md: '100%', lg: '70%' },
           mx: 'auto',
           px: { xs: 2.5, md: 5, lg: 7 },
           pt: { xs: 4, md: 6 },

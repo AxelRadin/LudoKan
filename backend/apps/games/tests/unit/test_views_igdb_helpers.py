@@ -4,7 +4,7 @@ import pytest
 from django.core.exceptions import ImproperlyConfigured
 
 from apps.games.views_igdb import _clamp_limit, _clamp_limit_200, _clamp_offset, _is_igdb_unavailable
-from apps.games.views_igdb_helpers import remove_q_equals_artifact, split_sentences_for_translate
+from apps.games.views_igdb_helpers import remove_q_equals_artifact, split_sentences_for_translate, trending_fetch_total_count
 
 
 def test_split_sentences_splits_on_punctuation():
@@ -67,3 +67,13 @@ def test_clamp_offset():
 )
 def test_is_igdb_unavailable(exc, expected):
     assert _is_igdb_unavailable(exc) is expected
+
+
+def _igdb_request_that_raises(_endpoint, _query):
+    raise RuntimeError("IGDB unavailable")
+
+
+@pytest.mark.parametrize("genre_id", [None, 42])
+def test_trending_fetch_total_count_returns_zero_on_igdb_error(genre_id):
+    """Branche except (views_igdb_helpers l.119-120) si la requête IGDB échoue."""
+    assert trending_fetch_total_count(_igdb_request_that_raises, genre_id=genre_id, sort="popularity") == 0

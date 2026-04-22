@@ -108,7 +108,7 @@ def trending_fetch_total_count(
 ) -> int:
     try:
         if genre_id is not None:
-            query = f"fields id; " f"where genres = ({genre_id}) & total_rating_count > 0; " f"limit 500;"
+            query = f"fields id; where genres = ({genre_id}) & total_rating_count > 0; " "limit 500;"
             raw = igdb_response_as_list(igdb_request("games", query))
             return len(raw)
         sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0;")

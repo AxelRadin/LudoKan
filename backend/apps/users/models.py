@@ -40,6 +40,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=150, blank=True)
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True, validators=[validate_avatar])
     avatar_url = models.URLField(blank=True)
+    banner = models.ImageField(upload_to="banners/", null=True, blank=True, validators=[validate_avatar])
+    banner_url = models.URLField(blank=True)
     description_courte = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -173,3 +175,31 @@ class AdminAction(models.Model):
 
     def __str__(self) -> str:
         return f"{self.action_type} par {self.admin_user} sur {self.target_type}#{self.target_id}"
+
+
+class SteamProfile(models.Model):
+    """
+    Lien 1:1 entre un CustomUser et son identité Steam.
+    """
+
+    user = models.OneToOneField(
+        "CustomUser",
+        on_delete=models.CASCADE,
+        related_name="steam_profile",
+    )
+    steam_id = models.CharField(
+        max_length=64,
+        unique=True,
+        help_text="SteamID64 de l'utilisateur",
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+    display_name = models.CharField(max_length=255, blank=True)
+    profile_url = models.URLField(blank=True)
+
+    class Meta:
+        verbose_name = "Steam Profile"
+        verbose_name_plural = "Steam Profiles"
+
+    def __str__(self):
+        return f"{self.user.pseudo} (Steam: {self.display_name or self.steam_id})"

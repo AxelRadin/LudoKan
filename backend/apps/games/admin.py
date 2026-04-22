@@ -4,7 +4,7 @@ from import_export.admin import ImportExportModelAdmin
 
 from apps.users.utils import log_admin_action
 
-from .models import Game, Genre, Platform, Publisher, Rating
+from .models import Game, GameScreenshot, GameVideo, Genre, Platform, Publisher, Rating
 
 
 @admin.register(Publisher)
@@ -46,6 +46,16 @@ class GameResource(resources.ModelResource):
         import_id_fields = ("id",)
 
 
+class GameScreenshotInline(admin.TabularInline):
+    model = GameScreenshot
+    extra = 1
+
+
+class GameVideoInline(admin.TabularInline):
+    model = GameVideo
+    extra = 1
+
+
 @admin.register(Game)
 class GameAdmin(ImportExportModelAdmin):
     resource_class = GameResource
@@ -55,6 +65,7 @@ class GameAdmin(ImportExportModelAdmin):
     list_filter = ("publisher", "genres", "platforms", "status")
     list_select_related = ("publisher",)
     date_hierarchy = "created_at"
+    inlines = [GameScreenshotInline, GameVideoInline]
 
     def has_import_permission(self, request, *args, **kwargs):
         from apps.users.permissions import has_permission
@@ -127,3 +138,18 @@ class RatingAdmin(ImportExportModelAdmin):
 
     def has_export_permission(self, request, *args, **kwargs):
         return bool(getattr(request.user, "is_staff", False))
+
+
+@admin.register(GameScreenshot)
+class GameScreenshotAdmin(admin.ModelAdmin):
+    list_display = ("game", "position", "url", "igdb_id")
+    search_fields = ("game__name", "url")
+    list_filter = ("position",)
+    list_select_related = ("game",)
+
+
+@admin.register(GameVideo)
+class GameVideoAdmin(admin.ModelAdmin):
+    list_display = ("game", "name", "video_id", "igdb_id")
+    search_fields = ("game__name", "name", "video_id")
+    list_select_related = ("game",)

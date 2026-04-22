@@ -15,8 +15,10 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.reviews.models import ContentReport
+from apps.users import recaptcha as recaptcha_module
+from apps.users.errors import UserErrors
 from apps.users.models import AdminAction, CustomUser, UserRole, UserSuspension
-from apps.users.tests.constants import TEST_USER_CREDENTIAL
+from apps.users.tests.constants import RECAPTCHA_POST_FIELD, TEST_USER_CREDENTIAL
 
 
 def get_errors_payload(response):
@@ -118,7 +120,7 @@ class TestLoginView:
     def test_login_success(self, api_client, user):
         """Test login réussi avec credentials valides"""
         url = "/api/auth/login/"
-        data = {"email": user.email, "password": TEST_USER_CREDENTIAL}
+        data = {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD}
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
@@ -129,7 +131,7 @@ class TestLoginView:
     def test_login_wrong_password(self, api_client, user):
         """Test login avec mauvais mot de passe"""
         url = "/api/auth/login/"
-        data = {"email": user.email, "password": "WrongPassword123!"}
+        data = {"email": user.email, "password": "WrongPassword123!", **RECAPTCHA_POST_FIELD}
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -139,7 +141,7 @@ class TestLoginView:
     def test_login_nonexistent_user(self, api_client):
         """Test login avec email inexistant"""
         url = "/api/auth/login/"
-        data = {"email": "nonexistent@example.com", "password": "AnyPassword123!"}
+        data = {"email": "nonexistent@example.com", "password": "AnyPassword123!", **RECAPTCHA_POST_FIELD}
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -147,11 +149,35 @@ class TestLoginView:
     def test_login_missing_fields(self, api_client):
         """Test login avec champs manquants"""
         url = "/api/auth/login/"
-        response = api_client.post(url, {"email": "test@example.com"}, format="json")
+        response = api_client.post(
+            url,
+            {"email": "test@example.com", **RECAPTCHA_POST_FIELD},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         errors = get_errors_payload(response)
         assert "password" in errors
+
+    def test_login_missing_recaptcha_token(self, api_client, user):
+        """Sans recaptcha_token, le login est refusé avant la validation du mot de passe."""
+        url = "/api/auth/login/"
+        response = api_client.post(
+            url,
+            {"email": user.email, "password": TEST_USER_CREDENTIAL},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data.get("detail") == UserErrors.RECAPTCHA_TOKEN_MISSING
+
+    def test_login_recaptcha_verification_failed(self, api_client, user):
+        """Si Google (ou le mock) refuse le jeton, message RECAPTCHA_INVALID."""
+        url = "/api/auth/login/"
+        data = {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD}
+        with patch.object(recaptcha_module, "verify_recaptcha", return_value=False):
+            response = api_client.post(url, data, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.data.get("detail") == UserErrors.RECAPTCHA_INVALID
 
 
 @pytest.mark.django_db
@@ -568,7 +594,7 @@ class TestCORSAndSecurity:
     def test_cors_headers_present(self, api_client, user):
         """Test que les headers CORS sont présents"""
         url = "/api/auth/login/"
-        data = {"email": user.email, "password": "SuperPass123!"}
+        data = {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD}
         response = api_client.post(url, data, format="json", HTTP_ORIGIN="http://localhost:5173")
 
         assert "access-control-allow-origin" in [k.lower() for k in response.headers.keys()]
@@ -576,7 +602,7 @@ class TestCORSAndSecurity:
     def test_jwt_cookies_httponly(self, api_client, user):
         """Test que les cookies JWT sont HttpOnly"""
         url = "/api/auth/login/"
-        data = {"email": user.email, "password": "SuperPass123!"}
+        data = {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD}
         response = api_client.post(url, data, format="json")
 
         access_cookie = response.cookies.get("access_token")
@@ -618,7 +644,7 @@ class TestAdminSuspendUserView:
         login_url = "/api/auth/login/"
         login_response = api_client.post(
             login_url,
-            {"email": user.email, "password": TEST_USER_CREDENTIAL},
+            {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
             format="json",
         )
         assert login_response.status_code == status.HTTP_200_OK
@@ -657,7 +683,7 @@ class TestAdminSuspendUserView:
         login_url = "/api/auth/login/"
         login_response = api_client.post(
             login_url,
-            {"email": admin_user.email, "password": TEST_USER_CREDENTIAL},
+            {"email": admin_user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
             format="json",
         )
         assert login_response.status_code == status.HTTP_200_OK
@@ -680,7 +706,7 @@ class TestAdminSuspendUserView:
         login_url = "/api/auth/login/"
         login_response = api_client.post(
             login_url,
-            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL},
+            {"email": moderator_user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
             format="json",
         )
         assert login_response.status_code == status.HTTP_200_OK

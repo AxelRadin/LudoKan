@@ -27,6 +27,7 @@ class UserGame(models.Model):
         default=GameStatus.EN_COURS,
     )
     is_favorite = models.BooleanField(default=False)
+    playtime_forever = models.FloatField(default=0.0, help_text="Temps de jeu total en heures")
     date_added = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 

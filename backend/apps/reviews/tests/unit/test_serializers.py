@@ -57,3 +57,69 @@ class TestReviewSerializers:
             serializer.is_valid(raise_exception=True)
 
         assert "deja laisse un avis pour ce jeu" in str(exc.value)
+
+    def test_review_write_validate_fails_if_no_rating_and_no_content(self, user, game):
+        request = factory.post("/api/reviews/")
+        request.user = user
+
+        serializer = ReviewWriteSerializer(
+            data={"game": game.id, "content": ""},
+            context={"request": request},
+        )
+        assert not serializer.is_valid()
+        assert "Veuillez fournir une note ou un avis." in str(serializer.errors["non_field_errors"])
+
+    def test_review_write_create_with_rating_value(self, user, game):
+        request = factory.post("/api/reviews/")
+        request.user = user
+
+        serializer = ReviewWriteSerializer(
+            data={"game": game.id, "rating_value": 4, "content": "Nice game"},
+            context={"request": request},
+        )
+        assert serializer.is_valid(), serializer.errors
+        review = serializer.save()
+
+        assert review.rating is not None
+        assert review.rating.value == 4
+        assert review.rating.user == user
+        assert review.rating.game == game
+
+    def test_review_write_update_existing_rating(self, user, game):
+        from apps.games.models import Rating
+
+        rating = Rating.objects.create(user=user, game=game, value=3, rating_type=Rating.RATING_TYPE_ETOILES, normalized_value=6)
+        review = Review.objects.create(user=user, game=game, content="Initial", rating=rating)
+
+        request = factory.patch(f"/api/reviews/{review.id}/")
+        request.user = user
+
+        serializer = ReviewWriteSerializer(
+            instance=review,
+            data={"rating_value": 5},
+            partial=True,
+            context={"request": request},
+        )
+        assert serializer.is_valid(), serializer.errors
+        updated_review = serializer.save()
+
+        assert updated_review.rating.id == rating.id
+        assert updated_review.rating.value == 5
+
+    def test_review_write_update_create_rating(self, user, game):
+        review = Review.objects.create(user=user, game=game, content="Initial without rating")
+
+        request = factory.patch(f"/api/reviews/{review.id}/")
+        request.user = user
+
+        serializer = ReviewWriteSerializer(
+            instance=review,
+            data={"rating_value": 4},
+            partial=True,
+            context={"request": request},
+        )
+        assert serializer.is_valid(), serializer.errors
+        updated_review = serializer.save()
+
+        assert updated_review.rating is not None
+        assert updated_review.rating.value == 4
