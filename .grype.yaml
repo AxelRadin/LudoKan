@@ -53,8 +53,6 @@ ignore:
     reason: "Won't fix by Debian - libcap2 system package"
   - vulnerability: CVE-2026-6100
     reason: "Python core vulnerability - no patch available for current slim image"
-  - vulnerability: CVE-2026-4786
-    reason: "Python core vulnerability - no patch available for current slim image"
 # Sources de données de vulnérabilités
 db:
   auto-update: true
