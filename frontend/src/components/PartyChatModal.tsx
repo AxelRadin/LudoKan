@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useRef, useState } from 'react';
+import { apiGet } from '../services/api';
 import { PartyInfo, PartyMember } from './MatchmakingModal';
 
 interface PartyChatModalProps {
@@ -56,13 +57,35 @@ export default function PartyChatModal({
   }, [messages]);
 
   useEffect(() => {
-    if (!open || !chatRoomId) return;
+    if (!chatRoomId) return;
+
+    const fetchHistory = async () => {
+      try {
+        const res = await apiGet(`/api/chats/${chatRoomId}/messages`);
+        const historyList = Array.isArray(res) ? res : res?.results || [];
+
+        const formattedHistory = historyList.map((msg: any) => ({
+          id: msg.id.toString(),
+          sender: `Joueur ${msg.user_id}`,
+          content: msg.content,
+        }));
+
+        setMessages(formattedHistory);
+      } catch (error) {
+        console.error('Erreur chargement historique:', error);
+      }
+    };
+
+    fetchHistory();
+  }, [chatRoomId]);
+
+  useEffect(() => {
+    if (!chatRoomId) return;
 
     const apiBase =
       import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     const wsProtocol = apiBase.startsWith('https') ? 'wss://' : 'ws://';
     const wsHost = apiBase.replace(/^https?:\/\//, '');
-
     const wsUrl = `${wsProtocol}${wsHost}/ws/chat/${chatRoomId}/`;
 
     const ws = new WebSocket(wsUrl);
@@ -71,21 +94,26 @@ export default function PartyChatModal({
     ws.onmessage = event => {
       const data = JSON.parse(event.data);
 
-      setMessages(prev => [
-        ...prev,
-        {
-          id: data.id ? data.id.toString() : Date.now().toString(),
-          sender: `Joueur ${data.user_id}`,
-          content: data.content,
-        },
-      ]);
+      setMessages(prev => {
+        const newId = data.id ? data.id.toString() : Date.now().toString();
+        if (prev.some(m => m.id === newId)) return prev;
+
+        return [
+          ...prev,
+          {
+            id: newId,
+            sender: `Joueur ${data.user_id}`,
+            content: data.content,
+          },
+        ];
+      });
     };
 
     return () => {
       ws.close();
       wsRef.current = null;
     };
-  }, [open, chatRoomId]);
+  }, [chatRoomId]);
 
   useEffect(() => {
     const currentMembers: PartyMember[] = JSON.parse(membersStr);
