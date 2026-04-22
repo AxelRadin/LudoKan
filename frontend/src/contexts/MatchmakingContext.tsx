@@ -107,17 +107,22 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         );
 
         if (partyRes && partyRes.id) {
-          if (
-            partyRes.status === 'chat_active' &&
-            activePartyStatus !== 'chat_active'
-          ) {
-            setIsMatchmakingModalOpen(false);
-            setIsChatModalOpen(true);
+          const isMatchFound =
+            partyRes.members.length > 1 || partyRes.status !== 'open';
+
+          if (isMatchFound) {
+            if (
+              partyRes.status === 'chat_active' &&
+              activePartyStatus !== 'chat_active'
+            ) {
+              setIsMatchmakingModalOpen(false);
+              setIsChatModalOpen(true);
+            }
+            setActiveParty(partyRes);
+          } else {
+            setActiveParty(null);
           }
-          setActiveParty(partyRes);
           return;
-        } else {
-          setActiveParty(null);
         }
 
         if (activeRequestId) {
