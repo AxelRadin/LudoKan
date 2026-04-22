@@ -12,7 +12,7 @@ import type { NormalizedGame } from '../types/game';
 function normalize(s: string): string {
   return s
     .normalize('NFD')
-    .replace(/\p{Mn}/gu, '')
+    .replaceAll(/\p{Mn}/gu, '')
     .toLowerCase();
 }
 
@@ -30,7 +30,7 @@ type WithNorm<T extends NormalizedGame> = T & { _norm: string };
 
 /** Tight threshold for full-phrase matching */
 const FULL_PHRASE_OPTIONS: IFuseOptions<WithNorm<NormalizedGame>> = {
-  keys: [{ name: '_norm', weight: 1.0 }],
+  keys: [{ name: '_norm', weight: 1 }],
   threshold: 0.6,
   includeScore: true,
   includeMatches: true,
