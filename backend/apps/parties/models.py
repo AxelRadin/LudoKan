@@ -1,9 +1,9 @@
-from backend.apps.parties.constants import TIMED_OUT_LABEL
 from django.conf import settings
 from django.db import models
 
 from apps.chat.models import ChatRoom
 from apps.games.models import Game
+from apps.parties.constants import TIMED_OUT_LABEL
 
 
 class GamePartyMemberQuerySet(models.QuerySet):
