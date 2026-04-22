@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import type { ReactNode } from 'react';
 import { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import GenreGrid from '../components/GenreGrid';
@@ -9,7 +10,7 @@ import { useHomeTrending } from '../hooks/useHomeTrending';
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
-styleEl.setAttribute('data-home-lux', '1');
+styleEl.dataset.homeLux = '1';
 styleEl.textContent = `
   @keyframes luxFadeUp {
     from { opacity: 0; transform: translateY(28px); }
@@ -50,18 +51,15 @@ const C = {
   darkLight: '#9e7070',
 };
 
-/* ── Section header ── */
-function SectionLabel({
-  label,
-  title,
-  to,
-  linkState,
-}: {
+type SectionLabelProps = Readonly<{
   label: string;
   title: string;
   to?: string;
   linkState?: object;
-}) {
+}>;
+
+/* ── Section header ── */
+function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const inkColor = isDark ? C.darkInk : C.ink;
@@ -188,16 +186,14 @@ function SectionLabel({
   );
 }
 
-/* ── Section avec fond jaquette ── */
-function Section({
-  children,
-  className,
-  coverUrl,
-}: {
-  children: React.ReactNode;
+type SectionProps = Readonly<{
+  children: ReactNode;
   className?: string;
   coverUrl?: string;
-}) {
+}>;
+
+/* ── Section avec fond jaquette ── */
+function Section({ children, className, coverUrl }: SectionProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -213,6 +209,11 @@ function Section({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  let coverOverlayOpacity = 0;
+  if (visible) {
+    coverOverlayOpacity = isDark ? 0.45 : 0.35;
+  }
 
   return (
     <Box
@@ -248,7 +249,7 @@ function Section({
             backgroundPosition: 'center',
             filter: 'blur(28px) saturate(1.6)',
             transform: 'scale(1.15)',
-            opacity: visible ? (isDark ? 0.45 : 0.35) : 0,
+            opacity: coverOverlayOpacity,
             transition: 'opacity 1.4s cubic-bezier(0.16,1,0.3,1)',
             zIndex: 0,
           }}
