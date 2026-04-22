@@ -18,6 +18,7 @@ import { styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type IgdbGame, searchIgdbGames } from '../api/igdb';
+import { useFuzzyGames, type MatchIndices } from '../hooks/useFuzzyGames';
 import { apiGet } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
@@ -113,6 +114,36 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   overflow: 'hidden',
 }));
 
+type HighlightedTextProps = Readonly<{
+  text: string;
+  indices: MatchIndices;
+}>;
+
+function HighlightedText({ text, indices }: HighlightedTextProps) {
+  if (!indices.length) return <>{text}</>;
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  for (const [start, end] of indices) {
+    if (start > cursor) parts.push(text.slice(cursor, start));
+    parts.push(
+      <mark
+        key={start}
+        style={{
+          background: 'rgba(255, 200, 0, 0.45)',
+          borderRadius: 2,
+          padding: '0 1px',
+          fontWeight: 700,
+        }}
+      >
+        {text.slice(start, end + 1)}
+      </mark>
+    );
+    cursor = end + 1;
+  }
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+}
+
 const SEARCH_DEBOUNCE_MS = 280;
 const DROPDOWN_LOCAL_MAX = 5;
 const DROPDOWN_IGDB_MAX = 8;
@@ -137,16 +168,56 @@ function mapLocalToSearchGame(g: any): SearchSourcedGame {
   };
 }
 
+function parseLocalSearchResponse(res: unknown): SearchSourcedGame[] {
+  const rawResults = Array.isArray(res)
+    ? res
+    : ((res as { results?: unknown[] })?.results ?? []);
+  return rawResults.map(mapLocalToSearchGame) as SearchSourcedGame[];
+}
+
+function mapIgdbGamesToSearch(games: IgdbGame[]): SearchSourcedGame[] {
+  return games.map(mapIgdbToSearchGame);
+}
+
+function mergeUniqueIntoPool(
+  prev: SearchSourcedGame[],
+  incoming: SearchSourcedGame[]
+): SearchSourcedGame[] {
+  const seen = new Set(prev.map(g => g.igdb_id));
+  const fresh = incoming.filter(g => !seen.has(g.igdb_id));
+  return [...prev, ...fresh];
+}
+
+async function fetchSearchGameLists(
+  q: string,
+  igdbMax: number,
+  signal: AbortSignal
+): Promise<{ local: SearchSourcedGame[]; igdb: SearchSourcedGame[] }> {
+  const localReq = apiGet(`/api/games/?search=${encodeURIComponent(q)}`)
+    .then(parseLocalSearchResponse)
+    .catch(() => [] as SearchSourcedGame[]);
+
+  const igdbReq = searchIgdbGames(q, igdbMax, false, signal)
+    .then(mapIgdbGamesToSearch)
+    .catch(() => [] as SearchSourcedGame[]);
+
+  const [local, igdb] = await Promise.all([localReq, igdbReq]);
+  return { local, igdb };
+}
+
 const GameSearchBar: React.FC = () => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [localResults, setLocalResults] = useState<SearchSourcedGame[]>([]);
-  const [igdbResults, setIgdbResults] = useState<SearchSourcedGame[]>([]);
+  // Pool of all games fetched across debounced queries — persists across keystrokes
+  // so Fuse.js can still match even when the API returns nothing for a typo.
+  const [gamePool, setGamePool] = useState<SearchSourcedGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
   useEffect(() => {
     if (!query) {
@@ -164,8 +235,7 @@ const GameSearchBar: React.FC = () => {
 
   useEffect(() => {
     if (!query) {
-      setLocalResults([]);
-      setIgdbResults([]);
+      setGamePool([]);
       setLoading(false);
       setShowDropdown(false);
       return;
@@ -176,48 +246,31 @@ const GameSearchBar: React.FC = () => {
 
   useEffect(() => {
     if (!debouncedQuery) {
-      setLocalResults([]);
-      setIgdbResults([]);
+      setGamePool([]);
       return;
     }
 
     const controller = new AbortController();
     let cancelled = false;
     setLoading(true);
-    setLocalResults([]);
-    setIgdbResults([]);
 
-    const localReq = apiGet(
-      `/api/games/?search=${encodeURIComponent(debouncedQuery)}`
-    )
-      .then(res => {
-        const rawResults = Array.isArray(res)
-          ? res
-          : ((res as { results?: unknown[] })?.results ?? []);
-        return rawResults.map((g: any) =>
-          mapLocalToSearchGame(g)
-        ) as SearchSourcedGame[];
-      })
-      .catch(() => [] as SearchSourcedGame[]);
-
-    const igdbReq = searchIgdbGames(
-      debouncedQuery,
-      DROPDOWN_IGDB_MAX,
-      false,
-      controller.signal
-    )
-      .then(games => games.map(mapIgdbToSearchGame))
-      .catch(() => [] as SearchSourcedGame[]);
-
-    Promise.all([localReq, igdbReq])
-      .then(([local, igdb]) => {
+    const run = async () => {
+      try {
+        const { local, igdb } = await fetchSearchGameLists(
+          debouncedQuery,
+          DROPDOWN_IGDB_MAX,
+          controller.signal
+        );
         if (cancelled) return;
-        setLocalResults(local.slice(0, DROPDOWN_LOCAL_MAX));
-        setIgdbResults(igdb);
-      })
-      .finally(() => {
+        const incoming = [...local.slice(0, DROPDOWN_LOCAL_MAX), ...igdb];
+        // Merge into pool, deduplicating by igdb_id to avoid visual duplicates
+        setGamePool(prev => mergeUniqueIntoPool(prev, incoming));
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    void run();
 
     return () => {
       cancelled = true;
@@ -229,13 +282,29 @@ const GameSearchBar: React.FC = () => {
     const handleClick = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.game-searchbar-root')) {
         setShowDropdown(false);
+        setActiveIndex(-1);
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const allResults = [...localResults, ...igdbResults];
+  // Re-rank the pool against the live query so typo corrections update instantly
+  const allResults = useFuzzyGames(gamePool, query);
+
+  // Reset active index whenever the result list changes
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [allResults.length, debouncedQuery]);
+
+  // Scroll active item into view when navigating with keyboard
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const el = listRef.current.querySelector<HTMLElement>(
+      `[data-index="${activeIndex}"]`
+    );
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
 
   const goToFullSearch = () => {
     const q = query.trim();
@@ -274,9 +343,23 @@ const GameSearchBar: React.FC = () => {
           }}
           onFocus={() => query && setShowDropdown(true)}
           onKeyDown={e => {
-            if (e.key === 'Enter' && query.trim()) {
+            if (!showDropdown) return;
+            if (e.key === 'ArrowDown') {
               e.preventDefault();
-              goToFullSearch();
+              setActiveIndex(i => Math.min(i + 1, allResults.length - 1));
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              setActiveIndex(i => Math.max(i - 1, -1));
+            } else if (e.key === 'Escape') {
+              setShowDropdown(false);
+              setActiveIndex(-1);
+            } else if (e.key === 'Enter') {
+              e.preventDefault();
+              if (activeIndex >= 0 && allResults[activeIndex]) {
+                handlePickGame(allResults[activeIndex].item);
+              } else if (query.trim()) {
+                goToFullSearch();
+              }
             }
           }}
         />
@@ -325,18 +408,21 @@ const GameSearchBar: React.FC = () => {
             </Box>
           ) : (
             <List
+              ref={listRef}
               dense
               sx={{ flex: 1, minHeight: 0, overflowY: 'auto', py: 0 }}
             >
-              {allResults.map(game => {
+              {allResults.map(({ item: game, nameIndices }, index) => {
                 const releaseYear = game.release_date
                   ? new Date(game.release_date).getFullYear()
                   : null;
+                const isActive = index === activeIndex;
                 return (
                   <React.Fragment key={`${game.source}-${game.igdb_id}`}>
-                    <ListItem disablePadding>
+                    <ListItem disablePadding data-index={index}>
                       <ListItemButton
                         onClick={() => handlePickGame(game)}
+                        selected={isActive}
                         sx={{
                           px: 2,
                           py: 1,
@@ -364,7 +450,10 @@ const GameSearchBar: React.FC = () => {
                         <ListItemText
                           primary={
                             <Typography variant="body2" fontWeight={600}>
-                              {game.name}
+                              <HighlightedText
+                                text={game.name}
+                                indices={nameIndices}
+                              />
                               {releaseYear && (
                                 <Typography
                                   component="span"
