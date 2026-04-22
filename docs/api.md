@@ -51,27 +51,34 @@ class GameViewSet(ModelViewSet):
 
 ### Usage Examples
 
-#### Filter games by name
+#### Filter games by publisher (ID)
+
+La liste `/api/games/` inclut déjà l’objet **`publisher`** (nested) dans chaque jeu. Pour restreindre la liste à un ou plusieurs éditeurs, utiliser le paramètre **`publisher`** avec l’ID Django (entier), comme pour `genre` / `platform` :
 
 ```bash
-# Exact match filter
-GET /api/games/?name=zelda
+# Un éditeur
+GET /api/games/?publisher=3
 
-# Returns all games with exact name "zelda"
+# Plusieurs éditeurs (OU)
+GET /api/games/?publisher=3,5
+```
+
+#### Recherche par nom (fuzzy)
+
+```bash
+GET /api/games/?search=zelda
 ```
 
 #### Combine filters
 
 ```bash
-# Multiple filters can be combined
-GET /api/games/?name=zelda&publisher=Nintendo
+GET /api/games/?publisher=3&genre=1&min_age=12
 ```
 
 #### Testing with curl
 
 ```bash
-# Test the filter endpoint
-curl -X GET "http://localhost:8000/api/games/?name=zelda" \
+curl -X GET "http://localhost:8000/api/games/?publisher=1" \
   -H "Accept: application/json"
 ```
 
@@ -79,10 +86,11 @@ curl -X GET "http://localhost:8000/api/games/?name=zelda" \
 
 #### Games Endpoint (`/api/games/`)
 
-The API supports filtering games by **genres** and **platforms** using Many-to-Many relationships. Multiple values can be provided for each filter.
+The API supports filtering games by **publisher** (ForeignKey), **genres** and **platforms** (Many-to-Many). Multiple values can be provided for each filter (OR within the same parameter).
 
 ##### Filter Parameters
 
+- **`publisher`**: Filter by publisher ID(s) - comma-separated (OR)
 - **`genre`**: Filter by genre ID(s) - supports multiple values separated by commas
 - **`platform`**: Filter by platform ID(s) - supports multiple values separated by commas
 
@@ -175,9 +183,14 @@ class GameFilter(django_filters.FilterSet):
         lookup_expr='in'
     )
 
+    publisher = django_filters.BaseInFilter(
+        field_name='publisher_id',
+        lookup_expr='in'
+    )
+
     class Meta:
         model = Game
-        fields = ['genre', 'platform']
+        fields = ['publisher', 'genre', 'platform']
 ```
 
 The `GameViewSet` uses this filter and includes `.distinct()` to avoid duplicate results from Many-to-Many joins:

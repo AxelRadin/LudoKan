@@ -170,3 +170,10 @@ class TestQueryPerformanceCommand:
         # Vérifie que le symbole ✓ (style.SUCCESS) est présent dans l'output
         assert "✓" in output
         assert "Index Scan" in output
+
+    def test_query_performance_runs_publisher_branch_when_game_exists(self, game):
+        """Couvre la branche first_pub is not None (filtre par publisher, lignes 63-64)."""
+        out = StringIO()
+        call_command("test_query_performance", stdout=out)
+        output = out.getvalue()
+        assert "Filter by publisher_id =" in output

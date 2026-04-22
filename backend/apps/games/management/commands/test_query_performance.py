@@ -58,6 +58,16 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING("\n6. Query: Order by -popularity_score (no filter)"))
         self._test_query(Game.objects.select_related("publisher").prefetch_related("genres", "platforms").order_by("-popularity_score")[:20])
 
+        first_pub = Game.objects.order_by("publisher_id").values_list("publisher_id", flat=True).first()
+        if first_pub is not None:
+            self.stdout.write(self.style.WARNING(f"\n7. Query: Filter by publisher_id = {first_pub}"))
+            self._test_query(
+                Game.objects.filter(publisher_id=first_pub)
+                .select_related("publisher")
+                .prefetch_related("genres", "platforms")
+                .order_by("-popularity_score")
+            )
+
         self.stdout.write(self.style.SUCCESS("\n\n=== Performance Testing Complete ===\n"))
         self.stdout.write("Look for 'Index Scan' or 'Index Only Scan' in the EXPLAIN output to confirm index usage.\n")
         self.stdout.write("'Seq Scan' indicates a full table scan (slower for large tables).\n")

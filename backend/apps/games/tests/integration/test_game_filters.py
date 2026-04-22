@@ -82,6 +82,16 @@ def publisher_test(db):
 
 
 @pytest.fixture
+def publisher_other(db):
+    """Second éditeur pour tests de filtre publisher"""
+    return Publisher.objects.create(
+        igdb_id=7002,
+        name="Other Publisher",
+        description="Autre éditeur",
+    )
+
+
+@pytest.fixture
 def game_action_ps5(db, publisher_test, genre_action, platform_ps5):
     """Jeu: Action sur PS5"""
     game = Game.objects.create(
@@ -246,6 +256,74 @@ class TestGameFilterByPlatform:
         """Filtrer par une plateforme inexistante retourne une liste vide"""
         response = api_client.get("/api/games/?platform=99999")
 
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 0
+
+
+@pytest.mark.django_db
+class TestGameFilterByPublisher:
+    """Filtrage par éditeur (ForeignKey)"""
+
+    def test_filter_by_single_publisher(
+        self,
+        api_client,
+        game_action_ps5,
+        game_rpg_multiplatform,
+        publisher_test,
+        publisher_other,
+        genre_action,
+        platform_ps5,
+    ):
+        """Un seul publisher_id : tous les jeux de cet éditeur"""
+        game_other = Game.objects.create(
+            igdb_id=8010,
+            name="Other Pub Exclusive",
+            description="Chez l'autre éditeur",
+            publisher=publisher_other,
+        )
+        game_other.genres.add(genre_action)
+        game_other.platforms.add(platform_ps5)
+
+        response = api_client.get(f"/api/games/?publisher={publisher_test.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        results = response.data["results"]
+        names = {g["name"] for g in results}
+        assert "Action Game PS5" in names
+        assert "RPG Multiplatform" in names
+        assert "Other Pub Exclusive" not in names
+        for g in results:
+            if g["name"] in ("Action Game PS5", "RPG Multiplatform"):
+                assert g["publisher"]["id"] == publisher_test.id
+
+    def test_filter_by_multiple_publishers(
+        self,
+        api_client,
+        game_action_ps5,
+        publisher_test,
+        publisher_other,
+        genre_action,
+        platform_ps5,
+    ):
+        """Plusieurs publisher_id : OU sur les éditeurs"""
+        game_other = Game.objects.create(
+            igdb_id=8011,
+            name="Other Pub Game",
+            description="",
+            publisher=publisher_other,
+        )
+        game_other.genres.add(genre_action)
+        game_other.platforms.add(platform_ps5)
+
+        response = api_client.get(f"/api/games/?publisher={publisher_test.id},{publisher_other.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        names = {g["name"] for g in response.data["results"]}
+        assert "Action Game PS5" in names
+        assert "Other Pub Game" in names
+
+    def test_filter_by_nonexistent_publisher(self, api_client):
+        response = api_client.get("/api/games/?publisher=99999")
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 0
 

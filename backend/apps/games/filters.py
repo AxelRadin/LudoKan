@@ -14,6 +14,7 @@ class GameFilter(django_filters.FilterSet):
     FilterSet personnalisé pour le modèle Game.
 
     Permet de filtrer par:
+    - publisher: Filtrage par ID(s) d'éditeur (ForeignKey), plusieurs valeurs = OU
     - genres: Filtrage par IDs de genres (Many-to-Many), supporte plusieurs valeurs
     - platforms: Filtrage par IDs de plateformes (Many-to-Many), supporte plusieurs valeurs
     - min_age: Âge minimum requis (gte) — ex: min_age=12 → jeux pour 12 ans et +
@@ -25,11 +26,16 @@ class GameFilter(django_filters.FilterSet):
     - /api/games/?genre=1,2,3      # Jeux avec les genres 1, 2 ou 3
     - /api/games/?platform=4,5     # Jeux sur les plateformes 4 ou 5
     - /api/games/?genre=1&platform=2  # Jeux avec genre 1 ET plateforme 2
+    - /api/games/?publisher=3       # Jeux de l'éditeur d'id 3
+    - /api/games/?publisher=3,5     # Jeux de l'un ou l'autre éditeur
     - /api/games/?min_age=12       # Jeux pour 12 ans et plus
     - /api/games/?min_players=2    # Jeux jouables à 2 joueurs minimum
     - /api/games/?max_players=4    # Jeux acceptant jusqu'à 4 joueurs
     - /api/games/?min_age=12&min_players=2  # Combinaison de filtres
     """
+
+    # Filtre éditeur (ForeignKey) — plusieurs IDs = OU
+    publisher = django_filters.BaseInFilter(field_name="publisher_id", lookup_expr="in", help_text="Filtrer par IDs d'éditeur (ex: 1 ou 1,2)")
 
     # Filtre pour genres (Many-to-Many)
     # BaseInFilter permet d'accepter plusieurs valeurs séparées par des virgules
@@ -71,4 +77,4 @@ class GameFilter(django_filters.FilterSet):
 
     class Meta:
         model = Game
-        fields = ["genre", "platform", "min_age", "min_players", "max_players", "search"]
+        fields = ["publisher", "genre", "platform", "min_age", "min_players", "max_players", "search"]
