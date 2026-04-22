@@ -1,3 +1,4 @@
+from backend.apps.parties.constants import TIMED_OUT_LABEL
 from django.conf import settings
 from django.db import models
 
@@ -90,20 +91,20 @@ class GamePartyMember(models.Model):
     class MembershipStatus(models.TextChoices):
         ACTIVE = "active", "Active"
         DECLINED = "declined", "Declined"
-        TIMED_OUT = "timed_out", "Timed out"
+        TIMED_OUT = "timed_out", TIMED_OUT_LABEL
         LEFT = "left", "Left"
 
     class ReadyState(models.TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
         DECLINED = "declined", "Declined"
-        TIMED_OUT = "timed_out", "Timed out"
+        TIMED_OUT = "timed_out", TIMED_OUT_LABEL
 
     class ReadyForChatState(models.TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
         DECLINED = "declined", "Declined"
-        TIMED_OUT = "timed_out", "Timed out"
+        TIMED_OUT = "timed_out", TIMED_OUT_LABEL
 
     party = models.ForeignKey(
         GameParty,
