@@ -10,7 +10,7 @@ import ReviewsList from './ReviewsList';
 
 const F = "'Outfit', sans-serif";
 
-type Review = {
+export type Review = {
   id: number;
   title?: string;
   content: string;
@@ -229,7 +229,6 @@ export default function ReviewSection({
 
   const accent = isDark ? '#ef5350' : '#d43c3c';
   const ink = isDark ? '#f5e6e6' : '#241818';
-  const cardBg = isDark ? 'rgba(40,20,20,0.65)' : 'rgba(255,255,255,0.80)';
   const cardBorder = isDark ? 'rgba(239,83,80,0.14)' : 'rgba(198,40,40,0.10)';
 
   const confirmDeleteReview = useCallback(async () => {
@@ -240,52 +239,22 @@ export default function ReviewSection({
   }, [reviewToDelete, userReview, onReviewChange, removeReview]);
 
   const otherReviews = reviews.filter(r => r.id !== userReview?.id);
-  const cardShadow = isDark
-    ? '0 4px 24px rgba(0,0,0,0.25)'
-    : '0 4px 24px rgba(198,40,40,0.06)';
-  const beforeOpacity = isDark ? 0.45 : 0.3;
 
   return (
     <Box sx={{ width: '100%' }}>
-      <SectionAccentTitle label="Votre avis" marginBottom={3} />
-
-      <Box
-        sx={{
-          background: cardBg,
-          backdropFilter: 'blur(24px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-          border: `1px solid ${cardBorder}`,
-          borderRadius: '16px',
-          p: { xs: '18px', md: '22px 26px' },
-          mb: 3,
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: cardShadow,
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 16,
-            right: 16,
-            height: '1px',
-            background: `linear-gradient(to right, ${accent} 0%, transparent 60%)`,
-            opacity: beforeOpacity,
-          },
-        }}
-      >
-        <UserReviewEditor
-          gameId={gameId}
-          resolveGameId={resolveGameId}
-          userReview={userReview}
-          editingReview={editingReview}
-          currentUserId={currentUserId}
-          onEditingChange={setEditingReview}
-          onDeleteRequest={setReviewToDelete}
-          onUserReviewChange={onReviewChange}
-          updateReview={updateReview}
-          addReview={addReview}
-        />
-      </Box>
+      <SectionAccentTitle label="Votre avis eededee" marginBottom={3} />
+      <UserReviewEditor
+        gameId={gameId}
+        resolveGameId={resolveGameId}
+        userReview={userReview}
+        editingReview={editingReview}
+        currentUserId={currentUserId}
+        onEditingChange={setEditingReview}
+        onDeleteRequest={setReviewToDelete}
+        onUserReviewChange={onReviewChange}
+        updateReview={updateReview}
+        addReview={addReview}
+      />
 
       {otherReviews.length > 0 && <SectionAccentTitle label="Autres avis" />}
 
