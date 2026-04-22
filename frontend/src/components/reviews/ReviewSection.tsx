@@ -6,7 +6,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { apiDelete } from '../../services/api';
 import { useReviews } from '../../hooks/useReviews';
@@ -34,6 +34,237 @@ type ReviewSectionProps = Readonly<{
   onReviewChange: (review: Review | null) => void;
 }>;
 
+async function deleteReviewOnServer(
+  reviewId: number,
+  userReview: Review | null,
+  onReviewChange: (review: Review | null) => void,
+  removeReview: (id: number) => void
+): Promise<void> {
+  try {
+    await apiDelete(`/api/reviews/${reviewId}/`);
+    if (userReview?.id === reviewId) {
+      onReviewChange(null);
+    }
+    removeReview(reviewId);
+  } catch {
+    alert("Erreur lors de la suppression de l'avis.");
+  }
+}
+
+function SectionAccentTitle({
+  label,
+  accent,
+  marginBottom = 3,
+}: Readonly<{
+  label: string;
+  accent: string;
+  marginBottom?: number;
+}>) {
+  return (
+    <Box sx={{ position: 'relative', pl: '14px', mb: marginBottom }}>
+      <Box
+        sx={{
+          position: 'absolute',
+          left: 0,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          width: '3px',
+          height: '80%',
+          background: `linear-gradient(to bottom, transparent, ${accent}, transparent)`,
+          borderRadius: '2px',
+          opacity: 0.8,
+        }}
+      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          sx={{ width: 14, height: '1px', background: accent, opacity: 0.6 }}
+        />
+        <Typography
+          sx={{
+            fontFamily: F,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            color: accent,
+            opacity: 0.9,
+          }}
+        >
+          {label}
+        </Typography>
+      </Box>
+    </Box>
+  );
+}
+
+type UserReviewEditorProps = Readonly<{
+  gameId: string;
+  resolveGameId?: () => Promise<string | number | null>;
+  userReview: Review | null;
+  editingReview: Review | null;
+  currentUserId: number | null;
+  onEditingChange: (review: Review | null) => void;
+  onDeleteRequest: (id: number) => void;
+  onUserReviewChange: (review: Review | null) => void;
+  updateReview: (review: Review) => void;
+  addReview: (review: Review) => void;
+}>;
+
+function UserReviewEditor({
+  gameId,
+  resolveGameId,
+  userReview,
+  editingReview,
+  currentUserId,
+  onEditingChange,
+  onDeleteRequest,
+  onUserReviewChange,
+  updateReview,
+  addReview,
+}: UserReviewEditorProps) {
+  const showExistingCard = Boolean(userReview && !editingReview);
+
+  function handleEditSuccess(updated: Review) {
+    onUserReviewChange({ ...userReview, ...updated } as Review);
+    updateReview({ ...userReview, ...updated } as Review);
+    onEditingChange(null);
+  }
+
+  function handleReviewCreated(review: Review) {
+    onUserReviewChange(review);
+    addReview(review);
+  }
+
+  function handleFormSuccess(review: Review) {
+    if (editingReview) {
+      handleEditSuccess(review);
+      return;
+    }
+    handleReviewCreated(review);
+  }
+
+  if (showExistingCard && userReview) {
+    return (
+      <ReviewCard
+        review={userReview}
+        isOwner={userReview.user?.id === currentUserId}
+        onEdit={review => onEditingChange(review as Review)}
+        onDelete={onDeleteRequest}
+      />
+    );
+  }
+
+  return (
+    <ReviewForm
+      gameId={gameId}
+      resolveGameId={resolveGameId}
+      initialValues={
+        editingReview
+          ? { ...editingReview, rating: editingReview.rating?.value }
+          : undefined
+      }
+      onSuccess={review => handleFormSuccess(review as Review)}
+      onCancel={editingReview ? () => onEditingChange(null) : undefined}
+    />
+  );
+}
+
+type DeleteReviewDialogProps = Readonly<{
+  open: boolean;
+  isDark: boolean;
+  accent: string;
+  ink: string;
+  cardBorder: string;
+  onDismiss: () => void;
+  onConfirm: () => void;
+}>;
+
+function DeleteReviewDialog({
+  open,
+  isDark,
+  accent,
+  ink,
+  cardBorder,
+  onDismiss,
+  onConfirm,
+}: DeleteReviewDialogProps) {
+  const paperBg = isDark ? 'rgba(40,20,20,0.95)' : 'rgba(255,255,255,0.95)';
+  const paperShadow = isDark
+    ? '0 24px 64px rgba(0,0,0,0.5)'
+    : '0 24px 64px rgba(198,40,40,0.12)';
+  const cancelHoverBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onDismiss}
+      PaperProps={{
+        sx: {
+          borderRadius: '16px',
+          background: paperBg,
+          backdropFilter: 'blur(24px)',
+          border: `1px solid ${cardBorder}`,
+          boxShadow: paperShadow,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          fontFamily: F,
+          fontWeight: 700,
+          fontSize: 16,
+          color: ink,
+          pb: 1,
+        }}
+      >
+        Supprimer votre avis ?
+      </DialogTitle>
+      <DialogActions sx={{ px: 3, pb: 2.5, gap: 1, justifyContent: 'center' }}>
+        <Button
+          size="small"
+          onClick={onDismiss}
+          sx={{
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontFamily: F,
+            fontWeight: 600,
+            fontSize: 13,
+            px: 2,
+            border: `1px solid ${cardBorder}`,
+            color: ink,
+            '&:hover': {
+              background: cancelHoverBg,
+            },
+          }}
+        >
+          Annuler
+        </Button>
+        <Button
+          size="small"
+          onClick={onConfirm}
+          variant="contained"
+          sx={{
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontFamily: F,
+            fontWeight: 700,
+            fontSize: 13,
+            px: 2,
+            background: `linear-gradient(135deg, ${accent} 0%, #ef5350 100%)`,
+            boxShadow: '0 4px 14px rgba(211,47,47,0.32)',
+            '&:hover': {
+              background: `linear-gradient(135deg, #b71c1c 0%, ${accent} 100%)`,
+              boxShadow: '0 6px 18px rgba(211,47,47,0.42)',
+            },
+          }}
+        >
+          Supprimer
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 export default function ReviewSection({
   gameId,
   resolveGameId,
@@ -53,72 +284,23 @@ export default function ReviewSection({
   const cardBg = isDark ? 'rgba(40,20,20,0.65)' : 'rgba(255,255,255,0.80)';
   const cardBorder = isDark ? 'rgba(239,83,80,0.14)' : 'rgba(198,40,40,0.10)';
 
-  async function confirmDeleteReview() {
+  const confirmDeleteReview = useCallback(async () => {
     if (reviewToDelete === null) return;
-    try {
-      await apiDelete(`/api/reviews/${reviewToDelete}/`);
-      if (userReview?.id === reviewToDelete) {
-        onReviewChange(null);
-      }
-      removeReview(reviewToDelete);
-    } catch {
-      alert("Erreur lors de la suppression de l'avis.");
-    } finally {
-      setReviewToDelete(null);
-    }
-  }
-
-  function handleEditSuccess(updated: Review) {
-    onReviewChange({ ...userReview, ...updated } as Review);
-    updateReview({ ...userReview, ...updated } as Review);
-    setEditingReview(null);
-  }
-
-  function handleReviewCreated(review: Review) {
-    onReviewChange(review);
-    addReview(review);
-  }
+    const id = reviewToDelete;
+    await deleteReviewOnServer(id, userReview, onReviewChange, removeReview);
+    setReviewToDelete(null);
+  }, [reviewToDelete, userReview, onReviewChange, removeReview]);
 
   const otherReviews = reviews.filter(r => r.id !== userReview?.id);
+  const cardShadow = isDark
+    ? '0 4px 24px rgba(0,0,0,0.25)'
+    : '0 4px 24px rgba(198,40,40,0.06)';
+  const beforeOpacity = isDark ? 0.45 : 0.3;
 
   return (
     <Box sx={{ width: '100%' }}>
-      {/* Titre section */}
-      <Box sx={{ position: 'relative', pl: '14px', mb: 3 }}>
-        <Box
-          sx={{
-            position: 'absolute',
-            left: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '3px',
-            height: '80%',
-            background: `linear-gradient(to bottom, transparent, ${accent}, transparent)`,
-            borderRadius: '2px',
-            opacity: 0.8,
-          }}
-        />
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{ width: 14, height: '1px', background: accent, opacity: 0.6 }}
-          />
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 3,
-              textTransform: 'uppercase',
-              color: accent,
-              opacity: 0.9,
-            }}
-          >
-            Votre avis
-          </Typography>
-        </Box>
-      </Box>
+      <SectionAccentTitle label="Votre avis" accent={accent} />
 
-      {/* Card avis utilisateur ou formulaire */}
       <Box
         sx={{
           background: cardBg,
@@ -130,9 +312,7 @@ export default function ReviewSection({
           mb: 3,
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: isDark
-            ? '0 4px 24px rgba(0,0,0,0.25)'
-            : '0 4px 24px rgba(198,40,40,0.06)',
+          boxShadow: cardShadow,
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -141,78 +321,30 @@ export default function ReviewSection({
             right: 16,
             height: '1px',
             background: `linear-gradient(to right, ${accent} 0%, transparent 60%)`,
-            opacity: isDark ? 0.45 : 0.3,
+            opacity: beforeOpacity,
           },
         }}
       >
-        {userReview && !editingReview ? (
-          <ReviewCard
-            review={userReview}
-            isOwner={userReview.user?.id === currentUserId}
-            onEdit={review => setEditingReview(review as Review)}
-            onDelete={setReviewToDelete}
-          />
-        ) : (
-          <ReviewForm
-            gameId={gameId}
-            resolveGameId={resolveGameId}
-            initialValues={
-              editingReview
-                ? { ...editingReview, rating: editingReview.rating?.value }
-                : undefined
-            }
-            onSuccess={review => {
-              if (editingReview) {
-                handleEditSuccess(review as Review);
-              } else {
-                handleReviewCreated(review as Review);
-              }
-            }}
-            onCancel={editingReview ? () => setEditingReview(null) : undefined}
-          />
-        )}
+        <UserReviewEditor
+          gameId={gameId}
+          resolveGameId={resolveGameId}
+          userReview={userReview}
+          editingReview={editingReview}
+          currentUserId={currentUserId}
+          onEditingChange={setEditingReview}
+          onDeleteRequest={setReviewToDelete}
+          onUserReviewChange={onReviewChange}
+          updateReview={updateReview}
+          addReview={addReview}
+        />
       </Box>
 
-      {/* Liste des autres avis */}
       {otherReviews.length > 0 && (
-        <Box sx={{ position: 'relative', pl: '14px', mb: 2 }}>
-          <Box
-            sx={{
-              position: 'absolute',
-              left: 0,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '3px',
-              height: '80%',
-              background: `linear-gradient(to bottom, transparent, ${accent}, transparent)`,
-              borderRadius: '2px',
-              opacity: 0.8,
-            }}
-          />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 14,
-                height: '1px',
-                background: accent,
-                opacity: 0.6,
-              }}
-            />
-            <Typography
-              sx={{
-                fontFamily: F,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 3,
-                textTransform: 'uppercase',
-                color: accent,
-                opacity: 0.9,
-              }}
-            >
-              Autres avis
-            </Typography>
-          </Box>
-        </Box>
+        <SectionAccentTitle
+          label="Autres avis"
+          accent={accent}
+          marginBottom={2}
+        />
       )}
 
       <ReviewsList
@@ -224,82 +356,15 @@ export default function ReviewSection({
         onDeleteReview={setReviewToDelete}
       />
 
-      {/* Dialog suppression */}
-      <Dialog
+      <DeleteReviewDialog
         open={reviewToDelete !== null}
-        onClose={() => setReviewToDelete(null)}
-        PaperProps={{
-          sx: {
-            borderRadius: '16px',
-            background: isDark
-              ? 'rgba(40,20,20,0.95)'
-              : 'rgba(255,255,255,0.95)',
-            backdropFilter: 'blur(24px)',
-            border: `1px solid ${cardBorder}`,
-            boxShadow: isDark
-              ? '0 24px 64px rgba(0,0,0,0.5)'
-              : '0 24px 64px rgba(198,40,40,0.12)',
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            fontFamily: F,
-            fontWeight: 700,
-            fontSize: 16,
-            color: ink,
-            pb: 1,
-          }}
-        >
-          Supprimer votre avis ?
-        </DialogTitle>
-        <DialogActions
-          sx={{ px: 3, pb: 2.5, gap: 1, justifyContent: 'center' }}
-        >
-          <Button
-            size="small"
-            onClick={() => setReviewToDelete(null)}
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontFamily: F,
-              fontWeight: 600,
-              fontSize: 13,
-              px: 2,
-              border: `1px solid ${cardBorder}`,
-              color: ink,
-              '&:hover': {
-                background: isDark
-                  ? 'rgba(255,255,255,0.06)'
-                  : 'rgba(0,0,0,0.04)',
-              },
-            }}
-          >
-            Annuler
-          </Button>
-          <Button
-            size="small"
-            onClick={confirmDeleteReview}
-            variant="contained"
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontFamily: F,
-              fontWeight: 700,
-              fontSize: 13,
-              px: 2,
-              background: `linear-gradient(135deg, ${accent} 0%, #ef5350 100%)`,
-              boxShadow: '0 4px 14px rgba(211,47,47,0.32)',
-              '&:hover': {
-                background: `linear-gradient(135deg, #b71c1c 0%, ${accent} 100%)`,
-                boxShadow: '0 6px 18px rgba(211,47,47,0.42)',
-              },
-            }}
-          >
-            Supprimer
-          </Button>
-        </DialogActions>
-      </Dialog>
+        isDark={isDark}
+        accent={accent}
+        ink={ink}
+        cardBorder={cardBorder}
+        onDismiss={() => setReviewToDelete(null)}
+        onConfirm={confirmDeleteReview}
+      />
     </Box>
   );
 }
