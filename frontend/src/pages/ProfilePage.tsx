@@ -55,7 +55,6 @@ const C = {
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 
-/* ── Keyframes injected once ── */
 const styleEl = document.createElement('style');
 styleEl.textContent = `
   @keyframes fadeUp {
@@ -110,7 +109,7 @@ type UserGame = {
 };
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
-const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_AVATAR_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const ALLOWED_AVATAR_EXT = new Set(['jpg', 'jpeg', 'png', 'webp']);
 
 const fileInputOverlaySx: React.CSSProperties = {
@@ -168,15 +167,12 @@ function formatProfileDate(iso?: string) {
 
 function validateAvatarFile(file: File): string {
   if (file.size > MAX_AVATAR_SIZE) return 'Fichier trop volumineux. Max 2 MB.';
-
   const ext = file.name.split('.').pop()?.toLowerCase() || '';
   const mime = file.type;
-  const mimeOk = ALLOWED_AVATAR_TYPES.includes(mime);
+  const mimeOk = ALLOWED_AVATAR_TYPES.has(mime);
   const extOk = ALLOWED_AVATAR_EXT.has(ext);
   const mimeEmptyOrUnknown = mime === '' || mime === 'application/octet-stream';
-
   if (mimeOk || (mimeEmptyOrUnknown && extOk)) return '';
-
   if (
     mime.includes('heic') ||
     mime.includes('heif') ||
@@ -184,7 +180,6 @@ function validateAvatarFile(file: File): string {
     ext === 'heif'
   )
     return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
-
   return 'Format invalide. JPG, PNG ou WEBP uniquement.';
 }
 
@@ -352,7 +347,6 @@ function useProfilePageModel(): ProfilePageModel {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f || avatarBusy) return;
-
     const err = validateAvatarFile(f);
     if (err) {
       setAvatarError(err);
@@ -406,7 +400,6 @@ function useProfilePageModel(): ProfilePageModel {
     const f = e.target.files?.[0];
     e.target.value = '';
     if (!f || bannerBusy) return;
-
     const err = validateAvatarFile(f);
     if (err) {
       alert(err);
@@ -469,7 +462,11 @@ function useProfilePageModel(): ProfilePageModel {
     open: boolean;
     message: string;
     isError: boolean;
-  }>({ open: false, message: '', isError: false });
+  }>({
+    open: false,
+    message: '',
+    isError: false,
+  });
   const undoRef = useRef<{ game: UserGame; index: number } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -492,26 +489,19 @@ function useProfilePageModel(): ProfilePageModel {
     const index = userGames.findIndex(g => g.id === userGameId);
     const ug = userGames[index];
     if (!ug) return;
-
-    // Suppression optimiste
     setUserGames(prev => prev.filter(g => g.id !== userGameId));
     undoRef.current = { game: ug, index };
-
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setSnackbar({
       open: true,
       message: 'Jeu retiré de la bibliothèque.',
       isError: false,
     });
-
-    // L'appel API est retardé : si l'utilisateur annule avant 5s, le timer est
-    // annulé et la suppression n'est jamais envoyée au backend.
     undoTimerRef.current = setTimeout(async () => {
       undoRef.current = null;
       try {
         await deleteUserGame(ug.game.id);
       } catch {
-        // Restauration en cas d'erreur API
         setUserGames(prev => {
           const next = [...prev];
           next.splice(index, 0, ug);
@@ -718,9 +708,7 @@ function ProfileEditDialog({
                   borderRadius: '50%',
                   cursor: avatarBusy ? 'wait' : 'pointer',
                   opacity: avatarBusy ? 0.75 : 1,
-                  '&:hover .modal-av-overlay': {
-                    opacity: avatarBusy ? 0 : 1,
-                  },
+                  '&:hover .modal-av-overlay': { opacity: avatarBusy ? 0 : 1 },
                 }}
               >
                 <input
@@ -1183,7 +1171,6 @@ export default function ProfilePage() {
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
-        /* Noise grain texture + rose base */
         background: `
           url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
           radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
@@ -1195,34 +1182,8 @@ export default function ProfilePage() {
       }}
     >
       <Box sx={{ maxWidth: 1160, mx: 'auto' }}>
-        {/* ── Top bar ── */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            mb: 4,
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: FONT_DISPLAY,
-              fontWeight: 900,
-              fontSize: { xs: 22, md: 26 },
-              color: C.title,
-              letterSpacing: -0.8,
-              background: `linear-gradient(135deg, ${C.title} 40%, ${C.accent})`,
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Ludokan
-          </Typography>
-        </Box>
-
         {/* ── HERO SECTION ── */}
         <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
-          {/* Banner */}
           {loading ? (
             <Box
               sx={{
@@ -1253,6 +1214,7 @@ export default function ProfilePage() {
               }}
             />
           )}
+
           {user && (
             <>
               <Box
@@ -1276,9 +1238,7 @@ export default function ProfilePage() {
                   justifyContent: 'center',
                   cursor: bannerBusy ? 'wait' : 'pointer',
                   zIndex: 2,
-                  '&:hover': {
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                  },
+                  '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
                 }}
               >
                 {bannerBusy ? (
@@ -1287,6 +1247,7 @@ export default function ProfilePage() {
                   <MoreVertIcon fontSize="small" />
                 )}
               </Box>
+
               <Menu
                 anchorEl={bannerMenuAnchor}
                 open={bannerMenuOpen}
@@ -1326,12 +1287,11 @@ export default function ProfilePage() {
                   </MenuItem>
                 )}
               </Menu>
+
               <Dialog
                 open={confirmDeleteBannerOpen}
                 onClose={() => setConfirmDeleteBannerOpen(false)}
-                PaperProps={{
-                  sx: { borderRadius: '16px', p: 1 },
-                }}
+                PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
               >
                 <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
                   Supprimer la bannière ?
@@ -1364,6 +1324,7 @@ export default function ProfilePage() {
                   </Button>
                 </DialogActions>
               </Dialog>
+
               <input
                 type="file"
                 ref={bannerInputRef}
@@ -1415,7 +1376,6 @@ export default function ProfilePage() {
                   gap: { xs: 2, md: 3 },
                 }}
               >
-                {/* Avatar (lecture seule — changement uniquement via « Modifier le profil ») */}
                 <Box
                   sx={{
                     position: 'relative',
@@ -1453,8 +1413,6 @@ export default function ProfilePage() {
                     {user?.pseudo?.[0]?.toUpperCase() || 'U'}
                   </Avatar>
                 </Box>
-
-                {/* Identity */}
                 <Box>
                   <Typography
                     sx={{
@@ -1496,8 +1454,6 @@ export default function ProfilePage() {
                   )}
                 </Box>
               </Box>
-
-              {/* Edit button */}
               <Box
                 sx={{
                   flexShrink: 0,
@@ -1524,7 +1480,6 @@ export default function ProfilePage() {
             mb: 2.5,
           }}
         >
-          {/* Présentation */}
           <Paper
             elevation={0}
             className="info-card-0"
@@ -1571,7 +1526,6 @@ export default function ProfilePage() {
             </Typography>
           </Paper>
 
-          {/* Identité */}
           <Paper
             elevation={0}
             className="info-card-1"
@@ -1647,7 +1601,6 @@ export default function ProfilePage() {
             ))}
           </Paper>
 
-          {/* Compte */}
           <Paper
             elevation={0}
             className="info-card-2"
@@ -1723,7 +1676,6 @@ export default function ProfilePage() {
               }}
             />
           </Box>
-
           <Box
             sx={{
               display: 'grid',
@@ -1878,8 +1830,6 @@ export default function ProfilePage() {
               </Typography>
             </Box>
           </Box>
-
-          {/* Thin accent line */}
           <Box
             sx={{
               height: '1px',
@@ -1887,8 +1837,6 @@ export default function ProfilePage() {
               mb: 3,
             }}
           />
-
-          {/* ── Game lists stacked vertically ── */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {[
               { games: gamesEnCours, label: 'En cours' },

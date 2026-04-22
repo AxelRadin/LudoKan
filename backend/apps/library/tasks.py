@@ -1,8 +1,11 @@
+import logging
+
 from celery import shared_task
 from django.contrib.auth import get_user_model
 
 from apps.library.steam_sync import sync_steam_library
 
+logger = logging.getLogger("system_logs")
 User = get_user_model()
 
 
@@ -15,4 +18,6 @@ def sync_steam_library_task(user_id: int):
         user = User.objects.get(id=user_id)
         sync_steam_library(user)
     except User.DoesNotExist:
-        pass
+        logger.error(f"Celery task failed: user_id={user_id} does not exist.")
+    except Exception as e:
+        logger.error(f"Celery task failed for user_id={user_id}: {e}")
