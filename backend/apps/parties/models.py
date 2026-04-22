@@ -3,6 +3,7 @@ from django.db import models
 
 from apps.chat.models import ChatRoom
 from apps.games.models import Game
+from apps.parties.constants import TIMED_OUT_LABEL
 
 
 class GamePartyMemberQuerySet(models.QuerySet):
@@ -90,20 +91,20 @@ class GamePartyMember(models.Model):
     class MembershipStatus(models.TextChoices):
         ACTIVE = "active", "Active"
         DECLINED = "declined", "Declined"
-        TIMED_OUT = "timed_out", "Timed out"
+        TIMED_OUT = "timed_out", TIMED_OUT_LABEL
         LEFT = "left", "Left"
 
     class ReadyState(models.TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
         DECLINED = "declined", "Declined"
-        TIMED_OUT = "timed_out", "Timed out"
+        TIMED_OUT = "timed_out", TIMED_OUT_LABEL
 
     class ReadyForChatState(models.TextChoices):
         PENDING = "pending", "Pending"
         ACCEPTED = "accepted", "Accepted"
         DECLINED = "declined", "Declined"
-        TIMED_OUT = "timed_out", "Timed out"
+        TIMED_OUT = "timed_out", TIMED_OUT_LABEL
 
     party = models.ForeignKey(
         GameParty,
