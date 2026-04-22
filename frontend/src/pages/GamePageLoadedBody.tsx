@@ -79,8 +79,9 @@ function getCommunityRating(game: NormalizedGame): number {
   return (game.average_rating ?? game.rating_avg ?? 0) / 2;
 }
 
-function getReviewGameId(djangoId: unknown): string {
-  return djangoId == null ? '' : String(djangoId);
+function getReviewGameId(djangoId: number | null | undefined): string {
+  if (djangoId == null) return '';
+  return String(djangoId);
 }
 
 function FavoriteGlyph({
