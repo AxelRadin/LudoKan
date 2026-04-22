@@ -1,15 +1,9 @@
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogTitle,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { apiDelete } from '../../services/api';
 import { useReviews } from '../../hooks/useReviews';
+import { SectionAccentTitle } from '../SectionAccentTitle';
 import ReviewCard from './ReviewCard';
 import ReviewForm from './ReviewForm';
 import ReviewsList from './ReviewsList';
@@ -49,52 +43,6 @@ async function deleteReviewOnServer(
   } catch {
     alert("Erreur lors de la suppression de l'avis.");
   }
-}
-
-function SectionAccentTitle({
-  label,
-  accent,
-  marginBottom = 3,
-}: Readonly<{
-  label: string;
-  accent: string;
-  marginBottom?: number;
-}>) {
-  return (
-    <Box sx={{ position: 'relative', pl: '14px', mb: marginBottom }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '3px',
-          height: '80%',
-          background: `linear-gradient(to bottom, transparent, ${accent}, transparent)`,
-          borderRadius: '2px',
-          opacity: 0.8,
-        }}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box
-          sx={{ width: 14, height: '1px', background: accent, opacity: 0.6 }}
-        />
-        <Typography
-          sx={{
-            fontFamily: F,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            color: accent,
-            opacity: 0.9,
-          }}
-        >
-          {label}
-        </Typography>
-      </Box>
-    </Box>
-  );
 }
 
 type UserReviewEditorProps = Readonly<{
@@ -299,7 +247,7 @@ export default function ReviewSection({
 
   return (
     <Box sx={{ width: '100%' }}>
-      <SectionAccentTitle label="Votre avis" accent={accent} />
+      <SectionAccentTitle label="Votre avis" marginBottom={3} />
 
       <Box
         sx={{
@@ -339,13 +287,7 @@ export default function ReviewSection({
         />
       </Box>
 
-      {otherReviews.length > 0 && (
-        <SectionAccentTitle
-          label="Autres avis"
-          accent={accent}
-          marginBottom={2}
-        />
-      )}
+      {otherReviews.length > 0 && <SectionAccentTitle label="Autres avis" />}
 
       <ReviewsList
         otherReviews={otherReviews}

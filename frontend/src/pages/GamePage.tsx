@@ -22,6 +22,7 @@ import {
 } from '../api/igdb';
 import PlatformLogos from '../components/PlatformLogos';
 import ReviewSection from '../components/reviews/ReviewSection';
+import { SectionAccentTitle } from '../components/SectionAccentTitle';
 import SecondaryButton from '../components/SecondaryButton';
 import { useMatchmaking } from '../contexts/MatchmakingContext';
 import { useAuth } from '../contexts/useAuth';
@@ -107,48 +108,6 @@ const hi = (u: string | null) =>
   u ? u.replace('t_thumb', 't_1080p').replace('t_cover_big', 't_1080p') : '';
 const fdate = (d: string | null) =>
   d ? new Date(d).toLocaleDateString('fr-FR') : '';
-
-function SectionLabel({ label }: { label: string }) {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-  const accent = isDark ? '#ef5350' : '#d43c3c';
-
-  return (
-    <Box sx={{ position: 'relative', pl: '14px', mb: 2 }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '3px',
-          height: '80%',
-          background: `linear-gradient(to bottom, transparent, ${accent}, transparent)`,
-          borderRadius: '2px',
-          opacity: 0.8,
-        }}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box
-          sx={{ width: 14, height: '1px', background: accent, opacity: 0.6 }}
-        />
-        <Typography
-          sx={{
-            fontFamily: F,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            color: accent,
-            opacity: 0.9,
-          }}
-        >
-          {label}
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
 
 function Sep() {
   const theme = useTheme();
@@ -683,7 +642,7 @@ export default function GamePage() {
           {/* ── COLONNE DROITE ── */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-              <SectionLabel label="Actions" />
+              <SectionAccentTitle label="Actions" />
               <Box
                 sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2.5 }}
               >
@@ -702,7 +661,7 @@ export default function GamePage() {
                 </Button>
               </Box>
               <Sep />
-              <SectionLabel label="Mon statut" />
+              <SectionAccentTitle label="Mon statut" />
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                 <StatusChip
                   icon={<CheckCircleIcon />}
@@ -772,12 +731,12 @@ export default function GamePage() {
             </Box>
 
             <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-              <SectionLabel label="Plateformes" />
+              <SectionAccentTitle label="Plateformes" />
               <PlatformLogos platforms={game.platforms ?? []} />
             </Box>
 
             <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-              <SectionLabel label="Genres" />
+              <SectionAccentTitle label="Genres" />
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.7 }}>
                 {game.genres && game.genres.length > 0 ? (
                   game.genres.map((g: any) => (
@@ -865,7 +824,7 @@ export default function GamePage() {
         <Box className="gp-c4" sx={{ ...card(), px: 3, py: 2.5, mb: 2 }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
             <Box>
-              <SectionLabel label="Sortie" />
+              <SectionAccentTitle label="Sortie" />
               <Typography
                 sx={{
                   fontFamily: F,
@@ -878,7 +837,7 @@ export default function GamePage() {
               </Typography>
             </Box>
             <Box>
-              <SectionLabel label="Éditeur" />
+              <SectionAccentTitle label="Éditeur" />
               <Typography
                 sx={{
                   fontFamily: F,
@@ -895,7 +854,7 @@ export default function GamePage() {
 
         {/* ── NOTE ── */}
         <Box className="gp-c4" sx={{ ...card(), px: 3, py: 2.5, mb: 2 }}>
-          <SectionLabel label="Note communauté" />
+          <SectionAccentTitle label="Note communauté" />
           <Rating
             value={(game.average_rating || game.rating_avg || 0) / 2}
             readOnly
@@ -915,7 +874,7 @@ export default function GamePage() {
             className="gp-c5"
             sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2 }}
           >
-            <SectionLabel label="Galerie" />
+            <SectionAccentTitle label="Galerie" />
             <Typography
               sx={{
                 fontFamily: F,
