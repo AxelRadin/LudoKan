@@ -209,8 +209,9 @@ class TestIgdbProxyTrending:
             mock_igdb,
         )
         api_client.get("/api/igdb/trending/")
+        assert len(calls) == 2
         api_client.get("/api/igdb/trending/")
-        assert len(calls) == 1
+        assert len(calls) == 2
 
     def test_trending_enrich_zero(self, api_client, monkeypatch):
         monkeypatch.setattr(
@@ -219,8 +220,8 @@ class TestIgdbProxyTrending:
         )
         response = api_client.get("/api/igdb/trending/", {"enrich": "0"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["name"] == "N"
-        assert response.data[0]["user_rating"] is None
+        assert response.data["results"][0]["name"] == "N"
+        assert response.data["results"][0]["user_rating"] is None
 
     def test_trending_with_genre_filter(self, api_client, mock_enrich, monkeypatch):
         def mock_igdb(ep, q):
@@ -237,7 +238,7 @@ class TestIgdbProxyTrending:
         )
         response = api_client.get("/api/igdb/trending/", {"genre": "1", "limit": "10"})
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) >= 1
+        assert len(response.data["results"]) >= 1
 
     def test_trending_invalid_genre_id_ignored(self, api_client, mock_enrich, monkeypatch):
         monkeypatch.setattr(
@@ -258,7 +259,7 @@ class TestIgdbProxyTrending:
         )
         response = api_client.get("/api/igdb/trending/")
         assert response.status_code == status.HTTP_200_OK
-        assert response.data == []
+        assert response.data == {"results": [], "total_count": 0}
 
     def test_trending_other_error_500(self, api_client, monkeypatch):
         monkeypatch.setattr(

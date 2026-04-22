@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
 import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { fetchTrendingGames } from '../api/igdb';
+import { fetchTrendingGamesWithCount } from '../api/igdb';
 import GamesGrid from '../components/GamesGrid';
 import PageLayout from '../components/PageLayout';
 import type { NormalizedGame } from '../types/game';
@@ -24,72 +24,49 @@ export default function TrendingCategoryPage() {
   const [games, setGames] = useState<NormalizedGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
   const isGenre = genreId != null;
   const title = isGenre
     ? (state?.genreName ?? `Genre #${genreId}`)
     : ((sort && SORT_TITLES[sort]) ?? 'Jeux tendances');
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+    setTotalCount(0);
+  }, [sort, genreId]);
+
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     const offset = (page - 1) * PAGE_SIZE;
 
-    const onSettled = () => {
-      if (!controller.signal.aborted) setLoading(false);
-    };
+    const sortKey = isGenre ? 'popularity' : (sort ?? 'popularity');
+    const genreArg = isGenre ? Number(genreId) : undefined;
 
-    if (isGenre) {
-      const id = Number(genreId);
-      fetchTrendingGames(
-        'popularity',
-        PAGE_SIZE,
-        id,
-        offset,
-        controller.signal,
-        false
-      )
-        .then(data => {
-          if (!controller.signal.aborted) {
-            setGames(data);
-            setHasMore(data.length === PAGE_SIZE);
-          }
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) {
-            setGames([]);
-            setHasMore(false);
-          }
-        })
-        .finally(onSettled);
-    } else if (sort) {
-      fetchTrendingGames(
-        sort,
-        PAGE_SIZE,
-        undefined,
-        offset,
-        controller.signal,
-        false
-      )
-        .then(data => {
-          if (!controller.signal.aborted) {
-            setGames(data);
-            setHasMore(data.length === PAGE_SIZE);
-          }
-        })
-        .catch(() => {
-          if (!controller.signal.aborted) {
-            setGames([]);
-            setHasMore(false);
-          }
-        })
-        .finally(onSettled);
-    } else {
-      setGames([]);
-      setHasMore(false);
-      setLoading(false);
-    }
+    fetchTrendingGamesWithCount(
+      sortKey,
+      PAGE_SIZE,
+      genreArg,
+      offset,
+      controller.signal
+    )
+      .then(({ games: data, totalCount: count }) => {
+        if (!controller.signal.aborted) {
+          setGames(data);
+          setTotalCount(count);
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setGames([]);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
 
     return () => controller.abort();
   }, [sort, genreId, isGenre, page]);
@@ -101,14 +78,15 @@ export default function TrendingCategoryPage() {
         loading={loading}
         emptyMessage="Aucun jeu dans cette catégorie."
       />
-      {!loading && (page > 1 || hasMore) && (
+      {!loading && totalPages > 1 && (
         <Box mt={5} display="flex" justifyContent="center">
           <Pagination
-            count={hasMore ? page + 1 : page}
+            count={totalPages}
             page={page}
             onChange={(_, value) => setPage(value)}
             color="primary"
             siblingCount={1}
+            boundaryCount={1}
           />
         </Box>
       )}
