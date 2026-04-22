@@ -292,6 +292,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
       <PartyChatModal
         open={isChatModalOpen}
         onClose={() => setIsChatModalOpen(false)}
+        onLeave={cancelMatchmaking}
         party={activeParty}
         game={activeGame}
       />

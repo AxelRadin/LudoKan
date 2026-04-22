@@ -1,29 +1,152 @@
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CloseIcon from '@mui/icons-material/Close';
+import LogoutIcon from '@mui/icons-material/Logout';
 import SendIcon from '@mui/icons-material/Send';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Box,
+  Button,
   Dialog,
   DialogContent,
   IconButton,
   TextField,
   Typography,
 } from '@mui/material';
-import { PartyInfo } from './MatchmakingModal';
+import { useEffect, useRef, useState } from 'react';
+import { PartyInfo, PartyMember } from './MatchmakingModal';
 
 interface PartyChatModalProps {
   readonly open: boolean;
   readonly onClose: () => void;
+  readonly onLeave: () => void;
   readonly party: PartyInfo | null;
   readonly game: { readonly name: string; readonly image: string } | null;
+}
+
+interface ChatMessage {
+  id: string;
+  sender: string;
+  content: string;
+  isSystem?: boolean;
 }
 
 export default function PartyChatModal({
   open,
   onClose,
+  onLeave,
   party,
   game,
 }: PartyChatModalProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [closingCountdown, setClosingCountdown] = useState<number | null>(null);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMembersRef = useRef<PartyMember[]>(party?.members || []);
+
+  const chatRoomId = party?.chat_room_id;
+  const countdownEndsAt = party?.countdown_ends_at;
+  const membersCount = party?.members?.length || 0;
+
+  const membersStr = JSON.stringify(party?.members || []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  useEffect(() => {
+    if (!open || !chatRoomId) return;
+
+    const apiBase =
+      import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    const wsProtocol = apiBase.startsWith('https') ? 'wss://' : 'ws://';
+    const wsHost = apiBase.replace(/^https?:\/\//, '');
+
+    const wsUrl = `${wsProtocol}${wsHost}/ws/chat/${chatRoomId}/`;
+
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onmessage = event => {
+      const data = JSON.parse(event.data);
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: data.id ? data.id.toString() : Date.now().toString(),
+          sender: `Joueur ${data.user_id}`,
+          content: data.content,
+        },
+      ]);
+    };
+
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [open, chatRoomId]);
+
+  useEffect(() => {
+    const currentMembers: PartyMember[] = JSON.parse(membersStr);
+    const previousMembers = prevMembersRef.current;
+
+    if (currentMembers.length < previousMembers.length) {
+      const remainingIds = currentMembers.map(m => m.id);
+      const leftMembers = previousMembers.filter(
+        m => !remainingIds.includes(m.id)
+      );
+
+      leftMembers.forEach(member => {
+        const pseudo =
+          (member.user as any).pseudo || member.user.username || 'Un joueur';
+
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `sys-${Date.now()}-${member.id}`,
+            sender: 'Système',
+            content: `${pseudo} a quitté le salon.`,
+            isSystem: true,
+          },
+        ]);
+      });
+    }
+    prevMembersRef.current = currentMembers;
+  }, [membersStr]);
+
+  useEffect(() => {
+    if (membersCount === 1 && countdownEndsAt) {
+      const interval = setInterval(() => {
+        const remaining = Math.floor(
+          (new Date(countdownEndsAt).getTime() - Date.now()) / 1000
+        );
+
+        if (remaining <= 0) {
+          clearInterval(interval);
+          onLeave();
+        } else {
+          setClosingCountdown(remaining);
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    } else {
+      setClosingCountdown(null);
+    }
+  }, [membersCount, countdownEndsAt, onLeave]);
+
+  const handleSend = () => {
+    if (!input.trim() || !wsRef.current) return;
+
+    wsRef.current.send(JSON.stringify({ type: 'message', content: input }));
+    setInput('');
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSend();
+  };
+
   if (!party) return null;
 
   return (
@@ -36,7 +159,7 @@ export default function PartyChatModal({
         sx: {
           borderRadius: 4,
           overflow: 'hidden',
-          height: '70vh',
+          height: '75vh',
           display: 'flex',
           flexDirection: 'column',
         },
@@ -60,14 +183,46 @@ export default function PartyChatModal({
               Salon : {game?.name || 'Jeu'}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-              {party.members.length} joueurs connectés
+              {membersCount} joueurs connectés
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} sx={{ color: 'white' }}>
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            size="small"
+            variant="contained"
+            color="error"
+            startIcon={<LogoutIcon />}
+            onClick={onLeave}
+            sx={{ textTransform: 'none', fontWeight: 'bold' }}
+          >
+            Quitter
+          </Button>
+          <IconButton onClick={onClose} sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
       </Box>
+
+      {closingCountdown !== null && (
+        <Box
+          sx={{
+            bgcolor: 'error.main',
+            color: 'white',
+            p: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+          }}
+        >
+          <WarningAmberIcon fontSize="small" />
+          <Typography variant="body2" fontWeight="bold">
+            Plus aucun joueur. Le salon se fermera dans {closingCountdown}{' '}
+            secondes.
+          </Typography>
+        </Box>
+      )}
 
       <DialogContent
         sx={{
@@ -89,24 +244,73 @@ export default function PartyChatModal({
           La discussion a commencé. Dites bonjour !
         </Typography>
 
-        <Box sx={{ alignSelf: 'flex-start', maxWidth: '80%' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-            Système
-          </Typography>
+        <Box sx={{ alignSelf: 'center', maxWidth: '80%', mb: 2 }}>
           <Box
             sx={{
               bgcolor: '#e0e0e0',
               color: 'black',
-              p: 1.5,
-              borderRadius: 2,
-              borderTopLeftRadius: 0,
+              px: 2,
+              py: 1,
+              borderRadius: 4,
             }}
           >
-            <Typography variant="body2">
-              Bienvenue dans le salon {party.chat_room_id}
+            <Typography variant="caption" fontWeight="bold">
+              Bienvenue dans le salon {chatRoomId}
             </Typography>
           </Box>
         </Box>
+
+        {messages.map(msg => {
+          const isMe = msg.sender === 'Vous';
+
+          if (msg.isSystem) {
+            return (
+              <Typography
+                key={msg.id}
+                variant="caption"
+                color="text.secondary"
+                textAlign="center"
+                sx={{ fontStyle: 'italic', my: 1 }}
+              >
+                {msg.content}
+              </Typography>
+            );
+          }
+
+          return (
+            <Box
+              key={msg.id}
+              sx={{
+                alignSelf: isMe ? 'flex-end' : 'flex-start',
+                maxWidth: '80%',
+              }}
+            >
+              {!isMe && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ ml: 1 }}
+                >
+                  {msg.sender}
+                </Typography>
+              )}
+              <Box
+                sx={{
+                  bgcolor: isMe ? 'primary.main' : 'white',
+                  color: isMe ? 'white' : 'black',
+                  p: 1.5,
+                  borderRadius: 2,
+                  borderTopLeftRadius: isMe ? 8 : 0,
+                  borderTopRightRadius: isMe ? 0 : 8,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                }}
+              >
+                <Typography variant="body2">{msg.content}</Typography>
+              </Box>
+            </Box>
+          );
+        })}
+        <div ref={messagesEndRef} />
       </DialogContent>
 
       <Box
@@ -123,10 +327,16 @@ export default function PartyChatModal({
           placeholder="Écrivez votre message..."
           variant="outlined"
           size="small"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          disabled={closingCountdown !== null}
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 5 } }}
         />
         <IconButton
           color="primary"
+          onClick={handleSend}
+          disabled={!input.trim() || closingCountdown !== null}
           sx={{
             bgcolor: 'primary.light',
             color: 'primary.main',
