@@ -207,14 +207,7 @@ export const Header: React.FC = () => {
             </Typography>
           </Box>
 
-          {!isMobile ? (
-            <>
-              <SearchBar />
-              <Box display="flex" alignItems="center" gap={2}>
-                {desktopActions}
-              </Box>
-            </>
-          ) : (
+          {isMobile ? (
             <IconButton
               color="inherit"
               edge="end"
@@ -224,6 +217,13 @@ export const Header: React.FC = () => {
             >
               <MenuIcon />
             </IconButton>
+          ) : (
+            <>
+              <SearchBar />
+              <Box display="flex" alignItems="center" gap={2}>
+                {desktopActions}
+              </Box>
+            </>
           )}
         </Toolbar>
       </AppBar>
