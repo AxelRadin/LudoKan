@@ -220,6 +220,7 @@ type ProfilePageModel = {
   handleSteamSync: () => Promise<void>;
   askEmailOpen: boolean;
   setAskEmailOpen: (b: boolean) => void;
+  handleEmailSave: () => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
@@ -308,15 +309,19 @@ function useProfilePageModel(): ProfilePageModel {
     const searchParams = new URLSearchParams(window.location.search);
     if (searchParams.get('new_user') === 'true') {
       setAskEmailOpen(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (searchParams.get('syncing') === 'true') {
+    }
+    if (searchParams.get('syncing') === 'true') {
       let polls = 0;
       setSteamBusy(true);
       const pollInterval = setInterval(async () => {
         polls++;
         try {
-          const res = await apiGet('/api/me/games/');
-          setUserGames(res.results || res || []);
+          const [gamesRes, meRes] = await Promise.all([
+            apiGet('/api/me/games/'),
+            apiGet('/api/me/'),
+          ]);
+          setUserGames(gamesRes.results || gamesRes || []);
+          setUser(meRes);
         } catch {
           /* ignore */
         }
@@ -325,6 +330,8 @@ function useProfilePageModel(): ProfilePageModel {
           setSteamBusy(false);
         }
       }, 3000);
+    }
+    if (searchParams.get('new_user') || searchParams.get('syncing')) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -634,6 +641,11 @@ function useProfilePageModel(): ProfilePageModel {
     handleSteamSync,
     askEmailOpen,
     setAskEmailOpen,
+    handleEmailSave: async () => {
+      const updated = await apiPatch('/api/me/', { email: form.email });
+      mergeUpdatedUser(updated);
+      setAskEmailOpen(false);
+    },
   };
 }
 
@@ -1251,6 +1263,7 @@ export default function ProfilePage() {
     handleSteamSync,
     askEmailOpen,
     setAskEmailOpen,
+    handleEmailSave,
   } = useProfilePageModel();
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -2005,8 +2018,7 @@ export default function ProfilePage() {
           <Button
             onClick={async () => {
               try {
-                await apiPatch('/api/me/', { email: form.email });
-                setAskEmailOpen(false);
+                await handleEmailSave();
               } catch (err: any) {
                 alert(
                   'Erreur: ' +
