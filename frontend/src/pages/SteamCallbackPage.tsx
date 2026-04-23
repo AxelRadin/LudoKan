@@ -34,11 +34,15 @@ const SteamCallbackPage: React.FC = () => {
       }
 
       try {
-        await apiPost('/api/auth/steam/callback/', params);
+        const res = await apiPost('/api/auth/steam/callback/', params);
         // Authentifie l'utilisateur dans le store React
         setAuthenticated(true);
         // Redirection vers le profil après succès
-        navigate('/profile', { replace: true });
+        if (res.is_new_user) {
+          navigate('/profile?syncing=true&new_user=true', { replace: true });
+        } else {
+          navigate('/profile?syncing=true', { replace: true });
+        }
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Échec de la connexion Steam';

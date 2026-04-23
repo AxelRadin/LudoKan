@@ -218,6 +218,8 @@ type ProfilePageModel = {
   handleSteamConnect: () => Promise<void>;
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
+  askEmailOpen: boolean;
+  setAskEmailOpen: (b: boolean) => void;
 };
 
 function useProfilePageModel(): ProfilePageModel {
@@ -237,6 +239,7 @@ function useProfilePageModel(): ProfilePageModel {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
+  const [askEmailOpen, setAskEmailOpen] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
 
   const handleSteamConnect = async () => {
@@ -302,6 +305,29 @@ function useProfilePageModel(): ProfilePageModel {
   };
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('new_user') === 'true') {
+      setAskEmailOpen(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (searchParams.get('syncing') === 'true') {
+      let polls = 0;
+      setSteamBusy(true);
+      const pollInterval = setInterval(async () => {
+        polls++;
+        try {
+          const res = await apiGet('/api/me/games/');
+          setUserGames(res.results || res || []);
+        } catch {
+          /* ignore */
+        }
+        if (polls >= 10) {
+          clearInterval(pollInterval);
+          setSteamBusy(false);
+        }
+      }, 3000);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     apiGet('/api/me/')
       .then(data => {
         setUser(data);
@@ -606,6 +632,8 @@ function useProfilePageModel(): ProfilePageModel {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
+    askEmailOpen,
+    setAskEmailOpen,
   };
 }
 
@@ -1221,6 +1249,8 @@ export default function ProfilePage() {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
+    askEmailOpen,
+    setAskEmailOpen,
   } = useProfilePageModel();
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -1941,6 +1971,58 @@ export default function ProfilePage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={askEmailOpen}
+        onClose={() => setAskEmailOpen(false)}
+        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+      >
+        <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
+          Finaliser votre inscription
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, fontFamily: FONT_BODY }}>
+            Bienvenue sur LudoKan ! Nous vous avons rattaché une adresse fictive
+            par défaut. Si vous le souhaitez, vous pouvez renseigner votre
+            véritable adresse e-mail.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Adresse e-mail"
+            value={form.email}
+            onChange={e => handleChange(e as any)}
+            name="email"
+            sx={fieldSx}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setAskEmailOpen(false)}
+            sx={{ fontFamily: FONT_BODY }}
+          >
+            Plus tard
+          </Button>
+          <Button
+            onClick={async () => {
+              try {
+                await apiPatch('/api/me/', { email: form.email });
+                setAskEmailOpen(false);
+              } catch (err: any) {
+                alert(
+                  'Erreur: ' +
+                    (err?.message || "Impossible de mettre à jour l'email.")
+                );
+              }
+            }}
+            variant="contained"
+            color="error"
+            sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+            disableElevation
+          >
+            Enregistrer
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <ProfileEditDialog
         open={editOpen}

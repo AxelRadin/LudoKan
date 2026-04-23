@@ -133,21 +133,45 @@ class SteamLoginCallbackView(APIView):
 
         # 3. Récupération ou création de l'utilisateur
         steam_profile = SteamProfile.objects.filter(steam_id=steam_id).first()
-        created = False
+        is_new_user = False
 
         if steam_profile:
             user = steam_profile.user
         else:
+            is_new_user = True
             # Si l'utilisateur est déjà authentifié, on lie simplement le compte
             if request.user.is_authenticated:
                 user = request.user
             else:
                 # Création d'un nouvel utilisateur si non connecté
                 fake_email = f"steam_{steam_id}@steam.ludokan.internal"
-                user = CustomUser.objects.create_user(email=fake_email)
-                created = True
+                try:
+                    user = CustomUser.objects.get(email=fake_email)
+                except CustomUser.DoesNotExist:
+                    user = CustomUser.objects.create_user(email=fake_email)
 
             SteamProfile.objects.create(user=user, steam_id=steam_id)
+
+            if is_new_user:
+                try:
+                    summary_res = requests.get(
+                        "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/",
+                        params={"key": settings.STEAM_API_KEY, "steamids": steam_id},
+                        timeout=10,
+                    )
+                    if summary_res.status_code == 200:
+                        players = summary_res.json().get("response", {}).get("players", [])
+                        if players:
+                            player = players[0]
+                            user.pseudo = player.get("personaname", user.pseudo)
+                            user.avatar_url = player.get("avatarfull", user.avatar_url)
+
+                            # Update email with pseudo format
+                            sanitized = re.sub(r"[^a-zA-Z0-9.\-_]", "", user.pseudo).lower()
+                            user.email = f"{sanitized or 'steam'}@mailtemporaire.ludokan.internal"
+                            user.save(update_fields=["pseudo", "avatar_url", "email"])
+                except Exception as e:
+                    logger.error(f"Failed to fetch Steam profile summary for user {user.id}: {e}")
 
         # 4. Génération des tokens JWT
         access_token, refresh_token = jwt_encode(user)
@@ -155,7 +179,7 @@ class SteamLoginCallbackView(APIView):
         # 5. Lancer la synchronisation initiale en arrière-plan
         sync_steam_library_task.delay(user.id)
 
-        logger.info(f"SteamAuth: Utilisateur {'créé' if created else 'connecté'} ({user.pseudo}, SteamID: {steam_id})")
+        logger.info(f"SteamAuth: Utilisateur {'créé' if is_new_user else 'connecté'} ({user.pseudo}, SteamID: {steam_id})")
 
         # 6. Renvoyer la réponse avec les cookies de session JWT
 
@@ -167,6 +191,7 @@ class SteamLoginCallbackView(APIView):
         res_data = {
             "steam_id": steam_id,
             "user": serializer.data,
+            "is_new_user": is_new_user,
         }
 
         # Use token string format for older versions or pass directly for newer ones.
