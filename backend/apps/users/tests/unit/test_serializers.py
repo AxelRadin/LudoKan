@@ -252,3 +252,22 @@ class TestUserSerializer:
     def test_get_steam_id_without_profile(self, user):
         serializer = UserSerializer(instance=user)
         assert serializer.data.get("steam_id") is None
+
+    def test_validate_email_conflict_raises_error(self, user, another_user, rf):
+        """Un email déjà utilisé par un autre user doit lever une erreur."""
+        request = rf.get("/api/auth/user/")
+        request.user = user
+
+        serializer = UserSerializer(instance=user, context={"request": request})
+        from rest_framework.exceptions import ValidationError
+
+        with pytest.raises(ValidationError):
+            serializer.validate_email(another_user.email)
+
+    def test_validate_email_without_request_raises_for_existing_email(self, user):
+        """Sans contexte request, un email déjà utilisé doit lever une erreur (branche elif)."""
+        serializer = UserSerializer(instance=user)
+        from rest_framework.exceptions import ValidationError
+
+        with pytest.raises(ValidationError):
+            serializer.validate_email(user.email)
