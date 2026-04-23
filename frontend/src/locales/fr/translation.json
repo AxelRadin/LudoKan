@@ -138,5 +138,73 @@
     "contact": "Contacter",
     "minimize": "Réduire en arrière-plan",
     "cancel": "Annuler la recherche"
+  },
+  "profile": {
+    "loading": "Chargement du profil…",
+    "editBanner": "Modifier la bannière",
+    "defaultName": "Pseudo utilisateur",
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "comments": "Commentaires",
+    "rating": "Notation",
+    "friends": "Amis",
+    "stats": "Statistiques",
+    "totalGames": "Total de jeux",
+    "totalPlatforms": "Total des plateformes",
+    "finishedTitles": "Titres terminés",
+    "myInfo": "Mes informations",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "avatarUrl": "URL de l'avatar",
+    "shortDescription": "Description courte",
+    "shortDescriptionPlaceholder": "Parle un peu de toi...",
+    "preferences": "Préférences",
+    "preferencesPlaceholder": "Ex : PC, Switch, RPG, jeux narratifs…",
+    "save": "Sauvegarder",
+    "saving": "Sauvegarde...",
+    "resetPassword": "Réinitialiser mon mot de passe",
+    "games": "Jeux",
+    "confirmEmail": "Tu es sur le point de modifier ton adresse e-mail. Continuer ?",
+    "confirmReset": "Un e-mail de réinitialisation sera envoyé à cette adresse. Continuer ?",
+    "profileUpdated": "Profil mis à jour ✅",
+    "resetSent": "E-mail de réinitialisation envoyé 📧",
+    "unexpectedError": "Erreur inattendue.",
+    "bannerUpdated": "Bannière mise à jour ✅",
+    "bannerError": "Erreur lors de l'upload de la bannière.",
+    "gameAlt": "Jeu {{index}}"
+  },
+  "pageLayout": {
+    "back": "← Retour"
+  },
+  "platformLogos": {
+    "notSpecified": "Non renseigné"
+  },
+  "registerForm": {
+    "title": "Inscription",
+    "switchLabel": "Se connecter",
+    "pseudo": "Pseudo",
+    "email": "Email",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmez votre mot de passe",
+    "registerWith": "S'inscrire avec",
+    "submit": "S'inscrire",
+    "submitting": "Inscription...",
+    "errorFillFields": "Veuillez remplir tous les champs.",
+    "errorPasswordMatch": "Les mots de passe ne correspondent pas.",
+    "errorGoogle": "Connexion Google indisponible.",
+    "errorFallback": "Une erreur est survenue."
+  },
+  "reviewForm": {
+    "loginPrompt": "Connectez-vous pour écrire un avis.",
+    "title": "Écrire un avis",
+    "placeholder": "Partagez votre expérience avec ce jeu...",
+    "errorRequired": "L'avis est obligatoire.",
+    "errorMinLength": "L'avis doit contenir au moins 10 caractères.",
+    "errorMaxLength": "L'avis ne peut pas dépasser 500 caractères.",
+    "submit": "Publier l'avis",
+    "submitting": "Envoi...",
+    "success": "Avis publié avec succès !",
+    "counter": "{{count}} / 500"
   }
 }

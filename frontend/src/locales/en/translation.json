@@ -138,5 +138,73 @@
     "contact": "Contact",
     "minimize": "Minimize to background",
     "cancel": "Cancel search"
+  },
+  "profile": {
+    "loading": "Loading profile…",
+    "editBanner": "Edit banner",
+    "defaultName": "Username",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "comments": "Comments",
+    "rating": "Rating",
+    "friends": "Friends",
+    "stats": "Statistics",
+    "totalGames": "Total games",
+    "totalPlatforms": "Total platforms",
+    "finishedTitles": "Finished titles",
+    "myInfo": "My information",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "avatarUrl": "Avatar URL",
+    "shortDescription": "Short description",
+    "shortDescriptionPlaceholder": "Tell us a bit about yourself...",
+    "preferences": "Preferences",
+    "preferencesPlaceholder": "E.g.: PC, Switch, RPG, narrative games…",
+    "save": "Save",
+    "saving": "Saving...",
+    "resetPassword": "Reset my password",
+    "games": "Games",
+    "confirmEmail": "You are about to change your email address. Continue?",
+    "confirmReset": "A reset email will be sent to this address. Continue?",
+    "profileUpdated": "Profile updated",
+    "resetSent": "Reset email sent",
+    "unexpectedError": "Unexpected error.",
+    "bannerUpdated": "Banner updated",
+    "bannerError": "Error uploading banner.",
+    "gameAlt": "Game {{index}}"
+  },
+  "pageLayout": {
+    "back": "← Back"
+  },
+  "platformLogos": {
+    "notSpecified": "Not specified"
+  },
+  "registerForm": {
+    "title": "Register",
+    "switchLabel": "Log in",
+    "pseudo": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm your password",
+    "registerWith": "Sign up with",
+    "submit": "Sign up",
+    "submitting": "Signing up...",
+    "errorFillFields": "Please fill in all fields.",
+    "errorPasswordMatch": "Passwords do not match.",
+    "errorGoogle": "Google login unavailable.",
+    "errorFallback": "An error occurred."
+  },
+  "reviewForm": {
+    "loginPrompt": "Log in to write a review.",
+    "title": "Write a review",
+    "placeholder": "Share your experience with this game...",
+    "errorRequired": "Review is required.",
+    "errorMinLength": "Review must be at least 10 characters.",
+    "errorMaxLength": "Review cannot exceed 500 characters.",
+    "submit": "Publish review",
+    "submitting": "Sending...",
+    "success": "Review published successfully!",
+    "counter": "{{count}} / 500"
   }
 }

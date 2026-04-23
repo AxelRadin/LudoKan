@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import type { CSSProperties } from 'react';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import { useTranslation } from 'react-i18next';
 import ludokanLogo from '../assets/logo.png';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
@@ -20,8 +20,7 @@ type User = {
   finished_titles?: number | null;
 };
 
-const styles: Record<string, CSSProperties> = {
-  // PAGE BLANCHE PLEINE HAUTEUR
+const styles = {
   page: {
     minHeight: '100vh',
     backgroundColor: '#ffffff',
@@ -30,11 +29,9 @@ const styles: Record<string, CSSProperties> = {
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
   },
-
-  // BARRE DU HAUT AVEC LOGO (responsive grâce à padding en vw)
   topbar: {
     width: '100%',
     maxWidth: 1100,
@@ -46,36 +43,32 @@ const styles: Record<string, CSSProperties> = {
   logoImg: {
     maxHeight: 70,
     width: 'auto',
-    objectFit: 'contain',
+    objectFit: 'contain' as const,
     display: 'block',
   },
-
-  // CONTENEUR PRINCIPAL
   card: {
     width: '100%',
     maxWidth: 1100,
     backgroundColor: '#ffffff',
     paddingBottom: 40,
   },
-
-  // BANDEAU + AVATAR
   hero: {
     borderTop: '1px solid #000',
     borderLeft: '1px solid #000',
     borderRight: '1px solid #000',
   },
   bannerWrapper: {
-    position: 'relative',
+    position: 'relative' as const,
   },
   bannerImg: {
     width: '100%',
     height: 260,
     maxHeight: '40vh',
-    objectFit: 'cover',
+    objectFit: 'cover' as const,
     display: 'block',
   },
   bannerCameraBtn: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: 16,
     right: 16,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -91,7 +84,7 @@ const styles: Record<string, CSSProperties> = {
     zIndex: 2,
   },
   avatarOverlay: {
-    position: 'absolute',
+    position: 'absolute' as const,
     left: 24,
     bottom: 12,
     display: 'flex',
@@ -114,11 +107,11 @@ const styles: Record<string, CSSProperties> = {
   avatarImg: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'cover' as const,
   },
   overlayTextBlock: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     gap: 2,
     color: '#fff',
   },
@@ -134,10 +127,8 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid #fff',
     padding: '2px 10px',
     cursor: 'pointer',
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-start' as const,
   },
-
-  // LIGNE N/A / 5 / 20 (responsive avec auto-fit)
   topStatsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -147,7 +138,7 @@ const styles: Record<string, CSSProperties> = {
   },
   topStatCell: {
     padding: '14px 8px',
-    textAlign: 'center',
+    textAlign: 'center' as const,
     borderLeft: '1px solid #000',
   },
   topStatCellFirst: {
@@ -160,8 +151,6 @@ const styles: Record<string, CSSProperties> = {
   topStatLabel: {
     fontSize: 13,
   },
-
-  // CONTENU (padding en vw pour s’adapter)
   content: {
     padding: '24px 7vw 0',
   },
@@ -172,8 +161,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 18,
     marginBottom: 16,
   },
-
-  // CARTES STATISTIQUES (auto-fit → 3 / 2 / 1 colonnes selon la largeur)
   statCards: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -183,7 +170,7 @@ const styles: Record<string, CSSProperties> = {
     border: '1px solid #000',
     borderRadius: 6,
     overflow: 'hidden',
-    textAlign: 'center',
+    textAlign: 'center' as const,
   },
   statLabel: {
     fontSize: 13,
@@ -194,8 +181,6 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 20,
     padding: '12px 4px 14px',
   },
-
-  // MESSAGES
   messages: {
     marginTop: 12,
     marginBottom: 4,
@@ -209,8 +194,6 @@ const styles: Record<string, CSSProperties> = {
     color: '#047857',
     fontSize: 14,
   },
-
-  // FORMULAIRE
   formSection: {
     marginTop: 32,
   },
@@ -220,7 +203,7 @@ const styles: Record<string, CSSProperties> = {
   },
   form: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     gap: 10,
     maxWidth: 520,
   },
@@ -231,7 +214,7 @@ const styles: Record<string, CSSProperties> = {
   },
   field: {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     gap: 4,
   },
   label: {
@@ -250,12 +233,12 @@ const styles: Record<string, CSSProperties> = {
     padding: '6px 8px',
     fontSize: 14,
     fontFamily: 'inherit',
-    resize: 'vertical',
+    resize: 'vertical' as const,
   },
   formActions: {
     marginTop: 8,
     display: 'flex',
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     gap: 8,
   },
   btn: {
@@ -278,8 +261,6 @@ const styles: Record<string, CSSProperties> = {
     backgroundColor: '#dc2626',
     color: '#f9fafb',
   },
-
-  // JEUX (wrap + responsive)
   gamesHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -295,7 +276,7 @@ const styles: Record<string, CSSProperties> = {
   },
   gamesRow: {
     display: 'flex',
-    flexWrap: 'wrap',
+    flexWrap: 'wrap' as const,
     gap: 16,
   },
   gameItem: {
@@ -308,11 +289,12 @@ const styles: Record<string, CSSProperties> = {
   gameImg: {
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
+    objectFit: 'cover' as const,
   },
 };
 
 const PageProfile: React.FC = () => {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [form, setForm] = useState({
     first_name: '',
@@ -331,17 +313,13 @@ const PageProfile: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const bannerInputRef = React.useRef<HTMLInputElement>(null);
 
-  // GET /api/me
   useEffect(() => {
     const fetchMe = async () => {
       try {
         setLoading(true);
         setError(null);
-
         const data: User = await apiGet('/api/me', {
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
         });
         setUser(data);
         setForm({
@@ -354,17 +332,16 @@ const PageProfile: React.FC = () => {
           preferences: data.preferences ?? '',
         });
       } catch (e: any) {
-        setError(e.message ?? 'Erreur inattendue.');
+        setError(e.message ?? t('profile.unexpectedError'));
       } finally {
         setLoading(false);
       }
     };
-
     fetchMe();
   }, []);
 
   const fullName =
-    `${form.first_name} ${form.last_name}`.trim() || 'Pseudo utilisateur';
+    `${form.first_name} ${form.last_name}`.trim() || t('profile.defaultName');
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -373,30 +350,21 @@ const PageProfile: React.FC = () => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // PATCH /api/me
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setMessage(null);
-
     if (user && form.email !== (user.email ?? '')) {
-      const ok = window.confirm(
-        'Tu es sur le point de modifier ton adresse e-mail. Continuer ?'
-      );
-      if (!ok) return;
+      if (!window.confirm(t('profile.confirmEmail'))) return;
     }
-
     try {
       setSaving(true);
-
-      const updated: User = await apiPatch('/api/me', form, {
-        headers: {},
-      });
+      const updated: User = await apiPatch('/api/me', form, { headers: {} });
       setUser(updated);
-      setMessage('Profil mis à jour ✅');
+      setMessage(t('profile.profileUpdated'));
       setIsEditing(false);
     } catch (e: any) {
-      setError(e.message ?? 'Erreur inattendue.');
+      setError(e.message ?? t('profile.unexpectedError'));
     } finally {
       setSaving(false);
     }
@@ -405,51 +373,38 @@ const PageProfile: React.FC = () => {
   const handleBannerChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-
     const formData = new FormData();
     formData.append('banner', file);
-
     try {
       setUploadingBanner(true);
       setError(null);
-
       const updated: User = await apiPatch('/api/me', formData);
       setUser(updated);
       setForm(prev => ({ ...prev, banner_url: updated.banner_url ?? '' }));
-      setMessage('Bannière mise à jour ✅');
+      setMessage(t('profile.bannerUpdated'));
     } catch (e: any) {
-      setError(e.message ?? "Erreur lors de l'upload de la bannière.");
+      setError(e.message ?? t('profile.bannerError'));
     } finally {
       setUploadingBanner(false);
     }
   };
 
-  // POST /api/reset-password
   const handleResetPassword = async () => {
     setError(null);
     setMessage(null);
-
     if (!form.email) {
-      setError(
-        'Aucune adresse e-mail renseignée pour réinitialiser le mot de passe.'
-      );
+      setError(t('profile.unexpectedError'));
       return;
     }
-
-    const ok = window.confirm(
-      'Un e-mail de réinitialisation sera envoyé à cette adresse. Continuer ?'
-    );
-    if (!ok) return;
-
+    if (!window.confirm(t('profile.confirmReset'))) return;
     try {
       await apiPost('/api/reset-password', { email: form.email });
-      setMessage('E-mail de réinitialisation envoyé 📧');
+      setMessage(t('profile.resetSent'));
     } catch (e: any) {
-      setError(e.message ?? 'Erreur inattendue.');
+      setError(e.message ?? t('profile.unexpectedError'));
     }
   };
 
-  // jaquettes juste pour la maquette
   const games = [
     'https://image.api.playstation.com/cdn/EP9000/CUSA08342_00/6hOJtV8LojRxurx8zS7imLwY2zLsyO2V.png',
     'https://static.fnac-static.com/multimedia/Images/FR/MDM/40/ae/85/8851776/1540-1/tsp20221117101644/The-Legend-of-Zelda-Breath-of-the-Wild-Nintendo-Switch.jpg',
@@ -459,20 +414,15 @@ const PageProfile: React.FC = () => {
     'https://image.api.playstation.com/cdn/UP0001/CUSA02152_00/h1JtVw2FCpfvzNwZ7nHU8pUB7G4qKzjL.png',
   ];
 
-  if (loading) {
-    return <div style={styles.page}>Chargement du profil…</div>;
-  }
+  if (loading) return <div style={styles.page}>{t('profile.loading')}</div>;
 
   return (
     <div style={styles.page}>
-      {/* Logo */}
       <header style={styles.topbar}>
         <img src={ludokanLogo} alt="Logo" style={styles.logoImg} />
       </header>
 
-      {/* Contenu principal */}
       <div style={styles.card}>
-        {/* Bandeau Zelda + avatar */}
         <section style={styles.hero}>
           <div style={styles.bannerWrapper}>
             {user && (
@@ -481,7 +431,7 @@ const PageProfile: React.FC = () => {
                 style={styles.bannerCameraBtn}
                 onClick={() => bannerInputRef.current?.click()}
                 disabled={uploadingBanner}
-                title="Modifier la bannière"
+                title={t('profile.editBanner')}
               >
                 {uploadingBanner ? '⏳' : <CameraAltIcon fontSize="small" />}
               </button>
@@ -501,7 +451,6 @@ const PageProfile: React.FC = () => {
               }
               alt="Bannière de profil"
             />
-
             <div style={styles.avatarOverlay}>
               <div style={styles.avatarCircle}>
                 {form.avatar_url ? (
@@ -521,32 +470,26 @@ const PageProfile: React.FC = () => {
                   style={styles.editLink}
                   onClick={() => setIsEditing(v => !v)}
                 >
-                  {isEditing ? 'Annuler' : 'Modifier'}
+                  {isEditing ? t('profile.cancel') : t('profile.edit')}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* N/A / 5 / 20 */}
           <div style={styles.topStatsRow}>
-            <div
-              style={{
-                ...styles.topStatCell,
-                ...styles.topStatCellFirst,
-              }}
-            >
+            <div style={{ ...styles.topStatCell, ...styles.topStatCellFirst }}>
               <div style={styles.topStatValue}>
                 {user?.comments_count ?? 'N/A'}
               </div>
-              <div style={styles.topStatLabel}>Commentaires</div>
+              <div style={styles.topStatLabel}>{t('profile.comments')}</div>
             </div>
             <div style={styles.topStatCell}>
               <div style={styles.topStatValue}>{user?.rating ?? '5'}</div>
-              <div style={styles.topStatLabel}>Notation</div>
+              <div style={styles.topStatLabel}>{t('profile.rating')}</div>
             </div>
             <div style={styles.topStatCell}>
               <div style={styles.topStatValue}>{user?.friends_count ?? 20}</div>
-              <div style={styles.topStatLabel}>Amis</div>
+              <div style={styles.topStatLabel}>{t('profile.friends')}</div>
             </div>
           </div>
         </section>
@@ -559,20 +502,23 @@ const PageProfile: React.FC = () => {
             </div>
           )}
 
-          {/* Statistiques */}
           <section style={styles.section}>
-            <h2 style={styles.sectionTitle}>Statistiques</h2>
+            <h2 style={styles.sectionTitle}>{t('profile.stats')}</h2>
             <div style={styles.statCards}>
               <div style={styles.statCard}>
-                <div style={styles.statLabel}>Total de jeux</div>
+                <div style={styles.statLabel}>{t('profile.totalGames')}</div>
                 <div style={styles.statValue}>{user?.total_games ?? 20}</div>
               </div>
               <div style={styles.statCard}>
-                <div style={styles.statLabel}>Total des plateformes</div>
+                <div style={styles.statLabel}>
+                  {t('profile.totalPlatforms')}
+                </div>
                 <div style={styles.statValue}>{user?.total_platforms ?? 4}</div>
               </div>
               <div style={styles.statCard}>
-                <div style={styles.statLabel}>Titres terminés</div>
+                <div style={styles.statLabel}>
+                  {t('profile.finishedTitles')}
+                </div>
                 <div style={styles.statValue}>
                   {user?.finished_titles ?? 'N/A'}
                 </div>
@@ -580,14 +526,13 @@ const PageProfile: React.FC = () => {
             </div>
           </section>
 
-          {/* Formulaire d'édition */}
           {isEditing && (
             <section style={styles.formSection}>
-              <h3 style={styles.formTitle}>Mes informations</h3>
+              <h3 style={styles.formTitle}>{t('profile.myInfo')}</h3>
               <form style={styles.form} onSubmit={handleSave}>
                 <div style={styles.formRow}>
                   <div style={styles.field}>
-                    <label style={styles.label}>Prénom</label>
+                    <label style={styles.label}>{t('profile.firstName')}</label>
                     <input
                       style={styles.input}
                       name="first_name"
@@ -596,7 +541,7 @@ const PageProfile: React.FC = () => {
                     />
                   </div>
                   <div style={styles.field}>
-                    <label style={styles.label}>Nom</label>
+                    <label style={styles.label}>{t('profile.lastName')}</label>
                     <input
                       style={styles.input}
                       name="last_name"
@@ -605,9 +550,8 @@ const PageProfile: React.FC = () => {
                     />
                   </div>
                 </div>
-
                 <div style={styles.field}>
-                  <label style={styles.label}>Email</label>
+                  <label style={styles.label}>{t('profile.email')}</label>
                   <input
                     type="email"
                     style={styles.input}
@@ -616,9 +560,8 @@ const PageProfile: React.FC = () => {
                     onChange={handleChange}
                   />
                 </div>
-
                 <div style={styles.field}>
-                  <label style={styles.label}>URL de l’avatar</label>
+                  <label style={styles.label}>{t('profile.avatarUrl')}</label>
                   <input
                     style={styles.input}
                     name="avatar_url"
@@ -627,63 +570,60 @@ const PageProfile: React.FC = () => {
                     placeholder="https://..."
                   />
                 </div>
-
                 <div style={styles.field}>
-                  <label style={styles.label}>Description courte</label>
+                  <label style={styles.label}>
+                    {t('profile.shortDescription')}
+                  </label>
                   <textarea
                     style={styles.textarea}
                     rows={2}
                     name="descriptionCourte"
                     value={form.descriptionCourte}
                     onChange={handleChange}
-                    placeholder="Parle un peu de toi..."
+                    placeholder={t('profile.shortDescriptionPlaceholder')}
                   />
                 </div>
-
                 <div style={styles.field}>
-                  <label style={styles.label}>Préférences</label>
+                  <label style={styles.label}>{t('profile.preferences')}</label>
                   <textarea
                     style={styles.textarea}
                     rows={2}
                     name="preferences"
                     value={form.preferences}
                     onChange={handleChange}
-                    placeholder="Ex : PC, Switch, RPG, jeux narratifs…"
+                    placeholder={t('profile.preferencesPlaceholder')}
                   />
                 </div>
-
                 <div style={styles.formActions}>
                   <button
                     type="button"
                     style={{ ...styles.btn, ...styles.btnSecondary }}
                     onClick={() => setIsEditing(false)}
                   >
-                    Annuler
+                    {t('profile.cancel')}
                   </button>
                   <button
                     type="submit"
                     style={{ ...styles.btn, ...styles.btnPrimary }}
                     disabled={saving}
                   >
-                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {saving ? t('profile.saving') : t('profile.save')}
                   </button>
                 </div>
               </form>
-
               <button
                 type="button"
                 style={{ ...styles.btn, ...styles.btnDanger }}
                 onClick={handleResetPassword}
               >
-                Réinitialiser mon mot de passe
+                {t('profile.resetPassword')}
               </button>
             </section>
           )}
 
-          {/* Jeux (maquette) */}
           <section style={styles.section}>
             <div style={styles.gamesHeader}>
-              <h2 style={styles.sectionTitle}>Jeux</h2>
+              <h2 style={styles.sectionTitle}>{t('profile.games')}</h2>
               <button style={styles.arrowBtn}>{'>'}</button>
             </div>
             <div style={styles.gamesRow}>
@@ -691,7 +631,7 @@ const PageProfile: React.FC = () => {
                 <div key={index} style={styles.gameItem}>
                   <img
                     src={src}
-                    alt={`Jeu ${index + 1}`}
+                    alt={t('profile.gameAlt', { index: index + 1 })}
                     style={styles.gameImg}
                   />
                 </div>
