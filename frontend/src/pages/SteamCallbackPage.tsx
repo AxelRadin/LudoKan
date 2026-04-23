@@ -10,7 +10,7 @@ import { apiPost } from '../services/api';
 const SteamCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setAuthenticated } = useAuth();
+  const { setAuthenticated, setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
 
@@ -36,6 +36,7 @@ const SteamCallbackPage: React.FC = () => {
       try {
         const res = await apiPost('/api/auth/steam/callback/', params);
         // Authentifie l'utilisateur dans le store React
+        setUser(res.user);
         setAuthenticated(true);
         // Redirection vers le profil après succès
         if (res.is_new_user) {

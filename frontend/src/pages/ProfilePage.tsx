@@ -24,6 +24,7 @@ import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
+import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
 /* ─── Google Fonts injection ─── */
@@ -82,6 +83,7 @@ styleEl.textContent = `
 document.head.appendChild(styleEl);
 
 type UserProfile = {
+  id: number;
   pseudo: string;
   email: string;
   first_name?: string;
@@ -218,16 +220,15 @@ type ProfilePageModel = {
   handleSteamConnect: () => Promise<void>;
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
-  askEmailOpen: boolean;
-  setAskEmailOpen: (b: boolean) => void;
-  handleEmailSave: () => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
+  const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<UserProfile>({
+    id: 0,
     pseudo: '',
     email: '',
     first_name: '',
@@ -240,8 +241,32 @@ function useProfilePageModel(): ProfilePageModel {
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
-  const [askEmailOpen, setAskEmailOpen] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+
+  // Sync with global user if it updates (e.g. email from ForcedEmailModal)
+  useEffect(() => {
+    if (globalUser && user && globalUser.id === user.id) {
+      if (
+        globalUser.email !== user.email ||
+        globalUser.pseudo !== user.pseudo
+      ) {
+        setUser(prev =>
+          prev
+            ? {
+                ...prev,
+                email: globalUser.email || prev.email,
+                pseudo: globalUser.pseudo || prev.pseudo,
+              }
+            : null
+        );
+        setForm(prev => ({
+          ...prev,
+          email: globalUser.email || prev.email,
+          pseudo: globalUser.pseudo || prev.pseudo,
+        }));
+      }
+    }
+  }, [globalUser, user]);
 
   const handleSteamConnect = async () => {
     if (steamBusy) return;
@@ -307,9 +332,6 @@ function useProfilePageModel(): ProfilePageModel {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get('new_user') === 'true') {
-      setAskEmailOpen(true);
-    }
     if (searchParams.get('syncing') === 'true') {
       let polls = 0;
       setSteamBusy(true);
@@ -339,6 +361,7 @@ function useProfilePageModel(): ProfilePageModel {
       .then(data => {
         setUser(data);
         setForm({
+          id: data.id,
           pseudo: data.pseudo || '',
           email: data.email || '',
           first_name: data.first_name || '',
@@ -364,6 +387,7 @@ function useProfilePageModel(): ProfilePageModel {
   const handleEditOpen = () => {
     setAvatarError('');
     setForm({
+      id: user?.id || 0,
       pseudo: user?.pseudo || '',
       email: user?.email || '',
       first_name: user?.first_name || '',
@@ -639,13 +663,6 @@ function useProfilePageModel(): ProfilePageModel {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
-    askEmailOpen,
-    setAskEmailOpen,
-    handleEmailSave: async () => {
-      const updated = await apiPatch('/api/me/', { email: form.email });
-      mergeUpdatedUser(updated);
-      setAskEmailOpen(false);
-    },
   };
 }
 
@@ -898,6 +915,14 @@ function ProfileEditDialog({
             name="last_name"
             fullWidth
             value={form.last_name}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="E-mail"
+            name="email"
+            fullWidth
+            value={form.email}
             onChange={onFieldChange}
             sx={fieldSx}
           />
@@ -1261,8 +1286,6 @@ export default function ProfilePage() {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
-    askEmailOpen,
-    handleEmailSave,
   } = useProfilePageModel();
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -1983,50 +2006,6 @@ export default function ProfilePage() {
           {snackbar.message}
         </Alert>
       </Snackbar>
-
-      <Dialog
-        open={askEmailOpen}
-        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
-        disableEscapeKeyDown
-      >
-        <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-          Finaliser votre inscription
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2, fontFamily: FONT_BODY }}>
-            Bienvenue sur LudoKan ! Pour finaliser votre inscription, veuillez
-            renseigner votre adresse e-mail.
-          </Typography>
-          <TextField
-            fullWidth
-            label="Adresse e-mail"
-            value={form.email}
-            onChange={e => handleChange(e as any)}
-            name="email"
-            sx={fieldSx}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={async () => {
-              try {
-                await handleEmailSave();
-              } catch (err: any) {
-                alert(
-                  'Erreur: ' +
-                    (err?.message || "Impossible de mettre à jour l'email.")
-                );
-              }
-            }}
-            variant="contained"
-            color="error"
-            sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
-            disableElevation
-          >
-            Enregistrer
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       <ProfileEditDialog
         open={editOpen}
