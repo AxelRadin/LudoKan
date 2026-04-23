@@ -227,5 +227,8 @@
     "apple": "Se connecter avec Apple",
     "x": "Se connecter avec X",
     "instagram": "Se connecter avec Instagram"
+  },
+  "matchmakingContext": {
+    "errorAlert": "Un problème est survenu lors de la recherche de joueurs."
   }
 }

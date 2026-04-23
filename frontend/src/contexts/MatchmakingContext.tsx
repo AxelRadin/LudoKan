@@ -12,6 +12,7 @@ import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
 import { useAuth } from './useAuth';
+import i18n from '../i18n';
 
 interface MatchmakingContextType {
   startMatchmaking: (
@@ -95,7 +96,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
             try {
               const gameData = await apiGet(`/api/games/${active.game}/`);
               let image = gameData.cover_url;
-
               if (image?.includes('t_thumb')) {
                 image = image.replace('t_thumb', 't_1080p');
               } else if (image?.includes('t_cover_big')) {
@@ -166,7 +166,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         setIsMatchmakingModalOpen(true);
       } catch (error) {
         console.error('Erreur API lors du matchmaking', error);
-        alert('Un problème est survenu lors de la recherche de joueurs.');
+        alert(i18n.t('matchmakingContext.errorAlert'));
       } finally {
         setIsMatching(false);
       }
@@ -182,7 +182,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         setIsConfirmModalOpen(true);
         return;
       }
-
       await executeMatchmaking(gameId, gameName, gameImage);
     },
     [activeRequestId, executeMatchmaking]
@@ -196,7 +195,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         console.error("Erreur lors de l'annulation côté serveur", error);
       }
     }
-
     setActiveRequestId(null);
     setActiveRequestStartedAt(null);
     setActiveGame(null);
@@ -218,20 +216,16 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     }
   }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
 
-  // Nouveau useEffect de polling avec cache buster et protection d'état
   useEffect(() => {
     if (!activeRequestId) return;
 
     const intervalId = setInterval(async () => {
       try {
-        // Ajout du paramètre _t pour empêcher la mise en cache par le navigateur
         const currentMatches = await apiGet(
           `/api/matchmaking/matches/?_t=${Date.now()}`
         );
-
         if (Array.isArray(currentMatches)) {
           setMatches(prevMatches => {
-            // Comparaison sûre avec l'état précédent
             if (currentMatches.length > prevMatches.length) {
               setHasNewMatch(true);
             }
@@ -239,11 +233,10 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
           });
         }
       } catch {
-        // En cas d'erreur (ex: requête expirée en base), on réinitialise
         setActiveRequestId(null);
         setActiveRequestStartedAt(null);
       }
-    }, 5000); // 5000ms = 5 secondes
+    }, 5000);
 
     return () => clearInterval(intervalId);
   }, [activeRequestId]);
@@ -305,9 +298,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
             const data = await apiPost('/api/chats/get-or-create/', {
               target_user_id: targetUserId,
             });
-
             const roomId = data.room_id || data.id;
-
             setIsMatchmakingModalOpen(false);
             navigate(`/chat/${roomId}`);
           } catch (error) {

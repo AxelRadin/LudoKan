@@ -227,5 +227,8 @@
     "apple": "Log in with Apple",
     "x": "Log in with X",
     "instagram": "Log in with Instagram"
+  },
+  "matchmakingContext": {
+    "errorAlert": "A problem occurred while searching for players."
   }
 }
