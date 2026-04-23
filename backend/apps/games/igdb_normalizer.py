@@ -69,6 +69,27 @@ def _extract_publisher(involved_companies: Any) -> dict | None:
     return None
 
 
+def _extract_player_counts(g: dict[str, Any]) -> tuple[int | None, int | None]:
+    mode_names = {m.get("name") for m in g.get("game_modes") or [] if isinstance(m, dict)}
+    is_solo_only = bool(mode_names) and mode_names <= {"Single player"}
+    if is_solo_only:
+        return 1, 1
+
+    multiplayer_modes = g.get("multiplayer_modes") or []
+    candidates = []
+    for m in multiplayer_modes:
+        if not isinstance(m, dict):
+            continue
+        for key in ("onlinemax", "offlinemax", "onlinecoopmax", "offlinecoopmax"):
+            val = m.get(key)
+            if isinstance(val, int) and val > 1:
+                candidates.append(val)
+
+    max_players = max(candidates) if candidates else None
+    min_players = 1 if max_players is not None else None
+    return min_players, max_players
+
+
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     """
     Transforme une réponse IGDB brute vers le contrat NormalizedGame.
@@ -79,6 +100,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
 
     # Normalisation du nom (g.get("display_name") provient éventuellement de l'enrichissement Wikidata)
     name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("name") or "Unknown"
+
+    min_players, max_players = _extract_player_counts(g)
 
     return {
         "igdb_id": igdb_id,
@@ -96,6 +119,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "user_rating": None,
         "screenshots": _extract_screenshots(g.get("screenshots")),
         "videos": g.get("videos") or [],
+        "min_players": min_players,
+        "max_players": max_players,
     }
 
 
@@ -133,6 +158,8 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
 
         django_game = game_map[igdb_id]
         g["django_id"] = django_game.id
+        g["min_players"] = django_game.min_players
+        g["max_players"] = django_game.max_players
 
         # Injection des données utilisateur
         if igdb_id in user_games_map:
