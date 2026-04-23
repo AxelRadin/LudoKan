@@ -3,6 +3,7 @@ Filtres personnalisés pour l'application Games.
 """
 
 import django_filters
+from django.contrib.postgres.search import TrigramWordSimilarity
 from django.db.models import Q
 
 from apps.games.models import Game
@@ -59,7 +60,14 @@ class GameFilter(django_filters.FilterSet):
         if not value or not str(value).strip():
             return queryset
         v = str(value).strip()
-        return queryset.filter(Q(name__icontains=v) | Q(name_fr__icontains=v))
+        return (
+            queryset.annotate(
+                sim_name=TrigramWordSimilarity(v, "name"),
+                sim_name_fr=TrigramWordSimilarity(v, "name_fr"),
+            )
+            .filter(Q(sim_name__gte=0.3) | Q(sim_name_fr__gte=0.3))
+            .order_by("-sim_name")
+        )
 
     class Meta:
         model = Game

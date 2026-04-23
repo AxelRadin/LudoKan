@@ -18,6 +18,16 @@ User = get_user_model()
 class TestUserModel:
     """Tests pour le modèle User (CustomUser)"""
 
+    def test_generate_unique_pseudo(self):
+        """Génération de pseudo unique à partir d'un seed"""
+        assert User.objects.generate_unique_pseudo("Hello World") == "hello-world"
+        User.objects.create_user(
+            email="a@example.com",
+            pseudo="hello-world",
+            password="x",
+        )
+        assert User.objects.generate_unique_pseudo("Hello World") == "hello-world1"
+
     def test_create_user(self):
         """Test de création d'un utilisateur normal"""
         user = User.objects.create_user(

@@ -33,6 +33,7 @@ describe('LoginForm', () => {
       expect(apiPost).toHaveBeenCalledWith('/api/auth/login/', {
         email: 'a@a.com',
         password: 'pass',
+        recaptcha_token: 'test-captcha-token',
       });
     });
   });
