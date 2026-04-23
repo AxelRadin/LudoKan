@@ -26,11 +26,16 @@ const resources = {
   },
 } as const;
 
-void i18n.use(initReactI18next).init({
-  resources,
-  lng: 'fr',
-  fallbackLng: 'fr',
-  interpolation: { escapeValue: false },
-});
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: 'fr',
+    fallbackLng: 'fr',
+    interpolation: { escapeValue: false },
+  })
+  .catch((err: unknown) => {
+    console.error('i18n init failed', err);
+  });
 
 export default i18n;
