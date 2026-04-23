@@ -1,7 +1,7 @@
 from datetime import timedelta
-from django.utils import timezone
+
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
+from django.utils import timezone
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -9,11 +9,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from apps.matchmaking.models import MatchmakingRequest, GameParty, GamePartyMember
+from apps.chat.models import ChatRoom, ChatRoomUser
+from apps.matchmaking.models import GameParty, GamePartyMember, MatchmakingRequest
 from apps.matchmaking.permissions import IsOwnerOrAdmin
 from apps.matchmaking.serializers import MatchmakingRequestSerializer, MatchResultSerializer, PartyInfoSerializer
 from apps.matchmaking.utils import find_matches, join_or_create_party
-from apps.chat.models import ChatRoom, ChatRoomUser
+
 
 class MatchmakingRequestViewSet(ModelViewSet):
     serializer_class = MatchmakingRequestSerializer
@@ -48,9 +49,11 @@ class MatchmakingMatchesView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_request = MatchmakingRequest.objects.filter(
-            user=request.user, status=MatchmakingRequest.STATUS_PENDING, expires_at__gt=timezone.now()
-        ).order_by("-created_at").first()
+        user_request = (
+            MatchmakingRequest.objects.filter(user=request.user, status=MatchmakingRequest.STATUS_PENDING, expires_at__gt=timezone.now())
+            .order_by("-created_at")
+            .first()
+        )
 
         if not user_request:
             return Response({"detail": "Aucune demande de matchmaking active."}, status=status.HTTP_404_NOT_FOUND)
@@ -68,70 +71,71 @@ class MatchmakingMatchesView(APIView):
 # VUE : LOBBY / PARTY
 # ==========================================
 
+
 class GamePartyViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
-    @action(detail=False, methods=['get'], url_path='my-active')
+    @action(detail=False, methods=["get"], url_path="my-active")
     def my_active(self, request):
-        member = GamePartyMember.objects.filter(user=request.user).order_by('-joined_at').first()
-        
+        member = GamePartyMember.objects.filter(user=request.user).order_by("-joined_at").first()
+
         if not member or member.party.status == GameParty.STATUS_CANCELLED:
             return Response({})
-            
+
         party = member.party
-        
+
         if party.status == GameParty.STATUS_COUNTDOWN and party.countdown_ends_at and party.countdown_ends_at <= timezone.now():
             self._activate_chat(party)
-            
-        serializer = PartyInfoSerializer(party, context={'request': request})
+
+        serializer = PartyInfoSerializer(party, context={"request": request})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def ready(self, request, pk=None):
         member = get_object_or_404(GamePartyMember, party_id=pk, user=request.user)
         member.ready = True
         member.save()
-        return Response({'status': 'ready'})
+        return Response({"status": "ready"})
 
-    @action(detail=True, methods=['post'], url_path='ready-for-chat')
+    @action(detail=True, methods=["post"], url_path="ready-for-chat")
     def ready_for_chat(self, request, pk=None):
         member = get_object_or_404(GamePartyMember, party_id=pk, user=request.user)
         member.ready_for_chat = True
         member.save()
-        
+
         party = member.party
         if not party.members.filter(ready_for_chat=False).exists():
             party.status = GameParty.STATUS_COUNTDOWN
             party.countdown_ends_at = timezone.now() + timedelta(seconds=5)
             party.save()
-            
-        return Response({'status': 'ready_for_chat'})
 
-    @action(detail=True, methods=['post'])
+        return Response({"status": "ready_for_chat"})
+
+    @action(detail=True, methods=["post"])
     def leave(self, request, pk=None):
         party = get_object_or_404(GameParty, pk=pk)
-        
+
         GamePartyMember.objects.filter(party=party, user=request.user).delete()
-        
+
         remaining = party.members.count()
-        
+
         if remaining == 0:
             party.status = GameParty.STATUS_CANCELLED
             party.save()
         elif remaining == 1 and party.status == GameParty.STATUS_CHAT_ACTIVE:
             party.countdown_ends_at = timezone.now() + timedelta(seconds=60)
             party.save()
-            
-        return Response({'status': 'left'})
+
+        return Response({"status": "left"})
 
     def _activate_chat(self, party):
         """Crée la ChatRoom en base et ouvre le canal."""
-        
-        chat_room = ChatRoom.objects.create(type='group') 
-        
+
+        chat_room = ChatRoom.objects.create(type="group")
+
         for member in party.members.all():
             ChatRoomUser.objects.create(room=chat_room, user=member.user)
-            
+
         party.status = GameParty.STATUS_CHAT_ACTIVE
         party.chat_room_id = str(chat_room.id)
         party.save()

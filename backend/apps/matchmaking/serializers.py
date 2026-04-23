@@ -1,7 +1,8 @@
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.matchmaking.models import MatchmakingRequest, GameParty, GamePartyMember
+from apps.matchmaking.models import GameParty, GamePartyMember, MatchmakingRequest
+
 
 class MatchmakingRequestSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
@@ -28,11 +29,15 @@ class MatchmakingRequestSerializer(serializers.ModelSerializer):
 
         if self.instance is None:
             exists = MatchmakingRequest.objects.filter(
-                user=user, game=game, status=MatchmakingRequest.STATUS_PENDING, expires_at__gt=timezone.now(),
+                user=user,
+                game=game,
+                status=MatchmakingRequest.STATUS_PENDING,
+                expires_at__gt=timezone.now(),
             ).exists()
             if exists:
                 raise serializers.ValidationError("You already have an active matchmaking request for this game.")
         return attrs
+
 
 class MatchResultSerializer(serializers.ModelSerializer):
     distance_km = serializers.SerializerMethodField()
@@ -46,25 +51,28 @@ class MatchResultSerializer(serializers.ModelSerializer):
         distances = self.context.get("distances", {})
         return round(distances.get(obj.id, 0.0), 3)
 
+
 # ==========================================
 # SÉRIALISEURS : LOBBY / PARTY
 # ==========================================
 
+
 class PartyMemberSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
     is_me = serializers.SerializerMethodField()
 
     class Meta:
         model = GamePartyMember
-        fields = ['id', 'user', 'username', 'is_me', 'ready', 'ready_for_chat']
+        fields = ["id", "user", "username", "is_me", "ready", "ready_for_chat"]
 
     def get_is_me(self, obj):
-        request = self.context.get('request')
+        request = self.context.get("request")
         return obj.user == request.user if request else False
+
 
 class PartyInfoSerializer(serializers.ModelSerializer):
     members = PartyMemberSerializer(many=True, read_only=True)
 
     class Meta:
         model = GameParty
-        fields = ['id', 'status', 'countdown_ends_at', 'chat_room_id', 'members']
+        fields = ["id", "status", "countdown_ends_at", "chat_room_id", "members"]
