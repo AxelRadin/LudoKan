@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import './i18n';
 import App from './App.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
