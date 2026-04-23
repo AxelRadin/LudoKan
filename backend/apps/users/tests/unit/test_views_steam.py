@@ -29,6 +29,7 @@ class SteamLoginInitiateViewTest(APITestCase):
         self.assertTrue(auth_url.startswith("https://steamcommunity.com/openid/login"))
         self.assertIn("openid.mode=checkid_setup", auth_url)
 
+    @override_settings(STEAM_REDIRECT_URL="https://ludokan.com/auth/steam/callback")
     def test_get_steam_login_url_unauthenticated(self):
         """
         Ensure unauthenticated requests are now allowed (AllowAny).
