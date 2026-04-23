@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { Outlet } from 'react-router-dom';
 import Header from './components/Header';
+import CookieBanner from './pages/CookieBanner';
 import Footer from './components/Footer';
 import './App.css';
 
@@ -19,6 +20,7 @@ const App = () => {
       }}
     >
       <Header />
+      <CookieBanner />
       <Box component="main" sx={{ paddingTop: 8, flex: 1 }}>
         <Outlet />
       </Box>

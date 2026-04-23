@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import './i18n';
 import App from './App.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
@@ -20,6 +21,10 @@ import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
 import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
 import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
+import SettingsPage from './pages/SettingsPage';
+import PolitiquesPage from './pages/PolitiquesPage.tsx';
+import CookiesPage from './pages/CookiesPage.tsx';
+import CookieBanner from './pages/CookieBanner.tsx';
 import { muiTheme } from './muiTheme';
 import AboutPage from './pages/AboutPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
@@ -45,6 +50,10 @@ const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsPage /> },
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: 'politiques', element: <PolitiquesPage /> },
+      { path: 'cookies', element: <CookiesPage /> },
+      { path: 'cookie-banner', element: <CookieBanner /> },
       { path: 'about', element: <AboutPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
       { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
