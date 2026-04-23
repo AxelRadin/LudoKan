@@ -206,5 +206,26 @@
     "submitting": "Envoi...",
     "success": "Avis publié avec succès !",
     "counter": "{{count}} / 500"
+  },
+  "searchBar": {
+    "placeholder": "Recherchez des jeux…",
+    "results": "RÉSULTATS",
+    "noResults": "Aucun résultat",
+    "seeAll": "Voir tous les résultats pour « {{query}} »",
+    "fullSearch": "Recherche complète, filtres et pagination",
+    "localSource": "Base locale",
+    "added": "Ajouté !",
+    "addToLibrary": "Ajouter à ma bibliothèque"
+  },
+  "trendingGames": {
+    "empty": "Aucun jeu à afficher",
+    "prevAriaLabel": "Voir les jeux précédents",
+    "nextAriaLabel": "Voir plus de jeux"
+  },
+  "socialLogin": {
+    "google": "Se connecter avec Google",
+    "apple": "Se connecter avec Apple",
+    "x": "Se connecter avec X",
+    "instagram": "Se connecter avec Instagram"
   }
 }

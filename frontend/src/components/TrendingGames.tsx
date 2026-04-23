@@ -4,8 +4,8 @@ import { Card, IconButton, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import GameCard from './GameCard';
-
 import type { NormalizedGame } from '../types/game';
 
 export interface TrendingGamesProps {
@@ -17,6 +17,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   games,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
@@ -45,9 +46,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
 
   useEffect(() => {
     if (games.length === 0) return;
-
     const SCROLL_SPEED = 0.18;
-
     const animate = () => {
       if (!isPausedRef.current && scrollRef.current) {
         const { scrollWidth, clientWidth } = scrollRef.current;
@@ -60,7 +59,6 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       }
       rafRef.current = requestAnimationFrame(animate);
     };
-
     rafRef.current = requestAnimationFrame(animate);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -70,7 +68,6 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
   const pauseAutoScroll = () => {
     isPausedRef.current = true;
   };
-
   const resumeAutoScroll = () => {
     isPausedRef.current = false;
   };
@@ -113,9 +110,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       transform: 'translateY(-50%) scale(1.05)',
       color: 'text.secondary',
     },
-    '&:active': {
-      transform: 'translateY(-50%) scale(0.98)',
-    },
+    '&:active': { transform: 'translateY(-50%) scale(0.98)' },
   });
 
   return (
@@ -123,7 +118,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
       <Box display="flex" alignItems="center" position="relative">
         {canScrollLeft && (
           <IconButton
-            aria-label="Voir les jeux précédents"
+            aria-label={t('trendingGames.prevAriaLabel')}
             onClick={handleScrollLeft}
             sx={arrowButtonSx('left')}
           >
@@ -157,7 +152,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
           ) : games.length === 0 ? (
             <Card sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Aucun jeu à afficher
+                {t('trendingGames.empty')}
               </Typography>
             </Card>
           ) : (
@@ -167,7 +162,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
 
         {canScrollRight && (
           <IconButton
-            aria-label="Voir plus de jeux"
+            aria-label={t('trendingGames.nextAriaLabel')}
             onClick={handleScrollRight}
             sx={arrowButtonSx('right')}
           >

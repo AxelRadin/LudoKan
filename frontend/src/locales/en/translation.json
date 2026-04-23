@@ -206,5 +206,26 @@
     "submitting": "Sending...",
     "success": "Review published successfully!",
     "counter": "{{count}} / 500"
+  },
+  "searchBar": {
+    "placeholder": "Search for games…",
+    "results": "RESULTS",
+    "noResults": "No results",
+    "seeAll": "See all results for « {{query}} »",
+    "fullSearch": "Full search, filters and pagination",
+    "localSource": "Local database",
+    "added": "Added!",
+    "addToLibrary": "Add to my library"
+  },
+  "trendingGames": {
+    "empty": "No games to display",
+    "prevAriaLabel": "See previous games",
+    "nextAriaLabel": "See more games"
+  },
+  "socialLogin": {
+    "google": "Log in with Google",
+    "apple": "Log in with Apple",
+    "x": "Log in with X",
+    "instagram": "Log in with Instagram"
   }
 }

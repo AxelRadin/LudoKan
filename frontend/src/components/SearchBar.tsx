@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { type IgdbGame, searchIgdbGames } from '../api/igdb';
 import { useFuzzyGames, type MatchIndices } from '../hooks/useFuzzyGames';
@@ -206,11 +207,10 @@ async function fetchSearchGameLists(
 }
 
 const GameSearchBar: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  // Pool of all games fetched across debounced queries — persists across keystrokes
-  // so Fuse.js can still match even when the API returns nothing for a typo.
   const [gamePool, setGamePool] = useState<SearchSourcedGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -263,7 +263,6 @@ const GameSearchBar: React.FC = () => {
         );
         if (cancelled) return;
         const incoming = [...local.slice(0, DROPDOWN_LOCAL_MAX), ...igdb];
-        // Merge into pool, deduplicating by igdb_id to avoid visual duplicates
         setGamePool(prev => mergeUniqueIntoPool(prev, incoming));
       } finally {
         if (!cancelled) setLoading(false);
@@ -289,15 +288,12 @@ const GameSearchBar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Re-rank the pool against the live query so typo corrections update instantly
   const allResults = useFuzzyGames(gamePool, query);
 
-  // Reset active index whenever the result list changes
   useEffect(() => {
     setActiveIndex(-1);
   }, [allResults.length, debouncedQuery]);
 
-  // Scroll active item into view when navigating with keyboard
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return;
     const el = listRef.current.querySelector<HTMLElement>(
@@ -334,7 +330,7 @@ const GameSearchBar: React.FC = () => {
           <SearchIcon fontSize="small" />
         </SearchIconWrapper>
         <StyledInputBase
-          placeholder="Recherchez des jeux…"
+          placeholder={t('searchBar.placeholder')}
           inputProps={{ 'aria-label': 'search' }}
           value={query}
           onChange={e => {
@@ -385,7 +381,7 @@ const GameSearchBar: React.FC = () => {
               color="text.secondary"
               sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
             >
-              RÉSULTATS
+              {t('searchBar.results')}
             </Typography>
           </Box>
 
@@ -403,7 +399,7 @@ const GameSearchBar: React.FC = () => {
           ) : allResults.length === 0 ? (
             <Box sx={{ px: 2, py: 1, flexShrink: 0 }}>
               <Typography variant="body2" color="text.secondary">
-                Aucun résultat
+                {t('searchBar.noResults')}
               </Typography>
             </Box>
           ) : (
@@ -478,7 +474,7 @@ const GameSearchBar: React.FC = () => {
                               }}
                             >
                               {game.source === 'local'
-                                ? '● Base locale'
+                                ? t('searchBar.localSource')
                                 : 'IGDB'}
                             </Typography>
                           }
@@ -510,8 +506,8 @@ const GameSearchBar: React.FC = () => {
                   }}
                 >
                   {allResults.length > 0
-                    ? `Voir tous les résultats pour « ${query.trim()} »`
-                    : 'Recherche complète, filtres et pagination'}
+                    ? t('searchBar.seeAll', { query: query.trim() })
+                    : t('searchBar.fullSearch')}
                 </Button>
               </Box>
             </>
