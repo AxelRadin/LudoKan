@@ -54,5 +54,28 @@
     "title": "Une erreur est survenue",
     "unknown": "Une erreur inconnue est survenue",
     "reload": "Recharger"
+  },
+  "footer": {
+    "tagline": "Votre collection, maîtrisée.",
+    "home": "Accueil",
+    "search": "Recherche",
+    "about": "À propos",
+    "copyright": "© 2026 Ludokan"
+  },
+  "matchmakingWidget": {
+    "found": "Joueur trouvé !",
+    "searching": "Recherche en cours..."
+  },
+  "gameList": {
+    "empty": "Aucun jeu à afficher.",
+    "removeTooltip": "Retirer de la bibliothèque",
+    "removeAriaLabel": "Retirer le jeu",
+    "confirmRemoveTitle": "Confirmer la suppression",
+    "confirmRemoveMessage": "Voulez-vous vraiment retirer ce jeu de votre ludothèque ?",
+    "confirmRemoveLabel": "Retirer"
+  },
+  "gameCard": {
+    "added": "Ajouté !",
+    "addToLibrary": "Ajouter à ma bibliothèque"
   }
 }

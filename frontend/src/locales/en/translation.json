@@ -54,5 +54,28 @@
     "title": "An error occurred",
     "unknown": "An unknown error occurred",
     "reload": "Reload"
+  },
+  "footer": {
+    "tagline": "Your collection, mastered.",
+    "home": "Home",
+    "search": "Search",
+    "about": "About",
+    "copyright": "© 2026 Ludokan"
+  },
+  "matchmakingWidget": {
+    "found": "Player found!",
+    "searching": "Searching..."
+  },
+  "gameList": {
+    "empty": "No games to display.",
+    "removeTooltip": "Remove from library",
+    "removeAriaLabel": "Remove game",
+    "confirmRemoveTitle": "Confirm removal",
+    "confirmRemoveMessage": "Do you really want to remove this game from your library?",
+    "confirmRemoveLabel": "Remove"
+  },
+  "gameCard": {
+    "added": "Added!",
+    "addToLibrary": "Add to my library"
   }
 }

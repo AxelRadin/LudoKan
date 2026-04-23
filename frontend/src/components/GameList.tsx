@@ -9,9 +9,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import ConfirmModal from './ConfirmModal';
 import { FaSteam } from 'react-icons/fa';
+import ConfirmModal from './ConfirmModal';
 
 export type GameListItem = {
   id: number;
@@ -44,27 +45,19 @@ function parseTrailingCountTitle(title: string): {
   base: string;
   count: string | undefined;
 } {
-  if (!title.endsWith(')')) {
-    return { base: title, count: undefined };
-  }
+  if (!title.endsWith(')')) return { base: title, count: undefined };
   const open = title.lastIndexOf('(');
-  if (open < 0) {
-    return { base: title, count: undefined };
-  }
+  if (open < 0) return { base: title, count: undefined };
   const inner = title.slice(open + 1, -1);
-  if (!isAllDigits(inner)) {
-    return { base: title, count: undefined };
-  }
+  if (!isAllDigits(inner)) return { base: title, count: undefined };
   const base = title.slice(0, open).trimEnd();
   return { base, count: inner };
 }
 
 function getGameImage(game: GameListItem) {
   let image = game.cover_url || game.image;
-
-  if (image?.includes('t_thumb')) {
+  if (image?.includes('t_thumb'))
     image = image.replace('t_thumb', 't_cover_big');
-  }
   return image || '/default-cover.jpg';
 }
 
@@ -74,6 +67,7 @@ export default function GameList({
   showStatus = true,
   onRemove,
 }: GameListProps) {
+  const { t } = useTranslation();
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
   const titleParts = title ? parseTrailingCountTitle(title) : null;
 
@@ -89,7 +83,6 @@ export default function GameList({
             mb: 2,
           }}
         >
-          {/* Accent bar */}
           <Box
             sx={{
               width: 4,
@@ -109,10 +102,8 @@ export default function GameList({
               lineHeight: 1,
             }}
           >
-            {/* Split title and count */}
             {titleParts.base}
           </Typography>
-          {/* Count badge */}
           {titleParts.count != null && (
             <Box
               sx={{
@@ -138,9 +129,10 @@ export default function GameList({
           )}
         </Box>
       )}
+
       <Box display="flex" gap={2} flexWrap="wrap">
         {games.length === 0 ? (
-          <Typography>Aucun jeu à afficher.</Typography>
+          <Typography>{t('gameList.empty')}</Typography>
         ) : (
           games.map(game => (
             <Box key={game.id} sx={{ position: 'relative' }}>
@@ -168,7 +160,6 @@ export default function GameList({
                     )}
                   </CardContent>
 
-                  {/* Badge Steam */}
                   {game.steam_appid &&
                     game.playtime_forever != null &&
                     game.playtime_forever > 0 && (
@@ -197,15 +188,16 @@ export default function GameList({
                     )}
                 </Card>
               </Link>
+
               {onRemove && game.userGameId != null && (
-                <Tooltip title="Retirer de la bibliothèque">
+                <Tooltip title={t('gameList.removeTooltip')}>
                   <IconButton
                     size="small"
                     onClick={e => {
                       e.preventDefault();
                       setPendingRemoveId(game.userGameId!);
                     }}
-                    aria-label="Retirer le jeu"
+                    aria-label={t('gameList.removeAriaLabel')}
                     sx={{
                       position: 'absolute',
                       top: 4,
@@ -230,9 +222,9 @@ export default function GameList({
       {onRemove && (
         <ConfirmModal
           open={pendingRemoveId !== null}
-          title="Confirmer la suppression"
-          message="Voulez-vous vraiment retirer ce jeu de votre ludothèque ?"
-          confirmLabel="Retirer"
+          title={t('gameList.confirmRemoveTitle')}
+          message={t('gameList.confirmRemoveMessage')}
+          confirmLabel={t('gameList.confirmRemoveLabel')}
           onConfirm={() => {
             if (pendingRemoveId !== null) onRemove(pendingRemoveId);
             setPendingRemoveId(null);
