@@ -1,20 +1,29 @@
 import CloseIcon from '@mui/icons-material/Close';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LanguageIcon from '@mui/icons-material/Language';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
-import {
-  Button,
-  Dialog,
-  Drawer,
-  useMediaQuery,
-  useTheme,
-  Typography,
-} from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
+import {
+  Button,
+  Dialog,
+  Divider,
+  Drawer,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
@@ -34,6 +43,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
   const { t, i18n } = useTranslation();
+
   const {
     isAuthenticated,
     setAuthenticated,
@@ -44,7 +54,10 @@ export const Header: React.FC = () => {
     authMode,
     setAuthMode,
   } = useAuth();
+
+  const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
 
@@ -69,6 +82,7 @@ export const Header: React.FC = () => {
   };
 
   const handleLogout = async () => {
+    setProfileAnchor(null);
     try {
       await apiPost('/api/auth/logout/', {});
     } catch (e) {
@@ -80,28 +94,96 @@ export const Header: React.FC = () => {
     }
   };
 
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileAnchor(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setProfileAnchor(null);
+  };
+
   const desktopActions = (
     <>
-      <IconButton color="inherit" onClick={toggleLang} sx={{ gap: 0.5 }}>
+      <IconButton
+        color="inherit"
+        onClick={toggleLang}
+        sx={{ ...rippleSx, gap: 0.5 }}
+      >
         <LanguageIcon />
         <Typography variant="caption" sx={{ fontWeight: 600 }}>
           {i18n.language === 'fr' ? 'FR' : 'EN'}
         </Typography>
       </IconButton>
+
       {isAuthenticated ? (
         <>
-          {isProfilePage ? (
-            <Button color="inherit" component={Link} to="/">
-              {t('nav.home')}
-            </Button>
-          ) : (
-            <Button color="inherit" component={Link} to="/profile">
-              {t('nav.profile')}
-            </Button>
-          )}
-          <Button color="inherit" onClick={handleLogout}>
-            {t('nav.logout')}
+          <Button
+            color="inherit"
+            onClick={handleProfileMenuOpen}
+            endIcon={
+              <KeyboardArrowDownIcon
+                sx={{
+                  transition: 'transform 0.2s',
+                  transform: profileAnchor ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+            }
+          >
+            {t('nav.profile')}
           </Button>
+
+          <Menu
+            anchorEl={profileAnchor}
+            open={Boolean(profileAnchor)}
+            onClose={handleProfileMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            slotProps={{
+              paper: {
+                elevation: 3,
+                sx: {
+                  mt: 1,
+                  minWidth: 180,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                },
+              },
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                handleProfileMenuClose();
+                navigate('/profile');
+              }}
+            >
+              <ListItemIcon>
+                <PersonIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('nav.profile')}</ListItemText>
+            </MenuItem>
+
+            <MenuItem
+              onClick={() => {
+                handleProfileMenuClose();
+                navigate('/settings');
+              }}
+            >
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('nav.settings')}</ListItemText>
+            </MenuItem>
+
+            <Divider />
+
+            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+              <ListItemIcon>
+                <LogoutIcon fontSize="small" sx={{ color: 'error.main' }} />
+              </ListItemIcon>
+              <ListItemText>{t('nav.logout')}</ListItemText>
+            </MenuItem>
+          </Menu>
         </>
       ) : (
         <>
@@ -130,6 +212,18 @@ export const Header: React.FC = () => {
           >
             {isProfilePage ? t('nav.home') : t('nav.profile')}
           </Button>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => {
+              setDrawerOpen(false);
+              navigate('/settings');
+            }}
+          >
+            {t('nav.settings')}
+          </Button>
+
           <Button
             variant="contained"
             color="error"
@@ -154,6 +248,7 @@ export const Header: React.FC = () => {
           </Button>
         </>
       )}
+
       <Button
         startIcon={<LanguageIcon />}
         fullWidth
@@ -255,6 +350,7 @@ export const Header: React.FC = () => {
             <CloseIcon />
           </IconButton>
         </Box>
+
         <Box>
           <Box mb={4}>
             <SearchBar />
