@@ -325,20 +325,29 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
   );
 }
 
-function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
+function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
   const { card, redBtnSx, accent, muted } = appearance;
   const isFavorite = Boolean(logic.userGame?.is_favorite);
+  const isSolo = game.max_players === 1;
 
   return (
     <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
       <SectionAccentTitle label="Actions" />
       <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2.5 }}>
-        <SecondaryButton
-          onClick={() => logic.handleSetMatchmaking()}
-          disabled={logic.isMatching}
+        <Tooltip
+          title={isSolo ? 'Ce jeu est solo' : ''}
+          arrow
+          disableHoverListener={!isSolo}
         >
-          {logic.isMatching ? 'Recherche…' : 'Matchmaking'}
-        </SecondaryButton>
+          <span>
+            <SecondaryButton
+              onClick={() => logic.handleSetMatchmaking()}
+              disabled={logic.isMatching || isSolo}
+            >
+              {logic.isMatching ? 'Recherche…' : 'Matchmaking'}
+            </SecondaryButton>
+          </span>
+        </Tooltip>
         <Button
           variant="contained"
           onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
