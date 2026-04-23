@@ -252,3 +252,28 @@ class TestUserSerializer:
     def test_get_steam_id_without_profile(self, user):
         serializer = UserSerializer(instance=user)
         assert serializer.data.get("steam_id") is None
+
+    @pytest.mark.django_db
+    def test_roles_empty_for_regular_user(self, user):
+        serializer = UserSerializer(instance=user)
+        assert serializer.data["roles"] == []
+
+    @pytest.mark.django_db
+    def test_roles_returns_assigned_roles(self, user):
+        from apps.users.models import UserRole
+
+        UserRole.objects.create(user=user, role=UserRole.Role.ADMIN)
+        serializer = UserSerializer(instance=user)
+        assert "admin" in serializer.data["roles"]
+
+    @pytest.mark.django_db
+    def test_is_superuser_false_for_regular_user(self, user):
+        serializer = UserSerializer(instance=user)
+        assert serializer.data["is_superuser"] is False
+
+    @pytest.mark.django_db
+    def test_is_superuser_true_for_superuser(self, user):
+        user.is_superuser = True
+        user.save()
+        serializer = UserSerializer(instance=user)
+        assert serializer.data["is_superuser"] is True

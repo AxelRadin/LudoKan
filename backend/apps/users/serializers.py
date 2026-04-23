@@ -6,7 +6,7 @@ from apps.core.tasks import send_welcome_email
 from .errors import UserErrors
 from .models import AdminAction
 from .models import CustomUser as User
-from .models import UserSuspension
+from .models import UserRole, UserSuspension
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -67,6 +67,8 @@ class UserSerializer(serializers.ModelSerializer):
     banner_url = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     steam_id = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+    is_superuser = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = User
@@ -84,8 +86,13 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "review_count",
             "steam_id",
+            "roles",
+            "is_superuser",
         ]
-        read_only_fields = ["id", "created_at", "email", "steam_id"]
+        read_only_fields = ["id", "created_at", "email", "steam_id", "roles", "is_superuser"]
+
+    def get_roles(self, obj) -> list[str]:
+        return list(UserRole.objects.filter(user=obj).values_list("role", flat=True))
 
     def get_steam_id(self, obj):
         if hasattr(obj, "steam_profile"):

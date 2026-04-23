@@ -28,6 +28,7 @@ import CookieBanner from './pages/CookieBanner.tsx';
 import { muiTheme } from './muiTheme';
 import AboutPage from './pages/AboutPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
+import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
 
 const router = createBrowserRouter([
   {
@@ -56,7 +57,14 @@ const router = createBrowserRouter([
       { path: 'about', element: <AboutPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
       { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
-      { path: 'admin/dashboard', element: <AdminDashboard /> },
+      {
+        path: 'admin/dashboard',
+        element: (
+          <ProtectedAdminRoute>
+            <AdminDashboard />
+          </ProtectedAdminRoute>
+        ),
+      },
     ],
   },
 ]);
