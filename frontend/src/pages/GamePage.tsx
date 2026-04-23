@@ -1,214 +1,32 @@
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import BusinessIcon from '@mui/icons-material/Business';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import CategoryIcon from '@mui/icons-material/Category';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DescriptionIcon from '@mui/icons-material/Description';
-import DevicesIcon from '@mui/icons-material/Devices';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import {
-  Box,
-  Button,
-  Divider,
-  Paper,
-  Rating,
-  Tooltip,
-  Typography,
-} from '@mui/material';
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import {
-  fetchIgdbGameById,
-  resolveGameIdIfNeeded,
-  translateDescription,
-} from '../api/igdb';
-import ReviewSection from '../components/reviews/ReviewSection';
-import SecondaryButton from '../components/SecondaryButton';
-import { useMatchmaking } from '../contexts/MatchmakingContext';
-import { useAuth } from '../contexts/useAuth';
-import { apiGet, apiPatch, apiPost } from '../services/api';
-import type { NormalizedGame, UserLibraryData } from '../types/game';
+import { Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import { useGamePageLogic } from '../hooks/useGamePageLogic';
+import { buildGamePageAppearance, GAME_PAGE_FONT } from './gamePageAppearance';
+import { GamePageLoadedBody } from './GamePageLoadedBody';
 
-function getHighResImage(url: string | null) {
-  if (!url) return '';
-  return url.replace('t_thumb', 't_1080p').replace('t_cover_big', 't_1080p');
-}
-
-function formatDate(isoDate: string | null) {
-  if (!isoDate) return '';
-  const date = new Date(isoDate);
-  return date.toLocaleDateString('fr-FR');
-}
+(() => {
+  const s = document.createElement('style');
+  s.textContent = `
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes scaleIn { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
+    .gp-img { animation: scaleIn 0.7s cubic-bezier(0.22,1,0.36,1) both }
+    .gp-c0  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.08s both }
+    .gp-c1  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.16s both }
+    .gp-c2  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.24s both }
+    .gp-c3  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.32s both }
+    .gp-c4  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.40s both }
+    .gp-c5  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.48s both }
+    .gp-c6  { animation: fadeUp  0.5s cubic-bezier(0.22,1,0.36,1) 0.56s both }
+  `;
+  document.head.appendChild(s);
+})();
 
 export default function GamePage() {
-  const { id, igdbId } = useParams();
-  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+  const logic = useGamePageLogic();
+  const theme = useTheme();
+  const appearance = buildGamePageAppearance(theme.palette.mode === 'dark');
 
-  const { startMatchmaking, isMatching } = useMatchmaking();
-
-  const [game, setGame] = useState<NormalizedGame | null>(null);
-  const [gameNotFound, setGameNotFound] = useState(false);
-  const [djangoId, setDjangoId] = useState<number | null>(null);
-  const [userGame, setUserGame] = useState<UserLibraryData | null>(null);
-  const [userReview, setUserReview] = useState<any>(null);
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  const [translatedDescription, setTranslatedDescription] = useState<
-    string | null
-  >(null);
-  const [translating, setTranslating] = useState(false);
-
-  useEffect(() => {
-    const fetchGameData = async () => {
-      try {
-        let data: NormalizedGame;
-        if (igdbId) {
-          data = await fetchIgdbGameById(Number(igdbId));
-        } else {
-          data = await apiGet(`/api/games/${id}/`);
-        }
-
-        setGame(data);
-        if (data.django_id) {
-          setDjangoId(data.django_id);
-        }
-        if (data.user_library) {
-          setUserGame(data.user_library);
-        }
-      } catch {
-        setGameNotFound(true);
-      }
-    };
-
-    fetchGameData();
-  }, [id, igdbId]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !djangoId) return;
-    apiGet(`/api/games/${djangoId}/`)
-      .then((data: NormalizedGame) => {
-        if (data.user_library) setUserGame(data.user_library);
-      })
-      .catch(() => {});
-  }, [isAuthenticated, djangoId]);
-
-  useEffect(() => {
-    if (!game?.summary) return;
-    setTranslating(true);
-    setTranslatedDescription(null);
-    translateDescription(game.summary)
-      .then(setTranslatedDescription)
-      .catch(() => {})
-      .finally(() => setTranslating(false));
-  }, [game?.summary]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setCurrentUserId(null);
-      return;
-    }
-    apiGet('/api/me')
-      .then((me: { id: number }) => setCurrentUserId(me.id))
-      .catch(() => setCurrentUserId(null));
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!djangoId || !isAuthenticated) {
-      setUserReview(null);
-      return;
-    }
-    apiGet(`/api/reviews/?game=${djangoId}`)
-      .then((reviews: any[]) => {
-        const myReview = reviews.find((r: any) => r.user?.id === currentUserId);
-        setUserReview(myReview || null);
-      })
-      .catch(() => setUserReview(null));
-  }, [djangoId, isAuthenticated]);
-
-  async function ensureDjangoId(): Promise<number | null> {
-    if (djangoId) return djangoId;
-    if (!game) return null;
-    try {
-      const { game_id, normalized_game } = await resolveGameIdIfNeeded(game);
-      setDjangoId(game_id);
-      setGame(normalized_game);
-      if (normalized_game.user_library) {
-        setUserGame(normalized_game.user_library);
-      }
-      return game_id;
-    } catch (err) {
-      console.error('[ensureDjangoId]', err);
-      return null;
-    }
-  }
-
-  async function handleSetStatus(
-    status: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
-    isPendingAction = false
-  ) {
-    if (!isAuthenticated && !isPendingAction) {
-      setPendingAction(() => () => handleSetStatus(status, true));
-      setAuthModalOpen(true);
-      return;
-    }
-    const currentDjangoId = await ensureDjangoId();
-    if (currentDjangoId === null) return;
-    try {
-      if (userGame) {
-        const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
-          status,
-        });
-        setUserGame({ ...userGame, status: updated.status });
-      } else {
-        const created = await apiPost('/api/me/games/', {
-          game_id: currentDjangoId,
-          status,
-        });
-        setUserGame(created);
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Erreur lors de la mise à jour du statut');
-    }
-  }
-
-  async function handleToggleFavorite(isPendingAction = false) {
-    if (!isAuthenticated && !isPendingAction) {
-      setPendingAction(() => () => handleToggleFavorite(true));
-      setAuthModalOpen(true);
-      return;
-    }
-
-    const currentDjangoId = await ensureDjangoId();
-    if (currentDjangoId === null) return;
-
-    try {
-      const updated = await apiPatch(`/api/me/games/${currentDjangoId}/`, {
-        is_favorite: !userGame?.is_favorite,
-      });
-      setUserGame(updated);
-    } catch (error) {
-      console.error(error);
-      alert('Erreur lors de la mise à jour du coup de cœur');
-    }
-  }
-
-  async function handleSetMatchmaking(isPendingAction = false) {
-    if (!isAuthenticated && !isPendingAction) {
-      setPendingAction(() => () => handleSetMatchmaking(true));
-      setAuthModalOpen(true);
-      return;
-    }
-
-    const currentDjangoId = await ensureDjangoId();
-    if (currentDjangoId === null || !game) return;
-
-    const gameImage = getHighResImage(game.cover_url);
-    await startMatchmaking(String(currentDjangoId), game.name, gameImage);
-  }
-
-  if (gameNotFound) {
+  if (logic.gameNotFound || !logic.game) {
     return (
       <Box
         sx={{
@@ -216,28 +34,19 @@ export default function GamePage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#fff',
+          background: appearance.loadingBackground,
         }}
       >
-        <Typography variant="h5">
-          Jeu introuvable dans notre base de données.
+        <Typography
+          sx={{
+            fontFamily: GAME_PAGE_FONT,
+            fontWeight: 700,
+            fontSize: 22,
+            color: appearance.ink,
+          }}
+        >
+          {logic.gameNotFound ? 'Jeu introuvable.' : 'Chargement…'}
         </Typography>
-      </Box>
-    );
-  }
-
-  if (!game) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#fff',
-        }}
-      >
-        <Typography variant="h5">Chargement du jeu...</Typography>
       </Box>
     );
   }
@@ -246,384 +55,14 @@ export default function GamePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: '#ffd3d3',
-        px: { xs: 1, sm: 4, md: 10, lg: 25 },
+        fontFamily: GAME_PAGE_FONT,
+        background: appearance.pageBackground,
+        px: { xs: 2, md: 4, lg: 6 },
+        py: { xs: 3, md: 5 },
       }}
     >
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          pt: { xs: 2, sm: 4, md: 4 },
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-        }}
-      >
-        <Paper
-          elevation={3}
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            maxWidth: 1400,
-            mt: { xs: 2, md: 0 },
-            mx: 'auto',
-            width: '100%',
-            boxSizing: 'border-box',
-            bgcolor: '#fafafa',
-            p: { xs: 2, sm: 4, md: 6 },
-          }}
-        >
-          <Box
-            sx={{
-              width: '100%',
-              position: 'relative',
-              borderRadius: 3,
-              mb: 4,
-              py: { xs: 2, md: 4 },
-              px: { xs: 2, md: 6 },
-              textAlign: 'center',
-              boxShadow: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: 90,
-              overflow: 'hidden',
-            }}
-          >
-            <Box
-              sx={{
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                backgroundImage: `linear-gradient(to right, black 20%, transparent 30%, transparent 70%, black 80%),url(${getHighResImage(
-                  game.cover_url
-                )})`,
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: 'black',
-                filter: 'brightness(0.8) blur(1px)',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 1,
-              }}
-            />
-            <Typography
-              variant="h3"
-              sx={{
-                letterSpacing: 1,
-                position: 'relative',
-              }}
-            >
-              <span
-                style={{
-                  WebkitTextStroke: '2px #fff',
-                  WebkitTextFillColor: '#fff',
-                  color: '#fff',
-                  padding: '0 8px',
-                  borderRadius: 8,
-                  background: 'rgba(0,0,0,0.25)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                }}
-              >
-                {game.name}
-              </span>
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: { xs: 'center', md: 'stretch' },
-              width: '100%',
-            }}
-          >
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                width: { xs: '100%', md: 350 },
-                mr: { md: 4 },
-                mb: { xs: 2, md: 0 },
-              }}
-            >
-              <Box
-                sx={{
-                  width: '100%',
-                  height: { xs: 220, sm: 300, md: 400 },
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mb: 2,
-                  position: 'relative',
-                }}
-              >
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 12,
-                    right: 12,
-                    zIndex: 2,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '50%',
-                      backgroundColor: 'rgba(0,0,0,0.55)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => handleToggleFavorite()}
-                  >
-                    <Tooltip title="Coup de cœur" arrow>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        {userGame?.is_favorite ? (
-                          <FavoriteIcon sx={{ color: '#ff1744' }} />
-                        ) : (
-                          <FavoriteBorderIcon sx={{ color: '#ffffff' }} />
-                        )}
-                      </Box>
-                    </Tooltip>
-                  </Box>
-                </Box>
-                <img
-                  src={getHighResImage(game.cover_url)}
-                  alt={game.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    borderRadius: 16,
-                  }}
-                />
-              </Box>
-              <Box
-                sx={{
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  mt: 2,
-                }}
-              >
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-                  Notes de la communauté
-                </Typography>
-                <Rating
-                  value={(game.average_rating || game.rating_avg || 0) / 2}
-                  readOnly
-                  precision={0.5}
-                  sx={{ mb: 2, fontSize: 40 }}
-                />
-                <Box
-                  sx={{
-                    width: '100%',
-                    mt: 2,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 1,
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckCircleIcon
-                      color={
-                        userGame?.status === 'TERMINE' ? 'success' : 'action'
-                      }
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleSetStatus('TERMINE')}
-                    />
-                    <Typography variant="body2">Terminé</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <BookmarkIcon
-                      color={
-                        userGame?.status === 'ENVIE_DE_JOUER'
-                          ? 'warning'
-                          : 'action'
-                      }
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-                    />
-                    <Typography variant="body2">Envie d'y jouer</Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PlayCircleIcon
-                      color={
-                        userGame?.status === 'EN_COURS' ? 'primary' : 'action'
-                      }
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleSetStatus('EN_COURS')}
-                    />
-                    <Typography variant="body2">En cours</Typography>
-                  </Box>
-                  <Tooltip title="Coup de cœur" arrow>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => handleToggleFavorite()}
-                    >
-                      {userGame?.is_favorite ? (
-                        <FavoriteIcon color="error" />
-                      ) : (
-                        <FavoriteBorderIcon color="action" />
-                      )}
-                      <Typography variant="body2">Coup de cœur</Typography>
-                    </Box>
-                  </Tooltip>
-                </Box>
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                flex: 1.2,
-                pr: { md: 6 },
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                minWidth: 0,
-                mt: { xs: 4, md: 0 },
-              }}
-            >
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <DevicesIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Plateformes
-                </Typography>
-              </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.platforms && game.platforms.length > 0
-                  ? game.platforms.map((p: any) => p.name).join(', ')
-                  : 'Non renseigné'}
-              </Typography>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <DescriptionIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Description
-                </Typography>
-              </Box>
-              <Typography
-                variant="body1"
-                sx={{
-                  mb: 3,
-                  color: translating ? 'text.secondary' : 'text.primary',
-                }}
-              >
-                {translating
-                  ? 'Traduction en cours…'
-                  : (translatedDescription ??
-                    game.summary ??
-                    'Aucune description disponible.')}
-              </Typography>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <CategoryIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Genres
-                </Typography>
-              </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.genres && game.genres.length > 0
-                  ? game.genres.map((g: any) => g.name).join(', ')
-                  : 'Non renseigné'}
-              </Typography>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <CalendarTodayIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Date de sortie
-                </Typography>
-              </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {formatDate(game.release_date) || 'Non renseignée'}
-              </Typography>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}
-              >
-                <BusinessIcon color="action" />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Éditeur
-                </Typography>
-              </Box>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {game.publisher?.name || 'Non renseigné'}
-              </Typography>
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              justifyContent: { xs: 'center', sm: 'flex-end' },
-              alignItems: 'center',
-              gap: 2,
-              mt: 3,
-              maxWidth: 1400,
-              mx: 'auto',
-              width: '100%',
-            }}
-          >
-            <SecondaryButton
-              onClick={() => handleSetMatchmaking()}
-              disabled={isMatching}
-            >
-              {isMatching ? 'Recherche...' : 'Matchmaking'}
-            </SecondaryButton>
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => handleSetStatus('ENVIE_DE_JOUER')}
-            >
-              Ajouter à la collection
-            </Button>
-          </Box>
-          <Divider sx={{ my: 4 }} />
-          <Box
-            sx={{
-              width: '100%',
-              bgcolor: '#fff',
-              borderRadius: 4,
-              p: { xs: 2, sm: 4 },
-            }}
-          >
-            <ReviewSection
-              gameId={djangoId ? String(djangoId) : ''}
-              userReview={userReview}
-              currentUserId={currentUserId}
-              onReviewChange={review => setUserReview(review)}
-            />
-          </Box>
-        </Paper>
+      <Box sx={{ maxWidth: 1140, mx: 'auto' }}>
+        <GamePageLoadedBody logic={logic} appearance={appearance} />
       </Box>
     </Box>
   );

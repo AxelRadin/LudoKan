@@ -47,6 +47,25 @@ ignore:
     reason: "Won't fix by Debian - glibc (libc-bin/libc6) system package"
   - vulnerability: CVE-2026-4519
     reason: "Won't fix by Debian - python system package"
+  - vulnerability: CVE-2026-4786
+    reason: "CPython webbrowser.open() follow-up to CVE-2026-4519; fix merged after python:3.11-slim / 3.13-slim releases — upgrade base image on next PSF maintenance release (python/cpython#148169)"
+  - vulnerability: CVE-2026-4878
+    reason: "Won't fix by Debian - libcap2 system package"
+  - vulnerability: CVE-2026-6100
+    reason: "Python core vulnerability - no patch available for current slim image"
+  - vulnerability: CVE-2025-13836
+    reason: "CPython 3.11.15 includes fix (gh-119451 / http.client); Grype/NVD fixed-in omits 3.11.x maintenance releases"
+  - vulnerability: CVE-2026-5928
+    reason: "Won't fix by Debian - python system package"
+  - vulnerability: CVE-2026-5929
+    reason: "Won't fix by Debian - python system package"
+  - vulnerability: CVE-2026-5450
+    reason: "Won't fix by Debian - libc system package"
+  - vulnerability: CVE-2026-5358
+    reason: "Won't fix by Debian - libc system package"
+  - vulnerability: CVE-2026-3298
+    reason: "CPython asyncio.sock_recvfrom_into buffer check — Windows ProactorEventLoop only; NVD/PSF: non-Windows not affected; Linux Docker — upgrade image when 3.11.x includes backport (cpython#148809)"
+
 # Sources de données de vulnérabilités
 db:
   auto-update: true

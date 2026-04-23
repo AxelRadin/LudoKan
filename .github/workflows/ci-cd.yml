@@ -141,20 +141,20 @@ jobs:
         run: npm run type-check
 
       # ✅ Si tu as des tests frontend qui génèrent coverage/lcov.info, active ce step
-      # - name: Tests + coverage (lcov)
-      #   run: npm run test -- --coverage --watch=false
-      #   env:
-      #     CI: "true"
+      - name: Tests + coverage (lcov)
+        run: npm run test -- --coverage --watch=false
+        env:
+          CI: "true"
 
       - name: Build ⚙️
         run: npm run build
 
       # ✅ Si tu actives les tests au-dessus, décommente aussi cet upload
-      # - name: Upload frontend coverage artifact
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: frontend-coverage
-      #     path: frontend/coverage
+      - name: Upload frontend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
 
   sonar:
     name: SonarCloud Scan 🔎

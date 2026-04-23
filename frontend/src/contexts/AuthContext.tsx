@@ -8,26 +8,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isAuthenticated, setAuthenticated] = useState<boolean>(false);
   const [isAuthModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  // Détermine l'état d'authentification au chargement de l'application
   useEffect(() => {
     let cancelled = false;
-
     const checkAuth = async () => {
       try {
         await apiGet('/api/me');
-        if (!cancelled) {
-          setAuthenticated(true);
-        }
+        if (!cancelled) setAuthenticated(true);
       } catch {
-        if (!cancelled) {
-          setAuthenticated(false);
-        }
+        if (!cancelled) setAuthenticated(false);
       }
     };
-
     checkAuth();
-
     return () => {
       cancelled = true;
     };
@@ -41,8 +34,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setAuthModalOpen,
       pendingAction,
       setPendingAction,
+      authMode,
+      setAuthMode,
     }),
-    [isAuthenticated, isAuthModalOpen, pendingAction]
+    [isAuthenticated, isAuthModalOpen, pendingAction, authMode]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Optional
 
-from apps.games.models import Game, Genre, Platform, Publisher
+from apps.games.models import Game, GameScreenshot, GameVideo, Genre, Platform, Publisher
 
 
 def _get_igdb_publisher() -> Publisher:
@@ -95,6 +95,37 @@ def _link_igdb_genres(game: Game, genres: list[dict]) -> None:
             game.genres.add(g_obj)
 
 
+def _sync_igdb_screenshots(game: Game, screenshots: list[dict]) -> None:
+    """Replace all screenshots for the game with the provided list."""
+    game.screenshots.all().delete()
+    for index, s_data in enumerate(screenshots):
+        url = s_data.get("url")
+        igdb_id = s_data.get("id")
+        if url:
+            GameScreenshot.objects.create(
+                game=game,
+                url=url,
+                position=index,
+                igdb_id=igdb_id,
+            )
+
+
+def _sync_igdb_videos(game: Game, videos: list[dict]) -> None:
+    """Replace all videos for the game with the provided list."""
+    game.game_videos.all().delete()
+    for v_data in videos:
+        v_id = v_data.get("id")
+        v_name = v_data.get("name")
+        v_youtube_id = v_data.get("video_id")
+        if v_youtube_id:
+            GameVideo.objects.create(
+                game=game,
+                igdb_id=v_id,
+                name=v_name or "",
+                video_id=v_youtube_id,
+            )
+
+
 def get_or_create_game_from_igdb(
     *,
     igdb_id: int,
@@ -104,6 +135,8 @@ def get_or_create_game_from_igdb(
     summary: Optional[str] = None,
     platforms: Optional[list[dict]] = None,
     genres: Optional[list[dict]] = None,
+    screenshots: Optional[list[dict]] = None,
+    videos: Optional[list[dict]] = None,
 ) -> tuple[Game, bool]:
     """
     Centralized logic to dynamically resolve or create an IGDB game in the local database.
@@ -139,5 +172,11 @@ def get_or_create_game_from_igdb(
 
     if genres:
         _link_igdb_genres(game, genres)
+
+    if screenshots is not None:
+        _sync_igdb_screenshots(game, screenshots)
+
+    if videos is not None:
+        _sync_igdb_videos(game, videos)
 
     return game, created

@@ -1,5 +1,17 @@
-import { Box, Card, CardContent, CardMedia, Typography } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
+import {
+  Box,
+  Card,
+  CardContent,
+  CardMedia,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import ConfirmModal from './ConfirmModal';
+import { FaSteam } from 'react-icons/fa';
 
 export type GameListItem = {
   id: number;
@@ -7,13 +19,45 @@ export type GameListItem = {
   cover_url?: string;
   image?: string;
   status?: string;
+  userGameId?: number;
+  steam_appid?: number | null;
+  playtime_forever?: number | null;
 };
 
 export type GameListProps = {
   games: GameListItem[];
   title?: string;
   showStatus?: boolean;
+  onRemove?: (userGameId: number) => void;
 };
+
+function isAllDigits(s: string): boolean {
+  if (s.length === 0) return false;
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (cp === undefined || cp < 48 || cp > 57) return false;
+  }
+  return true;
+}
+
+function parseTrailingCountTitle(title: string): {
+  base: string;
+  count: string | undefined;
+} {
+  if (!title.endsWith(')')) {
+    return { base: title, count: undefined };
+  }
+  const open = title.lastIndexOf('(');
+  if (open < 0) {
+    return { base: title, count: undefined };
+  }
+  const inner = title.slice(open + 1, -1);
+  if (!isAllDigits(inner)) {
+    return { base: title, count: undefined };
+  }
+  const base = title.slice(0, open).trimEnd();
+  return { base, count: inner };
+}
 
 function getGameImage(game: GameListItem) {
   let image = game.cover_url || game.image;
@@ -28,54 +72,174 @@ export default function GameList({
   games,
   title,
   showStatus = true,
+  onRemove,
 }: GameListProps) {
+  const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
+  const titleParts = title ? parseTrailingCountTitle(title) : null;
+
   return (
     <Box>
-      {title && (
-        <Typography variant="h6" fontWeight="bold" mb={2}>
-          {title}
-        </Typography>
+      {titleParts && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignSelf: 'flex-start',
+            alignItems: 'center',
+            gap: 1.5,
+            mb: 2,
+          }}
+        >
+          {/* Accent bar */}
+          <Box
+            sx={{
+              width: 4,
+              height: 22,
+              borderRadius: 999,
+              background: 'linear-gradient(180deg, #d32f2f, #ff8a80)',
+              flexShrink: 0,
+            }}
+          />
+          <Typography
+            sx={{
+              fontFamily: "'DM Sans', system-ui, sans-serif",
+              fontWeight: 700,
+              fontSize: 15,
+              color: '#0f0f0f',
+              letterSpacing: -0.2,
+              lineHeight: 1,
+            }}
+          >
+            {/* Split title and count */}
+            {titleParts.base}
+          </Typography>
+          {/* Count badge */}
+          {titleParts.count != null && (
+            <Box
+              sx={{
+                px: 1,
+                py: 0.25,
+                borderRadius: 999,
+                background: 'rgba(211,47,47,0.1)',
+                border: '1px solid rgba(211,47,47,0.2)',
+              }}
+            >
+              <Typography
+                sx={{
+                  fontFamily: "'DM Sans', system-ui, sans-serif",
+                  fontWeight: 700,
+                  fontSize: 11,
+                  color: '#d32f2f',
+                  lineHeight: 1,
+                }}
+              >
+                {titleParts.count}
+              </Typography>
+            </Box>
+          )}
+        </Box>
       )}
       <Box display="flex" gap={2} flexWrap="wrap">
         {games.length === 0 ? (
           <Typography>Aucun jeu à afficher.</Typography>
         ) : (
           games.map(game => (
-            <Link
-              key={game.id}
-              to={`/game/${game.id}`}
-              style={{ textDecoration: 'none' }}
-            >
-              <Card
-                key={game.id}
-                sx={{ width: 140, textAlign: 'center', boxShadow: 2 }}
-              >
-                <CardMedia
-                  component="img"
-                  image={getGameImage(game)}
-                  alt={game.name}
-                  sx={{
-                    width: '100%',
-                    height: 180,
-                    objectFit: 'cover',
-                    borderRadius: 2,
-                  }}
-                />
-                <CardContent sx={{ p: 1 }}>
-                  <Typography variant="subtitle2" noWrap>
-                    {game.name}
-                  </Typography>
-                  {showStatus && game.status && (
-                    <Typography variant="caption" color="text.secondary">
-                      {game.status.replace('_', ' ').toLowerCase()}
+            <Box key={game.id} sx={{ position: 'relative' }}>
+              <Link to={`/game/${game.id}`} style={{ textDecoration: 'none' }}>
+                <Card sx={{ width: 140, textAlign: 'center', boxShadow: 2 }}>
+                  <CardMedia
+                    component="img"
+                    image={getGameImage(game)}
+                    alt={game.name}
+                    sx={{
+                      width: '100%',
+                      height: 180,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                    }}
+                  />
+                  <CardContent sx={{ p: 1 }}>
+                    <Typography variant="subtitle2" noWrap>
+                      {game.name}
                     </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
+                    {showStatus && game.status && (
+                      <Typography variant="caption" color="text.secondary">
+                        {game.status.replace('_', ' ').toLowerCase()}
+                      </Typography>
+                    )}
+                  </CardContent>
+
+                  {/* Badge Steam */}
+                  {game.steam_appid &&
+                    game.playtime_forever != null &&
+                    game.playtime_forever > 0 && (
+                      <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
+                        <Box
+                          sx={{
+                            bgcolor: 'rgba(23,26,33,0.85)',
+                            color: '#fff',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                          }}
+                        >
+                          <FaSteam size={14} />
+                          <Typography
+                            variant="caption"
+                            sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                          >
+                            {game.playtime_forever}h
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                </Card>
+              </Link>
+              {onRemove && game.userGameId != null && (
+                <Tooltip title="Retirer de la bibliothèque">
+                  <IconButton
+                    size="small"
+                    onClick={e => {
+                      e.preventDefault();
+                      setPendingRemoveId(game.userGameId!);
+                    }}
+                    aria-label="Retirer le jeu"
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      color: 'text.secondary',
+                      bgcolor: 'rgba(255,255,255,0.85)',
+                      '&:hover': {
+                        color: 'error.main',
+                        bgcolor: 'error.light',
+                      },
+                    }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
           ))
         )}
       </Box>
+
+      {onRemove && (
+        <ConfirmModal
+          open={pendingRemoveId !== null}
+          title="Confirmer la suppression"
+          message="Voulez-vous vraiment retirer ce jeu de votre ludothèque ?"
+          confirmLabel="Retirer"
+          onConfirm={() => {
+            if (pendingRemoveId !== null) onRemove(pendingRemoveId);
+            setPendingRemoveId(null);
+          }}
+          onCancel={() => setPendingRemoveId(null)}
+        />
+      )}
     </Box>
   );
 }

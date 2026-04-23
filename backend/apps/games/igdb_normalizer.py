@@ -26,6 +26,18 @@ def _extract_cover_url(cover: Any) -> str | None:
     return None
 
 
+def _extract_screenshots(screenshots: Any) -> list[dict]:
+    out = []
+    for s in screenshots or []:
+        if isinstance(s, dict):
+            url = s.get("url", "")
+            if url.startswith("//"):
+                url = "https:" + url
+            url = url.replace("t_thumb", "t_screenshot_big")
+            out.append({"url": url})
+    return out
+
+
 def _extract_entities(entities: Any) -> list[dict]:
     out = []
     for item in entities or []:
@@ -37,6 +49,26 @@ def _extract_entities(entities: Any) -> list[dict]:
     return out
 
 
+def _extract_french_name(alternative_names: Any) -> str | None:
+    """Retourne le titre français depuis alternative_names (comment = 'French title')."""
+    for alt in alternative_names or []:
+        if not isinstance(alt, dict):
+            continue
+        comment = (alt.get("comment") or "").lower()
+        if "french" in comment and alt.get("name"):
+            return alt["name"]
+    return None
+
+
+def _extract_publisher(involved_companies: Any) -> dict | None:
+    for ic in involved_companies or []:
+        if isinstance(ic, dict) and ic.get("publisher"):
+            company = ic.get("company")
+            if isinstance(company, dict) and company.get("name"):
+                return {"name": company["name"]}
+    return None
+
+
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     """
     Transforme une réponse IGDB brute vers le contrat NormalizedGame.
@@ -45,8 +77,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     if igdb_id is None:
         igdb_id = 0
 
-    # Normalisation du nom (g.get("display_name") provient éventuellement de l'enrichissement Wikidata)
-    name = g.get("display_name") or g.get("name") or "Unknown"
+    # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
+    name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
 
     return {
         "igdb_id": igdb_id,
@@ -59,8 +91,11 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "genres": _extract_entities(g.get("genres")),
         "collections": _extract_entities(g.get("collections")),
         "franchises": _extract_entities(g.get("franchises")),
+        "publisher": _extract_publisher(g.get("involved_companies")),
         "user_library": None,
         "user_rating": None,
+        "screenshots": _extract_screenshots(g.get("screenshots")),
+        "videos": g.get("videos") or [],
     }
 
 

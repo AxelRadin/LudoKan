@@ -3,10 +3,13 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+from rest_framework.views import APIView
 
 from apps.games.models import Game
 from apps.library.models import UserGame
 from apps.library.serializers import UserGameSerializer
+from apps.library.tasks import sync_steam_library_task
 
 
 @extend_schema_view(
@@ -72,3 +75,30 @@ class UserGameViewSet(viewsets.ModelViewSet):
         user_game = get_object_or_404(UserGame, user=request.user, game_id=game_id)
         user_game.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SteamSyncThrottle(UserRateThrottle):
+    rate = "1/min"
+
+
+class SteamSyncView(APIView):
+    """
+    Déclenche la synchronisation de la bibliothèque Steam en asynchrone via Celery.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [SteamSyncThrottle]
+
+    @extend_schema(
+        summary="Synchroniser la bibliothèque Steam",
+        description="Lance une tâche asynchrone pour mettre à jour les jeux depuis Steam.\nLimité à 1 appel par minute par utilisateur.",
+        responses={
+            202: {"description": "Synchronisation lancée en arrière-plan."},
+            429: {"description": "Trop de requêtes. Veuillez patienter."},
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        # We start the Celery task safely
+        sync_steam_library_task.delay(request.user.id)
+
+        return Response({"detail": "La synchronisation a été ajoutée à la file d'attente."}, status=status.HTTP_202_ACCEPTED)

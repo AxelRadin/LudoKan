@@ -5,6 +5,29 @@ from apps.games.models import Rating
 from apps.library.models import UserGame
 
 
+def test_normalize_igdb_game_french_title_from_alternative_names():
+    """alternative_names : ignore les entrées non-dict, puis titre avec commentaire 'French'."""
+    raw_game = {
+        "id": 40,
+        "name": "English Title",
+        "alternative_names": [
+            "not a dict",
+            {"comment": "Official French title", "name": "Titre français"},
+        ],
+    }
+    assert normalize_igdb_game(raw_game)["name"] == "Titre français"
+
+
+def test_normalize_igdb_game_alternative_names_french_comment_but_no_name():
+    """Entrée 'French' sans nom exploitable : pas de retour depuis alternative_names, fallback sur name."""
+    raw_game = {
+        "id": 41,
+        "name": "Fallback",
+        "alternative_names": [{"comment": "French title", "name": ""}],
+    }
+    assert normalize_igdb_game(raw_game)["name"] == "Fallback"
+
+
 def test_normalize_igdb_game_basic():
     """Vérifie la normalisation avec tous les champs présents idéaux (mock d'une réponse de vue détails)."""
     raw_game = {
@@ -67,6 +90,57 @@ def test_normalize_igdb_game_malformed_timestamp():
     raw_game = {"id": 5, "first_release_date": "Not a number timestamp"}
     normalized = normalize_igdb_game(raw_game)
     assert normalized["release_date"] is None
+
+
+def test_normalize_igdb_game_screenshots():
+    """Couvre _extract_screenshots : URL //, remplacement t_thumb, entrées ignorées."""
+    raw_game = {
+        "id": 1,
+        "name": "X",
+        "screenshots": [
+            {"url": "//images.igdb.com/igdb/image/upload/t_thumb/shot1.jpg"},
+            {"url": "https://images.igdb.com/igdb/image/upload/t_thumb/shot2.jpg"},
+            "skip",
+            42,
+            {},
+        ],
+    }
+    normalized = normalize_igdb_game(raw_game)
+    assert normalized["screenshots"] == [
+        {"url": "https://images.igdb.com/igdb/image/upload/t_screenshot_big/shot1.jpg"},
+        {"url": "https://images.igdb.com/igdb/image/upload/t_screenshot_big/shot2.jpg"},
+        {"url": ""},
+    ]
+
+
+def test_normalize_igdb_game_publisher_from_involved_companies():
+    """Couvre _extract_publisher : premier éditeur (publisher=True) avec company.name."""
+    raw_game = {
+        "id": 2,
+        "name": "Y",
+        "involved_companies": [
+            {"publisher": False, "company": {"name": "Dev Studio"}},
+            {"publisher": True, "company": {"name": "Big Publisher"}},
+            {"publisher": True, "company": {"name": "Ignored After First"}},
+        ],
+    }
+    normalized = normalize_igdb_game(raw_game)
+    assert normalized["publisher"] == {"name": "Big Publisher"}
+
+
+def test_normalize_igdb_game_publisher_none_when_company_invalid():
+    """Éditeur marqué publisher mais company absente ou sans nom : pas de crash, publisher None."""
+    raw_game = {
+        "id": 3,
+        "name": "Z",
+        "involved_companies": [
+            {"publisher": True, "company": None},
+            {"publisher": True, "company": "not a dict"},
+            {"publisher": True, "company": {}},
+            {"publisher": True, "company": {"id": 1}},
+        ],
+    }
+    assert normalize_igdb_game(raw_game)["publisher"] is None
 
 
 @pytest.mark.django_db

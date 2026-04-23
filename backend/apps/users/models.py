@@ -7,20 +7,30 @@ from .validators import validate_avatar
 
 
 class CustomUserManager(BaseUserManager):
+    def generate_unique_pseudo(self, seed: str) -> str:
+        """
+        Produit un pseudo unique à partir d'une base lisible (email, nom, etc.).
+        Utilisé par create_user et par l'inscription sociale (Google, …).
+        """
+        raw = (seed or "").strip() or "user"
+        base_pseudo = (slugify(raw) or "user")[: self.model._meta.get_field("pseudo").max_length]
+        pseudo_candidate = base_pseudo
+        counter = 1
+        max_len = self.model._meta.get_field("pseudo").max_length
+        while self.model.objects.filter(pseudo=pseudo_candidate).exists():
+            suffix = str(counter)
+            truncated = base_pseudo[: max(1, max_len - len(suffix))]
+            pseudo_candidate = f"{truncated}{suffix}"
+            counter += 1
+        return pseudo_candidate
+
     def create_user(self, email, pseudo=None, password=None, **extra_fields):
         if not email:
             raise ValueError("L'email doit être fourni")
         email = self.normalize_email(email)
 
         if not pseudo:
-            # Générer un pseudo basé sur l'email
-            base_pseudo = slugify(email.split("@")[0])
-            pseudo_candidate = base_pseudo
-            counter = 1
-            while self.model.objects.filter(pseudo=pseudo_candidate).exists():
-                pseudo_candidate = f"{base_pseudo}{counter}"
-                counter += 1
-            pseudo = pseudo_candidate
+            pseudo = self.generate_unique_pseudo(email.split("@")[0])
 
         user = self.model(email=email, pseudo=pseudo, **extra_fields)
         user.set_password(password)
@@ -40,6 +50,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=150, blank=True)
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True, validators=[validate_avatar])
     avatar_url = models.URLField(blank=True)
+    banner = models.ImageField(upload_to="banners/", null=True, blank=True, validators=[validate_avatar])
+    banner_url = models.URLField(blank=True)
     description_courte = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -173,3 +185,31 @@ class AdminAction(models.Model):
 
     def __str__(self) -> str:
         return f"{self.action_type} par {self.admin_user} sur {self.target_type}#{self.target_id}"
+
+
+class SteamProfile(models.Model):
+    """
+    Lien 1:1 entre un CustomUser et son identité Steam.
+    """
+
+    user = models.OneToOneField(
+        "CustomUser",
+        on_delete=models.CASCADE,
+        related_name="steam_profile",
+    )
+    steam_id = models.CharField(
+        max_length=64,
+        unique=True,
+        help_text="SteamID64 de l'utilisateur",
+    )
+    linked_at = models.DateTimeField(auto_now_add=True)
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+    display_name = models.CharField(max_length=255, blank=True)
+    profile_url = models.URLField(blank=True)
+
+    class Meta:
+        verbose_name = "Steam Profile"
+        verbose_name_plural = "Steam Profiles"
+
+    def __str__(self):
+        return f"{self.user.pseudo} (Steam: {self.display_name or self.steam_id})"

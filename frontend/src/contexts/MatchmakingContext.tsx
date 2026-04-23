@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
@@ -39,7 +40,6 @@ interface MatchmakingProviderProps {
   readonly children: React.ReactNode;
 }
 
-/** Approximate coordinates for matchmaking radius (IP-based; avoids sensitive Geolocation API). */
 async function getUserLocation(): Promise<{
   latitude: number;
   longitude: number;
@@ -58,6 +58,7 @@ async function getUserLocation(): Promise<{
 
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const [isMatching, setIsMatching] = useState(false);
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
@@ -217,24 +218,35 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     }
   }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
 
+  // Nouveau useEffect de polling avec cache buster et protection d'état
   useEffect(() => {
     if (!activeRequestId) return;
 
     const intervalId = setInterval(async () => {
       try {
-        const currentMatches = await apiGet('/api/matchmaking/matches/');
-        if (currentMatches.length > matches.length) {
-          setMatches(currentMatches);
-          setHasNewMatch(true);
+        // Ajout du paramètre _t pour empêcher la mise en cache par le navigateur
+        const currentMatches = await apiGet(
+          `/api/matchmaking/matches/?_t=${Date.now()}`
+        );
+
+        if (Array.isArray(currentMatches)) {
+          setMatches(prevMatches => {
+            // Comparaison sûre avec l'état précédent
+            if (currentMatches.length > prevMatches.length) {
+              setHasNewMatch(true);
+            }
+            return currentMatches;
+          });
         }
       } catch {
+        // En cas d'erreur (ex: requête expirée en base), on réinitialise
         setActiveRequestId(null);
         setActiveRequestStartedAt(null);
       }
-    }, 10000);
+    }, 5000); // 5000ms = 5 secondes
 
     return () => clearInterval(intervalId);
-  }, [activeRequestId, matches.length]);
+  }, [activeRequestId]);
 
   useEffect(() => {
     if (!activeRequestId || hasNewMatch) return;
@@ -288,6 +300,20 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         matches={matches}
         startedAt={activeRequestStartedAt}
         game={activeGame}
+        onContactPlayer={async targetUserId => {
+          try {
+            const data = await apiPost('/api/chats/get-or-create/', {
+              target_user_id: targetUserId,
+            });
+
+            const roomId = data.room_id || data.id;
+
+            setIsMatchmakingModalOpen(false);
+            navigate(`/chat/${roomId}`);
+          } catch (error) {
+            console.error('Impossible de contacter le joueur :', error);
+          }
+        }}
       />
       <ConfirmCancelMatchmakingModal
         open={isConfirmModalOpen}

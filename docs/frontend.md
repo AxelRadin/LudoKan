@@ -57,3 +57,116 @@ PATCH /api/reviews/7/
 
 Si l'utilisateur n'est pas authentifié, le formulaire est remplacé par le message :
 > "Connectez-vous pour écrire un avis."
+
+---
+
+## Suppression d'un jeu de la ludothèque
+
+### Fichiers concernés
+
+- `src/components/GameList.tsx` — rendu des cartes jeux avec bouton "Retirer"
+- `src/components/ConfirmModal.tsx` — modal de confirmation réutilisable
+- `src/pages/ProfilePage.tsx` — logique de suppression, undo, et gestion des erreurs
+- `src/api/userGames.ts` — appel API DELETE
+
+### Endpoint
+
+| Méthode | Endpoint                      | Description                          |
+|---------|-------------------------------|--------------------------------------|
+| DELETE  | `/api/me/games/{game_id}/`    | Retire un jeu de la ludothèque       |
+
+### Exemple de requête DELETE
+
+```http
+DELETE /api/me/games/42/
+Authorization: Cookie <session>
+```
+
+Réponse attendue : `204 No Content`
+
+### Composant `ConfirmModal`
+
+Composant générique de confirmation avant action destructive.
+
+**Props :**
+
+| Prop            | Type       | Obligatoire | Description                            |
+|-----------------|------------|-------------|----------------------------------------|
+| `open`          | boolean    | Oui         | Contrôle l'affichage du modal          |
+| `title`         | string     | Oui         | Titre affiché dans le modal            |
+| `message`       | string     | Oui         | Message de confirmation                |
+| `confirmLabel`  | string     | Non         | Libellé du bouton confirmer (défaut : "Confirmer") |
+| `cancelLabel`   | string     | Non         | Libellé du bouton annuler (défaut : "Annuler")     |
+| `onConfirm`     | function   | Oui         | Callback déclenché à la confirmation   |
+| `onCancel`      | function   | Oui         | Callback déclenché à l'annulation      |
+
+**Exemple d'utilisation :**
+
+```tsx
+<ConfirmModal
+  open={modalOpen}
+  title="Confirmer la suppression"
+  message="Voulez-vous vraiment retirer ce jeu de votre ludothèque ?"
+  confirmLabel="Retirer"
+  onConfirm={handleConfirm}
+  onCancel={() => setModalOpen(false)}
+/>
+```
+
+### Gestion de l'action "Undo"
+
+La suppression est **optimiste** : le jeu est retiré de la liste immédiatement, avant même la réponse de l'API.
+
+Un toast s'affiche pendant **5 secondes** avec un bouton "Annuler" :
+
+- Si l'utilisateur clique **"Annuler"** → le jeu est réinséré à sa position d'origine, l'appel API est ignoré.
+- Si le timer expire → la suppression est définitive.
+- Si l'**API renvoie une erreur** → le jeu est automatiquement restauré et un toast d'erreur s'affiche : _"Impossible de retirer le jeu. Réessayez plus tard."_
+## Édition et suppression d'un avis (FRONT-008D)
+
+### Fichiers concernés
+
+- `src/components/reviews/ReviewCard.tsx` — carte d'avis avec détection du propriétaire
+- `src/components/reviews/ReviewSection.tsx` — orchestration édition/suppression
+- `src/components/reviews/ReviewForm.tsx` — formulaire réutilisé en mode édition
+
+### Badge "Mon avis"
+
+`ReviewCard` compare `review.user.id` avec `currentUserId`. Si l'utilisateur est le propriétaire (`isOwner === true`) :
+- Un badge **"Mon avis"** est affiché à côté du nom
+- Les boutons **Modifier** et **Supprimer** apparaissent dans un menu (3 points)
+- La carte reçoit un style visuel distinctif (bordure rose + animation `pulseGlow`)
+
+### Flux d'édition inline
+
+1. L'utilisateur clique sur **Modifier** → `ReviewSection` passe `editingReview` à l'état local
+2. `ReviewForm` est rendu avec `initialValues` pré-remplis (titre, contenu, note)
+3. À la soumission → appel `PATCH /api/reviews/:id/`
+4. En cas de succès → `onSuccess` met à jour l'avis dans la liste locale via `updateReview()`
+5. Le clic sur **Annuler** remet `editingReview` à `null`
+
+### Flux de suppression avec confirmation
+
+1. L'utilisateur clique sur **Supprimer** → `setReviewToDelete(id)` ouvre une `Dialog` MUI
+2. La modal affiche : *"Supprimer votre avis ?"* avec boutons **Annuler** / **Supprimer**
+3. Confirmation → appel `DELETE /api/reviews/:id/`
+4. En cas de succès → `removeReview(id)` retire la carte de la liste locale
+5. Annulation → `setReviewToDelete(null)` ferme la modal sans action
+
+### Endpoints utilisés
+
+| Méthode | Endpoint              | Description            |
+|---------|-----------------------|------------------------|
+| PATCH   | `/api/reviews/:id/`   | Mettre à jour son avis |
+| DELETE  | `/api/reviews/:id/`   | Supprimer son avis     |
+
+### Exemple de payload PATCH
+
+```json
+PATCH /api/reviews/7/
+{
+  "content": "Finalement un excellent jeu.",
+  "title": "Coup de coeur",
+  "rating": 5
+}
+```

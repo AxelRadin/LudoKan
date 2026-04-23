@@ -21,6 +21,11 @@ SECRET_KEY=your-secret-key-here-change-this-in-production
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 
+# Clé secrète reCAPTCHA (console Google) — requise pour POST /api/auth/login/
+RECAPTCHA_SECRET_KEY=
+# false en Docker local (évite invalid-input-response). true seulement avec proxy + vraie IP client.
+RECAPTCHA_SEND_REMOTEIP=false
+
 # ---------------------------------------------------------------------------
 # Multi-environnement (quotas email / Redis, contexte logs — voir backend/config/settings.py)
 # ---------------------------------------------------------------------------

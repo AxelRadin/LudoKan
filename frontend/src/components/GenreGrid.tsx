@@ -1,3 +1,4 @@
+import { alpha } from '@mui/material/styles';
 import { Card, CardMedia } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -30,69 +31,119 @@ interface GenreGridProps {
   onGenreClick?: (genreId: number, genreName: string) => void;
 }
 
+const C = {
+  card: 'rgba(255,255,255,0.68)',
+  cardHover: 'rgba(255,255,255,0.88)',
+  border: 'rgba(198,40,40,0.10)',
+  borderHover: 'rgba(198,40,40,0.24)',
+  accent: '#c62828',
+  ink: '#241818',
+  muted: '#7e6464',
+  mediaBg: 'linear-gradient(180deg, #fffafa 0%, #f8efee 100%)',
+};
+
 export const GenreGrid: React.FC<GenreGridProps> = ({ onGenreClick }) => (
   <Box
-    px={4}
-    py={4}
     sx={{
-      backgroundColor: '#2b2b2b',
-      color: 'white',
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: 0,
+      width: '100%',
     }}
   >
-    <Typography variant="h6" fontWeight="bold" mb={2} marginBottom={5}>
-      Parcourir par genre
-    </Typography>
     <Box
       display="grid"
-      gridTemplateColumns="repeat(auto-fill, minmax(100px, 1fr))"
-      gap={2}
-      sx={{ flex: 1, alignItems: 'start' }}
+      gridTemplateColumns="repeat(auto-fill, minmax(140px, 1fr))"
+      gap={{ xs: 1.5, md: 2 }}
     >
       {genres.map(genre => (
         <Card
           key={genre.name}
           onClick={() => onGenreClick?.(genre.id, genre.name)}
           sx={{
-            backgroundColor: '#1e1e1e',
-            borderRadius: 2,
             cursor: 'pointer',
-            transition: '0.3s',
-            '&:hover': { transform: 'scale(1.05)' },
+            borderRadius: '20px',
+            overflow: 'hidden',
+            background: C.card,
+            backdropFilter: 'blur(16px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(150%)',
+            border: `1px solid ${C.border}`,
+            boxShadow: '0 14px 32px rgba(36,24,24,0.04)',
+            transition:
+              'transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease, background 0.28s ease',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              background: C.cardHover,
+              borderColor: C.borderHover,
+              boxShadow: '0 18px 36px rgba(198,40,40,0.10)',
+            },
           }}
         >
-          <CardMedia
-            component="img"
-            height="80"
-            width="100"
-            image={genre.image}
-            alt={genre.name}
+          <Box
             sx={{
-              objectFit: 'contain',
-              backgroundColor: '#222',
-              width: '100px',
-              height: '80px',
-              margin: '0 auto',
-              display: 'block',
-            }}
-          />
-          <Typography
-            variant="caption"
-            textAlign="center"
-            display="block"
-            py={1}
-            sx={{
-              color: '#fff',
-              textShadow: '0 2px 8px #000',
-              fontWeight: 'bold',
-              letterSpacing: 1,
+              px: 1.5,
+              pt: 1.5,
+              pb: 1,
             }}
           >
-            {genre.name}
-          </Typography>
+            <Box
+              sx={{
+                borderRadius: '16px',
+                overflow: 'hidden',
+                background: C.mediaBg,
+                border: `1px solid ${alpha('#c62828', 0.06)}`,
+                minHeight: 96,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'transform 0.28s ease',
+                '.MuiCard-root:hover &': {
+                  transform: 'scale(1.02)',
+                },
+              }}
+            >
+              <CardMedia
+                component="img"
+                image={genre.image}
+                alt={genre.name}
+                sx={{
+                  width: '72%',
+                  height: 72,
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              px: 1.5,
+              pb: 1.6,
+              pt: 0.4,
+            }}
+          >
+            <Typography
+              textAlign="center"
+              sx={{
+                color: C.ink,
+                fontSize: '0.92rem',
+                fontWeight: 600,
+                lineHeight: 1.25,
+                letterSpacing: '-0.01em',
+              }}
+            >
+              {genre.name}
+            </Typography>
+
+            <Box
+              sx={{
+                width: 26,
+                height: '2px',
+                borderRadius: '999px',
+                mx: 'auto',
+                mt: 1,
+                background: `linear-gradient(to right, ${alpha(C.accent, 0.18)}, ${alpha(C.accent, 0.55)}, ${alpha(C.accent, 0.18)})`,
+              }}
+            />
+          </Box>
         </Card>
       ))}
     </Box>
