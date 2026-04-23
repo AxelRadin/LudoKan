@@ -1,31 +1,33 @@
-import { Alert, CircularProgress, Container, Typography } from '@mui/material';
+import { Typography } from '@mui/material';
+import AdminLayout from '../../components/admin/AdminLayout';
+import EngagementSection from '../../components/admin/EngagementSection';
+import KpiSection from '../../components/admin/KpiSection';
+import QuickActions from '../../components/admin/QuickActions';
+import RecentActivity from '../../components/admin/RecentActivity';
 import { useAdminStats } from '../../hooks/useAdminStats';
 
 export default function AdminDashboard() {
-  const { loading, error } = useAdminStats();
-
-  if (loading) {
-    return (
-      <Container sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
-        <CircularProgress />
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container sx={{ mt: 4 }}>
-        <Alert severity="error">{error}</Alert>
-      </Container>
-    );
-  }
+  const { data, loading, error } = useAdminStats();
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Dashboard Admin
+    <AdminLayout>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 4 }}>
+        Dashboard
       </Typography>
-      {/* KpiCards, EngagementMetrics, RecentActivity à venir */}
-    </Container>
+
+      <KpiSection data={data} loading={loading} />
+      <EngagementSection data={data} loading={loading} />
+      <RecentActivity data={data} loading={loading} />
+      <QuickActions />
+
+      {error && (
+        <Typography
+          variant="caption"
+          sx={{ color: 'error.main', mt: 2, display: 'block' }}
+        >
+          {error}
+        </Typography>
+      )}
+    </AdminLayout>
   );
 }
