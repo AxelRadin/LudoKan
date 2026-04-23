@@ -12,6 +12,8 @@ import {
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { LegalIconFrame } from '../components/legal/LegalIconFrame';
+
 const categories = [
   {
     label: 'Nécessaires',
@@ -66,20 +68,9 @@ const CookiesPage: React.FC = () => {
 
       {/* En-tête */}
       <Box display="flex" alignItems="center" gap={2} mb={1}>
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            borderRadius: 2,
-            bgcolor: 'rgba(255, 100, 100, 0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}
-        >
+        <LegalIconFrame>
           <CookieOutlinedIcon sx={{ color: 'primary.main' }} />
-        </Box>
+        </LegalIconFrame>
         <Typography
           variant="h5"
           fontWeight={600}
