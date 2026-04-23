@@ -21,8 +21,6 @@
   },
   "dependencies": {
     "@sentry/react": "^10.25.0",
-    "i18next": "^26.0.6",
-    "react-i18next": "^17.0.4",
     "vite": "^7.2.4"
   }
 }
