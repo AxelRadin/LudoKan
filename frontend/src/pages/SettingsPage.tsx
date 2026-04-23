@@ -20,6 +20,25 @@ import {
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const settingsSectionHeadingSx = {
+  color: 'text.secondary',
+  letterSpacing: 1.5,
+  fontSize: 11,
+} as const;
+
+const settingsListCardBaseSx = {
+  borderRadius: 3,
+  border: '1px solid',
+  borderColor: 'divider',
+  overflow: 'hidden',
+  bgcolor: 'background.paper',
+} as const;
+
+const settingsListRowButtonSx = {
+  py: 1.5,
+  '&:hover': { bgcolor: 'rgba(255, 100, 100, 0.06)' },
+} as const;
+
 const SettingsPage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
@@ -48,24 +67,11 @@ const SettingsPage: React.FC = () => {
       </Typography>
 
       {/* Section Apparence */}
-      <Typography
-        variant="overline"
-        sx={{ color: 'text.secondary', letterSpacing: 1.5, fontSize: 11 }}
-      >
+      <Typography variant="overline" sx={settingsSectionHeadingSx}>
         Apparence
       </Typography>
 
-      <Box
-        sx={{
-          mt: 1,
-          mb: 3,
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-          bgcolor: 'background.paper',
-        }}
-      >
+      <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
         <List disablePadding>
           <ListItem>
             <ListItemIcon
@@ -90,31 +96,16 @@ const SettingsPage: React.FC = () => {
       </Box>
 
       {/* Section Informations */}
-      <Typography
-        variant="overline"
-        sx={{ color: 'text.secondary', letterSpacing: 1.5, fontSize: 11 }}
-      >
+      <Typography variant="overline" sx={settingsSectionHeadingSx}>
         Informations
       </Typography>
 
-      <Box
-        sx={{
-          mt: 1,
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-          bgcolor: 'background.paper',
-        }}
-      >
+      <Box sx={{ ...settingsListCardBaseSx, mt: 1 }}>
         <List disablePadding>
           {/* Politiques — navigation interne */}
           <ListItemButton
             onClick={() => navigate('/politiques')}
-            sx={{
-              py: 1.5,
-              '&:hover': { bgcolor: 'rgba(255, 100, 100, 0.06)' },
-            }}
+            sx={settingsListRowButtonSx}
           >
             <ListItemIcon sx={{ color: 'text.secondary' }}>
               <PolicyOutlinedIcon />
@@ -136,10 +127,7 @@ const SettingsPage: React.FC = () => {
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{
-                  py: 1.5,
-                  '&:hover': { bgcolor: 'rgba(255, 100, 100, 0.06)' },
-                }}
+                sx={settingsListRowButtonSx}
               >
                 <ListItemIcon sx={{ color: 'text.secondary' }}>
                   {item.icon}
