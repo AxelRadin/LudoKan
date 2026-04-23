@@ -331,7 +331,7 @@ function useProfilePageModel(): ProfilePageModel {
   };
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
+    const searchParams = new URLSearchParams(globalThis.location.search);
     if (searchParams.get('syncing') === 'true') {
       let polls = 0;
       setSteamBusy(true);
@@ -354,7 +354,11 @@ function useProfilePageModel(): ProfilePageModel {
       }, 3000);
     }
     if (searchParams.get('new_user') || searchParams.get('syncing')) {
-      window.history.replaceState({}, document.title, window.location.pathname);
+      globalThis.history.replaceState(
+        {},
+        document.title,
+        globalThis.location.pathname
+      );
     }
 
     apiGet('/api/me/')

@@ -95,9 +95,11 @@ class UserSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = getattr(request, "user", None) if request is not None else None
 
-        if user is not None and User.objects.exclude(pk=user.pk).filter(email=value).exists():
-            raise serializers.ValidationError(UserErrors.EMAIL_ALREADY_EXISTS)
-        elif user is None and User.objects.filter(email=value).exists():
+        qs = User.objects.filter(email=value)
+        if user is not None:
+            qs = qs.exclude(pk=user.pk)
+
+        if qs.exists():
             raise serializers.ValidationError(UserErrors.EMAIL_ALREADY_EXISTS)
 
         return value

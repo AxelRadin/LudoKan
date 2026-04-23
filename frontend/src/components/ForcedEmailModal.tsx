@@ -37,7 +37,7 @@ const ForcedEmailModal: React.FC = () => {
   }, [user, isAuthenticated, isAuthLoading]);
 
   const handleSave = async () => {
-    if (!email || !email.includes('@')) {
+    if (!email?.includes('@')) {
       setError('Veuillez entrer une adresse e-mail valide.');
       return;
     }

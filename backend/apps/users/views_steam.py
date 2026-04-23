@@ -94,123 +94,117 @@ class SteamLoginCallbackView(APIView):
     def post(self, request, *args, **kwargs):
         params = request.data
         if not params:
-            return Response(
-                {"detail": "Paramètres OpenID manquants."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"detail": "Paramètres OpenID manquants."}, status=status.HTTP_400_BAD_REQUEST)
 
         # 1. Vérification auprès de Steam
-        validation_params = params.copy()
-        validation_params["openid.mode"] = "check_authentication"
-
-        try:
-            v_res = requests.post(
-                "https://steamcommunity.com/openid/login",
-                data=validation_params,
-                timeout=10,
-            )
-            if "is_valid:true" not in v_res.text:
-                return Response(
-                    {"detail": "Échec de la validation OpenID auprès de Steam."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        except requests.RequestException:
-            return Response(
-                {"detail": "Erreur de communication avec Steam."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+        error_res = self._validate_steam_response(params)
+        if error_res:
+            return error_res
 
         # 2. Extraction du SteamID64
-        claimed_id = params.get("openid.claimed_id", "")
-        match = re.search(r"https?://steamcommunity\.com/openid/id/(\d+)", claimed_id)
-        if not match:
-            return Response(
-                {"detail": "SteamID64 non trouvé dans la réponse."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        steam_id = match.group(1)
+        steam_id = self._extract_steam_id(params.get("openid.claimed_id", ""))
+        if not steam_id:
+            return Response({"detail": "SteamID64 non trouvé dans la réponse."}, status=status.HTTP_400_BAD_REQUEST)
 
         # 3. Récupération ou création de l'utilisateur
+        user, is_new_user = self._get_or_create_user(request, steam_id)
+
+        # 4. Synchronisation initiale du profil Steam
+        self._sync_steam_profile(user, steam_id, is_new_user)
+
+        # 5. Génération des tokens JWT
+        access_token, refresh_token = jwt_encode(user)
+
+        # 6. Lancer la synchronisation initiale de la bibliothèque en arrière-plan
+        sync_steam_library_task.delay(user.id)
+        logger.info(f"SteamAuth: Utilisateur {'créé' if is_new_user else 'connecté'} ({user.pseudo}, SteamID: {steam_id})")
+
+        # 7. Renvoyer la réponse avec les cookies de session JWT
+        return self._prepare_response(request, user, steam_id, is_new_user, access_token, refresh_token)
+
+    def _validate_steam_response(self, params):
+        validation_params = params.copy()
+        validation_params["openid.mode"] = "check_authentication"
+        try:
+            v_res = requests.post("https://steamcommunity.com/openid/login", data=validation_params, timeout=10)
+            if "is_valid:true" not in v_res.text:
+                return Response({"detail": "Échec de la validation OpenID auprès de Steam."}, status=status.HTTP_400_BAD_REQUEST)
+        except requests.RequestException:
+            return Response({"detail": "Erreur de communication avec Steam."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return None
+
+    def _extract_steam_id(self, claimed_id):
+        match = re.search(r"https?://steamcommunity\.com/openid/id/(\d+)", claimed_id)
+        return match.group(1) if match else None
+
+    def _get_or_create_user(self, request, steam_id):
         steam_profile = SteamProfile.objects.filter(steam_id=steam_id).first()
         is_new_user = False
-
         if steam_profile:
             user = steam_profile.user
         else:
             is_new_user = True
-            # Si l'utilisateur est déjà authentifié, on lie simplement le compte
             if request.user.is_authenticated:
                 user = request.user
             else:
-                # Création d'un nouvel utilisateur si non connecté
                 fake_email = f"steam_{steam_id}@steam.ludokan.internal"
                 try:
                     user = CustomUser.objects.get(email=fake_email)
                 except CustomUser.DoesNotExist:
                     user = CustomUser.objects.create_user(email=fake_email)
-
             SteamProfile.objects.create(user=user, steam_id=steam_id)
+        return user, is_new_user
 
-        # Déterminer si on doit récupérer les infos Steam : nouveau compte
-        # OU email encore temporaire (compte créé lors d'une session précédente)
+    def _sync_steam_profile(self, user, steam_id, is_new_user):
         email_is_temporary = user.email.endswith("@steam.ludokan.internal") or user.email.endswith("@mailtemporaire.ludokan.internal")
-        if is_new_user or email_is_temporary:
-            try:
-                summary_res = requests.get(
-                    "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/",
-                    params={"key": settings.STEAM_API_KEY, "steamids": steam_id},
-                    timeout=10,
-                )
-                if summary_res.status_code == 200:
-                    players = summary_res.json().get("response", {}).get("players", [])
-                    if players:
-                        player = players[0]
-                        base_pseudo = player.get("personaname", user.pseudo)
-                        # Garantir l'unicité du pseudo
-                        pseudo_candidate = base_pseudo
-                        counter = 1
-                        while CustomUser.objects.exclude(pk=user.pk).filter(pseudo=pseudo_candidate).exists():
-                            pseudo_candidate = f"{base_pseudo}_{counter}"
-                            counter += 1
-                        user.pseudo = pseudo_candidate
-                        user.avatar_url = player.get("avatarfull", user.avatar_url)
-                        fields_to_save = ["pseudo", "avatar_url"]
-                        if email_is_temporary:
-                            sanitized = re.sub(r"[^a-zA-Z0-9.\-_]", "", user.pseudo).lower()
-                            user.email = f"{sanitized or 'steam'}@mailtemporaire.ludokan.internal"
-                            fields_to_save.append("email")
-                        user.save(update_fields=fields_to_save)
-            except Exception as e:
-                logger.error(f"Failed to fetch Steam profile summary for user {user.id}: {e}")
+        if not (is_new_user or email_is_temporary):
+            return
 
-        # 4. Génération des tokens JWT
-        access_token, refresh_token = jwt_encode(user)
+        try:
+            summary_res = requests.get(
+                "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/",
+                params={"key": settings.STEAM_API_KEY, "steamids": steam_id},
+                timeout=10,
+            )
+            if summary_res.status_code == 200:
+                players = summary_res.json().get("response", {}).get("players", [])
+                if players:
+                    self._update_user_from_player_data(user, players[0], email_is_temporary)
+        except Exception as e:
+            logger.error(f"Failed to fetch Steam profile summary for user {user.id}: {e}")
 
-        # 5. Lancer la synchronisation initiale en arrière-plan
-        sync_steam_library_task.delay(user.id)
+    def _update_user_from_player_data(self, user, player, email_is_temporary):
+        base_pseudo = player.get("personaname", user.pseudo)
+        pseudo_candidate = base_pseudo
+        counter = 1
+        while CustomUser.objects.exclude(pk=user.pk).filter(pseudo=pseudo_candidate).exists():
+            pseudo_candidate = f"{base_pseudo}_{counter}"
+            counter += 1
 
-        logger.info(f"SteamAuth: Utilisateur {'créé' if is_new_user else 'connecté'} ({user.pseudo}, SteamID: {steam_id})")
+        user.pseudo = pseudo_candidate
+        user.avatar_url = player.get("avatarfull", user.avatar_url)
+        fields_to_save = ["pseudo", "avatar_url"]
 
-        # 6. Renvoyer la réponse avec les cookies de session JWT
+        if email_is_temporary:
+            sanitized = re.sub(r"[^a-zA-Z0-9.\-_]", "", user.pseudo).lower()
+            user.email = f"{sanitized or 'steam'}@mailtemporaire.ludokan.internal"
+            fields_to_save.append("email")
 
+        user.save(update_fields=fields_to_save)
+
+    def _prepare_response(self, request, user, steam_id, is_new_user, access_token, refresh_token):
         from dj_rest_auth.app_settings import api_settings
 
-        UserDetailsSerializer = api_settings.USER_DETAILS_SERIALIZER
+        user_details_serializer_class = api_settings.USER_DETAILS_SERIALIZER
+        serializer = user_details_serializer_class(user, context={"request": request})
 
-        serializer = UserDetailsSerializer(user, context={"request": request})
         res_data = {
             "steam_id": steam_id,
             "user": serializer.data,
             "is_new_user": is_new_user,
         }
-
-        # Use token string format for older versions or pass directly for newer ones.
         res = Response(res_data, status=status.HTTP_200_OK)
-        # Assuming dj-rest-auth standard behaviour (set_jwt_cookies does not strictly require request for standard case but wait)
-        # Django Rest Auth's set_jwt_cookies expects (response, access_token, refresh_token)
         set_jwt_cookies(res, access_token, refresh_token)
-
         return res
 
 
