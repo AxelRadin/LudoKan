@@ -49,6 +49,17 @@ def _extract_entities(entities: Any) -> list[dict]:
     return out
 
 
+def _extract_french_name(alternative_names: Any) -> str | None:
+    """Retourne le titre français depuis alternative_names (comment = 'French title')."""
+    for alt in alternative_names or []:
+        if not isinstance(alt, dict):
+            continue
+        comment = (alt.get("comment") or "").lower()
+        if "french" in comment and alt.get("name"):
+            return alt["name"]
+    return None
+
+
 def _extract_publisher(involved_companies: Any) -> dict | None:
     for ic in involved_companies or []:
         if isinstance(ic, dict) and ic.get("publisher"):
@@ -66,8 +77,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     if igdb_id is None:
         igdb_id = 0
 
-    # Normalisation du nom (g.get("display_name") provient éventuellement de l'enrichissement Wikidata)
-    name = g.get("display_name") or g.get("name") or "Unknown"
+    # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
+    name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
 
     return {
         "igdb_id": igdb_id,

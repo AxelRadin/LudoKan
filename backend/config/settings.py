@@ -129,6 +129,8 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
 SITE_ID = 1
 
+SOCIALACCOUNT_ADAPTER = "apps.users.adapters.SocialAccountAdapter"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         # JWT via cookies (dj-rest-auth)
