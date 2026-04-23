@@ -85,7 +85,18 @@ class UserSerializer(serializers.ModelSerializer):
             "review_count",
             "steam_id",
         ]
-        read_only_fields = ["id", "created_at", "email", "steam_id"]
+        read_only_fields = ["id", "created_at", "steam_id"]
+
+    def validate_email(self, value):
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request is not None else None
+
+        if user is not None and User.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError(UserErrors.EMAIL_ALREADY_EXISTS)
+        elif user is None and User.objects.filter(email=value).exists():
+            raise serializers.ValidationError(UserErrors.EMAIL_ALREADY_EXISTS)
+
+        return value
 
     def get_steam_id(self, obj):
         if hasattr(obj, "steam_profile"):
