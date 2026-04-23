@@ -23,7 +23,8 @@ from apps.games.views_igdb_helpers import (
     franchises_search_build_payload,
     igdb_search_non_suggest_results,
     igdb_search_suggest_results,
-    parse_genre_id_param,
+    parse_igdb_id_list_param,
+    parse_optional_int_query,
     search_page_fallback_search,
     search_page_name_matches,
     translate_request_body_to_french,
@@ -74,7 +75,7 @@ class IgdbGamesListView(APIView):
 
 
 class IgdbTrendingView(APIView):
-    """GET /api/igdb/trending/ — Jeux tendances (sort, limit, offset, genre). Cache Redis 2 min."""
+    """GET /api/igdb/trending/ — Jeux tendances (sort, limit, offset, genre, platform, min_age, min_players, max_players). Cache Redis 2 min."""
 
     permission_classes = [AllowAny]
 
@@ -82,18 +83,45 @@ class IgdbTrendingView(APIView):
         sort = request.query_params.get("sort", "popularity")
         limit = _clamp_limit(request.query_params.get("limit"), 1, 50)
         offset = _clamp_offset(request.query_params.get("offset"))
-        genre_id = parse_genre_id_param(request.query_params.get("genre"))
+        genre_ids = parse_igdb_id_list_param(request.query_params.get("genre"))
+        platform_ids = parse_igdb_id_list_param(request.query_params.get("platform"))
+        min_age = parse_optional_int_query(request.query_params.get("min_age"))
+        min_players = parse_optional_int_query(request.query_params.get("min_players"))
+        max_players = parse_optional_int_query(request.query_params.get("max_players"))
         enrich = request.query_params.get("enrich", "1") != "0"
 
-        cache_key = f"igdb:trending:{sort}:{limit}:{offset}:{genre_id or ''}:{enrich}"
+        cache_key = (
+            f"igdb:trending:{sort}:{limit}:{offset}:"
+            f"g:{','.join(map(str, genre_ids))}:p:{','.join(map(str, platform_ids))}:"
+            f"a:{min_age if min_age is not None else ''}:n:{min_players if min_players is not None else ''}:"
+            f"x:{max_players if max_players is not None else ''}:{enrich}"
+        )
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
 
         try:
-            arr = trending_fetch_games_array(igdb_client.igdb_request, genre_id, sort, limit, offset)
+            arr = trending_fetch_games_array(
+                igdb_client.igdb_request,
+                genre_ids,
+                platform_ids,
+                sort,
+                limit,
+                offset,
+                min_age,
+                min_players,
+                max_players,
+            )
             enriched = trending_enrich_for_response(arr, enrich, enrich_with_wikidata_display_name, request.user)
-            total_count = trending_fetch_total_count(igdb_client.igdb_request, genre_id, sort)
+            total_count = trending_fetch_total_count(
+                igdb_client.igdb_request,
+                genre_ids,
+                platform_ids,
+                sort,
+                min_age,
+                min_players,
+                max_players,
+            )
             response_data = {"results": enriched, "total_count": total_count}
             cache.set(cache_key, response_data, TRENDING_CACHE_TTL)
             return Response(response_data)
@@ -122,6 +150,11 @@ class IgdbSearchView(APIView):
             )
         suggest = (request.query_params.get("suggest") or "0") == "1"
         limit = _clamp_limit(request.query_params.get("limit"), 1, 50)
+        genre_ids = parse_igdb_id_list_param(request.query_params.get("genre"))
+        platform_ids = parse_igdb_id_list_param(request.query_params.get("platform"))
+        min_age = parse_optional_int_query(request.query_params.get("min_age"))
+        min_players = parse_optional_int_query(request.query_params.get("min_players"))
+        max_players = parse_optional_int_query(request.query_params.get("max_players"))
 
         q_esc = escape_igdb_string(q)
         q_norm = normalize_query(q)
@@ -129,9 +162,29 @@ class IgdbSearchView(APIView):
 
         try:
             if suggest:
-                arr = igdb_search_suggest_results(igdb_client.igdb_request, q_esc, q_norm_esc, limit)
+                arr = igdb_search_suggest_results(
+                    igdb_client.igdb_request,
+                    q_esc,
+                    q_norm_esc,
+                    limit,
+                    genre_ids,
+                    platform_ids,
+                    min_age,
+                    min_players,
+                    max_players,
+                )
             else:
-                arr = igdb_search_non_suggest_results(igdb_client.igdb_request, q_esc, q_norm_esc, limit)
+                arr = igdb_search_non_suggest_results(
+                    igdb_client.igdb_request,
+                    q_esc,
+                    q_norm_esc,
+                    limit,
+                    genre_ids,
+                    platform_ids,
+                    min_age,
+                    min_players,
+                    max_players,
+                )
 
             enriched = enrich_with_wikidata_display_name(arr)
             return Response(enrich_normalized_games(enriched, request.user))
@@ -273,7 +326,7 @@ class IgdbFranchisesSearchView(APIView):
 
 
 class IgdbSearchPageView(APIView):
-    """GET /api/igdb/search-page/ — Recherche paginée par nom (q, limit, offset)."""
+    """GET /api/igdb/search-page/ — Recherche paginée par nom (q, limit, offset, filtres IGDB)."""
 
     permission_classes = [AllowAny]
 
@@ -286,13 +339,38 @@ class IgdbSearchPageView(APIView):
             )
         limit = _clamp_limit(request.query_params.get("limit"), 1, 50)
         offset = _clamp_offset(request.query_params.get("offset"))
+        genre_ids = parse_igdb_id_list_param(request.query_params.get("genre"))
+        platform_ids = parse_igdb_id_list_param(request.query_params.get("platform"))
+        min_age = parse_optional_int_query(request.query_params.get("min_age"))
+        min_players = parse_optional_int_query(request.query_params.get("min_players"))
+        max_players = parse_optional_int_query(request.query_params.get("max_players"))
         q_esc = escape_igdb_string(q)
         q_norm_esc = escape_igdb_string(normalize_query(q))
 
         try:
-            arr = search_page_name_matches(igdb_client.igdb_request, q_esc, q_norm_esc, limit, offset)
+            arr = search_page_name_matches(
+                igdb_client.igdb_request,
+                q_esc,
+                q_norm_esc,
+                limit,
+                offset,
+                genre_ids,
+                platform_ids,
+                min_age,
+                min_players,
+                max_players,
+            )
             if not arr and offset == 0:
-                arr = search_page_fallback_search(igdb_client.igdb_request, q_esc, limit)
+                arr = search_page_fallback_search(
+                    igdb_client.igdb_request,
+                    q_esc,
+                    limit,
+                    genre_ids,
+                    platform_ids,
+                    min_age,
+                    min_players,
+                    max_players,
+                )
             enriched = enrich_with_wikidata_display_name(arr)
             return Response(enrich_normalized_games(enriched, request.user))
         except Exception as e:

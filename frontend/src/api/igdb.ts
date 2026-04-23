@@ -79,46 +79,85 @@ export async function fetchIgdbGames(): Promise<IgdbGame[]> {
   return apiGet('/api/igdb/games/');
 }
 
+/** Filtres optionnels alignés sur `/api/games/` — IDs IGDB pour genre / platform. */
+export type IgdbListFilters = {
+  genre?: number[];
+  platform?: number[];
+  min_age?: number;
+  min_players?: number;
+  max_players?: number;
+};
+
+function appendIgdbListFilters(
+  params: URLSearchParams,
+  filters?: IgdbListFilters
+): void {
+  if (!filters) return;
+  if (filters.genre?.length)
+    params.set('genre', filters.genre.map(String).join(','));
+  if (filters.platform?.length)
+    params.set('platform', filters.platform.map(String).join(','));
+  if (filters.min_age != null) params.set('min_age', String(filters.min_age));
+  if (filters.min_players != null)
+    params.set('min_players', String(filters.min_players));
+  if (filters.max_players != null)
+    params.set('max_players', String(filters.max_players));
+}
+
 export async function searchIgdbGames(
   q: string,
   limit = 8,
   suggest = false,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  filters?: IgdbListFilters
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
     q,
     limit: String(limit),
     suggest: suggest ? '1' : '0',
   });
+  appendIgdbListFilters(params, filters);
   return apiGet(`/api/igdb/search/?${params}`, { signal });
 }
 
 export async function searchGames(
   q: string,
-  options?: { limit?: number; suggest?: boolean; signal?: AbortSignal }
+  options?: {
+    limit?: number;
+    suggest?: boolean;
+    signal?: AbortSignal;
+    filters?: IgdbListFilters;
+  }
 ): Promise<IgdbGame[]> {
   return searchIgdbGames(
     q,
     options?.limit ?? 20,
     options?.suggest ?? false,
-    options?.signal
+    options?.signal,
+    options?.filters
   );
 }
 
 export async function fetchTrendingGames(
   sort: string,
   limit = 20,
-  genre?: number,
+  genre?: number | number[],
   offset = 0,
   signal?: AbortSignal,
-  enrich = true
+  enrich = true,
+  filters?: IgdbListFilters
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
     sort,
     limit: String(limit),
     offset: String(offset),
   });
-  if (genre != null) params.set('genre', String(genre));
+  const fromPositional =
+    genre != null ? (Array.isArray(genre) ? genre : [genre]) : [];
+  const merged: IgdbListFilters = { ...(filters ?? {}) };
+  if (!merged.genre?.length && fromPositional.length)
+    merged.genre = fromPositional;
+  appendIgdbListFilters(params, merged);
   if (!enrich) params.set('enrich', '0');
   const data = (await apiGet(`/api/igdb/trending/?${params}`, { signal })) as {
     results: IgdbGame[];
@@ -130,16 +169,22 @@ export async function fetchTrendingGames(
 export async function fetchTrendingGamesWithCount(
   sort: string,
   limit = 25,
-  genre?: number,
+  genre?: number | number[],
   offset = 0,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  filters?: IgdbListFilters
 ): Promise<{ games: IgdbGame[]; totalCount: number }> {
   const params = new URLSearchParams({
     sort,
     limit: String(limit),
     offset: String(offset),
   });
-  if (genre != null) params.set('genre', String(genre));
+  const fromPositional =
+    genre != null ? (Array.isArray(genre) ? genre : [genre]) : [];
+  const merged: IgdbListFilters = { ...(filters ?? {}) };
+  if (!merged.genre?.length && fromPositional.length)
+    merged.genre = fromPositional;
+  appendIgdbListFilters(params, merged);
   params.set('enrich', '0');
   const data = (await apiGet(`/api/igdb/trending/?${params}`, { signal })) as {
     results: IgdbGame[];
@@ -185,13 +230,15 @@ export async function searchFranchisesAndCollections(
 export async function searchGamesPage(
   q: string,
   limit = 24,
-  offset = 0
+  offset = 0,
+  filters?: IgdbListFilters
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
     q,
     limit: String(limit),
     offset: String(offset),
   });
+  appendIgdbListFilters(params, filters);
   return apiGet(`/api/igdb/search-page/?${params}`);
 }
 

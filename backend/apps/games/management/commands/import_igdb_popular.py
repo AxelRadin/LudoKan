@@ -4,6 +4,13 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.games.igdb_client import igdb_request
+from apps.games.igdb_demographics import (
+    compute_min_age,
+    compute_player_counts,
+    fetch_age_ratings_map,
+    fetch_multiplayer_modes_raw,
+    index_multiplayer_by_game,
+)
 from apps.games.models import Game, Genre, Platform, Publisher
 
 
@@ -542,29 +549,16 @@ class Command(BaseCommand):
         return status_map.get(value)
 
     def fetch_age_ratings(self, ids):
-        """
-        Retourne un dict {id: age_rating}
-        """
+        """Délègue à igdb_demographics ; conserve les logs de progression."""
         if not ids:
             self.stdout.write("    (Aucun age_rating à récupérer)")
             return {}
-
         result = {}
         unique_ids = list(set(ids))
         chunks = [unique_ids[i : i + 500] for i in range(0, len(unique_ids), 500)]
-
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch age_ratings {idx}/{len(chunks)} (taille={len(chunk)})")
-            ids_str = ",".join(str(i) for i in chunk)
-            query = f"""
-                fields id, category, rating;
-                where id = ({ids_str});
-                limit 500;
-            """
-            data = igdb_request("age_ratings", query)
-            for ar in data:
-                result[ar["id"]] = ar
-
+            result.update(fetch_age_ratings_map(igdb_request, chunk))
         return result
 
     def fetch_multiplayer_modes(self, ids):
@@ -581,118 +575,15 @@ class Command(BaseCommand):
 
         for idx, chunk in enumerate(chunks, start=1):
             self.stdout.write(f"    → Batch multiplayer_modes {idx}/{len(chunks)} (taille={len(chunk)})")
-            ids_str = ",".join(str(i) for i in chunk)
-            query = f"""
-                fields
-                id,
-                game,
-                offlinemax,
-                onlinemax,
-                offlinecoopmax,
-                onlinecoopmax,
-                offlinecoop,
-                onlinecoop,
-                campaigncoop;
-                where id = ({ids_str});
-                limit 500;
-            """
-            data = igdb_request("multiplayer_modes", query)
-            result.extend(data)
+            result.extend(fetch_multiplayer_modes_raw(igdb_request, chunk))
 
         return result
 
     def index_multiplayer_by_game(self, mp_list):
-        """
-        Retourne {game_id: [multiplayer_mode, ...]}
-        """
-        by_game = {}
-        for mp in mp_list:
-            game_id = mp.get("game")
-            if not game_id:
-                continue
-            by_game.setdefault(game_id, []).append(mp)
-        return by_game
+        return index_multiplayer_by_game(mp_list)
 
     def compute_min_age(self, game_data, age_ratings_map):
-        """
-        Calcule un min_age approximatif à partir des age_ratings IGDB.
-        On prend le plus petit âge repéré (PEGI / ESRB).
-        """
-        rating_ids = game_data.get("age_ratings") or []
-        if not rating_ids:
-            return None
-
-        ages = []
-
-        # Quelques mappings connus de IGDB :
-        # category 1: ESRB, category 2: PEGI
-        # (les valeurs de 'rating' sont documentées dans l'API IGDB)
-        pegi_map = {
-            # exemples: à ajuster au besoin selon la doc exacte
-            1: 3,  # PEGI 3
-            2: 7,  # PEGI 7
-            3: 12,  # PEGI 12
-            4: 16,  # PEGI 16
-            5: 18,  # PEGI 18
-        }
-        esrb_map = {
-            # exemples: à ajuster, mais en gros :
-            2: 6,  # E (Everyone)
-            3: 10,  # E10+
-            4: 13,  # T
-            5: 17,  # M
-            6: 18,  # AO
-        }
-
-        for rid in rating_ids:
-            ar = age_ratings_map.get(rid)
-            if not ar:
-                continue
-            cat = ar.get("category")
-            rating_code = ar.get("rating")
-
-            if cat == 2:  # PEGI
-                age = pegi_map.get(rating_code)
-                if age:
-                    ages.append(age)
-            elif cat == 1:  # ESRB
-                age = esrb_map.get(rating_code)
-                if age:
-                    ages.append(age)
-
-        if not ages:
-            return None
-        return min(ages)
+        return compute_min_age(game_data, age_ratings_map)
 
     def compute_player_counts(self, game_data, mp_by_game):
-        """
-        Calcule min_players / max_players à partir des multiplayer_modes.
-        Heuristique:
-        - max_players = max(offlinemax, onlinemax, offlinecoopmax, onlinecoopmax)
-        - min_players = 2 si coop présent, sinon 1
-        """
-        game_id = game_data["id"]
-        modes = mp_by_game.get(game_id, [])
-        if not modes:
-            return None, None
-
-        candidates_max = []
-        for m in modes:
-            for key in ("offlinemax", "onlinemax", "offlinecoopmax", "onlinecoopmax"):
-                v = m.get(key)
-                if v:
-                    candidates_max.append(v)
-
-        if not candidates_max:
-            return None, None
-
-        max_players = max(candidates_max)
-
-        # heuristique pour min_players
-        min_players = 1
-        for m in modes:
-            if m.get("offlinecoop") or m.get("onlinecoop") or m.get("campaigncoop"):
-                min_players = 2
-                break
-
-        return min_players, max_players
+        return compute_player_counts(game_data, mp_by_game)

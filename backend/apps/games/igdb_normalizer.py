@@ -80,7 +80,7 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
     name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
 
-    return {
+    out = {
         "igdb_id": igdb_id,
         "django_id": None,
         "name": name,
@@ -97,6 +97,13 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "screenshots": _extract_screenshots(g.get("screenshots")),
         "videos": g.get("videos") or [],
     }
+    if "_ludokan_min_age" in g:
+        out["min_age"] = g.get("_ludokan_min_age")
+    if "_ludokan_min_players" in g:
+        out["min_players"] = g.get("_ludokan_min_players")
+    if "_ludokan_max_players" in g:
+        out["max_players"] = g.get("_ludokan_max_players")
+    return out
 
 
 def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -> list[dict[str, Any]]:
