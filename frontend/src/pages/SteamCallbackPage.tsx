@@ -4,11 +4,13 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
 const SteamCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { setAuthenticated, setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
 
@@ -32,9 +34,16 @@ const SteamCallbackPage: React.FC = () => {
       }
 
       try {
-        await apiPost('/api/auth/steam/callback/', params);
+        const res = await apiPost('/api/auth/steam/callback/', params);
+        // Authentifie l'utilisateur dans le store React
+        setUser(res.user);
+        setAuthenticated(true);
         // Redirection vers le profil après succès
-        navigate('/profile', { replace: true });
+        if (res.is_new_user) {
+          navigate('/profile?syncing=true&new_user=true', { replace: true });
+        } else {
+          navigate('/profile?syncing=true', { replace: true });
+        }
       } catch (err: unknown) {
         const message =
           err instanceof Error ? err.message : 'Échec de la connexion Steam';
@@ -43,7 +52,7 @@ const SteamCallbackPage: React.FC = () => {
     };
 
     void run();
-  }, [navigate, location.search]);
+  }, [navigate, location.search, setAuthenticated, setUser]);
 
   if (error) {
     return (

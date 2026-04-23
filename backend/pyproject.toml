@@ -1,13 +1,13 @@
 [tool.black]
 line-length = 150
 target-version = ["py311"]
-extend-exclude = "migrations|\\.venv"
+extend-exclude = "migrations|\\.venv|venv"
 
 [tool.isort]
 profile = "black"
 line_length = 150
 multi_line_output = 3
-skip = ["migrations", ".venv"]
+skip = ["migrations", ".venv", "venv"]
 
 [tool.flake8]
 max-line-length = 150
@@ -19,6 +19,7 @@ extend-ignore = [
 exclude = [
     ".venv",
     "migrations",
+    "venv",
 ]
 
 [tool.ruff]

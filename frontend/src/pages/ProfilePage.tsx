@@ -24,6 +24,7 @@ import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
+import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
 /* ─── Google Fonts injection ─── */
@@ -82,6 +83,7 @@ styleEl.textContent = `
 document.head.appendChild(styleEl);
 
 type UserProfile = {
+  id: number;
   pseudo: string;
   email: string;
   first_name?: string;
@@ -221,10 +223,12 @@ type ProfilePageModel = {
 };
 
 function useProfilePageModel(): ProfilePageModel {
+  const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<UserProfile>({
+    id: 0,
     pseudo: '',
     email: '',
     first_name: '',
@@ -238,6 +242,31 @@ function useProfilePageModel(): ProfilePageModel {
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+
+  // Sync with global user if it updates (e.g. email from ForcedEmailModal)
+  useEffect(() => {
+    if (globalUser && user && globalUser.id === user.id) {
+      if (
+        globalUser.email !== user.email ||
+        globalUser.pseudo !== user.pseudo
+      ) {
+        setUser(prev =>
+          prev
+            ? {
+                ...prev,
+                email: globalUser.email || prev.email,
+                pseudo: globalUser.pseudo || prev.pseudo,
+              }
+            : null
+        );
+        setForm(prev => ({
+          ...prev,
+          email: globalUser.email || prev.email,
+          pseudo: globalUser.pseudo || prev.pseudo,
+        }));
+      }
+    }
+  }, [globalUser, user]);
 
   const handleSteamConnect = async () => {
     if (steamBusy) return;
@@ -302,10 +331,41 @@ function useProfilePageModel(): ProfilePageModel {
   };
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(globalThis.location.search);
+    if (searchParams.get('syncing') === 'true') {
+      let polls = 0;
+      setSteamBusy(true);
+      const pollInterval = setInterval(async () => {
+        polls++;
+        try {
+          const [gamesRes, meRes] = await Promise.all([
+            apiGet('/api/me/games/'),
+            apiGet('/api/me/'),
+          ]);
+          setUserGames(gamesRes.results || gamesRes || []);
+          setUser(meRes);
+        } catch {
+          /* ignore */
+        }
+        if (polls >= 10) {
+          clearInterval(pollInterval);
+          setSteamBusy(false);
+        }
+      }, 3000);
+    }
+    if (searchParams.get('new_user') || searchParams.get('syncing')) {
+      globalThis.history.replaceState(
+        {},
+        document.title,
+        globalThis.location.pathname
+      );
+    }
+
     apiGet('/api/me/')
       .then(data => {
         setUser(data);
         setForm({
+          id: data.id,
           pseudo: data.pseudo || '',
           email: data.email || '',
           first_name: data.first_name || '',
@@ -331,6 +391,7 @@ function useProfilePageModel(): ProfilePageModel {
   const handleEditOpen = () => {
     setAvatarError('');
     setForm({
+      id: user?.id || 0,
       pseudo: user?.pseudo || '',
       email: user?.email || '',
       first_name: user?.first_name || '',
@@ -858,6 +919,14 @@ function ProfileEditDialog({
             name="last_name"
             fullWidth
             value={form.last_name}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
+            label="E-mail"
+            name="email"
+            fullWidth
+            value={form.email}
             onChange={onFieldChange}
             sx={fieldSx}
           />

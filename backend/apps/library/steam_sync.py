@@ -132,8 +132,8 @@ def _process_single_igdb_game(igdb_game: dict, igdb_id_to_steam: dict) -> None:
 
 
 def _fetch_external_games(appids: List[int]) -> list[dict]:
-    uid_conditions = " | ".join(f'uid="{appid}"' for appid in appids)
-    ext_query = f"fields game,uid; where {uid_conditions}; limit {len(appids)};"
+    uid_conditions = ",".join(f'"{appid}"' for appid in appids)
+    ext_query = f"fields game,uid; where category = 1 & uid = ({uid_conditions}); limit 500;"
 
     try:
         ext_games = igdb_request("external_games", ext_query)
