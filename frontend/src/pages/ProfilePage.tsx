@@ -15,6 +15,7 @@ import {
   Menu,
   MenuItem,
   DialogContentText,
+  Tooltip,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -22,7 +23,7 @@ import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import SecondaryButton from '../components/SecondaryButton';
 import { deleteUserGame } from '../api/userGames';
-import { apiGet, apiPatch, apiDelete } from '../services/api';
+import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
 /* ─── Google Fonts injection ─── */
@@ -216,6 +217,7 @@ type ProfilePageModel = {
   steamBusy: boolean;
   handleSteamConnect: () => Promise<void>;
   handleSteamDisconnect: () => Promise<void>;
+  handleSteamSync: () => Promise<void>;
 };
 
 function useProfilePageModel(): ProfilePageModel {
@@ -267,6 +269,34 @@ function useProfilePageModel(): ProfilePageModel {
           (err?.message || 'Impossible de déconnecter le compte Steam')
       );
     } finally {
+      setSteamBusy(false);
+    }
+  };
+
+  const handleSteamSync = async () => {
+    if (steamBusy) return;
+    setSteamBusy(true);
+    try {
+      await apiPost('/api/sync/steam/', {});
+
+      // La tâche s'exécute en arrière-plan via Celery.
+      // On poll l'API toutes les 3s pour chercher les nouveaux jeux pdt ~30s.
+      let polls = 0;
+      const pollInterval = setInterval(async () => {
+        polls++;
+        try {
+          const res = await apiGet('/api/me/games/');
+          setUserGames(res.results || res || []);
+        } catch {
+          // ignore
+        }
+
+        if (polls >= 10) {
+          clearInterval(pollInterval);
+          setSteamBusy(false);
+        }
+      }, 3000);
+    } catch {
       setSteamBusy(false);
     }
   };
@@ -575,6 +605,7 @@ function useProfilePageModel(): ProfilePageModel {
     steamBusy,
     handleSteamConnect,
     handleSteamDisconnect,
+    handleSteamSync,
   };
 }
 
@@ -893,6 +924,7 @@ type ProfileIntegrationsProps = Readonly<{
   steamBusy: boolean;
   onSteamConnect: () => void;
   onSteamDisconnect: () => void;
+  onSteamSync: () => void;
 }>;
 
 function ProfileIntegrations({
@@ -900,6 +932,7 @@ function ProfileIntegrations({
   steamBusy,
   onSteamConnect,
   onSteamDisconnect,
+  onSteamSync,
 }: ProfileIntegrationsProps) {
   return (
     <Box sx={{ mb: 2.5 }}>
@@ -987,6 +1020,36 @@ function ProfileIntegrations({
               >
                 Connecté
               </Typography>
+              <Tooltip
+                title={
+                  steamBusy
+                    ? "Synchronisation en arrière-plan en cours, vos jeux vont s'actualiser sous peu..."
+                    : 'Re-synchroniser la ludothèque'
+                }
+                arrow
+              >
+                <span>
+                  <Button
+                    onClick={onSteamSync}
+                    disabled={steamBusy}
+                    variant="outlined"
+                    color="info"
+                    sx={{
+                      borderRadius: 999,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontFamily: FONT_BODY,
+                      minWidth: 130,
+                    }}
+                  >
+                    {steamBusy ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      'Synchroniser'
+                    )}
+                  </Button>
+                </span>
+              </Tooltip>
               <Button
                 onClick={onSteamDisconnect}
                 disabled={steamBusy}
@@ -1157,6 +1220,7 @@ export default function ProfilePage() {
     steamBusy,
     handleSteamConnect,
     handleSteamDisconnect,
+    handleSteamSync,
   } = useProfilePageModel();
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -1754,6 +1818,7 @@ export default function ProfilePage() {
           steamBusy={steamBusy}
           onSteamConnect={handleSteamConnect}
           onSteamDisconnect={handleSteamDisconnect}
+          onSteamSync={handleSteamSync}
         />
 
         {/* ── COUPS DE CŒUR ── */}

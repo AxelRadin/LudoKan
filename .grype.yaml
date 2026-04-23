@@ -63,6 +63,8 @@ ignore:
     reason: "Won't fix by Debian - libc system package"
   - vulnerability: CVE-2026-5358
     reason: "Won't fix by Debian - libc system package"
+  - vulnerability: CVE-2026-3298
+    reason: "CPython asyncio.sock_recvfrom_into buffer check — Windows ProactorEventLoop only; NVD/PSF: non-Windows not affected; Linux Docker — upgrade image when 3.11.x includes backport (cpython#148809)"
 
 # Sources de données de vulnérabilités
 db:
