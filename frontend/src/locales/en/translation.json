@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "home": "Home",
+    "profile": "Profile",
+    "logout": "Log out",
+    "login": "Log in",
+    "register": "Register"
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "registerTitle": "Register",
+    "switchToRegister": "No account? Sign up",
+    "switchToLogin": "Already registered? Log in"
+  },
+  "backendConnector": {
+    "title": "Frontend ↔ Backend Connector (React Vite)",
+    "copycurl": "Copy cURL",
+    "baseUrl": "Base URL",
+    "method": "Method",
+    "endpoint": "Endpoint",
+    "body": "Body (text/JSON)",
+    "bearerToken": "Bearer token (optional)",
+    "extraHeaders": "Additional headers (one line = key: value)",
+    "send": "Send request",
+    "sending": "Sending...",
+    "quickTest": "Quick test: GET /health",
+    "fullUrl": "Full URL displayed here",
+    "response": "Response",
+    "curlCommand": "cURL command",
+    "noResponse": "// No response yet.\n// Click \"Send request\".",
+    "error": "// Error\n{{message}}",
+    "tips": {
+      "title": "Tips",
+      "dev": "In dev, use http://localhost:PORT as Base URL.",
+      "cors": "To avoid CORS errors in the browser, configure a Vite proxy to your API.",
+      "health": "Quick test assumes a /health endpoint accessible via GET."
+    }
+  },
+  "confirmCancelMatchmaking": {
+    "title": "Search already in progress",
+    "description": "You already have an active player search. Do you want to cancel the previous search and start a new one?",
+    "keep": "No, keep current",
+    "confirm": "Yes, new search"
+  },
+  "common": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "error404": {
+    "title": "Error 404",
+    "subtitle": "It seems a problem has occurred"
+  },
+  "errorFallback": {
+    "title": "An error occurred",
+    "unknown": "An unknown error occurred",
+    "reload": "Reload"
+  }
+}

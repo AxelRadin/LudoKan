@@ -6,6 +6,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 interface ConfirmCancelMatchmakingModalProps {
   readonly open: boolean;
@@ -18,6 +19,8 @@ export default function ConfirmCancelMatchmakingModal({
   onClose,
   onConfirm,
 }: ConfirmCancelMatchmakingModalProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog
       open={open}
@@ -29,19 +32,18 @@ export default function ConfirmCancelMatchmakingModal({
       }}
     >
       <DialogTitle id="confirm-dialog-title" sx={{ fontWeight: 'bold' }}>
-        Recherche déjà en cours
+        {t('confirmCancelMatchmaking.title')}
       </DialogTitle>
 
       <DialogContent>
         <DialogContentText id="confirm-dialog-description">
-          Vous avez déjà une recherche de joueurs active. Voulez-vous annuler la
-          recherche précédente et en lancer une nouvelle ?
+          {t('confirmCancelMatchmaking.description')}
         </DialogContentText>
       </DialogContent>
 
       <DialogActions sx={{ pb: 2, px: 3, justifyContent: 'space-between' }}>
         <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-          Non, garder l'actuelle
+          {t('confirmCancelMatchmaking.keep')}
         </Button>
         <Button
           onClick={onConfirm}
@@ -49,7 +51,7 @@ export default function ConfirmCancelMatchmakingModal({
           variant="contained"
           sx={{ fontWeight: 600, borderRadius: 2 }}
         >
-          Oui, nouvelle recherche
+          {t('confirmCancelMatchmaking.confirm')}
         </Button>
       </DialogActions>
     </Dialog>

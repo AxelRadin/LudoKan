@@ -25,14 +25,25 @@ import { muiTheme } from './muiTheme';
 import AboutPage from './pages/AboutPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 
+initSentry();
+
+const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
+  error,
+  resetError,
+}) => <ErrorFallback error={error} resetError={resetError} />;
+
+const Root = () => (
+  <AuthProvider>
+    <MatchmakingProvider>
+      <App />
+    </MatchmakingProvider>
+  </AuthProvider>
+);
+
 const router = createBrowserRouter([
   {
     path: '/',
-    element: (
-      <MatchmakingProvider>
-        <App />
-      </MatchmakingProvider>
-    ),
+    element: <Root />,
     children: [
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
@@ -53,23 +64,14 @@ const router = createBrowserRouter([
   },
 ]);
 
-initSentry();
-
-const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
-  error,
-  resetError,
-}) => <ErrorFallback error={error} resetError={resetError} />;
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <AuthProvider>
-          <Sentry.ErrorBoundary fallback={errorFallback}>
-            <RouterProvider router={router} />
-          </Sentry.ErrorBoundary>
-        </AuthProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
       </ThemeProvider>
     </StyledEngineProvider>
   </StrictMode>

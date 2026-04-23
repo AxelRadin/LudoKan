@@ -1,0 +1,58 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "login": "Connexion",
+    "register": "S'inscrire"
+  },
+  "auth": {
+    "loginTitle": "Connexion",
+    "registerTitle": "Inscription",
+    "switchToRegister": "Pas de compte ? S'inscrire",
+    "switchToLogin": "Déjà inscrit ? Se connecter"
+  },
+  "backendConnector": {
+    "title": "Frontend ↔ Backend Connector (React Vite)",
+    "copycurl": "Copier le cURL",
+    "baseUrl": "Base URL",
+    "method": "Méthode",
+    "endpoint": "Endpoint",
+    "body": "Body (texte/JSON)",
+    "bearerToken": "Bearer token (facultatif)",
+    "extraHeaders": "En-têtes additionnels (une ligne = key: value)",
+    "send": "Envoyer la requête",
+    "sending": "Envoi...",
+    "quickTest": "Quick test: GET /health",
+    "fullUrl": "URL complète affichée ici",
+    "response": "Réponse",
+    "curlCommand": "Commande cURL",
+    "noResponse": "// Aucune réponse pour l'instant.\n// Cliquez sur \"Envoyer la requête\".",
+    "error": "// Erreur\n{{message}}",
+    "tips": {
+      "title": "Conseils",
+      "dev": "En dev, utilisez http://localhost:PORT comme Base URL.",
+      "cors": "Pour éviter les erreurs CORS en dev navigateur, configurez un proxy Vite vers votre API.",
+      "health": "Le Quick test suppose un endpoint /health accessible en GET."
+    }
+  },
+  "confirmCancelMatchmaking": {
+    "title": "Recherche déjà en cours",
+    "description": "Vous avez déjà une recherche de joueurs active. Voulez-vous annuler la recherche précédente et en lancer une nouvelle ?",
+    "keep": "Non, garder l'actuelle",
+    "confirm": "Oui, nouvelle recherche"
+  },
+  "common": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "error404": {
+    "title": "Error 404",
+    "subtitle": "Il semble qu'un problème soit survenu"
+  },
+  "errorFallback": {
+    "title": "Une erreur est survenue",
+    "unknown": "Une erreur inconnue est survenue",
+    "reload": "Recharger"
+  }
+}
