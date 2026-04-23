@@ -237,6 +237,39 @@ class SteamLoginCallbackViewTest(APITestCase):
         # Should succeed despite the Steam API error
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
+    @patch("apps.users.views_steam.requests.get")
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_pseudo_conflict_resolved(self, mock_post, mock_get, mock_delay):
+        """
+        L174-175: Test that pseudo conflict with an existing user is resolved
+        by adding a suffix.
+        """
+        from apps.users.models import CustomUser
+
+        # Create a user with the pseudo "SteamUser"
+        CustomUser.objects.create_user(email="other@example.com", pseudo="SteamUser")
+
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "response": {"players": [{"personaname": "SteamUser", "avatarfull": "https://example.com/avatar.jpg"}]}
+        }
+
+        self.client.logout()
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": "https://steamcommunity.com/openid/id/88888888888",
+            "openid.identity": "https://steamcommunity.com/openid/id/88888888888",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # The new user should have the pseudo "SteamUser_1"
+        user = CustomUser.objects.get(steam_profile__steam_id="88888888888")
+        self.assertEqual(user.pseudo, "SteamUser_1")
+
 
 class SteamDisconnectViewTest(APITestCase):
     def setUp(self):
