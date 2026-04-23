@@ -20,12 +20,8 @@ const App = () => {
       }}
     >
       <Header />
-      <Box component="main" sx={{ paddingTop: 8, flex: 1 }}>
-        <Outlet />
-      </Box>
-      <Header />
       <CookieBanner />
-      <Box component="main" sx={{ paddingTop: 8 }}>
+      <Box component="main" sx={{ paddingTop: 8, flex: 1 }}>
         <Outlet />
       </Box>
       <Footer />
