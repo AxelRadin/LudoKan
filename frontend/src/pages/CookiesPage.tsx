@@ -19,7 +19,11 @@ const categories = [
     required: true,
     description:
       'Ces cookies sont indispensables au fonctionnement de la plateforme. Ils gèrent votre session de connexion et assurent la sécurité de votre compte. Ils ne peuvent pas être désactivés.',
-    examples: ['Session utilisateur', 'Jeton CSRF (sécurité)', 'Préférences de langue'],
+    examples: [
+      'Session utilisateur',
+      'Jeton CSRF (sécurité)',
+      'Préférences de langue',
+    ],
   },
   {
     label: 'Analytics',
@@ -27,7 +31,11 @@ const categories = [
     required: false,
     description:
       "Ces cookies nous permettent de mesurer l'audience de la plateforme de manière anonymisée (pages visitées, durée de session, erreurs rencontrées). Ils nous aident à améliorer votre expérience.",
-    examples: ["Statistiques de navigation anonymes", "Rapports d'erreurs (Sentry anonymisé)", "Pages les plus visitées"],
+    examples: [
+      'Statistiques de navigation anonymes',
+      "Rapports d'erreurs (Sentry anonymisé)",
+      'Pages les plus visitées',
+    ],
   },
   {
     label: 'Personnalisation',
@@ -35,7 +43,11 @@ const categories = [
     required: false,
     description:
       "Ces cookies mémorisent vos préférences afin de personnaliser votre expérience sur Ludokan : thème (clair/sombre), préférences d'affichage, recommandations basées sur vos habitudes.",
-    examples: ["Thème clair / sombre", "Préférences d'affichage", "Recommandations personnalisées"],
+    examples: [
+      'Thème clair / sombre',
+      "Préférences d'affichage",
+      'Recommandations personnalisées',
+    ],
   },
 ];
 
@@ -68,19 +80,34 @@ const CookiesPage: React.FC = () => {
         >
           <CookieOutlinedIcon sx={{ color: 'primary.main' }} />
         </Box>
-        <Typography variant="h5" fontWeight={600} sx={{ color: 'secondary.main' }}>
+        <Typography
+          variant="h5"
+          fontWeight={600}
+          sx={{ color: 'secondary.main' }}
+        >
           Gestion des cookies
         </Typography>
       </Box>
-      <Typography variant="caption" color="text.disabled" display="block" mb={4}>
+      <Typography
+        variant="caption"
+        color="text.disabled"
+        display="block"
+        mb={4}
+      >
         Version 1.0 – Avril 2025
       </Typography>
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 4, lineHeight: 1.8, textAlign: 'justify' }}>
-        Ludokan utilise des cookies et technologies similaires pour assurer le bon fonctionnement
-        de la plateforme, analyser son utilisation et personnaliser votre expérience. Lors de votre
-        première visite, un bandeau vous permet d'accepter ou de refuser les catégories
-        non essentielles. Vous pouvez modifier vos préférences à tout moment depuis les paramètres.
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mb: 4, lineHeight: 1.8, textAlign: 'justify' }}
+      >
+        Ludokan utilise des cookies et technologies similaires pour assurer le
+        bon fonctionnement de la plateforme, analyser son utilisation et
+        personnaliser votre expérience. Lors de votre première visite, un
+        bandeau vous permet d'accepter ou de refuser les catégories non
+        essentielles. Vous pouvez modifier vos préférences à tout moment depuis
+        les paramètres.
       </Typography>
 
       {/* Catégories */}
@@ -89,22 +116,40 @@ const CookiesPage: React.FC = () => {
           <React.Fragment key={cat.label}>
             <Box>
               <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-                <Typography variant="subtitle1" fontWeight={600} sx={{ color: 'secondary.main' }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={600}
+                  sx={{ color: 'secondary.main' }}
+                >
                   {cat.label}
                 </Typography>
                 {cat.required ? (
-                  <Chip label="Toujours actifs" size="small" color="success" variant="outlined" />
+                  <Chip
+                    label="Toujours actifs"
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                  />
                 ) : (
-                  <Chip label="Soumis à consentement" size="small" color="default" variant="outlined" />
+                  <Chip
+                    label="Soumis à consentement"
+                    size="small"
+                    color="default"
+                    variant="outlined"
+                  />
                 )}
               </Box>
 
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.8, textAlign: 'justify' }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 1.5, lineHeight: 1.8, textAlign: 'justify' }}
+              >
                 {cat.description}
               </Typography>
 
               <Box display="flex" flexWrap="wrap" gap={1}>
-                {cat.examples.map((ex) => (
+                {cat.examples.map(ex => (
                   <Chip
                     key={ex}
                     label={ex}
@@ -156,8 +201,16 @@ const CookiesPage: React.FC = () => {
         </Button>
       </Box>
 
-      <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 5, color: 'text.disabled' }}>
-        Pour toute question : <Box component="span" sx={{ color: 'primary.main' }}>dpo@ludokan.fr</Box>
+      <Typography
+        variant="caption"
+        display="block"
+        textAlign="center"
+        sx={{ mt: 5, color: 'text.disabled' }}
+      >
+        Pour toute question :{' '}
+        <Box component="span" sx={{ color: 'primary.main' }}>
+          dpo@ludokan.fr
+        </Box>
       </Typography>
     </Container>
   );

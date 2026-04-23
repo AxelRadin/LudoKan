@@ -38,12 +38,17 @@ const CookieBanner: React.FC = () => {
   }, []);
 
   const save = (accepted: CookiePreferences) => {
-    localStorage.setItem(COOKIE_KEY, JSON.stringify({ ...accepted, necessary: true }));
+    localStorage.setItem(
+      COOKIE_KEY,
+      JSON.stringify({ ...accepted, necessary: true })
+    );
     setVisible(false);
   };
 
-  const handleAcceptAll = () => save({ analytics: true, personnalisation: true });
-  const handleRefuseAll = () => save({ analytics: false, personnalisation: false });
+  const handleAcceptAll = () =>
+    save({ analytics: true, personnalisation: true });
+  const handleRefuseAll = () =>
+    save({ analytics: false, personnalisation: false });
   const handleSaveChoice = () => save(prefs);
 
   if (!visible) return null;
@@ -72,13 +77,23 @@ const CookieBanner: React.FC = () => {
         </Typography>
       </Box>
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
-        Nous utilisons des cookies pour assurer le bon fonctionnement de Ludokan et améliorer
-        votre expérience. Vous pouvez accepter, refuser ou personnaliser vos choix.{' '}
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mb: 2, lineHeight: 1.7 }}
+      >
+        Nous utilisons des cookies pour assurer le bon fonctionnement de Ludokan
+        et améliorer votre expérience. Vous pouvez accepter, refuser ou
+        personnaliser vos choix.{' '}
         <Box
           component="span"
           onClick={() => navigate('/cookies')}
-          sx={{ color: 'primary.main', cursor: 'pointer', textDecoration: 'underline', fontSize: 'inherit' }}
+          sx={{
+            color: 'primary.main',
+            cursor: 'pointer',
+            textDecoration: 'underline',
+            fontSize: 'inherit',
+          }}
         >
           En savoir plus
         </Box>
@@ -97,10 +112,19 @@ const CookieBanner: React.FC = () => {
           }}
         >
           {/* Nécessaires — toujours activés */}
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            mb={1}
+          >
             <Box>
-              <Typography variant="body2" fontWeight={600}>Nécessaires</Typography>
-              <Typography variant="caption" color="text.secondary">Indispensables au fonctionnement</Typography>
+              <Typography variant="body2" fontWeight={600}>
+                Nécessaires
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Indispensables au fonctionnement
+              </Typography>
             </Box>
             <Switch checked disabled size="small" color="success" />
           </Box>
@@ -112,19 +136,30 @@ const CookieBanner: React.FC = () => {
             control={
               <Switch
                 checked={prefs.analytics}
-                onChange={(e) => setPrefs((p) => ({ ...p, analytics: e.target.checked }))}
+                onChange={e =>
+                  setPrefs(p => ({ ...p, analytics: e.target.checked }))
+                }
                 size="small"
                 color="primary"
               />
             }
             label={
               <Box>
-                <Typography variant="body2" fontWeight={600}>Analytics</Typography>
-                <Typography variant="caption" color="text.secondary">Mesure d'audience anonymisée</Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  Analytics
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Mesure d'audience anonymisée
+                </Typography>
               </Box>
             }
             labelPlacement="start"
-            sx={{ display: 'flex', justifyContent: 'space-between', ml: 0, width: '100%' }}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              ml: 0,
+              width: '100%',
+            }}
           />
 
           <Divider sx={{ my: 1.5 }} />
@@ -134,19 +169,30 @@ const CookieBanner: React.FC = () => {
             control={
               <Switch
                 checked={prefs.personnalisation}
-                onChange={(e) => setPrefs((p) => ({ ...p, personnalisation: e.target.checked }))}
+                onChange={e =>
+                  setPrefs(p => ({ ...p, personnalisation: e.target.checked }))
+                }
                 size="small"
                 color="primary"
               />
             }
             label={
               <Box>
-                <Typography variant="body2" fontWeight={600}>Personnalisation</Typography>
-                <Typography variant="caption" color="text.secondary">Thème, préférences, recommandations</Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  Personnalisation
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Thème, préférences, recommandations
+                </Typography>
               </Box>
             }
             labelPlacement="start"
-            sx={{ display: 'flex', justifyContent: 'space-between', ml: 0, width: '100%' }}
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              ml: 0,
+              width: '100%',
+            }}
           />
         </Box>
       </Collapse>
@@ -168,7 +214,11 @@ const CookieBanner: React.FC = () => {
             variant="outlined"
             color="inherit"
             onClick={handleRefuseAll}
-            sx={{ textTransform: 'none', borderRadius: 2, color: 'text.secondary' }}
+            sx={{
+              textTransform: 'none',
+              borderRadius: 2,
+              color: 'text.secondary',
+            }}
           >
             Tout refuser
           </Button>
@@ -189,7 +239,11 @@ const CookieBanner: React.FC = () => {
             fullWidth
             variant="text"
             onClick={() => setShowDetails(true)}
-            sx={{ textTransform: 'none', color: 'text.secondary', fontSize: 13 }}
+            sx={{
+              textTransform: 'none',
+              color: 'text.secondary',
+              fontSize: 13,
+            }}
           >
             Personnaliser
           </Button>

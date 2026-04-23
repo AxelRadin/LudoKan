@@ -135,7 +135,11 @@ const PolitiquesPage: React.FC = () => {
       {/* Titre principal */}
       {!active && (
         <>
-          <Typography variant="h5" fontWeight={600} sx={{ mb: 1, color: 'secondary.main' }}>
+          <Typography
+            variant="h5"
+            fontWeight={600}
+            sx={{ mb: 1, color: 'secondary.main' }}
+          >
             Politiques
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
@@ -245,10 +249,18 @@ const PolitiquesPage: React.FC = () => {
             Retour aux politiques
           </Button>
 
-          <Typography variant="h5" fontWeight={600} sx={{ mb: 0.5, color: 'secondary.main' }}>
+          <Typography
+            variant="h5"
+            fontWeight={600}
+            sx={{ mb: 0.5, color: 'secondary.main' }}
+          >
             {policy.title}
           </Typography>
-          <Typography variant="caption" color="text.disabled" sx={{ mb: 4, display: 'block' }}>
+          <Typography
+            variant="caption"
+            color="text.disabled"
+            sx={{ mb: 4, display: 'block' }}
+          >
             {policy.version}
           </Typography>
 
@@ -265,13 +277,15 @@ const PolitiquesPage: React.FC = () => {
                 <Typography
                   variant="body2"
                   color="text.secondary"
-                  sx={{ whiteSpace: 'pre-line', lineHeight: 1.8, textAlign: 'justify' }}
+                  sx={{
+                    whiteSpace: 'pre-line',
+                    lineHeight: 1.8,
+                    textAlign: 'justify',
+                  }}
                 >
                   {section.content}
                 </Typography>
-                {i < policy.sections.length - 1 && (
-                  <Divider sx={{ mt: 3 }} />
-                )}
+                {i < policy.sections.length - 1 && <Divider sx={{ mt: 3 }} />}
               </Box>
             ))}
           </Box>
