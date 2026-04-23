@@ -77,5 +77,66 @@
   "gameCard": {
     "added": "Ajouté !",
     "addToLibrary": "Ajouter à ma bibliothèque"
+  },
+  "gameSearchBar": {
+    "placeholder": "Rechercher un jeu… (ex: Zelda, Mario, Pokemon)",
+    "searching": "Recherche…",
+    "error": "Erreur : {{message}}",
+    "noResults": "Aucun résultat",
+    "seeMore": "Voir plus →"
+  },
+  "gamesGrid": {
+    "empty": "Aucun jeu à afficher."
+  },
+  "genres": {
+    "Action": "Action",
+    "Aventure": "Aventure",
+    "RPG": "RPG",
+    "FPS": "FPS",
+    "TPS": "TPS",
+    "Stratégie": "Stratégie",
+    "Simulation": "Simulation",
+    "Puzzle": "Puzzle",
+    "Course": "Course",
+    "Sport": "Sport",
+    "Hack'n Slash": "Hack'n Slash",
+    "Plateforme": "Plateforme",
+    "Jeu de cartes": "Jeu de cartes"
+  },
+  "header": {
+    "openMenu": "Ouvrir le menu",
+    "langFr": "Français 🇫🇷",
+    "langEn": "English 🇬🇧"
+  },
+  "loginForm": {
+    "title": "Connexion",
+    "switchLabel": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "recaptchaMissing": "Variable VITE_RECAPTCHA_SITE_KEY manquante : le login ne peut pas fonctionner.",
+    "connectWith": "Se connecter avec",
+    "submit": "Se connecter",
+    "submitting": "Connexion...",
+    "noAccount": "Tu n'as pas encore de compte ?",
+    "createAccount": "Créer un compte",
+    "terms": "En vous connectant, vous acceptez nos",
+    "termsLink": "Conditions d'utilisation",
+    "and": "et notre",
+    "privacyLink": "Politique de confidentialité",
+    "errorFillFields": "Veuillez remplir tous les champs.",
+    "errorRecaptchaNotConfigured": "reCAPTCHA non configuré : définissez VITE_RECAPTCHA_SITE_KEY (voir frontend/.env.example).",
+    "errorRecaptcha": "Veuillez valider le reCAPTCHA.",
+    "errorGoogle": "Connexion Google indisponible.",
+    "errorFallback": "Une erreur est survenue."
+  },
+  "matchmakingModal": {
+    "searchTitle": "Recherche de joueurs",
+    "analyzing": "Analyse de la zone...",
+    "searchDescription": "Nous élargissons le périmètre de recherche. Vous pouvez fermer cette fenêtre, nous vous avertirons dès qu'un joueur sera trouvé !",
+    "distance": "À environ {{km}} km",
+    "player": "Joueur #{{id}}",
+    "contact": "Contacter",
+    "minimize": "Réduire en arrière-plan",
+    "cancel": "Annuler la recherche"
   }
 }

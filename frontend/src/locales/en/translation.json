@@ -77,5 +77,66 @@
   "gameCard": {
     "added": "Added!",
     "addToLibrary": "Add to my library"
+  },
+  "gameSearchBar": {
+    "placeholder": "Search for a game… (e.g. Zelda, Mario, Pokemon)",
+    "searching": "Searching…",
+    "error": "Error: {{message}}",
+    "noResults": "No results",
+    "seeMore": "See more →"
+  },
+  "gamesGrid": {
+    "empty": "No games to display."
+  },
+  "genres": {
+    "Action": "Action",
+    "Aventure": "Adventure",
+    "RPG": "RPG",
+    "FPS": "FPS",
+    "TPS": "TPS",
+    "Stratégie": "Strategy",
+    "Simulation": "Simulation",
+    "Puzzle": "Puzzle",
+    "Course": "Racing",
+    "Sport": "Sport",
+    "Hack'n Slash": "Hack'n Slash",
+    "Plateforme": "Platformer",
+    "Jeu de cartes": "Card Game"
+  },
+  "header": {
+    "openMenu": "Open menu",
+    "langFr": "Français 🇫🇷",
+    "langEn": "English 🇬🇧"
+  },
+  "loginForm": {
+    "title": "Log in",
+    "switchLabel": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "recaptchaMissing": "VITE_RECAPTCHA_SITE_KEY missing: login cannot work.",
+    "connectWith": "Log in with",
+    "submit": "Log in",
+    "submitting": "Logging in...",
+    "noAccount": "Don't have an account yet?",
+    "createAccount": "Create an account",
+    "terms": "By logging in, you agree to our",
+    "termsLink": "Terms of Use",
+    "and": "and our",
+    "privacyLink": "Privacy Policy",
+    "errorFillFields": "Please fill in all fields.",
+    "errorRecaptchaNotConfigured": "reCAPTCHA not configured: set VITE_RECAPTCHA_SITE_KEY (see frontend/.env.example).",
+    "errorRecaptcha": "Please validate the reCAPTCHA.",
+    "errorGoogle": "Google login unavailable.",
+    "errorFallback": "An error occurred."
+  },
+  "matchmakingModal": {
+    "searchTitle": "Player search",
+    "analyzing": "Analyzing the area...",
+    "searchDescription": "We are expanding the search perimeter. You can close this window, we will notify you as soon as a player is found!",
+    "distance": "About {{km}} km away",
+    "player": "Player #{{id}}",
+    "contact": "Contact",
+    "minimize": "Minimize to background",
+    "cancel": "Cancel search"
   }
 }
