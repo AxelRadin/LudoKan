@@ -18,6 +18,7 @@ import {
   Tooltip,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
@@ -183,11 +184,6 @@ function validateAvatarFile(file: File): string {
     return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
   return 'Format invalide. JPG, PNG ou WEBP uniquement.';
 }
-
-function jeuPluralSuffix(count: number): string {
-  return count === 1 ? '' : 'x';
-}
-
 type ProfilePageModel = {
   user: UserProfile | null;
   loading: boolean;
@@ -221,6 +217,7 @@ type ProfilePageModel = {
 };
 
 function useProfilePageModel(): ProfilePageModel {
+  const { t } = useTranslation();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
@@ -246,7 +243,6 @@ function useProfilePageModel(): ProfilePageModel {
       const res = await apiGet('/api/auth/steam/login/');
       if (res.auth_url) {
         window.open(res.auth_url, '_blank', 'noopener,noreferrer');
-        // On arrête le spinner vu qu'on ouvre un nouvel onglet
         setSteamBusy(false);
       }
     } catch (err: any) {
@@ -278,9 +274,6 @@ function useProfilePageModel(): ProfilePageModel {
     setSteamBusy(true);
     try {
       await apiPost('/api/sync/steam/', {});
-
-      // La tâche s'exécute en arrière-plan via Celery.
-      // On poll l'API toutes les 3s pour chercher les nouveaux jeux pdt ~30s.
       let polls = 0;
       const pollInterval = setInterval(async () => {
         polls++;
@@ -288,9 +281,8 @@ function useProfilePageModel(): ProfilePageModel {
           const res = await apiGet('/api/me/games/');
           setUserGames(res.results || res || []);
         } catch {
-          // ignore
+          /* ignore */
         }
-
         if (polls >= 10) {
           clearInterval(pollInterval);
           setSteamBusy(false);
@@ -347,7 +339,6 @@ function useProfilePageModel(): ProfilePageModel {
     setEditOpen(false);
     setAvatarError('');
   };
-
   const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -395,11 +386,11 @@ function useProfilePageModel(): ProfilePageModel {
       const updated = await apiPatch('/api/me/', body);
       mergeUpdatedUser(updated);
     } catch (err: unknown) {
-      const msg =
+      setAvatarError(
         err instanceof Error
           ? err.message
-          : 'Impossible de mettre à jour la photo.';
-      setAvatarError(msg);
+          : 'Impossible de mettre à jour la photo.'
+      );
     } finally {
       setAvatarBusy(false);
     }
@@ -416,11 +407,9 @@ function useProfilePageModel(): ProfilePageModel {
       });
       mergeUpdatedUser(updated);
     } catch (err: unknown) {
-      const msg =
-        err instanceof Error
-          ? err.message
-          : 'Impossible de supprimer la photo.';
-      setAvatarError(msg);
+      setAvatarError(
+        err instanceof Error ? err.message : 'Impossible de supprimer la photo.'
+      );
     } finally {
       setAvatarBusy(false);
     }
@@ -442,11 +431,11 @@ function useProfilePageModel(): ProfilePageModel {
       const updated = await apiPatch('/api/me/', body);
       mergeUpdatedUser(updated);
     } catch (err: unknown) {
-      const msg =
+      alert(
         err instanceof Error
           ? err.message
-          : 'Impossible de mettre à jour la bannière.';
-      alert(msg);
+          : 'Impossible de mettre à jour la bannière.'
+      );
     } finally {
       setBannerBusy(false);
     }
@@ -462,11 +451,11 @@ function useProfilePageModel(): ProfilePageModel {
       });
       mergeUpdatedUser(updated);
     } catch (err: unknown) {
-      const msg =
+      alert(
         err instanceof Error
           ? err.message
-          : 'Impossible de supprimer la bannière.';
-      alert(msg);
+          : 'Impossible de supprimer la bannière.'
+      );
     } finally {
       setBannerBusy(false);
     }
@@ -524,7 +513,7 @@ function useProfilePageModel(): ProfilePageModel {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setSnackbar({
       open: true,
-      message: 'Jeu retiré de la bibliothèque.',
+      message: t('profilePage.gameRemoved'),
       isError: false,
     });
     undoTimerRef.current = setTimeout(async () => {
@@ -539,7 +528,7 @@ function useProfilePageModel(): ProfilePageModel {
         });
         setSnackbar({
           open: true,
-          message: 'Impossible de retirer le jeu. Réessayez plus tard.',
+          message: t('profilePage.gameRemoveError'),
           isError: true,
         });
       }
@@ -636,6 +625,8 @@ function ProfileEditDialog({
   onFieldChange,
   onSave,
 }: ProfileEditDialogProps) {
+  const { t } = useTranslation();
+
   return (
     <Dialog
       open={open}
@@ -671,7 +662,7 @@ function ProfileEditDialog({
           px: 3.5,
         }}
       >
-        Modifier mon profil
+        {t('profilePage.editTitle')}
       </DialogTitle>
 
       <DialogContent sx={{ px: 3.5, pt: '16px !important' }}>
@@ -686,13 +677,13 @@ function ProfileEditDialog({
             }}
           >
             <Box sx={{ position: 'relative', width: 90, height: 90 }}>
-              {user?.avatar_url ? (
+              {user?.avatar_url && (
                 <Box
                   component="button"
                   type="button"
                   disabled={avatarBusy}
                   onClick={() => void onAvatarRemove()}
-                  aria-label="Supprimer la photo de profil"
+                  aria-label={t('profilePage.avatarRemoveAriaLabel')}
                   sx={{
                     position: 'absolute',
                     top: 0,
@@ -727,8 +718,7 @@ function ProfileEditDialog({
                     ×
                   </Typography>
                 </Box>
-              ) : null}
-
+              )}
               <Box
                 component="label"
                 sx={{
@@ -787,11 +777,10 @@ function ProfileEditDialog({
                     pointerEvents: 'none',
                   }}
                 >
-                  Changer
+                  {t('profilePage.avatarChangeOverlay')}
                 </Box>
               </Box>
-
-              {avatarBusy ? (
+              {avatarBusy && (
                 <Box
                   sx={{
                     position: 'absolute',
@@ -806,10 +795,9 @@ function ProfileEditDialog({
                 >
                   <CircularProgress size={34} sx={{ color: C.accent }} />
                 </Box>
-              ) : null}
+              )}
             </Box>
-
-            {avatarError ? (
+            {avatarError && (
               <Typography
                 sx={{
                   color: C.accent,
@@ -823,8 +811,7 @@ function ProfileEditDialog({
               >
                 {avatarError}
               </Typography>
-            ) : null}
-
+            )}
             <Typography
               sx={{
                 color: C.muted,
@@ -833,12 +820,12 @@ function ProfileEditDialog({
                 textAlign: 'center',
               }}
             >
-              Clique sur la photo pour changer · JPG, PNG, WEBP · Max 2 MB
+              {t('profilePage.avatarHint')}
             </Typography>
           </Box>
 
           <TextField
-            label="Pseudo"
+            label={t('profilePage.pseudo')}
             name="pseudo"
             fullWidth
             value={form.pseudo}
@@ -846,7 +833,7 @@ function ProfileEditDialog({
             sx={fieldSx}
           />
           <TextField
-            label="Prénom"
+            label={t('profilePage.firstName')}
             name="first_name"
             fullWidth
             value={form.first_name}
@@ -854,7 +841,7 @@ function ProfileEditDialog({
             sx={fieldSx}
           />
           <TextField
-            label="Nom"
+            label={t('profilePage.lastName')}
             name="last_name"
             fullWidth
             value={form.last_name}
@@ -862,7 +849,7 @@ function ProfileEditDialog({
             sx={fieldSx}
           />
           <TextField
-            label="Description"
+            label={t('profilePage.description')}
             name="description_courte"
             fullWidth
             multiline
@@ -889,7 +876,7 @@ function ProfileEditDialog({
             '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
           }}
         >
-          Annuler
+          {t('profilePage.cancel')}
         </Button>
         <Button
           onClick={() => void onSave()}
@@ -912,7 +899,7 @@ function ProfileEditDialog({
             transition: 'all 0.18s ease',
           }}
         >
-          Enregistrer
+          {t('profilePage.save')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -934,6 +921,8 @@ function ProfileIntegrations({
   onSteamDisconnect,
   onSteamSync,
 }: ProfileIntegrationsProps) {
+  const { t } = useTranslation();
+
   return (
     <Box sx={{ mb: 2.5 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -946,7 +935,7 @@ function ProfileIntegrations({
             letterSpacing: -0.3,
           }}
         >
-          Intégrations
+          {t('profilePage.integrationsLabel')}
         </Typography>
         <Box
           sx={{
@@ -956,7 +945,6 @@ function ProfileIntegrations({
           }}
         />
       </Box>
-
       <Paper
         elevation={0}
         sx={{
@@ -986,7 +974,7 @@ function ProfileIntegrations({
             <Typography
               sx={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16 }}
             >
-              Steam
+              {t('profilePage.steamLabel')}
             </Typography>
             <Typography
               sx={{
@@ -996,7 +984,7 @@ function ProfileIntegrations({
                 lineHeight: 1.4,
               }}
             >
-              Importation de ta ludothèque et de tes temps de jeu
+              {t('profilePage.steamDesc')}
             </Typography>
           </Box>
         </Box>
@@ -1018,13 +1006,13 @@ function ProfileIntegrations({
                   fontSize: 13,
                 }}
               >
-                Connecté
+                {t('profilePage.steamConnected')}
               </Typography>
               <Tooltip
                 title={
                   steamBusy
-                    ? "Synchronisation en arrière-plan en cours, vos jeux vont s'actualiser sous peu..."
-                    : 'Re-synchroniser la ludothèque'
+                    ? t('profilePage.steamSyncTooltip')
+                    : t('profilePage.steamSyncTooltipDefault')
                 }
                 arrow
               >
@@ -1045,7 +1033,7 @@ function ProfileIntegrations({
                     {steamBusy ? (
                       <CircularProgress size={20} color="inherit" />
                     ) : (
-                      'Synchroniser'
+                      t('profilePage.steamSync')
                     )}
                   </Button>
                 </span>
@@ -1066,7 +1054,7 @@ function ProfileIntegrations({
                 {steamBusy ? (
                   <CircularProgress size={20} color="inherit" />
                 ) : (
-                  'Déconnecter'
+                  t('profilePage.steamDisconnect')
                 )}
               </Button>
             </>
@@ -1089,7 +1077,7 @@ function ProfileIntegrations({
               {steamBusy ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
-                'Lier Steam'
+                t('profilePage.steamConnect')
               )}
             </Button>
           )}
@@ -1108,7 +1096,9 @@ function ProfileFavoriteGames({
   gamesFavoris,
   removeGame,
 }: ProfileFavoriteGamesProps) {
+  const { t } = useTranslation();
   if (gamesFavoris.length === 0) return null;
+
   return (
     <Paper
       elevation={0}
@@ -1141,7 +1131,7 @@ function ProfileFavoriteGames({
               mb: 0.5,
             }}
           >
-            Sélection
+            {t('profilePage.favoritesLabel')}
           </Typography>
           <Typography
             sx={{
@@ -1152,7 +1142,7 @@ function ProfileFavoriteGames({
               letterSpacing: -0.3,
             }}
           >
-            Coups de cœur ({gamesFavoris.length})
+            {t('profilePage.favoritesTitle', { count: gamesFavoris.length })}
           </Typography>
         </Box>
         <Box
@@ -1172,11 +1162,14 @@ function ProfileFavoriteGames({
               fontWeight: 700,
             }}
           >
-            {gamesFavoris.length} jeu{jeuPluralSuffix(gamesFavoris.length)}
+            {gamesFavoris.length <= 1
+              ? t('profilePage.favoritesCount', { count: gamesFavoris.length })
+              : t('profilePage.favoritesCountPlural', {
+                  count: gamesFavoris.length,
+                })}
           </Typography>
         </Box>
       </Box>
-
       <Box
         sx={{
           height: '1px',
@@ -1184,13 +1177,13 @@ function ProfileFavoriteGames({
           mb: 3,
         }}
       />
-
       <GameList games={gamesFavoris} showStatus={false} onRemove={removeGame} />
     </Paper>
   );
 }
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const {
     user,
     loading,
@@ -1236,17 +1229,17 @@ export default function ProfilePage() {
         minHeight: '100vh',
         fontFamily: FONT_BODY,
         background: `
-          url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
-          radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-          radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
-          ${C.pageBg}
-        `,
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+        radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+        ${C.pageBg}
+      `,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
     >
       <Box sx={{ maxWidth: 1160, mx: 'auto' }}>
-        {/* ── HERO SECTION ── */}
+        {/* HERO */}
         <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
           {loading ? (
             <Box
@@ -1333,7 +1326,7 @@ export default function ProfilePage() {
                   }}
                   sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
                 >
-                  Ajouter une image
+                  {t('profilePage.bannerAdd')}
                 </MenuItem>
                 {user?.banner_url && (
                   <MenuItem
@@ -1347,7 +1340,7 @@ export default function ProfilePage() {
                       setConfirmDeleteBannerOpen(true);
                     }}
                   >
-                    Supprimer l'image
+                    {t('profilePage.bannerDelete')}
                   </MenuItem>
                 )}
               </Menu>
@@ -1358,13 +1351,11 @@ export default function ProfilePage() {
                 PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
               >
                 <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-                  Supprimer la bannière ?
+                  {t('profilePage.bannerConfirmTitle')}
                 </DialogTitle>
                 <DialogContent>
                   <DialogContentText sx={{ fontFamily: FONT_BODY }}>
-                    Es-tu sûr de vouloir supprimer ta bannière de profil ? Cette
-                    action remplacera ton image actuelle par l'image par défaut
-                    de Ludokan et est irréversible.
+                    {t('profilePage.bannerConfirmText')}
                   </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -1372,19 +1363,19 @@ export default function ProfilePage() {
                     onClick={() => setConfirmDeleteBannerOpen(false)}
                     sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
                   >
-                    Annuler
+                    {t('profilePage.cancel')}
                   </Button>
                   <Button
                     color="error"
                     variant="contained"
+                    disableElevation
+                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
                     onClick={() => {
                       setConfirmDeleteBannerOpen(false);
                       handleBannerRemoveNow();
                     }}
-                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
-                    disableElevation
                   >
-                    Supprimer
+                    {t('profilePage.bannerConfirmDelete')}
                   </Button>
                 </DialogActions>
               </Dialog>
@@ -1399,7 +1390,6 @@ export default function ProfilePage() {
             </>
           )}
 
-          {/* Gradient scrim */}
           <Box
             sx={{
               position: 'absolute',
@@ -1410,7 +1400,6 @@ export default function ProfilePage() {
             }}
           />
 
-          {/* Floating profile identity card */}
           <Box
             className="profile-card"
             sx={{
@@ -1525,17 +1514,16 @@ export default function ProfilePage() {
                 }}
               >
                 <SecondaryButton onClick={handleEditOpen}>
-                  Modifier le profil
+                  {t('profilePage.editProfile')}
                 </SecondaryButton>
               </Box>
             </Box>
           </Box>
         </Box>
 
-        {/* spacer for floating card */}
         <Box sx={{ height: { xs: 56, md: 44 } }} />
 
-        {/* ── INFO CARDS ── */}
+        {/* INFO CARDS */}
         <Box
           sx={{
             display: 'grid',
@@ -1560,7 +1548,7 @@ export default function ProfilePage() {
                 fontFamily: FONT_BODY,
               }}
             >
-              À propos
+              {t('profilePage.aboutLabel')}
             </Typography>
             <Typography
               sx={{
@@ -1573,7 +1561,7 @@ export default function ProfilePage() {
                 lineHeight: 1.15,
               }}
             >
-              Profil joueur
+              {t('profilePage.aboutTitle')}
             </Typography>
             <Typography
               sx={{
@@ -1585,8 +1573,7 @@ export default function ProfilePage() {
             >
               {loading
                 ? '...'
-                : user?.description_courte ||
-                  'Ajoute une description pour personnaliser ton profil.'}
+                : user?.description_courte || t('profilePage.aboutEmpty')}
             </Typography>
           </Paper>
 
@@ -1606,7 +1593,7 @@ export default function ProfilePage() {
                 fontFamily: FONT_BODY,
               }}
             >
-              Identité
+              {t('profilePage.identityLabel')}
             </Typography>
             <Typography
               sx={{
@@ -1625,8 +1612,8 @@ export default function ProfilePage() {
                   'N/A'}
             </Typography>
             {[
-              { k: 'Pseudo', v: user?.pseudo },
-              { k: 'Email', v: user?.email },
+              { k: t('profilePage.pseudoLabel'), v: user?.pseudo },
+              { k: t('profilePage.emailLabel'), v: user?.email },
             ].map(({ k, v }) => (
               <Box
                 key={k}
@@ -1688,7 +1675,7 @@ export default function ProfilePage() {
                   fontFamily: FONT_BODY,
                 }}
               >
-                Compte
+                {t('profilePage.accountLabel')}
               </Typography>
               <Typography
                 sx={{
@@ -1701,7 +1688,7 @@ export default function ProfilePage() {
                   lineHeight: 1.15,
                 }}
               >
-                Membre depuis
+                {t('profilePage.memberSince')}
               </Typography>
             </Box>
             <Typography
@@ -1718,7 +1705,7 @@ export default function ProfilePage() {
           </Paper>
         </Box>
 
-        {/* ── STATS ── */}
+        {/* STATS */}
         <Box sx={{ mb: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
             <Typography
@@ -1730,7 +1717,7 @@ export default function ProfilePage() {
                 letterSpacing: -0.3,
               }}
             >
-              Informations
+              {t('profilePage.infoLabel')}
             </Typography>
             <Box
               sx={{
@@ -1748,10 +1735,18 @@ export default function ProfilePage() {
             }}
           >
             {[
-              { label: 'Prénom', value: user?.first_name, cls: 'stat-card-0' },
-              { label: 'Nom', value: user?.last_name, cls: 'stat-card-1' },
               {
-                label: 'Inscrit le',
+                label: t('profilePage.firstNameLabel'),
+                value: user?.first_name,
+                cls: 'stat-card-0',
+              },
+              {
+                label: t('profilePage.lastNameLabel'),
+                value: user?.last_name,
+                cls: 'stat-card-1',
+              },
+              {
+                label: t('profilePage.registeredLabel'),
                 value: user?.created_at
                   ? new Date(user.created_at).toLocaleDateString('fr-FR')
                   : null,
@@ -1800,7 +1795,8 @@ export default function ProfilePage() {
                   sx={{
                     fontFamily: FONT_DISPLAY,
                     color: C.title,
-                    fontSize: label === 'Inscrit le' ? 22 : 28,
+                    fontSize:
+                      label === t('profilePage.registeredLabel') ? 22 : 28,
                     fontWeight: 900,
                     letterSpacing: -0.4,
                   }}
@@ -1812,7 +1808,6 @@ export default function ProfilePage() {
           </Box>
         </Box>
 
-        {/* ── INTÉGRATIONS ── */}
         <ProfileIntegrations
           steam_id={user?.steam_id}
           steamBusy={steamBusy}
@@ -1821,13 +1816,12 @@ export default function ProfilePage() {
           onSteamSync={handleSteamSync}
         />
 
-        {/* ── COUPS DE CŒUR ── */}
         <ProfileFavoriteGames
           gamesFavoris={gamesFavoris}
           removeGame={removeGame}
         />
 
-        {/* ── LIBRARY ── */}
+        {/* LIBRARY */}
         <Paper
           elevation={0}
           className="lib-section"
@@ -1859,7 +1853,7 @@ export default function ProfilePage() {
                   mb: 0.5,
                 }}
               >
-                Bibliothèque
+                {t('profilePage.libraryLabel')}
               </Typography>
               <Typography
                 sx={{
@@ -1870,7 +1864,7 @@ export default function ProfilePage() {
                   letterSpacing: -0.3,
                 }}
               >
-                Jeux par statut
+                {t('profilePage.libraryTitle')}
               </Typography>
             </Box>
             <Box
@@ -1890,8 +1884,11 @@ export default function ProfilePage() {
                   fontWeight: 700,
                 }}
               >
-                {userGames.length} jeu{jeuPluralSuffix(userGames.length)} au
-                total
+                {userGames.length <= 1
+                  ? t('profilePage.libraryTotal', { count: userGames.length })
+                  : t('profilePage.libraryTotalPlural', {
+                      count: userGames.length,
+                    })}
               </Typography>
             </Box>
           </Box>
@@ -1904,9 +1901,9 @@ export default function ProfilePage() {
           />
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {[
-              { games: gamesEnCours, label: 'En cours' },
-              { games: gamesTermines, label: 'Terminés' },
-              { games: gamesEnvie, label: "Envie d'y jouer" },
+              { games: gamesEnCours, label: t('profilePage.statusPlaying') },
+              { games: gamesTermines, label: t('profilePage.statusDone') },
+              { games: gamesEnvie, label: t('profilePage.statusWishlist') },
             ].map(({ games, label }) => (
               <GameList
                 key={label}
@@ -1932,7 +1929,7 @@ export default function ProfilePage() {
           action={
             snackbar.isError ? undefined : (
               <Button color="inherit" size="small" onClick={handleUndo}>
-                Annuler
+                {t('profilePage.undoLabel')}
               </Button>
             )
           }
