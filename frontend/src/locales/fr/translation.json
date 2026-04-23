@@ -351,5 +351,40 @@
     "steamConnectError": "Erreur: Impossible de se connecter à Steam",
     "steamDisconnectError": "Erreur: Impossible de déconnecter le compte Steam",
     "saveError": "Erreur : "
+  },
+  "about": {
+    "heroTitle": "Votre univers gaming,",
+    "heroTitleAccent": "maîtrisé.",
+    "heroSubtitle": "Ludokan est une bibliothèque de jeux vidéo personnalisable conçue pour aider les joueurs à découvrir, explorer et partager leurs expériences de jeu.",
+    "missionLabel": "Notre mission",
+    "missionTitle": "Centraliser, découvrir, partager.",
+    "missionDesc": "La plateforme centralise un vaste catalogue de jeux, propose des recommandations intelligentes et facilite la gestion de votre collection personnelle. Grâce à des outils de recherche avancés, un système de matchmaking et des fonctionnalités sociales, Ludokan crée un véritable espace communautaire autour du jeu vidéo.",
+    "visionLabel": "Notre vision",
+    "visionTitle": "Un espace pour chaque joueur.",
+    "visionDesc": "Nous pensons que chaque joueur mérite un espace qui lui ressemble. Que vous soyez un joueur occasionnel ou un gamer passionné, Ludokan s’adapte à vos habitudes et vous connecte à une communauté qui partage votre passion. Notre ambition : faire de Ludokan la référence en matière de gestion de collections de jeux vidéo.",
+    "ctaTitleAuth": "Bienvenue sur Ludokan !",
+    "ctaTitleGuest": "Prêt à rejoindre la communauté ?",
+    "ctaDescAuth": "Retrouvez votre collection et continuez à explorer.",
+    "ctaDescGuest": "Créez votre compte gratuitement et commencez à gérer votre collection dès aujourd’hui.",
+    "ctaBtnAuth": "Mon profil",
+    "ctaBtnGuest": "Rejoindre Ludokan",
+    "feature1Title": "Catalogue immense",
+    "feature1Desc": "Des milliers de jeux centralisés grâce aux données IGDB, avec jaquettes, descriptions et informations détaillées.",
+    "feature2Title": "Recherche avancée",
+    "feature2Desc": "Filtrez par genre, plateforme, note ou date de sortie. Trouvez exactement ce que vous cherchez en quelques secondes.",
+    "feature3Title": "Matchmaking",
+    "feature3Desc": "Trouvez des joueurs qui partagent vos goûts et habitudes de jeu grâce à notre système de matchmaking.",
+    "feature4Title": "Votre collection",
+    "feature4Desc": "Gérez et personnalisez votre bibliothèque. Marquez vos jeux comme en cours, terminés ou dans votre liste de souhaits."
+  },
+  "franchise": {
+    "page": "Page {{page}}",
+    "back": "← Retour",
+    "loading": "Chargement…",
+    "error": "Erreur : {{message}}",
+    "empty": "Aucun jeu trouvé.",
+    "release": "Sortie : {{date}}",
+    "prev": "← Précédent",
+    "next": "Suivant →"
   }
 }
