@@ -7,6 +7,7 @@ import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { startGoogleLogin } from '../auth/googleOAuth';
+import { startSteamLogin } from '../auth/steamAuth';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
@@ -88,6 +89,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
+  const handleSteamClick = async () => {
+    setError(null);
+    try {
+      await startSteamLogin();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Connexion Steam indisponible.'
+      );
+    }
+  };
+
   return (
     <AuthFormContainer
       title="Connexion"
@@ -135,9 +147,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 
         <Stack direction="row" spacing={3} mt={1.5}>
           <SocialLoginButton icon="google" onClick={handleGoogleClick} />
+          <SocialLoginButton icon="steam" onClick={handleSteamClick} />
           <SocialLoginButton icon="apple" />
           <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
         </Stack>
 
         <PrimaryButton

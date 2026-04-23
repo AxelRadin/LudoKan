@@ -4,11 +4,13 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
 const SteamCallbackPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { setAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
 
@@ -33,6 +35,8 @@ const SteamCallbackPage: React.FC = () => {
 
       try {
         await apiPost('/api/auth/steam/callback/', params);
+        // Authentifie l'utilisateur dans le store React
+        setAuthenticated(true);
         // Redirection vers le profil après succès
         navigate('/profile', { replace: true });
       } catch (err: unknown) {
@@ -43,7 +47,7 @@ const SteamCallbackPage: React.FC = () => {
     };
 
     void run();
-  }, [navigate, location.search]);
+  }, [navigate, location.search, setAuthenticated]);
 
   if (error) {
     return (

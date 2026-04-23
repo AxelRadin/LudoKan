@@ -4,6 +4,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { startGoogleLogin } from '../auth/googleOAuth';
+import { startSteamLogin } from '../auth/steamAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
@@ -64,6 +65,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     }
   };
 
+  const handleSteamClick = async () => {
+    setError(null);
+    try {
+      await startSteamLogin();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : 'Connexion Steam indisponible.'
+      );
+    }
+  };
+
   return (
     <AuthFormContainer
       title="Inscription"
@@ -112,9 +124,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
         <Stack direction="row" spacing={3} mt={1.5}>
           <SocialLoginButton icon="google" onClick={handleGoogleClick} />
+          <SocialLoginButton icon="steam" onClick={handleSteamClick} />
           <SocialLoginButton icon="apple" />
           <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
         </Stack>
 
         <PrimaryButton

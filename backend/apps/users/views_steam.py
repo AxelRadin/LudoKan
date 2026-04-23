@@ -1,29 +1,34 @@
+import logging
 import re
 from urllib.parse import urlencode, urlparse
 
 import requests
+from dj_rest_auth.jwt_auth import set_jwt_cookies
+from dj_rest_auth.utils import jwt_encode
 from django.conf import settings
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.library.tasks import sync_steam_library_task
-from apps.users.models import SteamProfile
+from apps.users.models import CustomUser, SteamProfile
+
+logger = logging.getLogger(__name__)
 
 
 class SteamLoginInitiateView(APIView):
     """
     Initie le flux OpenID pour Steam.
-    Renvoie l'URL vers laquelle le frontend doit rediriger l'utilisateur.
+    Permet à tous les utilisateurs (authentifiés ou non) de commencer le processus.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @extend_schema(
         summary="Initier la connexion Steam",
-        description="Génère l'URL d'authentification OpenID de Steam pour lier le compte utilisateur.",
+        description="Génère l'URL d'authentification OpenID de Steam pour (se) lier/connecter.",
         responses={
             200: inline_serializer(
                 name="SteamAuthUrlResponse",
@@ -32,11 +37,8 @@ class SteamLoginInitiateView(APIView):
         },
     )
     def get(self, request, *args, **kwargs):
-        # Base OpenID paramaters for Steam
         steam_openid_url = "https://steamcommunity.com/openid/login"
 
-        # Le callback sera géré côté frontend ou backend selon l'archi.
-        # On utilise le return_to de nos settings.
         return_to = settings.STEAM_REDIRECT_URL
         if not return_to:
             return Response(
@@ -44,8 +46,6 @@ class SteamLoginInitiateView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        # Extraction du domaine (realm) à partir de return_to pour Steam
-        # Le realm est en général 'https://domaine.com'
         parsed = urlparse(return_to)
         realm = f"{parsed.scheme}://{parsed.netloc}"
 
@@ -65,14 +65,17 @@ class SteamLoginInitiateView(APIView):
 class SteamLoginCallbackView(APIView):
     """
     Finalise l'authentification OpenID de Steam.
-    Vérifie la réponse de Steam et lie le SteamID à l'utilisateur.
+    Vérifie la réponse de Steam et connecte ou inscrit l'utilisateur.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @extend_schema(
         summary="Finaliser la connexion Steam",
-        description="Vérifie la signature OpenID envoyée par Steam et lie le compte SteamID64 à l'utilisateur.",
+        description=(
+            "Vérifie la signature OpenID envoyée par Steam. Si l'utilisateur n'existe pas, "
+            "un compte est créé. Renvoie les tokens JWT et déclenche la synchronisation."
+        ),
         request=inline_serializer(
             name="SteamCallbackRequest",
             fields={"openid_params": serializers.DictField()},
@@ -80,7 +83,10 @@ class SteamLoginCallbackView(APIView):
         responses={
             200: inline_serializer(
                 name="SteamCallbackResponse",
-                fields={"steam_id": serializers.CharField()},
+                fields={
+                    "steam_id": serializers.CharField(),
+                    "user_id": serializers.IntegerField(),
+                },
             ),
             400: {"description": "Validation OpenID échouée ou paramètres manquants."},
         },
@@ -125,16 +131,51 @@ class SteamLoginCallbackView(APIView):
 
         steam_id = match.group(1)
 
-        # 3. Liaison avec l'utilisateur
-        SteamProfile.objects.update_or_create(
-            user=request.user,
-            defaults={"steam_id": steam_id},
-        )
+        # 3. Récupération ou création de l'utilisateur
+        steam_profile = SteamProfile.objects.filter(steam_id=steam_id).first()
+        created = False
 
-        # 4. Lancer la synchronisation initiale en arrière-plan
-        sync_steam_library_task.delay(request.user.id)
+        if steam_profile:
+            user = steam_profile.user
+        else:
+            # Si l'utilisateur est déjà authentifié, on lie simplement le compte
+            if request.user.is_authenticated:
+                user = request.user
+            else:
+                # Création d'un nouvel utilisateur si non connecté
+                fake_email = f"steam_{steam_id}@steam.ludokan.internal"
+                user = CustomUser.objects.create_user(email=fake_email)
+                created = True
 
-        return Response({"steam_id": steam_id}, status=status.HTTP_200_OK)
+            SteamProfile.objects.create(user=user, steam_id=steam_id)
+
+        # 4. Génération des tokens JWT
+        access_token, refresh_token = jwt_encode(user)
+
+        # 5. Lancer la synchronisation initiale en arrière-plan
+        sync_steam_library_task.delay(user.id)
+
+        logger.info(f"SteamAuth: Utilisateur {'créé' if created else 'connecté'} ({user.pseudo}, SteamID: {steam_id})")
+
+        # 6. Renvoyer la réponse avec les cookies de session JWT
+
+        from dj_rest_auth.app_settings import api_settings
+
+        UserDetailsSerializer = api_settings.USER_DETAILS_SERIALIZER
+
+        serializer = UserDetailsSerializer(user, context={"request": request})
+        res_data = {
+            "steam_id": steam_id,
+            "user": serializer.data,
+        }
+
+        # Use token string format for older versions or pass directly for newer ones.
+        res = Response(res_data, status=status.HTTP_200_OK)
+        # Assuming dj-rest-auth standard behaviour (set_jwt_cookies does not strictly require request for standard case but wait)
+        # Django Rest Auth's set_jwt_cookies expects (response, access_token, refresh_token)
+        set_jwt_cookies(res, access_token, refresh_token)
+
+        return res
 
 
 class SteamDisconnectView(APIView):
