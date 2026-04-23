@@ -160,7 +160,6 @@ class SteamLoginCallbackViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data.get("is_new_user"))
         # Verify user was created with steam profile name
-        from apps.users.models import CustomUser
 
         user = CustomUser.objects.filter(steam_profile__steam_id="99999999999").first()
         self.assertIsNotNone(user)
@@ -173,7 +172,6 @@ class SteamLoginCallbackViewTest(APITestCase):
         If a fake-email user with the same steam ID exists but no SteamProfile,
         the existing user is reused instead of creating a new one (no IntegrityError).
         """
-        from apps.users.models import CustomUser
 
         steam_id = "11111111111"
         fake_email = f"steam_{steam_id}@steam.ludokan.internal"
@@ -245,7 +243,6 @@ class SteamLoginCallbackViewTest(APITestCase):
         L174-175: Test that pseudo conflict with an existing user is resolved
         by adding a suffix.
         """
-        from apps.users.models import CustomUser
 
         # Create a user with the pseudo "SteamUser"
         CustomUser.objects.create_user(email="other@example.com", pseudo="SteamUser")
