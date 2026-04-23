@@ -271,6 +271,7 @@ class TestUserSerializer:
 
         with pytest.raises(ValidationError):
             serializer.validate_email(user.email)
+
     @pytest.mark.django_db
     def test_roles_empty_for_regular_user(self, user):
         serializer = UserSerializer(instance=user)
