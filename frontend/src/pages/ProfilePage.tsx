@@ -1262,7 +1262,6 @@ export default function ProfilePage() {
     handleSteamDisconnect,
     handleSteamSync,
     askEmailOpen,
-    setAskEmailOpen,
     handleEmailSave,
   } = useProfilePageModel();
 
@@ -1987,17 +1986,16 @@ export default function ProfilePage() {
 
       <Dialog
         open={askEmailOpen}
-        onClose={() => setAskEmailOpen(false)}
         PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+        disableEscapeKeyDown
       >
         <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
           Finaliser votre inscription
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2, fontFamily: FONT_BODY }}>
-            Bienvenue sur LudoKan ! Nous vous avons rattaché une adresse fictive
-            par défaut. Si vous le souhaitez, vous pouvez renseigner votre
-            véritable adresse e-mail.
+            Bienvenue sur LudoKan ! Pour finaliser votre inscription, veuillez
+            renseigner votre adresse e-mail.
           </Typography>
           <TextField
             fullWidth
@@ -2009,12 +2007,6 @@ export default function ProfilePage() {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            onClick={() => setAskEmailOpen(false)}
-            sx={{ fontFamily: FONT_BODY }}
-          >
-            Plus tard
-          </Button>
           <Button
             onClick={async () => {
               try {

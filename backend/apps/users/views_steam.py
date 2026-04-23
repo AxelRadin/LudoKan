@@ -152,26 +152,37 @@ class SteamLoginCallbackView(APIView):
 
             SteamProfile.objects.create(user=user, steam_id=steam_id)
 
-            if is_new_user:
-                try:
-                    summary_res = requests.get(
-                        "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/",
-                        params={"key": settings.STEAM_API_KEY, "steamids": steam_id},
-                        timeout=10,
-                    )
-                    if summary_res.status_code == 200:
-                        players = summary_res.json().get("response", {}).get("players", [])
-                        if players:
-                            player = players[0]
-                            user.pseudo = player.get("personaname", user.pseudo)
-                            user.avatar_url = player.get("avatarfull", user.avatar_url)
-
-                            # Update email with pseudo format
+        # Déterminer si on doit récupérer les infos Steam : nouveau compte
+        # OU email encore temporaire (compte créé lors d'une session précédente)
+        email_is_temporary = user.email.endswith("@steam.ludokan.internal") or user.email.endswith("@mailtemporaire.ludokan.internal")
+        if is_new_user or email_is_temporary:
+            try:
+                summary_res = requests.get(
+                    "https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/",
+                    params={"key": settings.STEAM_API_KEY, "steamids": steam_id},
+                    timeout=10,
+                )
+                if summary_res.status_code == 200:
+                    players = summary_res.json().get("response", {}).get("players", [])
+                    if players:
+                        player = players[0]
+                        base_pseudo = player.get("personaname", user.pseudo)
+                        # Garantir l'unicité du pseudo
+                        pseudo_candidate = base_pseudo
+                        counter = 1
+                        while CustomUser.objects.exclude(pk=user.pk).filter(pseudo=pseudo_candidate).exists():
+                            pseudo_candidate = f"{base_pseudo}_{counter}"
+                            counter += 1
+                        user.pseudo = pseudo_candidate
+                        user.avatar_url = player.get("avatarfull", user.avatar_url)
+                        fields_to_save = ["pseudo", "avatar_url"]
+                        if email_is_temporary:
                             sanitized = re.sub(r"[^a-zA-Z0-9.\-_]", "", user.pseudo).lower()
                             user.email = f"{sanitized or 'steam'}@mailtemporaire.ludokan.internal"
-                            user.save(update_fields=["pseudo", "avatar_url", "email"])
-                except Exception as e:
-                    logger.error(f"Failed to fetch Steam profile summary for user {user.id}: {e}")
+                            fields_to_save.append("email")
+                        user.save(update_fields=fields_to_save)
+            except Exception as e:
+                logger.error(f"Failed to fetch Steam profile summary for user {user.id}: {e}")
 
         # 4. Génération des tokens JWT
         access_token, refresh_token = jwt_encode(user)

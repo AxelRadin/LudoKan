@@ -89,8 +89,8 @@ class UserSerializer(serializers.ModelSerializer):
             "roles",
             "is_superuser",
         ]
-        read_only_fields = ["id", "created_at", "email", "steam_id", "roles", "is_superuser"]
-        
+        read_only_fields = ["id", "created_at", "steam_id", "roles", "is_superuser"]
+
     def validate_email(self, value):
         request = self.context.get("request")
         user = getattr(request, "user", None) if request is not None else None
