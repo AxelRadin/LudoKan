@@ -15,6 +15,7 @@ import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
@@ -32,6 +33,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
+  const { t, i18n } = useTranslation();
   const {
     isAuthenticated,
     setAuthenticated,
@@ -44,7 +46,11 @@ export const Header: React.FC = () => {
   } = useAuth();
   const [isDrawerOpen, setDrawerOpen] = useState(false);
   const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md')); // md is 900px
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+
+  const toggleLang = () => {
+    i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
+  };
 
   const handleLoginOpen = () => {
     setAuthMode('login');
@@ -76,31 +82,34 @@ export const Header: React.FC = () => {
 
   const desktopActions = (
     <>
-      <IconButton color="inherit">
+      <IconButton color="inherit" onClick={toggleLang} sx={{ gap: 0.5 }}>
         <LanguageIcon />
+        <Typography variant="caption" sx={{ fontWeight: 600 }}>
+          {i18n.language === 'fr' ? 'FR' : 'EN'}
+        </Typography>
       </IconButton>
       {isAuthenticated ? (
         <>
           {isProfilePage ? (
             <Button color="inherit" component={Link} to="/">
-              Accueil
+              {t('nav.home')}
             </Button>
           ) : (
             <Button color="inherit" component={Link} to="/profile">
-              Profile
+              {t('nav.profile')}
             </Button>
           )}
           <Button color="inherit" onClick={handleLogout}>
-            Se déconnecter
+            {t('nav.logout')}
           </Button>
         </>
       ) : (
         <>
           <Button color="inherit" onClick={handleLoginOpen}>
-            Se connecter
+            {t('nav.login')}
           </Button>
           <SecondaryButton onClick={handleRegisterOpen}>
-            S’inscrire
+            {t('nav.register')}
           </SecondaryButton>
         </>
       )}
@@ -119,7 +128,7 @@ export const Header: React.FC = () => {
               navigate(isProfilePage ? '/' : '/profile');
             }}
           >
-            {isProfilePage ? 'Accueil' : 'Profile'}
+            {isProfilePage ? t('nav.home') : t('nav.profile')}
           </Button>
           <Button
             variant="contained"
@@ -127,13 +136,13 @@ export const Header: React.FC = () => {
             fullWidth
             onClick={handleLogout}
           >
-            Se déconnecter
+            {t('nav.logout')}
           </Button>
         </>
       ) : (
         <>
           <Button variant="outlined" fullWidth onClick={handleLoginOpen}>
-            Se connecter
+            {t('nav.login')}
           </Button>
           <Button
             variant="contained"
@@ -141,12 +150,17 @@ export const Header: React.FC = () => {
             fullWidth
             onClick={handleRegisterOpen}
           >
-            S’inscrire
+            {t('nav.register')}
           </Button>
         </>
       )}
-      <Button startIcon={<LanguageIcon />} fullWidth variant="text">
-        Langue
+      <Button
+        startIcon={<LanguageIcon />}
+        fullWidth
+        variant="text"
+        onClick={toggleLang}
+      >
+        {i18n.language === 'fr' ? 'Français 🇫🇷' : 'English 🇬🇧'}
       </Button>
     </Box>
   );
@@ -241,11 +255,7 @@ export const Header: React.FC = () => {
             <CloseIcon />
           </IconButton>
         </Box>
-        <Box
-          onClick={() => {
-            // Need to allow SeachBar inputs, so don't close Drawer on pure Box clicks
-          }}
-        >
+        <Box>
           <Box mb={4}>
             <SearchBar />
           </Box>
