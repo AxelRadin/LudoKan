@@ -2,21 +2,16 @@ import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
 import { useEffect, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { fetchTrendingGamesWithCount } from '../api/igdb';
 import GamesGrid from '../components/GamesGrid';
 import PageLayout from '../components/PageLayout';
 import type { NormalizedGame } from '../types/game';
 
-const SORT_TITLES: Record<string, string> = {
-  rating: 'Jeux les mieux notés',
-  popularity: 'Jeux les plus populaires',
-  recent: 'Jeux les plus récents',
-  most_rated: 'Jeux les plus notés',
-};
-
 const PAGE_SIZE = 25;
 
 export default function TrendingCategoryPage() {
+  const { t } = useTranslation();
   const { sort, genreId } = useParams<{ sort?: string; genreId?: string }>();
   const location = useLocation();
   const state = location.state as { genreName?: string } | null;
@@ -27,9 +22,17 @@ export default function TrendingCategoryPage() {
   const [totalCount, setTotalCount] = useState(0);
 
   const isGenre = genreId != null;
+
+  const SORT_TITLES: Record<string, string> = {
+    rating: t('trendingCategory.rating'),
+    popularity: t('trendingCategory.popularity'),
+    recent: t('trendingCategory.recent'),
+    most_rated: t('trendingCategory.mostRated'),
+  };
+
   const title = isGenre
     ? (state?.genreName ?? `Genre #${genreId}`)
-    : ((sort && SORT_TITLES[sort]) ?? 'Jeux tendances');
+    : ((sort && SORT_TITLES[sort]) ?? t('trendingCategory.default'));
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -42,7 +45,6 @@ export default function TrendingCategoryPage() {
     const controller = new AbortController();
     setLoading(true);
     const offset = (page - 1) * PAGE_SIZE;
-
     const sortKey = isGenre ? 'popularity' : (sort ?? 'popularity');
     const genreArg = isGenre ? Number(genreId) : undefined;
 
@@ -60,9 +62,7 @@ export default function TrendingCategoryPage() {
         }
       })
       .catch(() => {
-        if (!controller.signal.aborted) {
-          setGames([]);
-        }
+        if (!controller.signal.aborted) setGames([]);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -76,7 +76,7 @@ export default function TrendingCategoryPage() {
       <GamesGrid
         games={games}
         loading={loading}
-        emptyMessage="Aucun jeu dans cette catégorie."
+        emptyMessage={t('trendingCategory.empty')}
       />
       {!loading && totalPages > 1 && (
         <Box mt={5} display="flex" justifyContent="center">

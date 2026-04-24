@@ -4,46 +4,44 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { apiPost } from '../services/api';
 
 const SteamCallbackPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
 
   useEffect(() => {
-    if (exchangeStarted.current) {
-      return;
-    }
+    if (exchangeStarted.current) return;
     exchangeStarted.current = true;
 
     const run = async () => {
       const searchParams = new URLSearchParams(location.search);
       const params: Record<string, string> = {};
-
       searchParams.forEach((value, key) => {
         params[key] = value;
       });
 
       if (Object.keys(params).length === 0) {
-        setError('Aucun paramètre Steam reçu.');
+        setError(t('steamCallback.errorNoParams'));
         return;
       }
 
       try {
         await apiPost('/api/auth/steam/callback/', params);
-        // Redirection vers le profil après succès
         navigate('/profile', { replace: true });
       } catch (err: unknown) {
         const message =
-          err instanceof Error ? err.message : 'Échec de la connexion Steam';
+          err instanceof Error ? err.message : t('steamCallback.errorFallback');
         setError(message);
       }
     };
 
     void run();
-  }, [navigate, location.search]);
+  }, [navigate, location.search, t]);
 
   if (error) {
     return (
@@ -61,7 +59,7 @@ const SteamCallbackPage: React.FC = () => {
               textDecoration: 'underline',
             }}
           >
-            Retour au profil
+            {t('steamCallback.backToProfile')}
           </Typography>
         </Box>
       </Box>
@@ -84,10 +82,10 @@ const SteamCallbackPage: React.FC = () => {
       <CircularProgress size={60} thickness={4} />
       <Box sx={{ textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>
-          Liaison avec Steam en cours
+          {t('steamCallback.loadingTitle')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Veuillez patienter pendant que nous finalisons la connexion...
+          {t('steamCallback.loadingDesc')}
         </Typography>
       </Box>
     </Box>

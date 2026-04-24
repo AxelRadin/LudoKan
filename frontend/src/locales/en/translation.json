@@ -386,5 +386,44 @@
     "steamConnectError": "Error: Unable to connect to Steam",
     "steamDisconnectError": "Error: Unable to disconnect Steam account",
     "saveError": "Error: "
+  },
+  "searchResults": {
+    "title": "Results for: « {{query}} »",
+    "filterBy": "Filter by license:",
+    "series": "{{name}} (Series)",
+    "showAll": "✕ Show all",
+    "franchise": "License",
+    "collection": "Series",
+    "empty": "No games found for « {{query}} »."
+  },
+  "searchGames": {
+    "title": "Game search (IGDB)",
+    "placeholder": "E.g.: Zelda, Pokemon, Mario...",
+    "loading": "Searching…",
+    "error": "Error: {{message}}"
+  },
+  "searchSuggestions": {
+    "title": "Search with suggestions",
+    "selectionTitle": "Selection:"
+  },
+  "steamCallback": {
+    "loadingTitle": "Linking with Steam",
+    "loadingDesc": "Please wait while we finalize the connection...",
+    "errorNoParams": "No Steam parameters received.",
+    "errorFallback": "Steam login failed",
+    "backToProfile": "Back to profile"
+  },
+  "testSentry": {
+    "title": "Sentry test page",
+    "desc": "Click to generate an error captured by Sentry.",
+    "btn": "Trigger an error"
+  },
+  "trendingCategory": {
+    "rating": "Top rated games",
+    "popularity": "Most popular games",
+    "recent": "Most recent games",
+    "mostRated": "Most rated games",
+    "default": "Trending games",
+    "empty": "No games in this category."
   }
 }

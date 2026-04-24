@@ -386,5 +386,44 @@
     "release": "Sortie : {{date}}",
     "prev": "← Précédent",
     "next": "Suivant →"
+  },
+  "searchResults": {
+    "title": "Résultats pour : « {{query}} »",
+    "filterBy": "Filtrer par licence :",
+    "series": "{{name}} (Série)",
+    "showAll": "✕ Tout afficher",
+    "franchise": "Licence",
+    "collection": "Série",
+    "empty": "Aucun jeu trouvé pour « {{query}} »."
+  },
+  "searchGames": {
+    "title": "Recherche de jeux (IGDB)",
+    "placeholder": "Ex: Zelda, Pokemon, Mario...",
+    "loading": "Recherche…",
+    "error": "Erreur : {{message}}"
+  },
+  "searchSuggestions": {
+    "title": "Recherche avec suggestions",
+    "selectionTitle": "Sélection :"
+  },
+  "steamCallback": {
+    "loadingTitle": "Liaison avec Steam en cours",
+    "loadingDesc": "Veuillez patienter pendant que nous finalisons la connexion...",
+    "errorNoParams": "Aucun paramètre Steam reçu.",
+    "errorFallback": "Échec de la connexion Steam",
+    "backToProfile": "Retour au profil"
+  },
+  "testSentry": {
+    "title": "Page de test Sentry",
+    "desc": "Cliquez pour générer une erreur capturée par Sentry.",
+    "btn": "Déclencher une erreur"
+  },
+  "trendingCategory": {
+    "rating": "Jeux les mieux notés",
+    "popularity": "Jeux les plus populaires",
+    "recent": "Jeux les plus récents",
+    "mostRated": "Jeux les plus notés",
+    "default": "Jeux tendances",
+    "empty": "Aucun jeu dans cette catégorie."
   }
 }

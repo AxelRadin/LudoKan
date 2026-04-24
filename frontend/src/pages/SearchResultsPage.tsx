@@ -4,6 +4,7 @@ import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   fetchCollectionGames,
   fetchFranchiseGames,
@@ -18,11 +19,11 @@ import PageLayout from '../components/PageLayout';
 const PAGE_SIZE = 25;
 
 export default function SearchResultsPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
 
   const [franchises, setFranchises] = useState<FranchiseResult[]>([]);
-  // null = texte libre, objet = filtre par licence/collection
   const [selected, setSelected] = useState<FranchiseResult | null>(null);
   const [games, setGames] = useState<IgdbGame[]>([]);
   const [page, setPage] = useState(1);
@@ -30,7 +31,6 @@ export default function SearchResultsPage() {
   const [hasMore, setHasMore] = useState(false);
   const prevQuery = useRef('');
 
-  // Quand le query change : reset + fetch licences en arrière-plan
   useEffect(() => {
     if (!query) return;
     if (prevQuery.current !== query) {
@@ -38,14 +38,12 @@ export default function SearchResultsPage() {
       setSelected(null);
       setFranchises([]);
       setPage(1);
-      // Recherche les franchises/collections en background (pas bloquant)
       searchFranchisesAndCollections(query)
         .then(results => setFranchises(results))
         .catch(() => {});
     }
   }, [query]);
 
-  // Fetch des jeux : dès que query/selected/page change
   useEffect(() => {
     if (!query) return;
     const offset = (page - 1) * PAGE_SIZE;
@@ -63,10 +61,8 @@ export default function SearchResultsPage() {
 
     fetcher
       .then(data => {
-        // Si la licence/collection ne retourne rien, revenir à la recherche textuelle
-        if (data.length === 0 && selected) {
+        if (data.length === 0 && selected)
           return searchGamesPage(query, PAGE_SIZE, offset);
-        }
         return data;
       })
       .then(data => {
@@ -85,17 +81,20 @@ export default function SearchResultsPage() {
   };
 
   return (
-    <PageLayout title={<>Résultats pour : «&nbsp;{query}&nbsp;»</>}>
-      {/* Chips licences/collections */}
+    <PageLayout title={<>{t('searchResults.title', { query })}</>}>
       {franchises.length > 0 && (
         <Box mb={3} display="flex" gap={1} flexWrap="wrap" alignItems="center">
           <Typography variant="body2" color="text.secondary" mr={1}>
-            Filtrer par licence :
+            {t('searchResults.filterBy')}
           </Typography>
           {franchises.map(f => (
             <Chip
               key={`${f.type}-${f.id}`}
-              label={f.type === 'collection' ? `${f.name} (Série)` : f.name}
+              label={
+                f.type === 'collection'
+                  ? t('searchResults.series', { name: f.name })
+                  : f.name
+              }
               onClick={() => handleSelect(f)}
               color={
                 selected?.id === f.id && selected?.type === f.type
@@ -108,7 +107,7 @@ export default function SearchResultsPage() {
           ))}
           {selected && (
             <Chip
-              label="✕ Tout afficher"
+              label={t('searchResults.showAll')}
               onClick={() => {
                 setSelected(null);
                 setPage(1);
@@ -122,15 +121,17 @@ export default function SearchResultsPage() {
 
       {selected && (
         <Typography variant="subtitle2" color="text.secondary" mb={2}>
-          {selected.type === 'franchise' ? 'Licence' : 'Série'} :{' '}
-          <strong>{selected.name}</strong>
+          {selected.type === 'franchise'
+            ? t('searchResults.franchise')
+            : t('searchResults.collection')}{' '}
+          : <strong>{selected.name}</strong>
         </Typography>
       )}
 
       <GamesGrid
         games={games}
         loading={loading}
-        emptyMessage={`Aucun jeu trouvé pour « ${query} ».`}
+        emptyMessage={t('searchResults.empty', { query })}
       />
 
       {!loading && (page > 1 || hasMore) && (
