@@ -5,6 +5,8 @@ import {
   Button,
   Dialog,
   Drawer,
+  Menu,
+  MenuItem,
   useMediaQuery,
   useTheme,
   Typography,
@@ -18,7 +20,6 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
-
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
@@ -28,6 +29,11 @@ const rippleSx = {
   color: 'inherit',
   '& .MuiTouchRipple-root': { color: '#FF3D3D !important' },
 } as const;
+
+const LANGUAGES = [
+  { code: 'fr', label: 'Français', flag: 'https://flagcdn.com/w40/fr.png' },
+  { code: 'en', label: 'English', flag: 'https://flagcdn.com/w40/gb.png' },
+];
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -45,11 +51,21 @@ export const Header: React.FC = () => {
     setAuthMode,
   } = useAuth();
   const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const [langMenuAnchor, setLangMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
   const muiTheme = useTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
 
-  const toggleLang = () => {
-    i18n.changeLanguage(i18n.language === 'fr' ? 'en' : 'fr');
+  const currentLang =
+    LANGUAGES.find(l => l.code === i18n.language) ?? LANGUAGES[0];
+
+  const handleLangMenuOpen = (e: React.MouseEvent<HTMLElement>) =>
+    setLangMenuAnchor(e.currentTarget);
+  const handleLangMenuClose = () => setLangMenuAnchor(null);
+  const handleLangSelect = (code: string) => {
+    i18n.changeLanguage(code);
+    handleLangMenuClose();
   };
 
   const handleLoginOpen = () => {
@@ -57,16 +73,12 @@ export const Header: React.FC = () => {
     setAuthModalOpen(true);
     setDrawerOpen(false);
   };
-
   const handleRegisterOpen = () => {
     setAuthMode('register');
     setAuthModalOpen(true);
     setDrawerOpen(false);
   };
-
-  const handleAuthClose = () => {
-    setAuthModalOpen(false);
-  };
+  const handleAuthClose = () => setAuthModalOpen(false);
 
   const handleLogout = async () => {
     try {
@@ -80,14 +92,71 @@ export const Header: React.FC = () => {
     }
   };
 
-  const desktopActions = (
+  const langDropdown = (
     <>
-      <IconButton color="inherit" onClick={toggleLang} sx={{ gap: 0.5 }}>
+      <IconButton
+        color="inherit"
+        onClick={handleLangMenuOpen}
+        sx={{ gap: 0.5 }}
+      >
         <LanguageIcon />
+        <img
+          src={currentLang.flag}
+          alt={currentLang.code}
+          style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }}
+        />
         <Typography variant="caption" sx={{ fontWeight: 600 }}>
-          {i18n.language === 'fr' ? 'FR' : 'EN'}
+          {currentLang.code.toUpperCase()}
         </Typography>
       </IconButton>
+      <Menu
+        anchorEl={langMenuAnchor}
+        open={Boolean(langMenuAnchor)}
+        onClose={handleLangMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            minWidth: 150,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            mt: 0.5,
+          },
+        }}
+      >
+        {LANGUAGES.map(lang => (
+          <MenuItem
+            key={lang.code}
+            onClick={() => handleLangSelect(lang.code)}
+            selected={i18n.language === lang.code}
+            sx={{
+              fontWeight: i18n.language === lang.code ? 700 : 400,
+              gap: 1.5,
+              borderRadius: '8px',
+              mx: 0.5,
+              fontSize: 14,
+            }}
+          >
+            <img
+              src={lang.flag}
+              alt={lang.code}
+              style={{
+                width: 24,
+                height: 16,
+                objectFit: 'cover',
+                borderRadius: 2,
+              }}
+            />
+            {lang.label}
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
+  );
+
+  const desktopActions = (
+    <>
+      {langDropdown}
       {isAuthenticated ? (
         <>
           {isProfilePage ? (
@@ -154,14 +223,7 @@ export const Header: React.FC = () => {
           </Button>
         </>
       )}
-      <Button
-        startIcon={<LanguageIcon />}
-        fullWidth
-        variant="text"
-        onClick={toggleLang}
-      >
-        {i18n.language === 'fr' ? 'Français 🇫🇷' : 'English 🇬🇧'}
-      </Button>
+      {langDropdown}
     </Box>
   );
 
@@ -226,7 +288,7 @@ export const Header: React.FC = () => {
               color="inherit"
               edge="end"
               onClick={() => setDrawerOpen(true)}
-              aria-label="ouvrir le menu"
+              aria-label={t('header.openMenu')}
               sx={rippleSx}
             >
               <MenuIcon />
@@ -269,7 +331,6 @@ export const Header: React.FC = () => {
             <CloseIcon />
           </IconButton>
         </Box>
-
         {authMode === 'login' ? (
           <LoginForm
             onSwitchToRegister={() => setAuthMode('register')}
