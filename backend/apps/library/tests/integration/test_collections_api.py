@@ -44,6 +44,13 @@ class TestCollectionsAPI:
         r = jwt_authenticated_client.delete(f"{self.url}{lib.id}/")
         assert r.status_code == status.HTTP_403_FORBIDDEN
 
+    def test_cannot_remove_entry_from_ma_ludotheque(self, jwt_authenticated_client, user, game):
+        jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        ug = UserGame.objects.get(user=user, game=game)
+        ma = UserLibrary.objects.get(user=user, system_key=UserLibrary.SystemKey.MA_LUDOTHEQUE)
+        r = jwt_authenticated_client.delete(f"{self.url}{ma.id}/entries/{ug.id}/")
+        assert r.status_code == status.HTTP_403_FORBIDDEN
+
     def test_add_and_remove_entry(self, jwt_authenticated_client, user, game):
         jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
         ug = UserGame.objects.get(user=user, game=game)

@@ -56,6 +56,19 @@ class TestUserLibrarySerializer:
         assert ser.is_valid() is False
         assert "name" in ser.errors
 
+    def test_validate_name_raises_when_only_whitespace(self, user):
+        request = factory.post("/api/me/collections/")
+        request.user = user
+        ser = UserLibrarySerializer(context={"request": request})
+        with pytest.raises(serializers.ValidationError, match="vide"):
+            ser.validate_name("   ")
+
+    def test_validate_color_returns_normalized_hex(self, user):
+        request = factory.post("/api/me/collections/")
+        request.user = user
+        ser = UserLibrarySerializer(context={"request": request})
+        assert ser.validate_color("  #d32f2f  ") == "#d32f2f"
+
     def test_validate_color_rejects_invalid_hex(self, user):
         request = factory.post("/api/me/collections/")
         request.user = user
