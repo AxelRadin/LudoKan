@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../../contexts/useAuth';
 import { useSubmitReview } from '../../hooks/useSubmitReview';
+import { t } from 'i18next';
 
 const C = {
   accent: '#d32f2f',
@@ -470,7 +471,7 @@ export default function ReviewForm({
                 '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
               }}
             >
-              Annuler
+              {t('common.cancel')}
             </Button>
           )}
 

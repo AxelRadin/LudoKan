@@ -7,6 +7,7 @@ import { SectionAccentTitle } from '../SectionAccentTitle';
 import ReviewCard from './ReviewCard';
 import ReviewForm from './ReviewForm';
 import ReviewsList from './ReviewsList';
+import { t } from 'i18next';
 
 const F = "'Outfit', sans-serif";
 
@@ -185,7 +186,7 @@ function DeleteReviewDialog({
             },
           }}
         >
-          Annuler
+          {t('common.cancel')}
         </Button>
         <Button
           size="small"

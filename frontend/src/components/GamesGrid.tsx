@@ -2,8 +2,8 @@ import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import GameCard from './GameCard';
-
 import type { NormalizedGame } from '../types/game';
 
 export interface GamesGridProps {
@@ -15,8 +15,11 @@ export interface GamesGridProps {
 export const GamesGrid: React.FC<GamesGridProps> = ({
   games,
   loading = false,
-  emptyMessage = 'Aucun jeu à afficher.',
+  emptyMessage,
 }) => {
+  const { t } = useTranslation();
+  const message = emptyMessage ?? t('gamesGrid.empty');
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" py={8}>
@@ -24,13 +27,15 @@ export const GamesGrid: React.FC<GamesGridProps> = ({
       </Box>
     );
   }
+
   if (games.length === 0) {
     return (
       <Typography color="text.secondary" py={4}>
-        {emptyMessage}
+        {message}
       </Typography>
     );
   }
+
   return (
     <Box
       sx={{

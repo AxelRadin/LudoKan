@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { useSubmitReview } from '../hooks/useSubmitReview';
 
@@ -22,6 +23,7 @@ type ReviewFormProps = Readonly<{
 }>;
 
 export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { loading, success, error, submitReview } = useSubmitReview();
 
@@ -39,16 +41,13 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
   const content = watch('content') ?? '';
 
   useEffect(() => {
-    if (success) {
-      reset({ content: '' });
-    }
+    if (success) reset({ content: '' });
   }, [success, reset]);
 
   async function onSubmit(data: ReviewFormValues) {
     const result = await submitReview(gameId, data.content);
-    if (result && onSuccess) {
+    if (result && onSuccess)
       onSuccess(result as { id: number; content: string });
-    }
   }
 
   if (!isAuthenticated) {
@@ -63,7 +62,7 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
         }}
       >
         <Typography variant="body2" color="text.secondary">
-          {'Connectez-vous pour écrire un avis.'}
+          {t('reviewForm.loginPrompt')}
         </Typography>
       </Box>
     );
@@ -82,7 +81,7 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
       }}
     >
       <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
-        Écrire un avis
+        {t('reviewForm.title')}
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
@@ -90,26 +89,17 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
         multiline
         rows={5}
         fullWidth
-        placeholder="Partagez votre expérience avec ce jeu..."
+        placeholder={t('reviewForm.placeholder')}
         {...register('content', {
-          required: "L'avis est obligatoire.",
-          minLength: {
-            value: 10,
-            message: "L'avis doit contenir au moins 10 caractères.",
-          },
-          maxLength: {
-            value: 500,
-            message: "L'avis ne peut pas dépasser 500 caractères.",
-          },
+          required: t('reviewForm.errorRequired'),
+          minLength: { value: 10, message: t('reviewForm.errorMinLength') },
+          maxLength: { value: 500, message: t('reviewForm.errorMaxLength') },
         })}
         error={!!errors.content}
         helperText={errors.content?.message}
         disabled={loading}
         sx={{
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 2,
-            bgcolor: '#fff',
-          },
+          '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: '#fff' },
         }}
       />
 
@@ -125,9 +115,8 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
           variant="caption"
           color={content.length > 500 ? 'error' : 'text.secondary'}
         >
-          {content.length} / 500
+          {t('reviewForm.counter', { count: content.length })}
         </Typography>
-
         <Button
           type="submit"
           variant="contained"
@@ -137,16 +126,15 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
           }
           sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
         >
-          {loading ? 'Envoi...' : "Publier l'avis"}
+          {loading ? t('reviewForm.submitting') : t('reviewForm.submit')}
         </Button>
       </Box>
 
       {success && (
         <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }}>
-          Avis publié avec succès !
+          {t('reviewForm.success')}
         </Alert>
       )}
-
       {error && (
         <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }}>
           {error}

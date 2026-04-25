@@ -5,10 +5,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './i18n';
-import App from './App.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
-import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
 import GamePage from './pages/GamePage.tsx';
@@ -20,7 +18,6 @@ import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
 import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
-import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
 import SettingsPage from './pages/SettingsPage';
 import PolitiquesPage from './pages/PolitiquesPage.tsx';
 import CookiesPage from './pages/CookiesPage.tsx';
@@ -29,15 +26,19 @@ import { muiTheme } from './muiTheme';
 import AboutPage from './pages/AboutPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
+import { Root } from './Root.tsx';
+
+initSentry();
+
+const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
+  error,
+  resetError,
+}) => <ErrorFallback error={error} resetError={resetError} />;
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: (
-      <MatchmakingProvider>
-        <App />
-      </MatchmakingProvider>
-    ),
+    element: <Root />,
     children: [
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
@@ -69,23 +70,14 @@ const router = createBrowserRouter([
   },
 ]);
 
-initSentry();
-
-const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
-  error,
-  resetError,
-}) => <ErrorFallback error={error} resetError={resetError} />;
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
-        <AuthProvider>
-          <Sentry.ErrorBoundary fallback={errorFallback}>
-            <RouterProvider router={router} />
-          </Sentry.ErrorBoundary>
-        </AuthProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
       </ThemeProvider>
     </StyledEngineProvider>
   </StrictMode>

@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import IconButton from '@mui/material/IconButton';
 import React, { type JSX } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   icon: 'google' | 'apple' | 'x' | 'instagram' | 'steam';
@@ -23,28 +24,32 @@ const iconMap: Record<Props['icon'], JSX.Element> = {
   steam: <FaSteam size={24} />,
 };
 
-const defaultLabels: Record<Props['icon'], string> = {
-  google: 'Se connecter avec Google',
-  apple: 'Se connecter avec Apple',
-  x: 'Se connecter avec X',
-  instagram: 'Se connecter avec Instagram',
-  steam: 'Se connecter avec Steam',
-};
-
 export const SocialLoginButton: React.FC<Props> = ({
   icon,
   onClick,
   disabled,
   'aria-label': ariaLabel,
-}) => (
-  <IconButton
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-label={ariaLabel ?? defaultLabels[icon]}
-  >
-    {iconMap[icon]}
-  </IconButton>
-);
+}) => {
+  const { t } = useTranslation();
+
+  const defaultLabels: Record<Props['icon'], string> = {
+    google: t('socialLogin.google'),
+    apple: t('socialLogin.apple'),
+    x: t('socialLogin.x'),
+    instagram: t('socialLogin.instagram'),
+    steam: t('socialLogin.steam'),
+  };
+
+  return (
+    <IconButton
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel ?? defaultLabels[icon]}
+    >
+      {iconMap[icon]}
+    </IconButton>
+  );
+};
 
 export default SocialLoginButton;

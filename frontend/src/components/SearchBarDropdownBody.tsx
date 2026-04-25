@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { type IgdbGame } from '../api/igdb';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 
@@ -33,6 +34,8 @@ export function SearchBarDropdownBody({
   onAddToLibrary,
   onGameClick,
 }: SearchBarDropdownBodyProps) {
+  const { t } = useTranslation();
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -45,7 +48,7 @@ export function SearchBarDropdownBody({
     return (
       <Box sx={{ px: 2, py: 2 }}>
         <Typography variant="body2" color="text.secondary">
-          Aucun résultat
+          {t('searchBar.noResults')}
         </Typography>
       </Box>
     );
@@ -69,7 +72,9 @@ export function SearchBarDropdownBody({
               sx={{ py: 0 }}
               secondaryAction={
                 <Tooltip
-                  title={isAdded ? 'Ajouté !' : 'Ajouter à ma bibliothèque'}
+                  title={
+                    isAdded ? t('searchBar.added') : t('searchBar.addToLibrary')
+                  }
                 >
                   <span>
                     <IconButton
@@ -104,9 +109,7 @@ export function SearchBarDropdownBody({
                   px: 2,
                   py: 1,
                   pr: 6,
-                  '&:hover': {
-                    backgroundColor: 'rgba(255, 61, 61, 0.06)',
-                  },
+                  '&:hover': { backgroundColor: 'rgba(255, 61, 61, 0.06)' },
                 }}
               >
                 <ListItemAvatar>
