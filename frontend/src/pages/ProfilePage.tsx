@@ -17,14 +17,22 @@ import {
   DialogContentText,
   Tooltip,
 } from '@mui/material';
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
+import LibraryFilters from '../components/LibraryFilters';
+import {
+  LIBRARY_STATUS_QUERY_KEY,
+  type LibraryStatusFilter,
+  parseLibraryStatusParam,
+} from '../constants/libraryFilter';
 import SecondaryButton from '../components/SecondaryButton';
 import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
+import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 
 /* ─── Google Fonts injection ─── */
@@ -83,6 +91,7 @@ styleEl.textContent = `
 document.head.appendChild(styleEl);
 
 type UserProfile = {
+  id: number;
   pseudo: string;
   email: string;
   first_name?: string;
@@ -218,10 +227,12 @@ type ProfilePageModel = {
 
 function useProfilePageModel(): ProfilePageModel {
   const { t } = useTranslation();
+  const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<UserProfile>({
+    id: 0,
     pseudo: '',
     email: '',
     first_name: '',
@@ -235,6 +246,31 @@ function useProfilePageModel(): ProfilePageModel {
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+
+  // Sync with global user if it updates (e.g. email from ForcedEmailModal)
+  useEffect(() => {
+    if (globalUser && user && globalUser.id === user.id) {
+      if (
+        globalUser.email !== user.email ||
+        globalUser.pseudo !== user.pseudo
+      ) {
+        setUser(prev =>
+          prev
+            ? {
+                ...prev,
+                email: globalUser.email || prev.email,
+                pseudo: globalUser.pseudo || prev.pseudo,
+              }
+            : null
+        );
+        setForm(prev => ({
+          ...prev,
+          email: globalUser.email || prev.email,
+          pseudo: globalUser.pseudo || prev.pseudo,
+        }));
+      }
+    }
+  }, [globalUser, user]);
 
   const handleSteamConnect = async () => {
     if (steamBusy) return;
@@ -294,10 +330,41 @@ function useProfilePageModel(): ProfilePageModel {
   };
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(globalThis.location.search);
+    if (searchParams.get('syncing') === 'true') {
+      let polls = 0;
+      setSteamBusy(true);
+      const pollInterval = setInterval(async () => {
+        polls++;
+        try {
+          const [gamesRes, meRes] = await Promise.all([
+            apiGet('/api/me/games/'),
+            apiGet('/api/me/'),
+          ]);
+          setUserGames(gamesRes.results || gamesRes || []);
+          setUser(meRes);
+        } catch {
+          /* ignore */
+        }
+        if (polls >= 10) {
+          clearInterval(pollInterval);
+          setSteamBusy(false);
+        }
+      }, 3000);
+    }
+    if (searchParams.get('new_user') || searchParams.get('syncing')) {
+      globalThis.history.replaceState(
+        {},
+        document.title,
+        globalThis.location.pathname
+      );
+    }
+
     apiGet('/api/me/')
       .then(data => {
         setUser(data);
         setForm({
+          id: data.id,
           pseudo: data.pseudo || '',
           email: data.email || '',
           first_name: data.first_name || '',
@@ -323,6 +390,7 @@ function useProfilePageModel(): ProfilePageModel {
   const handleEditOpen = () => {
     setAvatarError('');
     setForm({
+      id: user?.id || 0,
       pseudo: user?.pseudo || '',
       email: user?.email || '',
       first_name: user?.first_name || '',
@@ -849,6 +917,14 @@ function ProfileEditDialog({
             sx={fieldSx}
           />
           <TextField
+            label="E-mail"
+            name="email"
+            fullWidth
+            value={form.email}
+            onChange={onFieldChange}
+            sx={fieldSx}
+          />
+          <TextField
             label={t('profilePage.description')}
             name="description_courte"
             fullWidth
@@ -1087,101 +1163,6 @@ function ProfileIntegrations({
   );
 }
 
-type ProfileFavoriteGamesProps = Readonly<{
-  gamesFavoris: GameListItem[];
-  removeGame: (userGameId: number) => void;
-}>;
-
-function ProfileFavoriteGames({
-  gamesFavoris,
-  removeGame,
-}: ProfileFavoriteGamesProps) {
-  const { t } = useTranslation();
-  if (gamesFavoris.length === 0) return null;
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        ...glassCard,
-        '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-        p: { xs: 2.5, md: 4 },
-        mb: 2.5,
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          mb: 3,
-          flexWrap: 'wrap',
-          gap: 1,
-        }}
-      >
-        <Box>
-          <Typography
-            sx={{
-              fontFamily: FONT_BODY,
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: 2,
-              textTransform: 'uppercase',
-              color: C.accent,
-              mb: 0.5,
-            }}
-          >
-            {t('profilePage.favoritesLabel')}
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: FONT_DISPLAY,
-              fontWeight: 700,
-              fontSize: 20,
-              color: C.title,
-              letterSpacing: -0.3,
-            }}
-          >
-            {t('profilePage.favoritesTitle', { count: gamesFavoris.length })}
-          </Typography>
-        </Box>
-        <Box
-          sx={{
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 999,
-            background: 'rgba(211,47,47,0.1)',
-            border: '1px solid rgba(211,47,47,0.25)',
-          }}
-        >
-          <Typography
-            sx={{
-              fontFamily: FONT_BODY,
-              color: C.accent,
-              fontSize: 13,
-              fontWeight: 700,
-            }}
-          >
-            {gamesFavoris.length <= 1
-              ? t('profilePage.favoritesCount', { count: gamesFavoris.length })
-              : t('profilePage.favoritesCountPlural', {
-                  count: gamesFavoris.length,
-                })}
-          </Typography>
-        </Box>
-      </Box>
-      <Box
-        sx={{
-          height: '1px',
-          background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
-          mb: 3,
-        }}
-      />
-      <GameList games={gamesFavoris} showStatus={false} onRemove={removeGame} />
-    </Paper>
-  );
-}
-
 export default function ProfilePage() {
   const { t } = useTranslation();
   const {
@@ -1215,6 +1196,66 @@ export default function ProfilePage() {
     handleSteamDisconnect,
     handleSteamSync,
   } = useProfilePageModel();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const libraryFilter = useMemo(
+    () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
+    [searchParams]
+  );
+
+  const setLibraryFilter = useCallback(
+    (next: LibraryStatusFilter) => {
+      setSearchParams(
+        prev => {
+          const p = new URLSearchParams(prev);
+          if (next === 'ALL') p.delete(LIBRARY_STATUS_QUERY_KEY);
+          else p.set(LIBRARY_STATUS_QUERY_KEY, next);
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const libraryCounts = useMemo(
+    () => ({
+      all: userGames.length,
+      enCours: gamesEnCours.length,
+      termines: gamesTermines.length,
+      envie: gamesEnvie.length,
+    }),
+    [
+      userGames.length,
+      gamesEnCours.length,
+      gamesTermines.length,
+      gamesEnvie.length,
+    ]
+  );
+
+  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
+    switch (libraryFilter) {
+      case 'EN_COURS':
+        return gamesEnCours;
+      case 'TERMINE':
+        return gamesTermines;
+      case 'ENVIE_DE_JOUER':
+        return gamesEnvie;
+      default:
+        return [];
+    }
+  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
+
+  const singleFilterTitle = useMemo(() => {
+    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
+      EN_COURS: 'En cours',
+      TERMINE: 'Terminés',
+      ENVIE_DE_JOUER: "Envie d'y jouer",
+    };
+    if (libraryFilter === 'ALL') return '';
+    return map[libraryFilter];
+  }, [libraryFilter]);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
@@ -1816,12 +1857,7 @@ export default function ProfilePage() {
           onSteamSync={handleSteamSync}
         />
 
-        <ProfileFavoriteGames
-          gamesFavoris={gamesFavoris}
-          removeGame={removeGame}
-        />
-
-        {/* LIBRARY */}
+        {/* ── LIBRARY ── */}
         <Paper
           elevation={0}
           className="lib-section"
@@ -1892,6 +1928,11 @@ export default function ProfilePage() {
               </Typography>
             </Box>
           </Box>
+          <LibraryFilters
+            value={libraryFilter}
+            onChange={setLibraryFilter}
+            counts={libraryCounts}
+          />
           <Box
             sx={{
               height: '1px',
@@ -1900,19 +1941,31 @@ export default function ProfilePage() {
             }}
           />
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {[
-              { games: gamesEnCours, label: t('profilePage.statusPlaying') },
-              { games: gamesTermines, label: t('profilePage.statusDone') },
-              { games: gamesEnvie, label: t('profilePage.statusWishlist') },
-            ].map(({ games, label }) => (
+            {libraryFilter === 'ALL' ? (
+              <>
+                {[
+                  { games: gamesFavoris, label: 'Coups de cœur' },
+                  { games: gamesEnCours, label: t('profilePage.statusPlaying') },
+                  { games: gamesTermines, label: t('profilePage.statusDone') },
+                  { games: gamesEnvie, label: t('profilePage.statusWishlist') },
+                ].map(({ games, label }) => (
+                  <GameList
+                    key={label}
+                    games={games}
+                    title={`${label} (${games.length})`}
+                    showStatus={false}
+                    onRemove={removeGame}
+                  />
+                ))}
+              </>
+            ) : (
               <GameList
-                key={label}
-                games={games}
-                title={`${label} (${games.length})`}
+                games={gamesForLibraryFilter}
+                title={`${singleFilterTitle} (${gamesForLibraryFilter.length})`}
                 showStatus={false}
                 onRemove={removeGame}
               />
-            ))}
+            )}
           </Box>
         </Paper>
       </Box>

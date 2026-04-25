@@ -29,13 +29,15 @@ class SteamLoginInitiateViewTest(APITestCase):
         self.assertTrue(auth_url.startswith("https://steamcommunity.com/openid/login"))
         self.assertIn("openid.mode=checkid_setup", auth_url)
 
+    @override_settings(STEAM_REDIRECT_URL="https://ludokan.com/auth/steam/callback")
     def test_get_steam_login_url_unauthenticated(self):
         """
-        Ensure unauthenticated requests are blocked.
+        Ensure unauthenticated requests are now allowed (AllowAny).
         """
         self.client.logout()
         response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        # La vue est publique depuis l'ajout de AllowAny
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @patch("apps.users.views_steam.settings.STEAM_REDIRECT_URL", "")
     def test_get_steam_login_url_missing_redirect_url(self):
@@ -133,6 +135,138 @@ class SteamLoginCallbackViewTest(APITestCase):
         response = self.client.post(self.url, data=data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("SteamID64 non trouvé", response.data["detail"])
+
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
+    @patch("apps.users.views_steam.requests.get")
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_new_unauthenticated_user_with_steam_summary(self, mock_post, mock_get, mock_delay):
+        """
+        When an unauthenticated user authenticates via Steam for the first time,
+        a new CustomUser is created and Steam profile info is fetched.
+        """
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "response": {"players": [{"personaname": "SteamUser", "avatarfull": "https://example.com/avatar.jpg"}]}
+        }
+
+        self.client.logout()  # test as unauthenticated user
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": "https://steamcommunity.com/openid/id/99999999999",
+            "openid.identity": "https://steamcommunity.com/openid/id/99999999999",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get("is_new_user"))
+        # Verify user was created with steam profile name
+
+        user = CustomUser.objects.filter(steam_profile__steam_id="99999999999").first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.pseudo, "SteamUser")
+
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_orphan_user_reused(self, mock_post, mock_delay):
+        """
+        If a fake-email user with the same steam ID exists but no SteamProfile,
+        the existing user is reused instead of creating a new one (no IntegrityError).
+        """
+
+        steam_id = "11111111111"
+        fake_email = f"steam_{steam_id}@steam.ludokan.internal"
+        CustomUser.objects.create_user(email=fake_email)
+
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+        self.client.logout()
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": f"https://steamcommunity.com/openid/id/{steam_id}",
+            "openid.identity": f"https://steamcommunity.com/openid/id/{steam_id}",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # No duplicate user created
+        self.assertEqual(CustomUser.objects.filter(email=fake_email).count(), 1)
+
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_existing_steam_profile_reuses_user(self, mock_post, mock_delay):
+        """
+        L139: When a SteamProfile already exists, the linked user is reused directly
+        without creating a new one and is_new_user is False.
+        """
+        steam_id = "55555555555"
+        SteamProfile.objects.create(user=self.user, steam_id=steam_id)
+
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": f"https://steamcommunity.com/openid/id/{steam_id}",
+            "openid.identity": f"https://steamcommunity.com/openid/id/{steam_id}",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data.get("is_new_user"))
+        self.assertEqual(response.data["steam_id"], steam_id)
+
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
+    @patch("apps.users.views_steam.requests.get")
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_steam_summary_api_exception_is_handled(self, mock_post, mock_get, mock_delay):
+        """
+        L173-174: If the Steam GetPlayerSummaries call raises an exception,
+        it is caught and logged — the overall response is still 200.
+        """
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+        mock_get.side_effect = Exception("Network error")
+
+        self.client.logout()
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": "https://steamcommunity.com/openid/id/77777777777",
+            "openid.identity": "https://steamcommunity.com/openid/id/77777777777",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        # Should succeed despite the Steam API error
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch("apps.users.views_steam.sync_steam_library_task.delay")
+    @patch("apps.users.views_steam.requests.get")
+    @patch("apps.users.views_steam.requests.post")
+    def test_post_callback_pseudo_conflict_resolved(self, mock_post, mock_get, mock_delay):
+        """
+        L174-175: Test that pseudo conflict with an existing user is resolved
+        by adding a suffix.
+        """
+
+        # Create a user with the pseudo "SteamUser"
+        CustomUser.objects.create_user(email="other@example.com", pseudo="SteamUser")
+
+        mock_post.return_value.text = "ns:http://specs.openid.net/auth/2.0\nis_valid:true\n"
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = {
+            "response": {"players": [{"personaname": "SteamUser", "avatarfull": "https://example.com/avatar.jpg"}]}
+        }
+
+        self.client.logout()
+        data = {
+            "openid.ns": "http://specs.openid.net/auth/2.0",
+            "openid.mode": "id_res",
+            "openid.claimed_id": "https://steamcommunity.com/openid/id/88888888888",
+            "openid.identity": "https://steamcommunity.com/openid/id/88888888888",
+        }
+        response = self.client.post(self.url, data=data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # The new user should have the pseudo "SteamUser_1"
+        user = CustomUser.objects.get(steam_profile__steam_id="88888888888")
+        self.assertEqual(user.pseudo, "SteamUser_1")
 
 
 class SteamDisconnectViewTest(APITestCase):

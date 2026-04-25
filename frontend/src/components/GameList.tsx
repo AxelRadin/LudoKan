@@ -160,32 +160,34 @@ export default function GameList({
                     )}
                   </CardContent>
 
-                  {game.steam_appid &&
-                    game.playtime_forever != null &&
-                    game.playtime_forever > 0 && (
-                      <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
-                        <Box
-                          sx={{
-                            bgcolor: 'rgba(23,26,33,0.85)',
-                            color: '#fff',
-                            px: 1,
-                            py: 0.5,
-                            borderRadius: 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                          }}
-                        >
-                          <FaSteam size={14} />
-                          <Typography
-                            variant="caption"
-                            sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-                          >
-                            {game.playtime_forever}h
-                          </Typography>
-                        </Box>
+                  {/* Badge Steam */}
+                  {game.steam_appid && (
+                    <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
+                      <Box
+                        sx={{
+                          bgcolor: 'rgba(23,26,33,0.85)',
+                          color: '#fff',
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                        }}
+                      >
+                        <FaSteam size={14} />
+                        {game.playtime_forever != null &&
+                          game.playtime_forever > 0 && (
+                            <Typography
+                              variant="caption"
+                              sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                            >
+                              {game.playtime_forever}h
+                            </Typography>
+                          )}
                       </Box>
-                    )}
+                    </Box>
+                  )}
                 </Card>
               </Link>
 

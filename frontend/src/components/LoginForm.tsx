@@ -12,7 +12,10 @@ import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
-import SocialLoginButton from './SocialLoginButton';
+import SocialLoginSection from './SocialLoginSection';
+import { useSocialAuth } from '../hooks/useSocialAuth';
+import { useAuth } from '../contexts/useAuth';
+import { apiPost } from '../services/api';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
@@ -34,6 +37,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
+  const {
+    error: socialError,
+    handleGoogleClick,
+    handleSteamClick,
+  } = useSocialAuth();
+
+  const displayError = error || socialError;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -114,22 +124,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           )}
         </Stack>
 
-        {error && (
+        {displayError && (
           <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
-            {error}
+            {displayError}
           </Alert>
         )}
 
-        <Typography variant="body1" mt={5}>
-          {t('loginForm.connectWith')}
-        </Typography>
-
-        <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
-          <SocialLoginButton icon="apple" />
-          <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
-        </Stack>
+        <SocialLoginSection
+          title="Se connecter avec"
+          onGoogleClick={handleGoogleClick}
+          onSteamClick={handleSteamClick}
+        />
 
         <PrimaryButton
           sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}

@@ -1,14 +1,15 @@
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startGoogleLogin } from '../auth/googleOAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
-import SocialLoginButton from './SocialLoginButton';
+import SocialLoginSection from './SocialLoginSection';
+import { useSocialAuth } from '../hooks/useSocialAuth';
+import { apiPost } from '../services/api';
 
 type RegisterFormProps = {
   onSwitchToLogin: () => void;
@@ -22,6 +23,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [password2, setPassword2] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const {
+    error: socialError,
+    handleGoogleClick,
+    handleSteamClick,
+  } = useSocialAuth();
+
+  const displayError = error || socialError;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -99,22 +107,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           />
         </Stack>
 
-        {error && (
+        {displayError && (
           <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
-            {error}
+            {displayError}
           </Alert>
         )}
 
-        <Typography variant="body1" mt={5}>
-          {t('registerForm.registerWith')}
-        </Typography>
-
-        <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
-          <SocialLoginButton icon="apple" />
-          <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
-        </Stack>
+        <SocialLoginSection
+          title="S’inscrire avec"
+          onGoogleClick={handleGoogleClick}
+          onSteamClick={handleSteamClick}
+        />
 
         <PrimaryButton
           sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}

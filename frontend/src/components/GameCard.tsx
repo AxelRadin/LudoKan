@@ -106,32 +106,34 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
         </Box>
       )}
 
-      {game.steam_appid &&
-        game.user_library?.playtime_forever != null &&
-        game.user_library.playtime_forever > 0 && (
-          <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
-            <Box
-              sx={{
-                bgcolor: 'rgba(23,26,33,0.85)',
-                color: '#fff',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
-              }}
-            >
-              <FaSteam size={14} />
-              <Typography
-                variant="caption"
-                sx={{ fontWeight: 600, fontSize: '0.7rem' }}
-              >
-                {game.user_library.playtime_forever}h
-              </Typography>
-            </Box>
+      {/* Badge Steam */}
+      {game.steam_appid && (
+        <Box sx={{ position: 'absolute', top: 6, left: 6 }}>
+          <Box
+            sx={{
+              bgcolor: 'rgba(23,26,33,0.85)',
+              color: '#fff',
+              px: 1,
+              py: 0.5,
+              borderRadius: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
+            <FaSteam size={14} />
+            {game.user_library?.playtime_forever != null &&
+              game.user_library.playtime_forever > 0 && (
+                <Typography
+                  variant="caption"
+                  sx={{ fontWeight: 600, fontSize: '0.7rem' }}
+                >
+                  {game.user_library.playtime_forever}h
+                </Typography>
+              )}
           </Box>
-        )}
+        </Box>
+      )}
     </Card>
   );
 };
