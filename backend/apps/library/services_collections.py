@@ -4,12 +4,8 @@ Création et rattachement des collections système (Ma ludothèque, Jeux Steam).
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from apps.users.models import CustomUser
-
 from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
+from apps.users.models import CustomUser
 
 MA_LUDOTHEQUE_NAME = "Ma ludothèque"
 STEAM_COLLECTION_NAME = "Jeux Steam"

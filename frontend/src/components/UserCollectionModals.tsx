@@ -43,6 +43,86 @@ import { apiPost } from '../services/api';
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 
+type AddToCollectionPickRowProps = Readonly<{
+  collection: UserCollection;
+  already: boolean;
+  busyId: number | null;
+  onPickWithCatch: (col: UserCollection) => void;
+  onRemoveWithCatch: (col: UserCollection) => void;
+  formatGamesCount: (n: number) => string;
+}>;
+
+function AddToCollectionPickRow({
+  collection: col,
+  already,
+  busyId,
+  onPickWithCatch,
+  onRemoveWithCatch,
+  formatGamesCount,
+}: AddToCollectionPickRowProps) {
+  const { t } = useTranslation();
+
+  function handlePickClick(): void {
+    onPickWithCatch(col);
+  }
+
+  function handleRemoveClick(): void {
+    onRemoveWithCatch(col);
+  }
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+      }}
+    >
+      <ListItemButton
+        disabled={busyId != null || already}
+        onClick={handlePickClick}
+        sx={{ borderRadius: 1, mb: 0.5, flex: 1 }}
+      >
+        <ListItemText
+          primary={col.name}
+          secondary={
+            already
+              ? t('collections.addTo.alreadyIn')
+              : formatGamesCount(col.games_count)
+          }
+          primaryTypographyProps={{
+            fontFamily: FONT_BODY,
+            fontWeight: 600,
+          }}
+          secondaryTypographyProps={{
+            fontFamily: FONT_BODY,
+            fontSize: 12,
+          }}
+        />
+        {busyId === col.id ? (
+          <Typography variant="caption">…</Typography>
+        ) : null}
+      </ListItemButton>
+      {already ? (
+        <Tooltip title={t('collections.addTo.removeTooltip')} arrow>
+          <span>
+            <IconButton
+              size="small"
+              onClick={handleRemoveClick}
+              disabled={busyId != null}
+              aria-label={t('collections.addTo.removeAria', {
+                name: col.name,
+              })}
+            >
+              <PlaylistRemoveIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      ) : null}
+    </Box>
+  );
+}
+
 type CollectionFormFields = {
   name: string;
   color: string;
@@ -547,6 +627,14 @@ export function AddToCollectionModal({
 
   const openAuthThenModal = () => onRequireAuth();
 
+  function pickWithCatch(col: UserCollection): void {
+    handlePickCollection(col).catch(() => {});
+  }
+
+  function removeWithCatch(col: UserCollection): void {
+    handleRemoveFromCollection(col).catch(() => {});
+  }
+
   const addToPickDialogContent = (): ReactNode => {
     if (isAuthenticated === false) {
       return (
@@ -565,65 +653,17 @@ export function AddToCollectionModal({
     return (
       <>
         <List dense disablePadding sx={{ py: 0 }}>
-          {collections.map(c => {
-            const already = (userGameHint?.collection_ids ?? []).includes(c.id);
-            return (
-              <Box
-                key={c.id}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                <ListItemButton
-                  disabled={busyId != null || already}
-                  onClick={() => {
-                    handlePickCollection(c).catch(() => {});
-                  }}
-                  sx={{ borderRadius: 1, mb: 0.5, flex: 1 }}
-                >
-                  <ListItemText
-                    primary={c.name}
-                    secondary={
-                      already
-                        ? t('collections.addTo.alreadyIn')
-                        : formatGamesCount(c.games_count)
-                    }
-                    primaryTypographyProps={{
-                      fontFamily: FONT_BODY,
-                      fontWeight: 600,
-                    }}
-                    secondaryTypographyProps={{
-                      fontFamily: FONT_BODY,
-                      fontSize: 12,
-                    }}
-                  />
-                  {busyId === c.id ? (
-                    <Typography variant="caption">…</Typography>
-                  ) : null}
-                </ListItemButton>
-                {already ? (
-                  <Tooltip title={t('collections.addTo.removeTooltip')} arrow>
-                    <span>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          handleRemoveFromCollection(c).catch(() => {});
-                        }}
-                        disabled={busyId != null}
-                        aria-label={t('collections.addTo.removeAria', {
-                          name: c.name,
-                        })}
-                      >
-                        <PlaylistRemoveIcon fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                ) : null}
-              </Box>
-            );
-          })}
+          {collections.map(c => (
+            <AddToCollectionPickRow
+              key={c.id}
+              collection={c}
+              already={(userGameHint?.collection_ids ?? []).includes(c.id)}
+              busyId={busyId}
+              onPickWithCatch={pickWithCatch}
+              onRemoveWithCatch={removeWithCatch}
+              formatGamesCount={formatGamesCount}
+            />
+          ))}
         </List>
         <Button
           fullWidth
