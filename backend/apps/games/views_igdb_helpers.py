@@ -40,17 +40,38 @@ def _has_demographic_filters(
     return min_age is not None or min_players is not None or max_players is not None
 
 
+def _genre_platform_where_extra_clauses(
+    genre_ids: list[int],
+    platform_ids: list[int],
+) -> list[str]:
+    extras: list[str] = []
+    if genre_ids:
+        extras.append("(" + " | ".join(f"genres = ({g})" for g in genre_ids) + ")")
+    if platform_ids:
+        extras.append("(" + " | ".join(f"platforms = ({p})" for p in platform_ids) + ")")
+    return extras
+
+
+def _normalize_optional_genre_platform(
+    genre_ids: list[int] | None,
+    platform_ids: list[int] | None,
+    min_age: int | None,
+    min_players: int | None,
+    max_players: int | None,
+) -> tuple[list[int], list[int], bool]:
+    g = genre_ids or []
+    p = platform_ids or []
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
+    return g, p, use_demo
+
+
 def merge_igdb_where_predicates(
     base_predicate: str,
     genre_ids: list[int],
     platform_ids: list[int],
 ) -> str:
     """Clause `where` sans point-virgule final (à suffixer par `; sort ...`)."""
-    extras: list[str] = []
-    if genre_ids:
-        extras.append("(" + " | ".join(f"genres = ({g})" for g in genre_ids) + ")")
-    if platform_ids:
-        extras.append("(" + " | ".join(f"platforms = ({p})" for p in platform_ids) + ")")
+    extras = _genre_platform_where_extra_clauses(genre_ids, platform_ids)
     parts = extras + [base_predicate.strip()]
     return "where " + " & ".join(parts)
 
@@ -126,9 +147,7 @@ def search_page_name_matches(
     min_players: int | None = None,
     max_players: int | None = None,
 ) -> list:
-    genre_ids = genre_ids or []
-    platform_ids = platform_ids or []
-    use_demo = _has_demographic_filters(min_age, min_players, max_players)
+    genre_ids, platform_ids, use_demo = _normalize_optional_genre_platform(genre_ids, platform_ids, min_age, min_players, max_players)
     needs_post_slice = use_demo
 
     def fetch_for_q(q_inner: str) -> list:
@@ -162,15 +181,12 @@ def search_page_fallback_search(
     min_players: int | None = None,
     max_players: int | None = None,
 ) -> list:
-    genre_ids = genre_ids or []
-    platform_ids = platform_ids or []
-    use_demo = _has_demographic_filters(min_age, min_players, max_players)
+    genre_ids, platform_ids, use_demo = _normalize_optional_genre_platform(genre_ids, platform_ids, min_age, min_players, max_players)
     fields = _search_page_fields(genre_ids, use_demo)
     search_body = f'{fields} search "{q_esc}"; limit 50;'
     try:
         search_arr = igdb_response_as_list(igdb_request("games", search_body))
-        search_arr = filter_raw_games_by_genre_platform_ids(search_arr, genre_ids, platform_ids)
-        search_arr = filter_games_raw_by_demographics(igdb_request, search_arr, min_age, min_players, max_players)
+        search_arr = _apply_raw_list_filters(igdb_request, search_arr, genre_ids, platform_ids, min_age, min_players, max_players)
         return sorted(
             search_arr,
             key=lambda g: -(g.get("total_rating_count") or 0),
@@ -229,11 +245,7 @@ def merge_trending_where_with_filters(
     if not head.lower().startswith("where"):
         return sort_clause
     base_cond = head[5:].strip()
-    extras: list[str] = []
-    if genre_ids:
-        extras.append("(" + " | ".join(f"genres = ({g})" for g in genre_ids) + ")")
-    if platform_ids:
-        extras.append("(" + " | ".join(f"platforms = ({p})" for p in platform_ids) + ")")
+    extras = _genre_platform_where_extra_clauses(genre_ids, platform_ids)
     cond = " & ".join(extras + [base_cond]) if extras else base_cond
     return f"where {cond}; {tail}"
 
@@ -243,6 +255,20 @@ def _trending_fields_with_demographics(use_demographics: bool, with_genres: bool
     if not use_demographics:
         return base
     return base.rstrip(";") + FIELDS_IGDB_DEMOGRAPHICS_SUFFIX + ";"
+
+
+def _trending_use_demo_and_merged_clause(
+    sort: str,
+    genre_ids: list[int],
+    platform_ids: list[int],
+    min_age: int | None,
+    min_players: int | None,
+    max_players: int | None,
+) -> tuple[bool, str]:
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
+    sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
+    merged_clause = merge_trending_where_with_filters(sort_clause, genre_ids, platform_ids)
+    return use_demo, merged_clause
 
 
 def trending_fetch_games_array(
@@ -256,9 +282,7 @@ def trending_fetch_games_array(
     min_players: int | None = None,
     max_players: int | None = None,
 ) -> list:
-    use_demo = _has_demographic_filters(min_age, min_players, max_players)
-    sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
-    merged_clause = merge_trending_where_with_filters(sort_clause, genre_ids, platform_ids)
+    use_demo, merged_clause = _trending_use_demo_and_merged_clause(sort, genre_ids, platform_ids, min_age, min_players, max_players)
 
     # Cas historique : un seul genre, pas de plateforme, pas de filtre numérique → tri pure/mixed
     if len(genre_ids) == 1 and not platform_ids and not use_demo:
@@ -296,9 +320,7 @@ def trending_fetch_total_count(
     max_players: int | None = None,
 ) -> int:
     try:
-        use_demo = _has_demographic_filters(min_age, min_players, max_players)
-        sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
-        merged_clause = merge_trending_where_with_filters(sort_clause, genre_ids, platform_ids)
+        use_demo, merged_clause = _trending_use_demo_and_merged_clause(sort, genre_ids, platform_ids, min_age, min_players, max_players)
         where_part = merged_clause.split("sort")[0].strip()
 
         if use_demo:
@@ -379,6 +401,20 @@ def _merge_unique_games_by_id(first: list, second: list) -> list:
     return merged
 
 
+def _igdb_search_games_list_query_setup(
+    genre_ids: list[int] | None,
+    platform_ids: list[int] | None,
+    min_age: int | None,
+    min_players: int | None,
+    max_players: int | None,
+    limit: int,
+) -> tuple[list[int], list[int], int, str]:
+    g, p, use_demo = _normalize_optional_genre_platform(genre_ids, platform_ids, min_age, min_players, max_players)
+    fetch_limit = max(limit * 4, 50) if (use_demo or g or p) else limit
+    fields = _search_games_fields_for_list(g, use_demo)
+    return g, p, fetch_limit, fields
+
+
 def igdb_search_suggest_results(
     igdb_request: IgdbRequestFn,
     q_esc: str,
@@ -390,11 +426,9 @@ def igdb_search_suggest_results(
     min_players: int | None = None,
     max_players: int | None = None,
 ) -> list:
-    genre_ids = genre_ids or []
-    platform_ids = platform_ids or []
-    use_demo = _has_demographic_filters(min_age, min_players, max_players)
-    fetch_limit = max(limit * 4, 50) if (use_demo or genre_ids or platform_ids) else limit
-    fields = _search_games_fields_for_list(genre_ids, use_demo)
+    genre_ids, platform_ids, fetch_limit, fields = _igdb_search_games_list_query_setup(
+        genre_ids, platform_ids, min_age, min_players, max_players, limit
+    )
     core = f'name ~ *"{q_esc}"* & total_rating_count > 0'
     where_line = merge_igdb_where_predicates(core, genre_ids, platform_ids)
     name_query = f"{fields} {where_line}; sort total_rating_count desc; limit {fetch_limit};"
@@ -438,11 +472,9 @@ def igdb_search_non_suggest_results(
     min_players: int | None = None,
     max_players: int | None = None,
 ) -> list:
-    genre_ids = genre_ids or []
-    platform_ids = platform_ids or []
-    use_demo = _has_demographic_filters(min_age, min_players, max_players)
-    fetch_limit = max(limit * 4, 50) if (use_demo or genre_ids or platform_ids) else limit
-    fields = _search_games_fields_for_list(genre_ids, use_demo)
+    genre_ids, platform_ids, fetch_limit, fields = _igdb_search_games_list_query_setup(
+        genre_ids, platform_ids, min_age, min_players, max_players, limit
+    )
     query = f'{fields} search "{q_esc}"; limit {fetch_limit};'
     arr = igdb_response_as_list(igdb_request("games", query))
     if not arr and q_norm_esc != q_esc:
@@ -455,6 +487,18 @@ def igdb_search_non_suggest_results(
 # --- Franchises search ---
 
 
+def _extend_igdb_list_or_ignore(
+    igdb_request: IgdbRequestFn,
+    endpoint: str,
+    query: str,
+    target: list,
+) -> None:
+    try:
+        target.extend(igdb_response_as_list(igdb_request(endpoint, query)))
+    except Exception:
+        pass
+
+
 def franchises_collections_fetch_terms(
     igdb_request: IgdbRequestFn,
     terms: list[str],
@@ -463,16 +507,8 @@ def franchises_collections_fetch_terms(
     all_collections: list = []
     for term in terms:
         name_query = f'fields id, name; where name ~ *"{term}"*; limit 5;'
-        try:
-            f_data = igdb_request("franchises", name_query)
-            all_franchises.extend(igdb_response_as_list(f_data))
-        except Exception:
-            pass
-        try:
-            c_data = igdb_request("collections", name_query)
-            all_collections.extend(igdb_response_as_list(c_data))
-        except Exception:
-            pass
+        _extend_igdb_list_or_ignore(igdb_request, "franchises", name_query, all_franchises)
+        _extend_igdb_list_or_ignore(igdb_request, "collections", name_query, all_collections)
     return all_franchises, all_collections
 
 
