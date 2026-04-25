@@ -2034,6 +2034,7 @@ export default function ProfilePage() {
         {/* ── LIBRARY ── */}
         <ProfilePageLibrarySection
           glassCard={glassCard}
+          paperRestingBoxShadow={glassCard.boxShadow}
           accent={C.accent}
           titleColor={C.title}
           borderColor={C.border}

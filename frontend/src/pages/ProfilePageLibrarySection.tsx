@@ -7,7 +7,6 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import type { SxProps, Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import type { GameListItem, GameListProps } from '../components/GameList';
 import GameList from '../components/GameList';
@@ -20,7 +19,9 @@ import type {
 } from '../constants/libraryFilter';
 
 type ProfilePageLibrarySectionProps = Readonly<{
-  glassCard: SxProps<Theme>;
+  glassCard: Record<string, unknown>;
+  /** Ombre au repos (même valeur que `glassCard.boxShadow`) pour désactiver l’effet hover sur ce bloc. */
+  paperRestingBoxShadow: string;
   accent: string;
   titleColor: string;
   borderColor: string;
@@ -53,6 +54,7 @@ const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 
 export default function ProfilePageLibrarySection({
   glassCard,
+  paperRestingBoxShadow,
   accent,
   titleColor,
   borderColor,
@@ -117,7 +119,10 @@ export default function ProfilePageLibrarySection({
       className="lib-section"
       sx={{
         ...glassCard,
-        '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
+        '&:hover': {
+          transform: 'none',
+          boxShadow: paperRestingBoxShadow,
+        },
         p: { xs: 2.5, md: 4 },
       }}
     >
