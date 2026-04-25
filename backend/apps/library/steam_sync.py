@@ -12,6 +12,7 @@ from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL
 from apps.games.models import Game
 from apps.games.services import get_or_create_game_from_igdb
 from apps.library.models import UserGame
+from apps.library.services_collections import sync_steam_entries_for_matched_games
 from apps.users.models import CustomUser
 
 logger = logging.getLogger("system_logs")
@@ -86,6 +87,8 @@ def sync_steam_library(user: CustomUser) -> None:
             if not created and playtime_hours > user_game.playtime_forever:
                 user_game.playtime_forever = playtime_hours
                 user_game.save(update_fields=["playtime_forever", "date_modified"])
+
+        sync_steam_entries_for_matched_games(user, all_matched_games)
 
     # 5. Mettre à jour la date de dernière synchronisation
 

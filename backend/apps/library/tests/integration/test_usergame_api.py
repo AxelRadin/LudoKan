@@ -16,6 +16,8 @@ class TestUserGameAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["game"]["id"] == game.id
         assert response.data["status"] == "EN_COURS"
+        assert "collection_ids" in response.data
+        assert isinstance(response.data["collection_ids"], list)
 
     def test_create_usergame_duplicate(self, authenticated_api_client, user, game):
         UserGame.objects.create(user=user, game=game)

@@ -1,7 +1,8 @@
+from django.db.models import Max
 from rest_framework import serializers
 
 from apps.games.models import Game, Genre, Platform, Publisher
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary
 
 
 class PublisherSerializer(serializers.ModelSerializer):
@@ -50,11 +51,24 @@ class GameNestedSerializer(serializers.ModelSerializer):
 class UserGameSerializer(serializers.ModelSerializer):
     game = GameNestedSerializer(read_only=True)
     game_id = serializers.IntegerField(write_only=True, required=False)
+    collection_ids = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = UserGame
-        fields = ["id", "game", "game_id", "status", "is_favorite", "date_added", "playtime_forever"]
-        read_only_fields = ["date_added", "playtime_forever"]
+        fields = [
+            "id",
+            "game",
+            "game_id",
+            "status",
+            "is_favorite",
+            "date_added",
+            "playtime_forever",
+            "collection_ids",
+        ]
+        read_only_fields = ["date_added", "playtime_forever", "collection_ids"]
+
+    def get_collection_ids(self, obj: UserGame) -> list[int]:
+        return list(obj.library_entries.exclude(library__system_key=UserLibrary.SystemKey.MA_LUDOTHEQUE).values_list("library_id", flat=True))
 
     def validate_status(self, value):
         allowed = ["EN_COURS", "TERMINE", "ABANDONNE", "ENVIE_DE_JOUER"]
@@ -84,3 +98,80 @@ class UserGameSerializer(serializers.ModelSerializer):
         instance.is_favorite = validated_data.get("is_favorite", instance.is_favorite)
         instance.save()
         return instance
+
+
+class UserLibrarySerializer(serializers.ModelSerializer):
+    games_count = serializers.IntegerField(read_only=True)
+    is_system = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = UserLibrary
+        fields = [
+            "id",
+            "name",
+            "color",
+            "sort_order",
+            "is_default",
+            "is_visible_on_profile",
+            "system_key",
+            "is_system",
+            "games_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "is_default",
+            "system_key",
+            "is_system",
+            "games_count",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_is_system(self, obj: UserLibrary) -> bool:
+        return obj.is_system
+
+    def validate_name(self, value: str) -> str:
+        v = (value or "").strip()
+        if not v:
+            raise serializers.ValidationError("Le nom ne peut pas être vide.")
+        return v
+
+    def validate_color(self, value: str) -> str:
+        if not value:
+            return ""
+        v = value.strip()
+        if len(v) != 7 or not v.startswith("#"):
+            raise serializers.ValidationError("Utilise une couleur hex (#RRGGBB).")
+        return v
+
+    def validate(self, attrs):
+        instance = self.instance
+        if instance and instance.system_key:
+            allowed = {"is_visible_on_profile", "color"}
+            extra = set(attrs) - allowed
+            if extra:
+                raise serializers.ValidationError("Cette collection système ne peut modifier que la visibilité sur le profil et la couleur.")
+        return attrs
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        max_order = UserLibrary.objects.filter(user=user).aggregate(m=Max("sort_order"))["m"]
+        if max_order is None:
+            max_order = 0
+        validated_data.setdefault("sort_order", max_order + 1)
+        return UserLibrary.objects.create(
+            user=user,
+            system_key=None,
+            is_default=False,
+            **validated_data,
+        )
+
+
+class PublicUserLibrarySerializer(serializers.ModelSerializer):
+    games_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = UserLibrary
+        fields = ["id", "name", "color", "games_count", "sort_order"]

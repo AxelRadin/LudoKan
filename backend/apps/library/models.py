@@ -4,6 +4,96 @@ from django.db import models
 from apps.games.models import Game
 
 
+class UserLibrary(models.Model):
+    """
+    Collection nommée (liste) regroupant des UserGame sans dupliquer les jeux.
+    Les collections système (Ma ludothèque, Jeux Steam) ont ``system_key`` renseigné.
+    """
+
+    class SystemKey(models.TextChoices):
+        MA_LUDOTHEQUE = "MA_LUDOTHEQUE", "Ma ludothèque"
+        STEAM = "STEAM", "Jeux Steam"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="libraries",
+    )
+    name = models.CharField(max_length=120)
+    color = models.CharField(
+        max_length=7,
+        blank=True,
+        default="",
+        help_text="Couleur hex optionnelle, ex. #d32f2f",
+    )
+    sort_order = models.PositiveIntegerField(default=0)
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Vrai pour la collection principale « Ma ludothèque ».",
+    )
+    is_visible_on_profile = models.BooleanField(
+        default=False,
+        help_text="Si vrai, la collection peut être listée sur le profil public.",
+    )
+    system_key = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+        choices=SystemKey.choices,
+        help_text="Non nul pour les collections gérées par l’application.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Collection utilisateur"
+        verbose_name_plural = "Collections utilisateur"
+        ordering = ["sort_order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "system_key"],
+                condition=models.Q(system_key__isnull=False),
+                name="library_user_system_key_uniq",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user} — {self.name}"
+
+    @property
+    def is_system(self) -> bool:
+        return bool(self.system_key)
+
+
+class UserLibraryEntry(models.Model):
+    """Appartenance d’un UserGame à une collection."""
+
+    library = models.ForeignKey(
+        UserLibrary,
+        on_delete=models.CASCADE,
+        related_name="entries",
+    )
+    user_game = models.ForeignKey(
+        "UserGame",
+        on_delete=models.CASCADE,
+        related_name="library_entries",
+    )
+    date_added = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Entrée de collection"
+        verbose_name_plural = "Entrées de collections"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["library", "user_game"],
+                name="library_entry_library_usergame_uniq",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.library_id} → UserGame {self.user_game_id}"
+
+
 class UserGame(models.Model):
     class GameStatus(models.TextChoices):
         ENVIE_DE_JOUER = "ENVIE_DE_JOUER", "Envie de jouer"
