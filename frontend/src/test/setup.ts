@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
 import { vi } from 'vitest';
+import '../i18n';
 
 vi.stubEnv('VITE_RECAPTCHA_SITE_KEY', 'test-site-key');
 
