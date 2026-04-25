@@ -264,7 +264,7 @@ class GameByIgdbIdView(APIView):
 
     def _is_stub_game(self, game: Game) -> bool:
         """Check if the local record is a stub (missing metadata)."""
-        return not game.description or (game.genres.count() == 0 and game.platforms.count() == 0) or game.max_players is None
+        return not game.description or (game.genres.count() == 0 and game.platforms.count() == 0)
 
     def _handle_igdb_result(self, game: Optional[Game], norm: dict, request) -> Response:
         """Heal existing stub or return proxy data for new game."""

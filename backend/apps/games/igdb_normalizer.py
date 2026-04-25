@@ -69,11 +69,11 @@ def _extract_publisher(involved_companies: Any) -> dict | None:
     return None
 
 
+_MULTIPLAYER_GAME_MODES = {"Multiplayer", "Co-operative", "Battle Royale", "Split screen", "MMO"}
+
+
 def _extract_player_counts(g: dict[str, Any]) -> tuple[int | None, int | None]:
     mode_names = {m.get("name") for m in g.get("game_modes") or [] if isinstance(m, dict)}
-    is_solo_only = bool(mode_names) and mode_names <= {"Single player"}
-    if is_solo_only:
-        return 1, 1
 
     multiplayer_modes = g.get("multiplayer_modes") or []
     candidates = []
@@ -86,8 +86,16 @@ def _extract_player_counts(g: dict[str, Any]) -> tuple[int | None, int | None]:
                 candidates.append(val)
 
     max_players = max(candidates) if candidates else None
-    min_players = 1 if max_players is not None else None
-    return min_players, max_players
+    if max_players is not None:
+        return 1, max_players
+
+    # No explicit multiplayer count — use game_modes to infer
+    has_multiplayer_mode = bool(mode_names & _MULTIPLAYER_GAME_MODES)
+    if mode_names and not has_multiplayer_mode:
+        # game_modes present but none are multiplayer → solo
+        return 1, 1
+
+    return None, None
 
 
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
