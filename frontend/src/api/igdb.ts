@@ -104,6 +104,30 @@ function appendIgdbListFilters(
     params.set('max_players', String(filters.max_players));
 }
 
+function normalizePositionalGenre(genre?: number | number[]): number[] {
+  if (genre == null) return [];
+  if (Array.isArray(genre)) return genre;
+  return [genre];
+}
+
+function mergeGenreFilter(
+  filters: IgdbListFilters | undefined,
+  positionalGenre: number[]
+): IgdbListFilters | undefined {
+  const hasPositionalGenre = positionalGenre.length > 0;
+  if (!filters) {
+    if (!hasPositionalGenre) return undefined;
+    return { genre: positionalGenre };
+  }
+
+  const merged: IgdbListFilters = { ...filters };
+  const hasFilterGenre = (merged.genre?.length ?? 0) > 0;
+  if (!hasFilterGenre && hasPositionalGenre) {
+    merged.genre = positionalGenre;
+  }
+  return merged;
+}
+
 export async function searchIgdbGames(
   q: string,
   limit = 8,
@@ -152,11 +176,8 @@ export async function fetchTrendingGames(
     limit: String(limit),
     offset: String(offset),
   });
-  const fromPositional =
-    genre != null ? (Array.isArray(genre) ? genre : [genre]) : [];
-  const merged: IgdbListFilters = { ...(filters ?? {}) };
-  if (!merged.genre?.length && fromPositional.length)
-    merged.genre = fromPositional;
+  const fromPositional = normalizePositionalGenre(genre);
+  const merged = mergeGenreFilter(filters, fromPositional);
   appendIgdbListFilters(params, merged);
   if (!enrich) params.set('enrich', '0');
   const data = (await apiGet(`/api/igdb/trending/?${params}`, { signal })) as {
@@ -179,11 +200,8 @@ export async function fetchTrendingGamesWithCount(
     limit: String(limit),
     offset: String(offset),
   });
-  const fromPositional =
-    genre != null ? (Array.isArray(genre) ? genre : [genre]) : [];
-  const merged: IgdbListFilters = { ...(filters ?? {}) };
-  if (!merged.genre?.length && fromPositional.length)
-    merged.genre = fromPositional;
+  const fromPositional = normalizePositionalGenre(genre);
+  const merged = mergeGenreFilter(filters, fromPositional);
   appendIgdbListFilters(params, merged);
   params.set('enrich', '0');
   const data = (await apiGet(`/api/igdb/trending/?${params}`, { signal })) as {

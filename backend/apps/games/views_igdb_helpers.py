@@ -74,22 +74,33 @@ def filter_raw_games_by_genre_platform_ids(
     return filtered
 
 
-def _search_page_fields(genre_ids: list[int], use_demo: bool) -> str:
-    f = FIELDS_SEARCH_PAGE.rstrip(";")
-    if genre_ids:
+def _fields_with_optional_genres_and_demographics(
+    base_fields: str,
+    include_genres: bool,
+    use_demo: bool,
+) -> str:
+    f = base_fields.rstrip(";")
+    if include_genres:
         f += ",genres"
     if use_demo:
         f += FIELDS_IGDB_DEMOGRAPHICS_SUFFIX
     return f + ";"
+
+
+def _search_page_fields(genre_ids: list[int], use_demo: bool) -> str:
+    return _fields_with_optional_genres_and_demographics(
+        FIELDS_SEARCH_PAGE,
+        bool(genre_ids),
+        use_demo,
+    )
 
 
 def _search_games_fields_for_list(genre_ids: list[int], use_demo: bool) -> str:
-    f = FIELDS_GAMES_SEARCH.rstrip(";")
-    if genre_ids:
-        f += ",genres"
-    if use_demo:
-        f += FIELDS_IGDB_DEMOGRAPHICS_SUFFIX
-    return f + ";"
+    return _fields_with_optional_genres_and_demographics(
+        FIELDS_GAMES_SEARCH,
+        bool(genre_ids),
+        use_demo,
+    )
 
 
 # --- Search-page ---

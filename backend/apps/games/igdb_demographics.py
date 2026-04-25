@@ -141,15 +141,12 @@ def _numeric_filter_result(
     ma = compute_min_age(game_data, age_ratings_map)
     mn, mx = compute_player_counts(game_data, mp_by_game)
 
-    if min_age is not None:
-        if ma is None or ma < min_age:
-            return False, ma, mn, mx
-    if min_players is not None:
-        if mn is None or mn > min_players:
-            return False, ma, mn, mx
-    if max_players is not None:
-        if mx is None or mx < max_players:
-            return False, ma, mn, mx
+    if min_age is not None and (ma is None or ma < min_age):
+        return False, ma, mn, mx
+    if min_players is not None and (mn is None or mn > min_players):
+        return False, ma, mn, mx
+    if max_players is not None and (mx is None or mx < max_players):
+        return False, ma, mn, mx
     return True, ma, mn, mx
 
 
