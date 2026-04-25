@@ -1,8 +1,10 @@
 from datetime import datetime
 from typing import Any
 
+from django.db.models import Prefetch
+
 from apps.games.models import Game, Rating
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
 
 
 def _extract_release_date(first_release_date: Any) -> str | None:
@@ -127,7 +129,16 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
     user_games_map = {}
     ratings_map = {}
     if user and user.is_authenticated:
-        user_games = UserGame.objects.filter(user=user, game__igdb_id__in=igdb_ids)
+        user_games = UserGame.objects.filter(user=user, game__igdb_id__in=igdb_ids).prefetch_related(
+            Prefetch(
+                "library_entries",
+                queryset=UserLibraryEntry.objects.select_related("library").only(
+                    "library_id",
+                    "user_game_id",
+                    "library__system_key",
+                ),
+            )
+        )
         user_games_map = {ug.game.igdb_id: ug for ug in user_games}
 
         user_ratings = Rating.objects.filter(user=user, game__igdb_id__in=igdb_ids)
@@ -145,8 +156,12 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
         if igdb_id in user_games_map:
             ug = user_games_map[igdb_id]
             g["user_library"] = {
+                "id": ug.id,
                 "status": ug.status,
                 "is_favorite": ug.is_favorite,
+                "collection_ids": [
+                    e.library_id for e in ug.library_entries.all() if getattr(e.library, "system_key", None) != UserLibrary.SystemKey.MA_LUDOTHEQUE
+                ],
             }
 
         if igdb_id in ratings_map:
