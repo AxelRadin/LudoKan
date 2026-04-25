@@ -32,6 +32,14 @@ def igdb_response_as_list(data) -> list:
     return data if isinstance(data, list) else []
 
 
+def _has_demographic_filters(
+    min_age: int | None,
+    min_players: int | None,
+    max_players: int | None,
+) -> bool:
+    return min_age is not None or min_players is not None or max_players is not None
+
+
 def merge_igdb_where_predicates(
     base_predicate: str,
     genre_ids: list[int],
@@ -120,7 +128,7 @@ def search_page_name_matches(
 ) -> list:
     genre_ids = genre_ids or []
     platform_ids = platform_ids or []
-    use_demo = min_age is not None or min_players is not None or max_players is not None
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
     needs_post_slice = use_demo
 
     def fetch_for_q(q_inner: str) -> list:
@@ -156,7 +164,7 @@ def search_page_fallback_search(
 ) -> list:
     genre_ids = genre_ids or []
     platform_ids = platform_ids or []
-    use_demo = min_age is not None or min_players is not None or max_players is not None
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
     fields = _search_page_fields(genre_ids, use_demo)
     search_body = f'{fields} search "{q_esc}"; limit 50;'
     try:
@@ -248,7 +256,7 @@ def trending_fetch_games_array(
     min_players: int | None = None,
     max_players: int | None = None,
 ) -> list:
-    use_demo = min_age is not None or min_players is not None or max_players is not None
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
     sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
     merged_clause = merge_trending_where_with_filters(sort_clause, genre_ids, platform_ids)
 
@@ -288,7 +296,7 @@ def trending_fetch_total_count(
     max_players: int | None = None,
 ) -> int:
     try:
-        use_demo = min_age is not None or min_players is not None or max_players is not None
+        use_demo = _has_demographic_filters(min_age, min_players, max_players)
         sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
         merged_clause = merge_trending_where_with_filters(sort_clause, genre_ids, platform_ids)
         where_part = merged_clause.split("sort")[0].strip()
@@ -335,6 +343,26 @@ def _rating_desc_key(g: dict) -> float:
     return -(g.get("total_rating_count") or 0)
 
 
+def _apply_raw_list_filters(
+    igdb_request: IgdbRequestFn,
+    games: list,
+    genre_ids: list[int],
+    platform_ids: list[int],
+    min_age: int | None,
+    min_players: int | None,
+    max_players: int | None,
+) -> list:
+    out = filter_raw_games_by_genre_platform_ids(games, genre_ids, platform_ids)
+    return filter_games_raw_by_demographics(igdb_request, out, min_age, min_players, max_players)
+
+
+def _top_rated_games(games: list, limit: int) -> list:
+    return sorted(
+        [g for g in games if (g.get("total_rating_count") or 0) > 0],
+        key=_rating_desc_key,
+    )[:limit]
+
+
 def _merge_unique_games_by_id(first: list, second: list) -> list:
     seen: set[int] = set()
     merged: list = []
@@ -364,7 +392,7 @@ def igdb_search_suggest_results(
 ) -> list:
     genre_ids = genre_ids or []
     platform_ids = platform_ids or []
-    use_demo = min_age is not None or min_players is not None or max_players is not None
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
     fetch_limit = max(limit * 4, 50) if (use_demo or genre_ids or platform_ids) else limit
     fields = _search_games_fields_for_list(genre_ids, use_demo)
     core = f'name ~ *"{q_esc}"* & total_rating_count > 0'
@@ -384,24 +412,16 @@ def igdb_search_suggest_results(
     name_results = igdb_response_as_list(name_results)
     search_results = igdb_response_as_list(search_results)
     merged = _merge_unique_games_by_id(name_results, search_results)
-    merged = filter_raw_games_by_genre_platform_ids(merged, genre_ids, platform_ids)
-    merged = filter_games_raw_by_demographics(igdb_request, merged, min_age, min_players, max_players)
-    arr = sorted(
-        [g for g in merged if (g.get("total_rating_count") or 0) > 0],
-        key=_rating_desc_key,
-    )[:limit]
+    merged = _apply_raw_list_filters(igdb_request, merged, genre_ids, platform_ids, min_age, min_players, max_players)
+    arr = _top_rated_games(merged, limit)
     if not arr and q_norm_esc != q_esc:
         # Comportement historique : un seul appel IGDB (search normalisé), pour garder 3 requêtes max
         # sur le chemin suggest + requête accentuée (cf. tests d’intégration).
         fallback_query = f'{fields} search "{q_norm_esc}"; limit 50;'
         try:
             fallback = igdb_response_as_list(igdb_request("games", fallback_query))
-            merged2 = filter_raw_games_by_genre_platform_ids(fallback, genre_ids, platform_ids)
-            merged2 = filter_games_raw_by_demographics(igdb_request, merged2, min_age, min_players, max_players)
-            arr = sorted(
-                [g for g in merged2 if (g.get("total_rating_count") or 0) > 0],
-                key=_rating_desc_key,
-            )[:limit]
+            merged2 = _apply_raw_list_filters(igdb_request, fallback, genre_ids, platform_ids, min_age, min_players, max_players)
+            arr = _top_rated_games(merged2, limit)
         except Exception:
             pass
     return arr
@@ -420,7 +440,7 @@ def igdb_search_non_suggest_results(
 ) -> list:
     genre_ids = genre_ids or []
     platform_ids = platform_ids or []
-    use_demo = min_age is not None or min_players is not None or max_players is not None
+    use_demo = _has_demographic_filters(min_age, min_players, max_players)
     fetch_limit = max(limit * 4, 50) if (use_demo or genre_ids or platform_ids) else limit
     fields = _search_games_fields_for_list(genre_ids, use_demo)
     query = f'{fields} search "{q_esc}"; limit {fetch_limit};'
@@ -428,8 +448,7 @@ def igdb_search_non_suggest_results(
     if not arr and q_norm_esc != q_esc:
         query = f'{fields} search "{q_norm_esc}"; limit {fetch_limit};'
         arr = igdb_response_as_list(igdb_request("games", query))
-    arr = filter_raw_games_by_genre_platform_ids(arr, genre_ids, platform_ids)
-    arr = filter_games_raw_by_demographics(igdb_request, arr, min_age, min_players, max_players)
+    arr = _apply_raw_list_filters(igdb_request, arr, genre_ids, platform_ids, min_age, min_players, max_players)
     return arr[:limit]
 
 
