@@ -1,5 +1,6 @@
 from urllib.parse import parse_qs
 
+from channels.auth import AuthMiddlewareStack
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -41,10 +42,7 @@ class JwtAuthMiddleware:
         query_string = scope.get("query_string", b"").decode("utf-8")
         params = parse_qs(query_string)
 
-        token = None
-
-        if "token" in params and params["token"]:
-            token = params["token"][0]
+        token = params.get("token", [None])[0]
 
         # 2) Sinon, essayer de récupérer le token dans les cookies (header Cookie)
         if token is None:
@@ -56,13 +54,11 @@ class JwtAuthMiddleware:
                     key, value = part.strip().split("=", 1)
                     cookies[key] = value
 
-            token = cookies.get("access_token")
+        token = cookies.get("access") or cookies.get("access_token") or cookies.get("jwt") or cookies.get("jwt-auth")
 
         # 3) Résolution de l'utilisateur à partir du token (ou AnonymousUser)
         if token:
             scope["user"] = await get_user_from_token(token)
-        else:
-            scope["user"] = AnonymousUser()
 
         return await self.inner(scope, receive, send)
 
@@ -80,4 +76,4 @@ def jwt_auth_middleware_stack(inner):
         })
     """
 
-    return JwtAuthMiddleware(inner)
+    return AuthMiddlewareStack(JwtAuthMiddleware(inner))

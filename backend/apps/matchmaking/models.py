@@ -10,16 +10,9 @@ class MatchmakingRequestQuerySet(models.QuerySet):
         return self.filter(status=MatchmakingRequest.STATUS_PENDING)
 
     def active(self):
-        """Requêtes encore valides (non expirées)."""
         return self.pending().filter(expires_at__gt=timezone.now())
 
     def expire_old(self) -> int:
-        """
-        Marque comme 'expired' toutes les requêtes expirées.
-
-        Retourne le nombre de lignes affectées. Peut être utilisé par une
-        tâche périodique Celery dans le futur.
-        """
         return self.pending().filter(expires_at__lte=timezone.now()).update(status=MatchmakingRequest.STATUS_EXPIRED)
 
 
@@ -37,10 +30,7 @@ class MatchmakingRequest(models.Model):
 
     latitude = models.FloatField()
     longitude = models.FloatField()
-
-    # Optionnel (optimisation / future PostGIS migration)
     geohash = models.CharField(max_length=12, blank=True)
-
     radius_km = models.PositiveIntegerField(default=10)
 
     STATUS_PENDING = "pending"
@@ -53,12 +43,7 @@ class MatchmakingRequest(models.Model):
         (STATUS_EXPIRED, "Expired"),
     ]
 
-    status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default=STATUS_PENDING,
-    )
-
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
     expires_at = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -77,21 +62,9 @@ class MatchmakingRequest(models.Model):
 
 
 class Match(models.Model):
-    player1 = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="matches_as_player1",
-    )
-    player2 = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name="matches_as_player2",
-    )
-    game = models.ForeignKey(
-        Game,
-        on_delete=models.CASCADE,
-        related_name="matches",
-    )
+    player1 = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="matches_as_player1")
+    player2 = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="matches_as_player2")
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="matches")
 
     STATUS_ACTIVE = "active"
     STATUS_CLOSED = "closed"
@@ -101,10 +74,47 @@ class Match(models.Model):
         (STATUS_CLOSED, "Closed"),
     ]
 
-    status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default=STATUS_ACTIVE,
-    )
-
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+# ==========================================
+# MODÈLES : LOBBY / PARTY
+# ==========================================
+
+
+class GameParty(models.Model):
+    STATUS_OPEN = "open"
+    STATUS_COUNTDOWN = "countdown"
+    STATUS_CHAT_ACTIVE = "chat_active"
+    STATUS_CANCELLED = "cancelled"
+
+    STATUS_CHOICES = [
+        (STATUS_OPEN, "Ouvert / En formation"),
+        (STATUS_COUNTDOWN, "Compte à rebours en cours"),
+        (STATUS_CHAT_ACTIVE, "Discussion active"),
+        (STATUS_CANCELLED, "Annulé"),
+    ]
+
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="parties")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_OPEN)
+    max_players = models.PositiveIntegerField(default=2)  # Ou défini dynamiquement selon le jeu
+
+    countdown_ends_at = models.DateTimeField(null=True, blank=True)
+    chat_room_id = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_full(self):
+        return self.members.count() >= self.max_players
+
+
+class GamePartyMember(models.Model):
+    party = models.ForeignKey(GameParty, on_delete=models.CASCADE, related_name="members")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    ready = models.BooleanField(default=False)
+    ready_for_chat = models.BooleanField(default=False)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("party", "user")

@@ -6,11 +6,11 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
-import MatchmakingModal from '../components/MatchmakingModal';
-import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
+import MatchmakingModal, { PartyInfo } from '../components/MatchmakingModal';
+import PartyChatModal from '../components/PartyChatModal'; // <-- Import de la nouvelle modale
+import { apiDelete, apiGet, apiPost } from '../services/api';
 import { useAuth } from './useAuth';
 
 interface MatchmakingContextType {
@@ -20,7 +20,10 @@ interface MatchmakingContextType {
     gameImage: string
   ) => Promise<void>;
   cancelMatchmaking: () => Promise<void>;
+  handleReady: () => Promise<void>;
+  handleReadyForChat: () => Promise<void>;
   isMatching: boolean;
+  activeParty: PartyInfo | null;
 }
 
 const MatchmakingContext = createContext<MatchmakingContextType | undefined>(
@@ -30,9 +33,8 @@ const MatchmakingContext = createContext<MatchmakingContextType | undefined>(
 // eslint-disable-next-line react-refresh/only-export-components
 export function useMatchmaking() {
   const context = useContext(MatchmakingContext);
-  if (!context) {
+  if (!context)
     throw new Error('useMatchmaking must be used within a MatchmakingProvider');
-  }
   return context;
 }
 
@@ -58,23 +60,21 @@ async function getUserLocation(): Promise<{
 
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
   const [isMatching, setIsMatching] = useState(false);
+
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
-  const [matches, setMatches] = useState<any[]>([]);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   const [activeRequestId, setActiveRequestId] = useState<number | null>(null);
   const [activeRequestStartedAt, setActiveRequestStartedAt] =
     useState<Date | null>(null);
-  const [currentRadius, setCurrentRadius] = useState<number>(20);
-  const [hasNewMatch, setHasNewMatch] = useState(false);
+  const [activeParty, setActiveParty] = useState<PartyInfo | null>(null);
 
   const [activeGame, setActiveGame] = useState<{
     name: string;
     image: string;
   } | null>(null);
-
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingGame, setPendingGame] = useState<{
     id: string;
@@ -82,91 +82,110 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     image: string;
   } | null>(null);
 
+  const clearAllStates = useCallback(() => {
+    setActiveRequestId(null);
+    setActiveRequestStartedAt(null);
+    setActiveParty(null);
+    setActiveGame(null);
+    setIsMatchmakingModalOpen(false);
+    setIsChatModalOpen(false);
+  }, []);
+
+  const activePartyStatus = activeParty?.status;
+  const hasActiveParty = !!activeParty;
+
   useEffect(() => {
-    if (isAuthenticated) {
-      apiGet('/api/matchmaking/requests/')
-        .then(async reqs => {
-          if (reqs?.length > 0) {
-            const active = reqs[0];
-            setActiveRequestId(active.id);
-            setActiveRequestStartedAt(new Date(active.created_at));
-            setCurrentRadius(active.radius_km);
-
-            try {
-              const gameData = await apiGet(`/api/games/${active.game}/`);
-              let image = gameData.cover_url;
-
-              if (image?.includes('t_thumb')) {
-                image = image.replace('t_thumb', 't_1080p');
-              } else if (image?.includes('t_cover_big')) {
-                image = image.replace('t_cover_big', 't_1080p');
-              }
-              setActiveGame({ name: gameData.name_fr || gameData.name, image });
-            } catch (e) {
-              console.error(e);
-            }
-
-            try {
-              const currentMatches = await apiGet('/api/matchmaking/matches/');
-              setMatches(currentMatches);
-            } catch (e) {
-              console.error(e);
-            }
-          }
-        })
-        .catch(() => {});
-    } else {
-      setActiveRequestId(null);
-      setActiveRequestStartedAt(null);
-      setMatches([]);
+    if (!isAuthenticated) {
+      clearAllStates();
+      return;
     }
-  }, [isAuthenticated]);
+
+    const checkStatus = async () => {
+      try {
+        const partyRes = await apiGet(
+          `/api/matchmaking/parties/my-active/?_t=${Date.now()}`
+        );
+
+        if (partyRes && partyRes.id) {
+          const isMatchFound =
+            partyRes.members.length > 1 || partyRes.status !== 'open';
+
+          if (isMatchFound) {
+            if (
+              partyRes.status === 'chat_active' &&
+              activePartyStatus !== 'chat_active'
+            ) {
+              setIsMatchmakingModalOpen(false);
+              setIsChatModalOpen(true);
+            }
+            setActiveParty(partyRes);
+          } else {
+            setActiveParty(null);
+          }
+          return;
+        }
+
+        if (activeRequestId) {
+          const reqsRes = await apiGet(
+            `/api/matchmaking/requests/?_t=${Date.now()}`
+          );
+          const reqsList = Array.isArray(reqsRes)
+            ? reqsRes
+            : reqsRes?.results || [];
+          const stillActive = reqsList.find(
+            (r: any) => r.id === activeRequestId
+          );
+          if (!stillActive) {
+            setActiveRequestId(null);
+            setActiveRequestStartedAt(null);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur lors du polling de statut', error);
+      }
+    };
+
+    checkStatus();
+
+    let intervalId: NodeJS.Timeout | undefined;
+
+    if (activeRequestId || hasActiveParty) {
+      intervalId = setInterval(checkStatus, 4000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [
+    isAuthenticated,
+    activeRequestId,
+    activePartyStatus,
+    hasActiveParty,
+    clearAllStates,
+  ]);
 
   const executeMatchmaking = useCallback(
     async (gameId: string, gameName: string, gameImage: string) => {
       setIsMatching(true);
       try {
         const { latitude, longitude } = await getUserLocation();
-        const defaultExpiresAt = new Date();
-        defaultExpiresAt.setHours(defaultExpiresAt.getHours() + 1);
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 1);
 
-        let reqId = null;
-        let startedDate = new Date();
-        let radius = 20;
+        const res = await apiPost('/api/matchmaking/requests/', {
+          game: gameId,
+          latitude,
+          longitude,
+          radius_km: 20,
+          expires_at: expiresAt.toISOString(),
+        });
 
-        try {
-          const res = await apiPost('/api/matchmaking/requests/', {
-            game: gameId,
-            latitude,
-            longitude,
-            radius_km: radius,
-            expires_at: defaultExpiresAt.toISOString(),
-          });
-          reqId = res.id;
-          startedDate = new Date(res.created_at);
-        } catch {
-          const activeReqs = await apiGet(
-            `/api/matchmaking/requests/?game=${gameId}`
-          );
-          if (activeReqs?.length > 0) {
-            reqId = activeReqs[0].id;
-            radius = activeReqs[0].radius_km;
-            startedDate = new Date(activeReqs[0].created_at);
-          }
-        }
-
-        setActiveRequestId(reqId);
-        setCurrentRadius(radius);
-        setActiveRequestStartedAt(startedDate);
+        setActiveRequestId(res.id);
+        setActiveRequestStartedAt(new Date(res.created_at));
         setActiveGame({ name: gameName, image: gameImage });
-
-        const matchesData = await apiGet('/api/matchmaking/matches/');
-        setMatches(matchesData);
-        setHasNewMatch(false);
         setIsMatchmakingModalOpen(true);
       } catch (error) {
-        console.error('Erreur API lors du matchmaking', error);
-        alert('Un problème est survenu lors de la recherche de joueurs.');
+        console.error('Erreur lancement matchmaking', error);
       } finally {
         setIsMatching(false);
       }
@@ -176,152 +195,130 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
 
   const startMatchmaking = useCallback(
     async (gameId: string, gameName: string, gameImage: string) => {
-      if (activeRequestId) {
+      if (activeRequestId || activeParty) {
         setPendingGame({ id: gameId, name: gameName, image: gameImage });
-        setIsMatchmakingModalOpen(true);
         setIsConfirmModalOpen(true);
         return;
       }
-
       await executeMatchmaking(gameId, gameName, gameImage);
     },
-    [activeRequestId, executeMatchmaking]
+    [activeRequestId, activeParty, executeMatchmaking]
   );
 
   const cancelMatchmaking = useCallback(async () => {
-    if (activeRequestId) {
-      try {
+    try {
+      if (activeParty) {
+        await apiPost(`/api/matchmaking/parties/${activeParty.id}/leave/`);
+      } else if (activeRequestId) {
         await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
-      } catch (error) {
-        console.error("Erreur lors de l'annulation côté serveur", error);
       }
+    } catch (error) {
+      console.error("Erreur lors de l'annulation", error);
+    } finally {
+      clearAllStates();
     }
+  }, [activeRequestId, activeParty, clearAllStates]);
 
-    setActiveRequestId(null);
-    setActiveRequestStartedAt(null);
-    setActiveGame(null);
-    setMatches([]);
-    setHasNewMatch(false);
-    setIsMatchmakingModalOpen(false);
-  }, [activeRequestId]);
+  const handleReady = useCallback(async () => {
+    if (!activeParty) return;
+    try {
+      await apiPost(`/api/matchmaking/parties/${activeParty.id}/ready/`);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [activeParty]);
 
-  const confirmNewMatchmaking = useCallback(async () => {
-    if (pendingGame) {
-      await cancelMatchmaking();
-      setIsConfirmModalOpen(false);
-      await executeMatchmaking(
-        pendingGame.id,
-        pendingGame.name,
-        pendingGame.image
+  const handleReadyForChat = useCallback(async () => {
+    if (!activeParty) return;
+    try {
+      await apiPost(
+        `/api/matchmaking/parties/${activeParty.id}/ready-for-chat/`
       );
-      setPendingGame(null);
+    } catch (e) {
+      console.error(e);
     }
-  }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
-
-  // Nouveau useEffect de polling avec cache buster et protection d'état
-  useEffect(() => {
-    if (!activeRequestId) return;
-
-    const intervalId = setInterval(async () => {
-      try {
-        // Ajout du paramètre _t pour empêcher la mise en cache par le navigateur
-        const currentMatches = await apiGet(
-          `/api/matchmaking/matches/?_t=${Date.now()}`
-        );
-
-        if (Array.isArray(currentMatches)) {
-          setMatches(prevMatches => {
-            // Comparaison sûre avec l'état précédent
-            if (currentMatches.length > prevMatches.length) {
-              setHasNewMatch(true);
-            }
-            return currentMatches;
-          });
-        }
-      } catch {
-        // En cas d'erreur (ex: requête expirée en base), on réinitialise
-        setActiveRequestId(null);
-        setActiveRequestStartedAt(null);
-      }
-    }, 5000); // 5000ms = 5 secondes
-
-    return () => clearInterval(intervalId);
-  }, [activeRequestId]);
-
-  useEffect(() => {
-    if (!activeRequestId || hasNewMatch) return;
-
-    const timeoutId = setTimeout(
-      async () => {
-        const newRadius = currentRadius * 2;
-        try {
-          await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
-            radius_km: newRadius,
-          });
-          setCurrentRadius(newRadius);
-        } catch (error) {
-          console.error("Erreur d'extension du rayon", error);
-        }
-      },
-      5 * 60 * 1000
-    );
-
-    return () => clearTimeout(timeoutId);
-  }, [activeRequestId, currentRadius, hasNewMatch]);
+  }, [activeParty]);
 
   const contextValue = useMemo(
     () => ({
       startMatchmaking,
       cancelMatchmaking,
+      handleReady,
+      handleReadyForChat,
       isMatching,
+      activeParty,
     }),
-    [startMatchmaking, cancelMatchmaking, isMatching]
+    [
+      startMatchmaking,
+      cancelMatchmaking,
+      handleReady,
+      handleReadyForChat,
+      isMatching,
+      activeParty,
+    ]
   );
+
+  const widgetStatus =
+    activeParty?.status === 'chat_active'
+      ? 'chat'
+      : activeParty
+        ? 'lobby'
+        : 'searching';
 
   return (
     <MatchmakingContext.Provider value={contextValue}>
       {children}
 
-      {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
-        <FloatingMatchmakingWidget
-          startedAt={activeRequestStartedAt}
-          hasNewMatch={hasNewMatch}
-          onClick={() => {
-            setIsMatchmakingModalOpen(true);
-            setHasNewMatch(false);
-          }}
-        />
-      )}
+      {(activeRequestStartedAt || activeParty) &&
+        !isMatchmakingModalOpen &&
+        !isChatModalOpen &&
+        isAuthenticated && (
+          <FloatingMatchmakingWidget
+            startedAt={activeRequestStartedAt || new Date()}
+            status={widgetStatus}
+            onClick={() => {
+              if (widgetStatus === 'chat') setIsChatModalOpen(true);
+              else setIsMatchmakingModalOpen(true);
+            }}
+          />
+        )}
 
       <MatchmakingModal
         open={isMatchmakingModalOpen}
         onClose={() => setIsMatchmakingModalOpen(false)}
         onCancel={cancelMatchmaking}
-        matches={matches}
+        party={activeParty}
         startedAt={activeRequestStartedAt}
         game={activeGame}
-        onContactPlayer={async targetUserId => {
-          try {
-            const data = await apiPost('/api/chats/get-or-create/', {
-              target_user_id: targetUserId,
-            });
-
-            const roomId = data.room_id || data.id;
-
-            setIsMatchmakingModalOpen(false);
-            navigate(`/chat/${roomId}`);
-          } catch (error) {
-            console.error('Impossible de contacter le joueur :', error);
-          }
-        }}
+        onReady={handleReady}
+        onReadyForChat={handleReadyForChat}
       />
+
+      <PartyChatModal
+        open={isChatModalOpen}
+        onClose={() => setIsChatModalOpen(false)}
+        onLeave={cancelMatchmaking}
+        party={activeParty}
+        game={activeGame}
+      />
+
       <ConfirmCancelMatchmakingModal
         open={isConfirmModalOpen}
         onClose={() => {
           setIsConfirmModalOpen(false);
           setPendingGame(null);
         }}
-        onConfirm={confirmNewMatchmaking}
+        onConfirm={async () => {
+          await cancelMatchmaking();
+          setIsConfirmModalOpen(false);
+          if (pendingGame)
+            await executeMatchmaking(
+              pendingGame.id,
+              pendingGame.name,
+              pendingGame.image
+            );
+          setPendingGame(null);
+        }}
       />
     </MatchmakingContext.Provider>
   );
