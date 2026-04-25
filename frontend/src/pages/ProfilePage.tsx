@@ -16,6 +16,7 @@ import {
   MenuItem,
   DialogContentText,
   Tooltip,
+  IconButton,
 } from '@mui/material';
 import {
   useCallback,
@@ -32,11 +33,23 @@ import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import LibraryFilters from '../components/LibraryFilters';
 import {
+  CreateCollectionModal,
+  ManageCollectionsModal,
+} from '../components/UserCollectionModals';
+import {
+  LIBRARY_COLLECTION_QUERY_KEY,
   LIBRARY_STATUS_QUERY_KEY,
+  type LibraryCollectionFilter,
   type LibraryStatusFilter,
+  parseLibraryCollectionParam,
   parseLibraryStatusParam,
 } from '../constants/libraryFilter';
 import SecondaryButton from '../components/SecondaryButton';
+import {
+  fetchMyCollections,
+  removeGameFromCollection,
+  type UserCollection,
+} from '../api/collections';
 import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
@@ -112,6 +125,7 @@ type UserProfile = {
 
 type UserGame = {
   id: number;
+  collection_ids?: number[];
   status: string;
   is_favorite: boolean;
   date_added: string;
@@ -208,6 +222,7 @@ type ProfilePageModel = {
   avatarError: string;
   avatarBusy: boolean;
   userGames: UserGame[];
+  userGamesForLibrary: UserGame[];
   gamesEnCours: GameListItem[];
   gamesTermines: GameListItem[];
   gamesEnvie: GameListItem[];
@@ -230,9 +245,12 @@ type ProfilePageModel = {
   handleSteamConnect: () => Promise<void>;
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
+  reloadUserGames: () => Promise<void>;
 };
 
-function useProfilePageModel(): ProfilePageModel {
+function useProfilePageModel(
+  collectionFilterId: LibraryCollectionFilter
+): ProfilePageModel {
   const { t } = useTranslation();
   const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -312,6 +330,15 @@ function useProfilePageModel(): ProfilePageModel {
     }
   };
 
+  const reloadUserGames = useCallback(async () => {
+    try {
+      const res = await apiGet('/api/me/games/');
+      setUserGames(res.results || res || []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const handleSteamSync = async () => {
     if (steamBusy) return;
     setSteamBusy(true);
@@ -321,8 +348,7 @@ function useProfilePageModel(): ProfilePageModel {
       const pollInterval = setInterval(async () => {
         polls++;
         try {
-          const res = await apiGet('/api/me/games/');
-          setUserGames(res.results || res || []);
+          await reloadUserGames();
         } catch {
           /* ignore */
         }
@@ -610,35 +636,60 @@ function useProfilePageModel(): ProfilePageModel {
     }, 5000);
   };
 
-  const gamesForStatus = (status: string): GameListItem[] =>
-    userGames
-      .filter(g => g.status === status)
-      .map(g => ({
-        id: g.game.id,
-        name: g.game.name,
-        cover_url: g.game.cover_url,
-        image: g.game.image,
-        status: g.status,
-        userGameId: g.id,
-        steam_appid: g.game.steam_appid,
-        playtime_forever: g.playtime_forever,
-      }));
+  const userGamesForLibrary = useMemo(() => {
+    if (collectionFilterId === 'ALL') return userGames;
+    return userGames.filter(ug =>
+      Array.isArray(ug.collection_ids)
+        ? ug.collection_ids.includes(collectionFilterId)
+        : false
+    );
+  }, [userGames, collectionFilterId]);
 
-  const gamesEnCours = gamesForStatus('EN_COURS');
-  const gamesTermines = gamesForStatus('TERMINE');
-  const gamesEnvie = gamesForStatus('ENVIE_DE_JOUER');
-  const gamesFavoris = userGames
-    .filter(g => g.is_favorite)
-    .map(g => ({
-      id: g.game.id,
-      name: g.game.name,
-      cover_url: g.game.cover_url,
-      image: g.game.image,
-      status: g.status,
-      userGameId: g.id,
-      steam_appid: g.game.steam_appid,
-      playtime_forever: g.playtime_forever,
-    }));
+  const gamesForStatus = useCallback(
+    (games: UserGame[], status: string): GameListItem[] =>
+      games
+        .filter(g => g.status === status)
+        .map(g => ({
+          id: g.game.id,
+          name: g.game.name,
+          cover_url: g.game.cover_url,
+          image: g.game.image,
+          status: g.status,
+          userGameId: g.id,
+          steam_appid: g.game.steam_appid,
+          playtime_forever: g.playtime_forever,
+        })),
+    []
+  );
+
+  const gamesEnCours = useMemo(
+    () => gamesForStatus(userGamesForLibrary, 'EN_COURS'),
+    [userGamesForLibrary, gamesForStatus]
+  );
+  const gamesTermines = useMemo(
+    () => gamesForStatus(userGamesForLibrary, 'TERMINE'),
+    [userGamesForLibrary, gamesForStatus]
+  );
+  const gamesEnvie = useMemo(
+    () => gamesForStatus(userGamesForLibrary, 'ENVIE_DE_JOUER'),
+    [userGamesForLibrary, gamesForStatus]
+  );
+  const gamesFavoris = useMemo(
+    () =>
+      userGamesForLibrary
+        .filter(g => g.is_favorite)
+        .map(g => ({
+          id: g.game.id,
+          name: g.game.name,
+          cover_url: g.game.cover_url,
+          image: g.game.image,
+          status: g.status,
+          userGameId: g.id,
+          steam_appid: g.game.steam_appid,
+          playtime_forever: g.playtime_forever,
+        })),
+    [userGamesForLibrary]
+  );
 
   return {
     user,
@@ -648,6 +699,7 @@ function useProfilePageModel(): ProfilePageModel {
     avatarError,
     avatarBusy,
     userGames,
+    userGamesForLibrary,
     gamesEnCours,
     gamesTermines,
     gamesEnvie,
@@ -670,6 +722,7 @@ function useProfilePageModel(): ProfilePageModel {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
+    reloadUserGames,
   };
 }
 
@@ -1172,6 +1225,15 @@ function ProfileIntegrations({
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const collectionFilterId = useMemo(
+    () =>
+      parseLibraryCollectionParam(
+        searchParams.get(LIBRARY_COLLECTION_QUERY_KEY)
+      ),
+    [searchParams]
+  );
+
   const {
     user,
     loading,
@@ -1180,6 +1242,7 @@ export default function ProfilePage() {
     avatarError,
     avatarBusy,
     userGames,
+    userGamesForLibrary,
     gamesEnCours,
     gamesTermines,
     gamesEnvie,
@@ -1202,9 +1265,41 @@ export default function ProfilePage() {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
-  } = useProfilePageModel();
+    reloadUserGames,
+  } = useProfilePageModel(collectionFilterId);
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [collections, setCollections] = useState<UserCollection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const [librarySectionMenuAnchor, setLibrarySectionMenuAnchor] =
+    useState<null | HTMLElement>(null);
+  const [createCollectionModalOpen, setCreateCollectionModalOpen] =
+    useState(false);
+  const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
+    useState(false);
+
+  const refreshCollections = useCallback(async () => {
+    try {
+      const list = await fetchMyCollections();
+      setCollections(list);
+    } catch {
+      setCollections([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setCollectionsLoading(true);
+    refreshCollections().finally(() => {
+      if (alive) setCollectionsLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [refreshCollections, user?.pseudo]);
+
+  useEffect(() => {
+    refreshCollections();
+  }, [userGames.length, refreshCollections]);
 
   const libraryFilter = useMemo(
     () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
@@ -1226,15 +1321,30 @@ export default function ProfilePage() {
     [setSearchParams]
   );
 
+  const setLibraryCollectionFilter = useCallback(
+    (next: LibraryCollectionFilter) => {
+      setSearchParams(
+        prev => {
+          const p = new URLSearchParams(prev);
+          if (next === 'ALL') p.delete(LIBRARY_COLLECTION_QUERY_KEY);
+          else p.set(LIBRARY_COLLECTION_QUERY_KEY, String(next));
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
   const libraryCounts = useMemo(
     () => ({
-      all: userGames.length,
+      all: userGamesForLibrary.length,
       enCours: gamesEnCours.length,
       termines: gamesTermines.length,
       envie: gamesEnvie.length,
     }),
     [
-      userGames.length,
+      userGamesForLibrary.length,
       gamesEnCours.length,
       gamesTermines.length,
       gamesEnvie.length,
@@ -1256,13 +1366,45 @@ export default function ProfilePage() {
 
   const singleFilterTitle = useMemo(() => {
     const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
-      EN_COURS: 'En cours',
-      TERMINE: 'Terminés',
-      ENVIE_DE_JOUER: "Envie d'y jouer",
+      EN_COURS: t('profilePage.statusPlaying'),
+      TERMINE: t('profilePage.statusDone'),
+      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
     };
     if (libraryFilter === 'ALL') return '';
     return map[libraryFilter];
-  }, [libraryFilter]);
+  }, [libraryFilter, t]);
+
+  const activeCollectionMeta = useMemo(
+    () =>
+      typeof collectionFilterId === 'number'
+        ? collections.find(c => c.id === collectionFilterId)
+        : undefined,
+    [collections, collectionFilterId]
+  );
+
+  const handleDetachFromActiveCollection =
+    typeof collectionFilterId === 'number' &&
+    activeCollectionMeta?.system_key !== 'MA_LUDOTHEQUE'
+      ? async (userGameId: number) => {
+          try {
+            await removeGameFromCollection(collectionFilterId, userGameId);
+            await reloadUserGames();
+            await refreshCollections();
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      : undefined;
+
+  const gameListCollectionProps =
+    handleDetachFromActiveCollection != null
+      ? {
+          onDetachFromCollection: handleDetachFromActiveCollection,
+          detachFromCollectionTitle: `Retirer de « ${
+            activeCollectionMeta?.name ?? 'cette collection'
+          } »`,
+        }
+      : {};
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
@@ -1910,35 +2052,94 @@ export default function ProfilePage() {
                 {t('profilePage.libraryTitle')}
               </Typography>
             </Box>
-            <Box
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 999,
-                background: 'rgba(211,47,47,0.1)',
-                border: '1px solid rgba(211,47,47,0.25)',
-              }}
-            >
-              <Typography
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box
                 sx={{
-                  fontFamily: FONT_BODY,
-                  color: C.accent,
-                  fontSize: 13,
-                  fontWeight: 700,
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 999,
+                  background: 'rgba(211,47,47,0.1)',
+                  border: '1px solid rgba(211,47,47,0.25)',
                 }}
               >
-                {userGames.length <= 1
-                  ? t('profilePage.libraryTotal', { count: userGames.length })
-                  : t('profilePage.libraryTotalPlural', {
-                      count: userGames.length,
-                    })}
-              </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    color: C.accent,
+                    fontSize: 13,
+                    fontWeight: 700,
+                  }}
+                >
+                  {collectionFilterId === 'ALL'
+                    ? userGames.length <= 1
+                      ? t('profilePage.libraryTotal', {
+                          count: userGames.length,
+                        })
+                      : t('profilePage.libraryTotalPlural', {
+                          count: userGames.length,
+                        })
+                    : userGamesForLibrary.length <= 1
+                      ? t('profilePage.libraryInViewOne', {
+                          count: userGamesForLibrary.length,
+                        })
+                      : t('profilePage.libraryInViewMany', {
+                          count: userGamesForLibrary.length,
+                        })}
+                </Typography>
+              </Box>
+              <IconButton
+                aria-label={t('profilePage.libraryOptionsAria')}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                  setLibrarySectionMenuAnchor(e.currentTarget)
+                }
+                size="small"
+                sx={{ color: '#2e7d32' }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+              <Menu
+                anchorEl={librarySectionMenuAnchor}
+                open={Boolean(librarySectionMenuAnchor)}
+                onClose={() => setLibrarySectionMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  sx: {
+                    borderRadius: '12px',
+                    minWidth: 200,
+                    fontFamily: FONT_BODY,
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setLibrarySectionMenuAnchor(null);
+                    setCreateCollectionModalOpen(true);
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  {t('profilePage.createCollection')}
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setLibrarySectionMenuAnchor(null);
+                    setManageCollectionsModalOpen(true);
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  {t('profilePage.manageCollections')}
+                </MenuItem>
+              </Menu>
             </Box>
           </Box>
           <LibraryFilters
             value={libraryFilter}
             onChange={setLibraryFilter}
             counts={libraryCounts}
+            collections={collections}
+            collectionValue={collectionFilterId}
+            onCollectionChange={setLibraryCollectionFilter}
+            collectionsLoading={collectionsLoading}
           />
           <Box
             sx={{
@@ -1965,6 +2166,7 @@ export default function ProfilePage() {
                     title={`${label} (${games.length})`}
                     showStatus={false}
                     onRemove={removeGame}
+                    {...gameListCollectionProps}
                   />
                 ))}
               </>
@@ -1974,11 +2176,28 @@ export default function ProfilePage() {
                 title={`${singleFilterTitle} (${gamesForLibraryFilter.length})`}
                 showStatus={false}
                 onRemove={removeGame}
+                {...gameListCollectionProps}
               />
             )}
           </Box>
         </Paper>
       </Box>
+
+      <CreateCollectionModal
+        open={createCollectionModalOpen}
+        onClose={() => setCreateCollectionModalOpen(false)}
+        onCreated={async () => {
+          await refreshCollections();
+        }}
+      />
+      <ManageCollectionsModal
+        open={manageCollectionsModalOpen}
+        onClose={() => {
+          setManageCollectionsModalOpen(false);
+          void refreshCollections();
+          void reloadUserGames();
+        }}
+      />
 
       <Snackbar
         open={snackbar.open}

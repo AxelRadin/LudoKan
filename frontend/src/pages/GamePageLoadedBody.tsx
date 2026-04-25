@@ -13,11 +13,14 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PlatformLogos from '../components/PlatformLogos';
 import ReviewSection from '../components/reviews/ReviewSection';
 import { SectionAccentTitle } from '../components/SectionAccentTitle';
 import SecondaryButton from '../components/SecondaryButton';
+import { AddToCollectionModal } from '../components/UserCollectionModals';
+import { useAuth } from '../contexts/useAuth';
 import type { GamePageLogic } from '../hooks/useGamePageLogic';
 import type { NormalizedGame } from '../types/game';
 import type { GamePageAppearance } from './gamePageAppearance';
@@ -284,6 +287,23 @@ function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
   const { t } = useTranslation();
   const { card, redBtnSx, accent, muted } = appearance;
   const isFavorite = Boolean(logic.userGame?.is_favorite);
+  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+  const [collectionModalOpen, setCollectionModalOpen] = useState(false);
+
+  const openCollectionModal = () => setCollectionModalOpen(true);
+
+  const requireAuthForCollection = () => {
+    setPendingAction(() => () => setCollectionModalOpen(true));
+    setAuthModalOpen(true);
+  };
+
+  const onAddToCollectionClick = () => {
+    if (!isAuthenticated) {
+      requireAuthForCollection();
+      return;
+    }
+    openCollectionModal();
+  };
 
   return (
     <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
@@ -299,12 +319,23 @@ function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
         </SecondaryButton>
         <Button
           variant="contained"
-          onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
+          onClick={onAddToCollectionClick}
           sx={redBtnSx}
         >
           {t('gamePageBody.addToCollection')}
         </Button>
       </Box>
+
+      <AddToCollectionModal
+        open={collectionModalOpen}
+        onClose={() => setCollectionModalOpen(false)}
+        djangoGameId={logic.djangoId}
+        ensureDjangoId={logic.ensureDjangoId}
+        isAuthenticated={isAuthenticated}
+        onRequireAuth={requireAuthForCollection}
+        userGameHint={logic.userGame}
+        onApplied={logic.refreshUserLibrary}
+      />
 
       <Sep />
 

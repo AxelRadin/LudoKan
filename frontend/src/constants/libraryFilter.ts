@@ -1,6 +1,21 @@
 /** Query string key for persisting the ludothèque filter (e.g. `/profile?libraryStatus=EN_COURS`). */
 export const LIBRARY_STATUS_QUERY_KEY = 'libraryStatus';
 
+/** Filtre par collection (ID numérique), ou absent / ALL pour tout afficher. */
+export const LIBRARY_COLLECTION_QUERY_KEY = 'libraryCollection';
+
+export type LibraryCollectionFilter = number | 'ALL';
+
+export function parseLibraryCollectionParam(
+  raw: string | null
+): LibraryCollectionFilter {
+  if (raw == null || raw.trim() === '') return 'ALL';
+  const u = raw.trim().toUpperCase();
+  if (u === 'ALL') return 'ALL';
+  const n = Number.parseInt(raw.trim(), 10);
+  return Number.isFinite(n) ? n : 'ALL';
+}
+
 export type LibraryStatusFilter =
   | 'ALL'
   | 'EN_COURS'

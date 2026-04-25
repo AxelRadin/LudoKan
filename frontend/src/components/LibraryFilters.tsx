@@ -1,8 +1,18 @@
-import { Box, Button } from '@mui/material';
+import {
+  Box,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+} from '@mui/material';
+import type { UserCollection } from '../api/collections';
 import type {
+  LibraryCollectionFilter,
   LibraryCounts,
   LibraryStatusFilter,
 } from '../constants/libraryFilter';
+import { t } from 'i18next';
 
 const STATUS_FILTERS: Exclude<LibraryStatusFilter, 'ALL'>[] = [
   'EN_COURS',
@@ -12,12 +22,11 @@ const STATUS_FILTERS: Exclude<LibraryStatusFilter, 'ALL'>[] = [
 
 const FILTER_LABELS: Record<LibraryStatusFilter, string> = {
   ALL: 'Tous',
-  EN_COURS: 'En cours',
-  TERMINE: 'Terminés',
-  ENVIE_DE_JOUER: "Envie d'y jouer",
+  EN_COURS: t('profilePage.statusPlaying'),
+  TERMINE: t('profilePage.statusDone'),
+  ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
 };
 
-/* Aligné sur ProfilePage (C.*) */
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 const C = {
   title: '#0f0f0f',
@@ -48,6 +57,10 @@ type LibraryFiltersProps = {
   value: LibraryStatusFilter;
   onChange: (next: LibraryStatusFilter) => void;
   counts: LibraryCounts;
+  collections?: UserCollection[];
+  collectionValue: LibraryCollectionFilter;
+  onCollectionChange: (next: LibraryCollectionFilter) => void;
+  collectionsLoading?: boolean;
 };
 
 const FILTER_ORDER: LibraryStatusFilter[] = ['ALL', ...STATUS_FILTERS];
@@ -56,65 +69,101 @@ export default function LibraryFilters({
   value,
   onChange,
   counts,
+  collections = [],
+  collectionValue,
+  onCollectionChange,
+  collectionsLoading = false,
 }: Readonly<LibraryFiltersProps>) {
+  const selectValue = collectionValue === 'ALL' ? '' : String(collectionValue);
+
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: 1,
-        mb: 2,
-        rowGap: 1.25,
-      }}
-      role="tablist"
-      aria-label="Filtrer la ludothèque par statut"
-    >
-      {FILTER_ORDER.map(id => {
-        const selected = value === id;
-        const n = countFor(id, counts);
-        return (
-          <Button
-            key={id}
-            onClick={() => onChange(id)}
-            disableElevation
-            variant={selected ? 'contained' : 'outlined'}
-            role="tab"
-            aria-selected={selected}
-            sx={{
-              borderRadius: 999,
-              textTransform: 'none',
-              fontFamily: FONT_BODY,
-              fontSize: 13,
-              fontWeight: selected ? 700 : 600,
-              minHeight: 36,
-              px: 1.75,
-              py: 0.75,
-              borderColor: selected ? C.activeBorder : C.border,
-              color: selected ? '#fff' : C.title,
-              bgcolor: selected ? C.accent : C.softBg,
-              boxShadow: 'none',
-              '&:hover': {
-                boxShadow: 'none',
-                bgcolor: selected ? C.accentDark : 'rgba(255,255,255,0.9)',
-                borderColor: selected ? C.accentDark : C.accent,
-              },
+    <Box sx={{ mb: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 1,
+          mb: 2,
+          rowGap: 1.25,
+        }}
+        role="tablist"
+        aria-label="Filtrer la ludothèque par statut"
+      >
+        <FormControl
+          size="small"
+          sx={{ minWidth: { xs: '100%', sm: 280 }, maxWidth: 400 }}
+        >
+          <InputLabel id="library-collection-filter-label">
+            Collection
+          </InputLabel>
+          <Select
+            labelId="library-collection-filter-label"
+            label="Collection"
+            value={selectValue}
+            disabled={collectionsLoading}
+            onChange={e => {
+              const v = e.target.value;
+              onCollectionChange(v === '' ? 'ALL' : Number(v));
             }}
+            sx={{ fontFamily: FONT_BODY, borderRadius: '12px' }}
           >
-            {FILTER_LABELS[id]}{' '}
-            <Box
-              component="span"
+            <MenuItem value="">
+              <em>Toutes les collections</em>
+            </MenuItem>
+            {collections.map(c => (
+              <MenuItem key={c.id} value={String(c.id)}>
+                {c.name} ({c.games_count})
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {FILTER_ORDER.map(id => {
+          const selected = value === id;
+          const n = countFor(id, counts);
+          return (
+            <Button
+              key={id}
+              onClick={() => onChange(id)}
+              disableElevation
+              variant={selected ? 'contained' : 'outlined'}
+              role="tab"
+              aria-selected={selected}
               sx={{
-                ml: 0.5,
-                fontWeight: 700,
-                opacity: selected ? 0.95 : 1,
-                color: selected ? 'rgba(255,255,255,0.92)' : C.muted,
+                borderRadius: 999,
+                textTransform: 'none',
+                fontFamily: FONT_BODY,
+                fontSize: 13,
+                fontWeight: selected ? 700 : 600,
+                minHeight: 36,
+                px: 1.75,
+                py: 0.75,
+                borderColor: selected ? C.activeBorder : C.border,
+                color: selected ? '#fff' : C.title,
+                bgcolor: selected ? C.accent : C.softBg,
+                boxShadow: 'none',
+                '&:hover': {
+                  boxShadow: 'none',
+                  bgcolor: selected ? C.accentDark : 'rgba(255,255,255,0.9)',
+                  borderColor: selected ? C.accentDark : C.accent,
+                },
               }}
             >
-              ({n})
-            </Box>
-          </Button>
-        );
-      })}
+              {FILTER_LABELS[id]}{' '}
+              <Box
+                component="span"
+                sx={{
+                  ml: 0.5,
+                  fontWeight: 700,
+                  opacity: selected ? 0.95 : 1,
+                  color: selected ? 'rgba(255,255,255,0.92)' : C.muted,
+                }}
+              >
+                ({n})
+              </Box>
+            </Button>
+          );
+        })}
+      </Box>
     </Box>
   );
 }
