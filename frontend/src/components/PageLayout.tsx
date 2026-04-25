@@ -20,9 +20,12 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const pageBackground = isDark
+    ? 'linear-gradient(180deg, #1a1010 0%, #221414 100%)'
+    : 'linear-gradient(180deg, #fdf4f4 0%, #f9ecec 100%)';
 
   return (
-    <Box sx={{ minHeight: '100vh', background: isDark ? `...` : `...` }}>
+    <Box sx={{ minHeight: '100vh', background: pageBackground }}>
       <Box sx={{ px: 4, py: 4, maxWidth: 1400, mx: 'auto' }}>
         <Box mb={3} display="flex" alignItems="center" gap={2} flexWrap="wrap">
           <Link to={backTo} style={{ textDecoration: 'none' }}>

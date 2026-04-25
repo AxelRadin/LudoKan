@@ -86,7 +86,7 @@ export default function BackendConnector() {
 
   const curl = useMemo(() => {
     const headerFlags = Object.entries(parsedHeaders)
-      .map(([k, v]) => `-H ${JSON.stringify(`${k}: ${v}`)}`)
+      .map(([k, v]) => `-H ${JSON.stringify(k + ': ' + v)}`)
       .join(' ');
     const bodyFlag =
       method === 'GET' || method === 'DELETE'

@@ -163,7 +163,10 @@ function Section({ children, className, coverUrl }: SectionProps) {
     return () => observer.disconnect();
   }, []);
 
-  const coverOverlayOpacity = visible ? (isDark ? 0.45 : 0.35) : 0;
+  let coverOverlayOpacity = 0;
+  if (visible) {
+    coverOverlayOpacity = isDark ? 0.45 : 0.35;
+  }
 
   return (
     <Box

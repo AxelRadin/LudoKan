@@ -67,6 +67,9 @@ export default function AboutPage() {
   const muted = isDark ? '#9e7070' : '#b49393';
   const cardBg = isDark ? 'rgba(40,20,20,0.65)' : 'rgba(255,255,255,0.80)';
   const cardBorder = isDark ? 'rgba(239,83,80,0.14)' : 'rgba(198,40,40,0.10)';
+  const pageBackground = isDark
+    ? 'linear-gradient(180deg, #1a1010 0%, #221414 60%, #1e1212 100%)'
+    : 'linear-gradient(180deg, #fdf4f4 0%, #f9ecec 60%, #fef6f6 100%)';
 
   const card = {
     background: cardBg,
@@ -126,7 +129,7 @@ export default function AboutPage() {
       sx={{
         minHeight: '100vh',
         fontFamily: F,
-        background: isDark ? `...` : `...`,
+        background: pageBackground,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 6, md: 8 },
       }}

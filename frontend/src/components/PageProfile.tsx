@@ -355,7 +355,7 @@ const PageProfile: React.FC = () => {
     setError(null);
     setMessage(null);
     if (user && form.email !== (user.email ?? '')) {
-      if (!window.confirm(t('profile.confirmEmail'))) return;
+      if (!globalThis.confirm(t('profile.confirmEmail'))) return;
     }
     try {
       setSaving(true);
@@ -396,7 +396,7 @@ const PageProfile: React.FC = () => {
       setError(t('profile.unexpectedError'));
       return;
     }
-    if (!window.confirm(t('profile.confirmReset'))) return;
+    if (!globalThis.confirm(t('profile.confirmReset'))) return;
     try {
       await apiPost('/api/reset-password', { email: form.email });
       setMessage(t('profile.resetSent'));
