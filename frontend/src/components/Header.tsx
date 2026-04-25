@@ -1,6 +1,5 @@
 import CloseIcon from '@mui/icons-material/Close';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import LanguageIcon from '@mui/icons-material/Language';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -116,7 +115,6 @@ export const Header: React.FC = () => {
         onClick={handleLangMenuOpen}
         sx={{ gap: 0.5 }}
       >
-        <LanguageIcon />
         <img
           src={currentLang.flag}
           alt={currentLang.code}
