@@ -36,7 +36,7 @@ class TestCollectionsAPI:
         assert r.status_code == status.HTTP_201_CREATED
         assert r.data["name"] == "Coop"
         assert r.data["is_system"] is False
-        assert r.data["system_key"] is None
+        assert r.data["system_key"] == ""
 
     def test_cannot_delete_system_collection(self, jwt_authenticated_client, user, game):
         jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
@@ -80,3 +80,31 @@ class TestCollectionsAPI:
         names = {row["name"] for row in pub_rows}
         assert "Publique" in names
         assert "Privée" not in names
+
+    def test_games_list_ignores_non_numeric_collection_param(self, jwt_authenticated_client, user, game):
+        jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        r = jwt_authenticated_client.get("/api/me/games/?collection=not-a-number")
+        assert r.status_code == 200
+        rows = _unwrap_list(r)
+        assert len(rows) >= 1
+
+    def test_add_entry_requires_user_game_id(self, jwt_authenticated_client, user, game):
+        jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        r_col = jwt_authenticated_client.post(self.url, {"name": "Need ug"}, format="json")
+        col_id = r_col.data["id"]
+        r = jwt_authenticated_client.post(f"{self.url}{col_id}/entries/", {}, format="json")
+        assert r.status_code == 400
+
+    def test_remove_entry_bad_user_game_id_returns_400(self, jwt_authenticated_client, user, game):
+        jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        r_col = jwt_authenticated_client.post(self.url, {"name": "Rm bad"}, format="json")
+        col_id = r_col.data["id"]
+        r = jwt_authenticated_client.delete(f"{self.url}{col_id}/entries/notint/")
+        assert r.status_code == 400
+
+    def test_remove_entry_missing_returns_404(self, jwt_authenticated_client, user, game):
+        jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        r_col = jwt_authenticated_client.post(self.url, {"name": "Rm 404"}, format="json")
+        col_id = r_col.data["id"]
+        r = jwt_authenticated_client.delete(f"{self.url}{col_id}/entries/999999/")
+        assert r.status_code == 404

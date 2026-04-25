@@ -20,7 +20,13 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   addGameToCollection,
@@ -263,7 +269,9 @@ export function ManageCollectionsModal({
   }, []);
 
   useEffect(() => {
-    if (open) void load();
+    if (open) {
+      load().catch(() => {});
+    }
   }, [open, load]);
 
   const confirmDelete = async () => {
@@ -274,6 +282,79 @@ export function ManageCollectionsModal({
   };
 
   const displayCollections = useMemo(() => collections, [collections]);
+
+  let manageListBody: ReactNode;
+  if (loading) {
+    manageListBody = (
+      <Typography sx={{ fontFamily: FONT_BODY }}>
+        {t('collections.manage.loading')}
+      </Typography>
+    );
+  } else if (displayCollections.length === 0) {
+    manageListBody = (
+      <Typography sx={{ fontFamily: FONT_BODY }}>
+        {t('collections.manage.empty')}
+      </Typography>
+    );
+  } else {
+    manageListBody = (
+      <List disablePadding>
+        {displayCollections.map(c => (
+          <Box
+            key={c.id}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              py: 0.5,
+            }}
+          >
+            <ListItemText
+              primary={c.name}
+              secondary={formatGamesCount(c.games_count)}
+              primaryTypographyProps={{
+                fontFamily: FONT_BODY,
+                fontWeight: 600,
+              }}
+              secondaryTypographyProps={{
+                fontFamily: FONT_BODY,
+                fontSize: 12,
+              }}
+            />
+            <Tooltip title={t('collections.manage.editTooltip')} arrow>
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={() => setEditTarget(c)}
+                  aria-label={t('collections.manage.editAria', {
+                    name: c.name,
+                  })}
+                >
+                  <EditOutlinedIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            {c.is_system ? null : (
+              <Tooltip title={t('collections.manage.deleteTooltip')} arrow>
+                <span>
+                  <IconButton
+                    size="small"
+                    onClick={() => setDeleteTarget(c)}
+                    aria-label={t('collections.manage.deleteAria', {
+                      name: c.name,
+                    })}
+                    color="error"
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
+          </Box>
+        ))}
+      </List>
+    );
+  }
 
   return (
     <>
@@ -287,76 +368,7 @@ export function ManageCollectionsModal({
         <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
           {t('collections.manage.title')}
         </DialogTitle>
-        <DialogContent dividers>
-          {loading ? (
-            <Typography sx={{ fontFamily: FONT_BODY }}>
-              {t('collections.manage.loading')}
-            </Typography>
-          ) : displayCollections.length === 0 ? (
-            <Typography sx={{ fontFamily: FONT_BODY }}>
-              {t('collections.manage.empty')}
-            </Typography>
-          ) : (
-            <List disablePadding>
-              {displayCollections.map(c => (
-                <Box
-                  key={c.id}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1,
-                    py: 0.5,
-                  }}
-                >
-                  <ListItemText
-                    primary={c.name}
-                    secondary={formatGamesCount(c.games_count)}
-                    primaryTypographyProps={{
-                      fontFamily: FONT_BODY,
-                      fontWeight: 600,
-                    }}
-                    secondaryTypographyProps={{
-                      fontFamily: FONT_BODY,
-                      fontSize: 12,
-                    }}
-                  />
-                  <Tooltip title={t('collections.manage.editTooltip')} arrow>
-                    <span>
-                      <IconButton
-                        size="small"
-                        onClick={() => setEditTarget(c)}
-                        aria-label={t('collections.manage.editAria', {
-                          name: c.name,
-                        })}
-                      >
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
-                  {!c.is_system ? (
-                    <Tooltip
-                      title={t('collections.manage.deleteTooltip')}
-                      arrow
-                    >
-                      <span>
-                        <IconButton
-                          size="small"
-                          onClick={() => setDeleteTarget(c)}
-                          aria-label={t('collections.manage.deleteAria', {
-                            name: c.name,
-                          })}
-                          color="error"
-                        >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  ) : null}
-                </Box>
-              ))}
-            </List>
-          )}
-        </DialogContent>
+        <DialogContent dividers>{manageListBody}</DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
             onClick={onClose}
@@ -390,7 +402,9 @@ export function ManageCollectionsModal({
             {t('collections.deleteConfirm.cancel')}
           </Button>
           <Button
-            onClick={() => void confirmDelete()}
+            onClick={() => {
+              confirmDelete().catch(() => {});
+            }}
             variant="contained"
             color="error"
             sx={{ fontFamily: FONT_BODY }}
@@ -461,7 +475,9 @@ export function AddToCollectionModal({
     if (!open) return;
     setStep('pick');
     setCreateOpen(false);
-    if (isAuthenticated) void loadCollections();
+    if (isAuthenticated) {
+      loadCollections().catch(() => {});
+    }
   }, [open, isAuthenticated, loadCollections]);
 
   const resolveUserGameId = useCallback(
@@ -531,11 +547,101 @@ export function AddToCollectionModal({
 
   const openAuthThenModal = () => onRequireAuth();
 
+  const addToPickDialogContent = (): ReactNode => {
+    if (isAuthenticated === false) {
+      return (
+        <Typography sx={{ fontFamily: FONT_BODY }}>
+          {t('collections.addTo.loginPrompt')}
+        </Typography>
+      );
+    }
+    if (loadingList) {
+      return (
+        <Typography sx={{ fontFamily: FONT_BODY }}>
+          {t('collections.addTo.loading')}
+        </Typography>
+      );
+    }
+    return (
+      <>
+        <List dense disablePadding sx={{ py: 0 }}>
+          {collections.map(c => {
+            const already = (userGameHint?.collection_ids ?? []).includes(c.id);
+            return (
+              <Box
+                key={c.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                <ListItemButton
+                  disabled={busyId != null || already}
+                  onClick={() => {
+                    handlePickCollection(c).catch(() => {});
+                  }}
+                  sx={{ borderRadius: 1, mb: 0.5, flex: 1 }}
+                >
+                  <ListItemText
+                    primary={c.name}
+                    secondary={
+                      already
+                        ? t('collections.addTo.alreadyIn')
+                        : formatGamesCount(c.games_count)
+                    }
+                    primaryTypographyProps={{
+                      fontFamily: FONT_BODY,
+                      fontWeight: 600,
+                    }}
+                    secondaryTypographyProps={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 12,
+                    }}
+                  />
+                  {busyId === c.id ? (
+                    <Typography variant="caption">…</Typography>
+                  ) : null}
+                </ListItemButton>
+                {already ? (
+                  <Tooltip title={t('collections.addTo.removeTooltip')} arrow>
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          handleRemoveFromCollection(c).catch(() => {});
+                        }}
+                        disabled={busyId != null}
+                        aria-label={t('collections.addTo.removeAria', {
+                          name: c.name,
+                        })}
+                      >
+                        <PlaylistRemoveIcon fontSize="small" />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                ) : null}
+              </Box>
+            );
+          })}
+        </List>
+        <Button
+          fullWidth
+          variant="outlined"
+          sx={{ mt: 2, fontFamily: FONT_BODY, borderRadius: 2 }}
+          onClick={() => setStep('create')}
+        >
+          {t('collections.addTo.createNew')}
+        </Button>
+      </>
+    );
+  };
+
   return (
     <>
       <Dialog
         open={open}
-        onClose={busyId != null ? undefined : onClose}
+        onClose={busyId === null ? onClose : undefined}
         fullWidth
         maxWidth="sm"
         PaperProps={{ sx: { borderRadius: '16px' } }}
@@ -545,95 +651,7 @@ export function AddToCollectionModal({
             <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
               {t('collections.addTo.title')}
             </DialogTitle>
-            <DialogContent>
-              {!isAuthenticated ? (
-                <Typography sx={{ fontFamily: FONT_BODY }}>
-                  {t('collections.addTo.loginPrompt')}
-                </Typography>
-              ) : loadingList ? (
-                <Typography sx={{ fontFamily: FONT_BODY }}>
-                  {t('collections.addTo.loading')}
-                </Typography>
-              ) : (
-                <>
-                  <List dense disablePadding sx={{ py: 0 }}>
-                    {collections.map(c => {
-                      const already = (
-                        userGameHint?.collection_ids ?? []
-                      ).includes(c.id);
-                      return (
-                        <Box
-                          key={c.id}
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                          }}
-                        >
-                          <ListItemButton
-                            disabled={busyId != null || already}
-                            onClick={() => void handlePickCollection(c)}
-                            sx={{ borderRadius: 1, mb: 0.5, flex: 1 }}
-                          >
-                            <ListItemText
-                              primary={c.name}
-                              secondary={
-                                already
-                                  ? t('collections.addTo.alreadyIn')
-                                  : formatGamesCount(c.games_count)
-                              }
-                              primaryTypographyProps={{
-                                fontFamily: FONT_BODY,
-                                fontWeight: 600,
-                              }}
-                              secondaryTypographyProps={{
-                                fontFamily: FONT_BODY,
-                                fontSize: 12,
-                              }}
-                            />
-                            {busyId === c.id ? (
-                              <Typography variant="caption">…</Typography>
-                            ) : null}
-                          </ListItemButton>
-                          {already ? (
-                            <Tooltip
-                              title={t('collections.addTo.removeTooltip')}
-                              arrow
-                            >
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  onClick={() =>
-                                    void handleRemoveFromCollection(c)
-                                  }
-                                  disabled={busyId != null}
-                                  aria-label={t(
-                                    'collections.addTo.removeAria',
-                                    {
-                                      name: c.name,
-                                    }
-                                  )}
-                                >
-                                  <PlaylistRemoveIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          ) : null}
-                        </Box>
-                      );
-                    })}
-                  </List>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    sx={{ mt: 2, fontFamily: FONT_BODY, borderRadius: 2 }}
-                    onClick={() => setStep('create')}
-                  >
-                    {t('collections.addTo.createNew')}
-                  </Button>
-                </>
-              )}
-            </DialogContent>
+            <DialogContent>{addToPickDialogContent()}</DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button
                 onClick={onClose}
@@ -641,7 +659,7 @@ export function AddToCollectionModal({
               >
                 {t('collections.addTo.close')}
               </Button>
-              {!isAuthenticated ? (
+              {isAuthenticated ? null : (
                 <Button
                   variant="contained"
                   onClick={openAuthThenModal}
@@ -649,7 +667,7 @@ export function AddToCollectionModal({
                 >
                   {t('collections.addTo.login')}
                 </Button>
-              ) : null}
+              )}
             </DialogActions>
           </>
         ) : (

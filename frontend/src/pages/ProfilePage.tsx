@@ -16,7 +16,6 @@ import {
   MenuItem,
   DialogContentText,
   Tooltip,
-  IconButton,
 } from '@mui/material';
 import {
   useCallback,
@@ -30,8 +29,6 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
-import GameList from '../components/GameList';
-import LibraryFilters from '../components/LibraryFilters';
 import {
   CreateCollectionModal,
   ManageCollectionsModal,
@@ -54,6 +51,7 @@ import { deleteUserGame } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
+import ProfilePageLibrarySection from './ProfilePageLibrarySection';
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -1412,6 +1410,27 @@ export default function ProfilePage() {
     t,
   ]);
 
+  const libraryBadgeText = useMemo(() => {
+    if (collectionFilterId === 'ALL') {
+      return userGames.length <= 1
+        ? t('profilePage.libraryTotal', { count: userGames.length })
+        : t('profilePage.libraryTotalPlural', { count: userGames.length });
+    }
+    return userGamesForLibrary.length <= 1
+      ? t('profilePage.libraryInViewOne', {
+          count: userGamesForLibrary.length,
+        })
+      : t('profilePage.libraryInViewMany', {
+          count: userGamesForLibrary.length,
+        });
+  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
+
+  const handleCloseManageCollectionsModal = useCallback(() => {
+    setManageCollectionsModalOpen(false);
+    refreshCollections().catch(() => {});
+    reloadUserGames().catch(() => {});
+  }, [refreshCollections, reloadUserGames]);
+
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
     null
@@ -2013,180 +2032,32 @@ export default function ProfilePage() {
         />
 
         {/* ── LIBRARY ── */}
-        <Paper
-          elevation={0}
-          className="lib-section"
-          sx={{
-            ...glassCard,
-            '&:hover': { transform: 'none', boxShadow: glassCard.boxShadow },
-            p: { xs: 2.5, md: 4 },
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 3,
-              flexWrap: 'wrap',
-              gap: 1,
-            }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontFamily: FONT_BODY,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  textTransform: 'uppercase',
-                  color: C.accent,
-                  mb: 0.5,
-                }}
-              >
-                {t('profilePage.libraryLabel')}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONT_DISPLAY,
-                  fontWeight: 700,
-                  fontSize: 20,
-                  color: C.title,
-                  letterSpacing: -0.3,
-                }}
-              >
-                {t('profilePage.libraryTitle')}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  borderRadius: 999,
-                  background: 'rgba(211,47,47,0.1)',
-                  border: '1px solid rgba(211,47,47,0.25)',
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    color: C.accent,
-                    fontSize: 13,
-                    fontWeight: 700,
-                  }}
-                >
-                  {collectionFilterId === 'ALL'
-                    ? userGames.length <= 1
-                      ? t('profilePage.libraryTotal', {
-                          count: userGames.length,
-                        })
-                      : t('profilePage.libraryTotalPlural', {
-                          count: userGames.length,
-                        })
-                    : userGamesForLibrary.length <= 1
-                      ? t('profilePage.libraryInViewOne', {
-                          count: userGamesForLibrary.length,
-                        })
-                      : t('profilePage.libraryInViewMany', {
-                          count: userGamesForLibrary.length,
-                        })}
-                </Typography>
-              </Box>
-              <IconButton
-                aria-label={t('profilePage.libraryOptionsAria')}
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  setLibrarySectionMenuAnchor(e.currentTarget)
-                }
-                size="small"
-                sx={{ color: '#2e7d32' }}
-              >
-                <MoreVertIcon />
-              </IconButton>
-              <Menu
-                anchorEl={librarySectionMenuAnchor}
-                open={Boolean(librarySectionMenuAnchor)}
-                onClose={() => setLibrarySectionMenuAnchor(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                  sx: {
-                    borderRadius: '12px',
-                    minWidth: 200,
-                    fontFamily: FONT_BODY,
-                  },
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    setLibrarySectionMenuAnchor(null);
-                    setCreateCollectionModalOpen(true);
-                  }}
-                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
-                >
-                  {t('profilePage.createCollection')}
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    setLibrarySectionMenuAnchor(null);
-                    setManageCollectionsModalOpen(true);
-                  }}
-                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
-                >
-                  {t('profilePage.manageCollections')}
-                </MenuItem>
-              </Menu>
-            </Box>
-          </Box>
-          <LibraryFilters
-            value={libraryFilter}
-            onChange={setLibraryFilter}
-            counts={libraryCounts}
-            collections={collections}
-            collectionValue={collectionFilterId}
-            onCollectionChange={setLibraryCollectionFilter}
-            collectionsLoading={collectionsLoading}
-          />
-          <Box
-            sx={{
-              height: '1px',
-              background: `linear-gradient(to right, ${C.accent}33, ${C.border}, transparent)`,
-              mb: 3,
-            }}
-          />
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {libraryFilter === 'ALL' ? (
-              <>
-                {[
-                  { games: gamesFavoris, label: t('profilePage.favorites') },
-                  {
-                    games: gamesEnCours,
-                    label: t('profilePage.statusPlaying'),
-                  },
-                  { games: gamesTermines, label: t('profilePage.statusDone') },
-                  { games: gamesEnvie, label: t('profilePage.statusWishlist') },
-                ].map(({ games, label }) => (
-                  <GameList
-                    key={label}
-                    games={games}
-                    title={`${label} (${games.length})`}
-                    showStatus={false}
-                    onRemove={removeGame}
-                    {...gameListCollectionProps}
-                  />
-                ))}
-              </>
-            ) : (
-              <GameList
-                games={gamesForLibraryFilter}
-                title={`${singleFilterTitle} (${gamesForLibraryFilter.length})`}
-                showStatus={false}
-                onRemove={removeGame}
-                {...gameListCollectionProps}
-              />
-            )}
-          </Box>
-        </Paper>
+        <ProfilePageLibrarySection
+          glassCard={glassCard}
+          accent={C.accent}
+          titleColor={C.title}
+          borderColor={C.border}
+          libraryBadgeText={libraryBadgeText}
+          librarySectionMenuAnchor={librarySectionMenuAnchor}
+          setLibrarySectionMenuAnchor={setLibrarySectionMenuAnchor}
+          setCreateCollectionModalOpen={setCreateCollectionModalOpen}
+          setManageCollectionsModalOpen={setManageCollectionsModalOpen}
+          libraryFilter={libraryFilter}
+          setLibraryFilter={setLibraryFilter}
+          libraryCounts={libraryCounts}
+          collections={collections}
+          collectionFilterId={collectionFilterId}
+          setLibraryCollectionFilter={setLibraryCollectionFilter}
+          collectionsLoading={collectionsLoading}
+          gamesFavoris={gamesFavoris}
+          gamesEnCours={gamesEnCours}
+          gamesTermines={gamesTermines}
+          gamesEnvie={gamesEnvie}
+          gamesForLibraryFilter={gamesForLibraryFilter}
+          singleFilterTitle={singleFilterTitle}
+          removeGame={removeGame}
+          gameListCollectionProps={gameListCollectionProps}
+        />
       </Box>
 
       <CreateCollectionModal
@@ -2198,11 +2069,7 @@ export default function ProfilePage() {
       />
       <ManageCollectionsModal
         open={manageCollectionsModalOpen}
-        onClose={() => {
-          setManageCollectionsModalOpen(false);
-          void refreshCollections();
-          void reloadUserGames();
-        }}
+        onClose={handleCloseManageCollectionsModal}
       />
 
       <Snackbar

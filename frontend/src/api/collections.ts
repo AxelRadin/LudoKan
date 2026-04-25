@@ -7,7 +7,7 @@ export type UserCollection = {
   sort_order: number;
   is_default: boolean;
   is_visible_on_profile: boolean;
-  system_key: 'MA_LUDOTHEQUE' | 'STEAM' | null;
+  system_key: 'MA_LUDOTHEQUE' | 'STEAM' | '';
   is_system: boolean;
   games_count: number;
   created_at: string;

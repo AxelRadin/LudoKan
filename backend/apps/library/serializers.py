@@ -163,7 +163,7 @@ class UserLibrarySerializer(serializers.ModelSerializer):
         validated_data.setdefault("sort_order", max_order + 1)
         return UserLibrary.objects.create(
             user=user,
-            system_key=None,
+            system_key="",
             is_default=False,
             **validated_data,
         )

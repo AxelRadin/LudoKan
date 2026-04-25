@@ -37,10 +37,10 @@ class UserLibrary(models.Model):
     )
     system_key = models.CharField(
         max_length=32,
-        null=True,
         blank=True,
+        default="",
         choices=SystemKey.choices,
-        help_text="Non nul pour les collections gérées par l’application.",
+        help_text="Vide pour les collections utilisateur ; valeur enum pour les collections système.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -52,7 +52,12 @@ class UserLibrary(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "system_key"],
-                condition=models.Q(system_key__isnull=False),
+                condition=models.Q(
+                    system_key__in=[
+                        "MA_LUDOTHEQUE",
+                        "STEAM",
+                    ]
+                ),
                 name="library_user_system_key_uniq",
             ),
         ]
