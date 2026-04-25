@@ -56,7 +56,7 @@ export default function LibraryFilters({
   value,
   onChange,
   counts,
-}: LibraryFiltersProps) {
+}: Readonly<LibraryFiltersProps>) {
   return (
     <Box
       sx={{

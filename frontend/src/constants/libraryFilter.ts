@@ -24,7 +24,7 @@ export function parseLibraryStatusParam(
   raw: string | null
 ): LibraryStatusFilter {
   if (raw == null || raw.trim() === '') return 'ALL';
-  const key = raw.trim().toUpperCase().replace(/-/g, '_');
+  const key = raw.trim().toUpperCase().replaceAll('-', '_');
   if (key === 'ALL') return 'ALL';
   if ((STATUS_FILTERS as string[]).includes(key)) {
     return key as Exclude<LibraryStatusFilter, 'ALL'>;
