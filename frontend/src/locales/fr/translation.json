@@ -228,7 +228,8 @@
     "google": "Se connecter avec Google",
     "apple": "Se connecter avec Apple",
     "x": "Se connecter avec X",
-    "instagram": "Se connecter avec Instagram"
+    "instagram": "Se connecter avec Instagram",
+    "steam": "Se connecter avec Steam"
   },
   "matchmakingContext": {
     "errorAlert": "Un problème est survenu lors de la recherche de joueurs."

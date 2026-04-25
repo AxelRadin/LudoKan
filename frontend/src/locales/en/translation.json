@@ -228,7 +228,8 @@
     "google": "Log in with Google",
     "apple": "Log in with Apple",
     "x": "Log in with X",
-    "instagram": "Log in with Instagram"
+    "instagram": "Log in with Instagram",
+    "steam": "Log in with Steam"
   },
   "matchmakingContext": {
     "errorAlert": "A problem occurred while searching for players."

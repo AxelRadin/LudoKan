@@ -338,7 +338,7 @@ const PageProfile: React.FC = () => {
       }
     };
     fetchMe();
-  }, []);
+  }, [t]);
 
   const fullName =
     `${form.first_name} ${form.last_name}`.trim() || t('profile.defaultName');

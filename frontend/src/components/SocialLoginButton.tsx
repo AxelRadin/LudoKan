@@ -24,14 +24,6 @@ const iconMap: Record<Props['icon'], JSX.Element> = {
   steam: <FaSteam size={24} />,
 };
 
-const defaultLabels: Record<Props['icon'], string> = {
-  google: 'Se connecter avec Google',
-  apple: 'Se connecter avec Apple',
-  x: 'Se connecter avec X',
-  instagram: 'Se connecter avec Instagram',
-  steam: 'Se connecter avec Steam',
-};
-
 export const SocialLoginButton: React.FC<Props> = ({
   icon,
   onClick,
@@ -45,6 +37,7 @@ export const SocialLoginButton: React.FC<Props> = ({
     apple: t('socialLogin.apple'),
     x: t('socialLogin.x'),
     instagram: t('socialLogin.instagram'),
+    steam: t('socialLogin.steam'),
   };
 
   return (
