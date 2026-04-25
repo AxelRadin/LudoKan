@@ -199,7 +199,8 @@ export default function GameList({
               {onDetachFromCollection && game.userGameId != null && (
                 <Tooltip
                   title={
-                    detachFromCollectionTitle ?? 'Retirer de cette collection'
+                    detachFromCollectionTitle ??
+                    t('gameList.detachFromCollection')
                   }
                 >
                   <IconButton
@@ -208,7 +209,7 @@ export default function GameList({
                       e.preventDefault();
                       onDetachFromCollection(game.userGameId!);
                     }}
-                    aria-label="Retirer de la collection"
+                    aria-label={t('gameList.detachFromCollectionAria')}
                     sx={{
                       position: 'absolute',
                       top: 4,

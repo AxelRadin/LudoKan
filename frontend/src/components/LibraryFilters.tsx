@@ -7,25 +7,19 @@ import {
   Select,
 } from '@mui/material';
 import type { UserCollection } from '../api/collections';
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   LibraryCollectionFilter,
   LibraryCounts,
   LibraryStatusFilter,
 } from '../constants/libraryFilter';
-import { t } from 'i18next';
 
 const STATUS_FILTERS: Exclude<LibraryStatusFilter, 'ALL'>[] = [
   'EN_COURS',
   'TERMINE',
   'ENVIE_DE_JOUER',
 ];
-
-const FILTER_LABELS: Record<LibraryStatusFilter, string> = {
-  ALL: 'Tous',
-  EN_COURS: t('profilePage.statusPlaying'),
-  TERMINE: t('profilePage.statusDone'),
-  ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
-};
 
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 const C = {
@@ -74,7 +68,18 @@ export default function LibraryFilters({
   onCollectionChange,
   collectionsLoading = false,
 }: Readonly<LibraryFiltersProps>) {
+  const { t } = useTranslation();
   const selectValue = collectionValue === 'ALL' ? '' : String(collectionValue);
+
+  const filterLabels = useMemo(
+    (): Record<LibraryStatusFilter, string> => ({
+      ALL: t('libraryFilters.statusAll'),
+      EN_COURS: t('profilePage.statusPlaying'),
+      TERMINE: t('profilePage.statusDone'),
+      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
+    }),
+    [t]
+  );
 
   return (
     <Box sx={{ mb: 2 }}>
@@ -87,18 +92,18 @@ export default function LibraryFilters({
           rowGap: 1.25,
         }}
         role="tablist"
-        aria-label="Filtrer la ludothèque par statut"
+        aria-label={t('libraryFilters.filterByStatusAria')}
       >
         <FormControl
           size="small"
           sx={{ minWidth: { xs: '100%', sm: 280 }, maxWidth: 400 }}
         >
           <InputLabel id="library-collection-filter-label">
-            Collection
+            {t('libraryFilters.collection')}
           </InputLabel>
           <Select
             labelId="library-collection-filter-label"
-            label="Collection"
+            label={t('libraryFilters.collection')}
             value={selectValue}
             disabled={collectionsLoading}
             onChange={e => {
@@ -108,7 +113,7 @@ export default function LibraryFilters({
             sx={{ fontFamily: FONT_BODY, borderRadius: '12px' }}
           >
             <MenuItem value="">
-              <em>Toutes les collections</em>
+              <em>{t('libraryFilters.allCollections')}</em>
             </MenuItem>
             {collections.map(c => (
               <MenuItem key={c.id} value={String(c.id)}>
@@ -148,7 +153,7 @@ export default function LibraryFilters({
                 },
               }}
             >
-              {FILTER_LABELS[id]}{' '}
+              {filterLabels[id]}{' '}
               <Box
                 component="span"
                 sx={{

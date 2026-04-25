@@ -21,6 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   addGameToCollection,
   createCollection,
@@ -77,6 +78,7 @@ function CollectionFormModal({
   submitLabel,
   title,
 }: CollectionFormModalProps) {
+  const { t } = useTranslation();
   const [fields, setFields] = useState<CollectionFormFields>(() =>
     toFields(collection)
   );
@@ -85,7 +87,7 @@ function CollectionFormModal({
   useEffect(() => {
     if (!open) return;
     setFields(toFields(collection));
-  }, [open, collection?.id]);
+  }, [open, collection]);
 
   const handleSubmit = async () => {
     const name = fields.name.trim();
@@ -118,12 +120,14 @@ function CollectionFormModal({
     >
       <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
         {title ??
-          (mode === 'create' ? 'Nouvelle collection' : 'Éditer la collection')}
+          (mode === 'create'
+            ? t('collections.form.titleCreate')
+            : t('collections.form.titleEdit'))}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0.5 }}>
           <TextField
-            label="Nom"
+            label={t('collections.form.nameLabel')}
             required
             fullWidth
             value={fields.name}
@@ -134,7 +138,7 @@ function CollectionFormModal({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <TextField
-              label="Couleur"
+              label={t('collections.form.colorLabel')}
               value={fields.color}
               onChange={e =>
                 setFields(p => ({
@@ -146,7 +150,7 @@ function CollectionFormModal({
               InputLabelProps={{ sx: { fontFamily: FONT_BODY } }}
               sx={{ flex: 1 }}
             />
-            <Tooltip title="Choisir une couleur" arrow>
+            <Tooltip title={t('collections.form.colorPickerTooltip')} arrow>
               <Box
                 component="input"
                 type="color"
@@ -178,7 +182,7 @@ function CollectionFormModal({
             }
             label={
               <Typography sx={{ fontFamily: FONT_BODY, fontSize: 14 }}>
-                Visible sur mon profil public
+                {t('collections.form.visibleOnProfile')}
               </Typography>
             }
           />
@@ -190,7 +194,7 @@ function CollectionFormModal({
           disabled={busy}
           sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
         >
-          Annuler
+          {t('collections.form.cancel')}
         </Button>
         <Button
           variant="contained"
@@ -198,7 +202,10 @@ function CollectionFormModal({
           disabled={busy || !fields.name.trim()}
           sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
         >
-          {submitLabel ?? (mode === 'create' ? 'Créer' : 'Enregistrer')}
+          {submitLabel ??
+            (mode === 'create'
+              ? t('collections.form.create')
+              : t('collections.form.save'))}
         </Button>
       </DialogActions>
     </Dialog>
@@ -222,8 +229,6 @@ export function CreateCollectionModal({
       mode="create"
       onClose={onClose}
       onSubmitted={onCreated}
-      title="Nouvelle collection"
-      submitLabel="Créer"
     />
   );
 }
@@ -237,10 +242,16 @@ export function ManageCollectionsModal({
   open,
   onClose,
 }: ManageCollectionsModalProps) {
+  const { t } = useTranslation();
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [loading, setLoading] = useState(false);
   const [editTarget, setEditTarget] = useState<UserCollection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserCollection | null>(null);
+
+  const formatGamesCount = (n: number) =>
+    n === 1
+      ? t('collections.manage.gamesCountOne', { count: n })
+      : t('collections.manage.gamesCountMany', { count: n });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -274,14 +285,16 @@ export function ManageCollectionsModal({
         PaperProps={{ sx: { borderRadius: '16px' } }}
       >
         <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-          Gérer les collections
+          {t('collections.manage.title')}
         </DialogTitle>
         <DialogContent dividers>
           {loading ? (
-            <Typography sx={{ fontFamily: FONT_BODY }}>Chargement…</Typography>
+            <Typography sx={{ fontFamily: FONT_BODY }}>
+              {t('collections.manage.loading')}
+            </Typography>
           ) : displayCollections.length === 0 ? (
             <Typography sx={{ fontFamily: FONT_BODY }}>
-              Aucune collection à gérer.
+              {t('collections.manage.empty')}
             </Typography>
           ) : (
             <List disablePadding>
@@ -297,7 +310,7 @@ export function ManageCollectionsModal({
                 >
                   <ListItemText
                     primary={c.name}
-                    secondary={`${c.games_count} jeu(x)`}
+                    secondary={formatGamesCount(c.games_count)}
                     primaryTypographyProps={{
                       fontFamily: FONT_BODY,
                       fontWeight: 600,
@@ -307,24 +320,31 @@ export function ManageCollectionsModal({
                       fontSize: 12,
                     }}
                   />
-                  <Tooltip title="Éditer" arrow>
+                  <Tooltip title={t('collections.manage.editTooltip')} arrow>
                     <span>
                       <IconButton
                         size="small"
                         onClick={() => setEditTarget(c)}
-                        aria-label={`Éditer ${c.name}`}
+                        aria-label={t('collections.manage.editAria', {
+                          name: c.name,
+                        })}
                       >
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>
                     </span>
                   </Tooltip>
                   {!c.is_system ? (
-                    <Tooltip title="Supprimer" arrow>
+                    <Tooltip
+                      title={t('collections.manage.deleteTooltip')}
+                      arrow
+                    >
                       <span>
                         <IconButton
                           size="small"
                           onClick={() => setDeleteTarget(c)}
-                          aria-label={`Supprimer ${c.name}`}
+                          aria-label={t('collections.manage.deleteAria', {
+                            name: c.name,
+                          })}
                           color="error"
                         >
                           <DeleteOutlineIcon fontSize="small" />
@@ -342,7 +362,7 @@ export function ManageCollectionsModal({
             onClick={onClose}
             sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
           >
-            Fermer
+            {t('collections.manage.close')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -353,11 +373,13 @@ export function ManageCollectionsModal({
         PaperProps={{ sx: { borderRadius: '14px' } }}
       >
         <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-          Supprimer la collection ?
+          {t('collections.deleteConfirm.title')}
         </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ fontFamily: FONT_BODY }}>
-            Confirme la suppression de « {deleteTarget?.name} ».
+            {t('collections.deleteConfirm.message', {
+              name: deleteTarget?.name ?? '',
+            })}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
@@ -365,7 +387,7 @@ export function ManageCollectionsModal({
             onClick={() => setDeleteTarget(null)}
             sx={{ fontFamily: FONT_BODY }}
           >
-            Annuler
+            {t('collections.deleteConfirm.cancel')}
           </Button>
           <Button
             onClick={() => void confirmDelete()}
@@ -373,7 +395,7 @@ export function ManageCollectionsModal({
             color="error"
             sx={{ fontFamily: FONT_BODY }}
           >
-            Supprimer
+            {t('collections.deleteConfirm.confirm')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -386,8 +408,6 @@ export function ManageCollectionsModal({
         onSubmitted={async () => {
           await load();
         }}
-        title="Éditer la collection"
-        submitLabel="Enregistrer"
       />
     </>
   );
@@ -414,11 +434,17 @@ export function AddToCollectionModal({
   userGameHint,
   onApplied,
 }: AddToCollectionModalProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'pick' | 'create'>('pick');
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [loadingList, setLoadingList] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+
+  const formatGamesCount = (n: number) =>
+    n === 1
+      ? t('collections.manage.gamesCountOne', { count: n })
+      : t('collections.manage.gamesCountMany', { count: n });
 
   const loadCollections = useCallback(async () => {
     setLoadingList(true);
@@ -475,7 +501,7 @@ export function AddToCollectionModal({
       await onApplied();
       onClose();
     } catch {
-      alert('Impossible d’ajouter le jeu à cette collection.');
+      alert(t('collections.errors.addFailed'));
     } finally {
       setBusyId(null);
     }
@@ -497,7 +523,7 @@ export function AddToCollectionModal({
       await onApplied();
       await loadCollections();
     } catch {
-      alert('Impossible de retirer le jeu de cette collection.');
+      alert(t('collections.errors.removeFailed'));
     } finally {
       setBusyId(null);
     }
@@ -517,16 +543,16 @@ export function AddToCollectionModal({
         {step === 'pick' ? (
           <>
             <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-              Ajouter à une collection
+              {t('collections.addTo.title')}
             </DialogTitle>
             <DialogContent>
               {!isAuthenticated ? (
                 <Typography sx={{ fontFamily: FONT_BODY }}>
-                  Connecte-toi pour gérer tes collections.
+                  {t('collections.addTo.loginPrompt')}
                 </Typography>
               ) : loadingList ? (
                 <Typography sx={{ fontFamily: FONT_BODY }}>
-                  Chargement…
+                  {t('collections.addTo.loading')}
                 </Typography>
               ) : (
                 <>
@@ -553,8 +579,8 @@ export function AddToCollectionModal({
                               primary={c.name}
                               secondary={
                                 already
-                                  ? 'Déjà dans cette collection'
-                                  : `${c.games_count} jeu(x)`
+                                  ? t('collections.addTo.alreadyIn')
+                                  : formatGamesCount(c.games_count)
                               }
                               primaryTypographyProps={{
                                 fontFamily: FONT_BODY,
@@ -570,7 +596,10 @@ export function AddToCollectionModal({
                             ) : null}
                           </ListItemButton>
                           {already ? (
-                            <Tooltip title="Retirer de cette collection" arrow>
+                            <Tooltip
+                              title={t('collections.addTo.removeTooltip')}
+                              arrow
+                            >
                               <span>
                                 <IconButton
                                   size="small"
@@ -578,7 +607,12 @@ export function AddToCollectionModal({
                                     void handleRemoveFromCollection(c)
                                   }
                                   disabled={busyId != null}
-                                  aria-label={`Retirer de ${c.name}`}
+                                  aria-label={t(
+                                    'collections.addTo.removeAria',
+                                    {
+                                      name: c.name,
+                                    }
+                                  )}
                                 >
                                   <PlaylistRemoveIcon fontSize="small" />
                                 </IconButton>
@@ -595,7 +629,7 @@ export function AddToCollectionModal({
                     sx={{ mt: 2, fontFamily: FONT_BODY, borderRadius: 2 }}
                     onClick={() => setStep('create')}
                   >
-                    Créer une collection…
+                    {t('collections.addTo.createNew')}
                   </Button>
                 </>
               )}
@@ -605,7 +639,7 @@ export function AddToCollectionModal({
                 onClick={onClose}
                 sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
               >
-                Fermer
+                {t('collections.addTo.close')}
               </Button>
               {!isAuthenticated ? (
                 <Button
@@ -613,7 +647,7 @@ export function AddToCollectionModal({
                   onClick={openAuthThenModal}
                   sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
                 >
-                  Connexion
+                  {t('collections.addTo.login')}
                 </Button>
               ) : null}
             </DialogActions>
@@ -635,16 +669,15 @@ export function AddToCollectionModal({
                 onClick={() => setStep('pick')}
                 sx={{ minWidth: 0, fontFamily: FONT_BODY }}
               >
-                Retour
+                {t('collections.addTo.back')}
               </Button>
-              <span>Nouvelle collection</span>
+              <span>{t('collections.addTo.newCollectionHeading')}</span>
             </DialogTitle>
             <DialogContent>
               <Typography
                 sx={{ fontFamily: FONT_BODY, color: 'text.secondary' }}
               >
-                Utilise le formulaire de création, puis le jeu sera ajouté
-                automatiquement.
+                {t('collections.addTo.createFlowHint')}
               </Typography>
               <Button
                 fullWidth
@@ -652,7 +685,7 @@ export function AddToCollectionModal({
                 sx={{ mt: 2, fontFamily: FONT_BODY, borderRadius: 2 }}
                 onClick={() => setCreateOpen(true)}
               >
-                Ouvrir le formulaire
+                {t('collections.addTo.openForm')}
               </Button>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -660,7 +693,7 @@ export function AddToCollectionModal({
                 onClick={() => setStep('pick')}
                 sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
               >
-                Retour
+                {t('collections.addTo.back')}
               </Button>
             </DialogActions>
           </>
@@ -681,8 +714,8 @@ export function AddToCollectionModal({
           await loadCollections();
           onClose();
         }}
-        title="Nouvelle collection"
-        submitLabel="Créer et ajouter le jeu"
+        title={t('collections.form.titleCreate')}
+        submitLabel={t('collections.addTo.createAndAdd')}
       />
     </>
   );

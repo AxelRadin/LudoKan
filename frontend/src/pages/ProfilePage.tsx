@@ -1382,29 +1382,35 @@ export default function ProfilePage() {
     [collections, collectionFilterId]
   );
 
-  const handleDetachFromActiveCollection =
-    typeof collectionFilterId === 'number' &&
-    activeCollectionMeta?.system_key !== 'MA_LUDOTHEQUE'
-      ? async (userGameId: number) => {
-          try {
-            await removeGameFromCollection(collectionFilterId, userGameId);
-            await reloadUserGames();
-            await refreshCollections();
-          } catch (err) {
-            console.error(err);
-          }
+  const gameListCollectionProps = useMemo(() => {
+    const canDetach =
+      typeof collectionFilterId === 'number' &&
+      activeCollectionMeta?.system_key !== 'MA_LUDOTHEQUE';
+    if (!canDetach) return {};
+    const colId = collectionFilterId;
+    return {
+      onDetachFromCollection: async (userGameId: number) => {
+        try {
+          await removeGameFromCollection(colId, userGameId);
+          await reloadUserGames();
+          await refreshCollections();
+        } catch (err) {
+          console.error(err);
         }
-      : undefined;
-
-  const gameListCollectionProps =
-    handleDetachFromActiveCollection != null
-      ? {
-          onDetachFromCollection: handleDetachFromActiveCollection,
-          detachFromCollectionTitle: `Retirer de « ${
-            activeCollectionMeta?.name ?? 'cette collection'
-          } »`,
-        }
-      : {};
+      },
+      detachFromCollectionTitle: t('collections.profileDetachTooltip', {
+        name:
+          activeCollectionMeta?.name ?? t('collections.defaultCollectionName'),
+      }),
+    };
+  }, [
+    collectionFilterId,
+    activeCollectionMeta?.system_key,
+    activeCollectionMeta?.name,
+    reloadUserGames,
+    refreshCollections,
+    t,
+  ]);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
