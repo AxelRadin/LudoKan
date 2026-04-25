@@ -6,12 +6,12 @@ import Typography from '@mui/material/Typography';
 import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { startGoogleLogin } from '../auth/googleOAuth';
-import { useAuth } from '../contexts/useAuth';
-import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
-import SocialLoginButton from './SocialLoginButton';
+import SocialLoginSection from './SocialLoginSection';
+import { useSocialAuth } from '../hooks/useSocialAuth';
+import { useAuth } from '../contexts/useAuth';
+import { apiPost } from '../services/api';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
@@ -32,6 +32,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
+  const {
+    error: socialError,
+    handleGoogleClick,
+    handleSteamClick,
+  } = useSocialAuth();
+
+  const displayError = error || socialError;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,17 +84,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
-  const handleGoogleClick = () => {
-    setError(null);
-    try {
-      startGoogleLogin();
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Connexion Google indisponible.'
-      );
-    }
-  };
-
   return (
     <AuthFormContainer
       title="Connexion"
@@ -123,22 +119,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           )}
         </Stack>
 
-        {error && (
+        {displayError && (
           <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
-            {error}
+            {displayError}
           </Alert>
         )}
 
-        <Typography variant="body1" mt={5}>
-          Se connecter avec
-        </Typography>
-
-        <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
-          <SocialLoginButton icon="apple" />
-          <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
-        </Stack>
+        <SocialLoginSection
+          title="Se connecter avec"
+          onGoogleClick={handleGoogleClick}
+          onSteamClick={handleSteamClick}
+        />
 
         <PrimaryButton
           sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
