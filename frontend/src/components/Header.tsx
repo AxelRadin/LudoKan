@@ -14,8 +14,11 @@ import {
   Dialog,
   Divider,
   Drawer,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
+  Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -99,6 +102,12 @@ export const Header: React.FC = () => {
       navigate('/');
     }
   };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileAnchor(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => setProfileAnchor(null);
 
   const langDropdown = (
     <>

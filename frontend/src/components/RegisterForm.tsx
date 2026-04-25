@@ -3,8 +3,6 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { startGoogleLogin } from '../auth/googleOAuth';
-import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginSection from './SocialLoginSection';
@@ -57,17 +55,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       setError(err.message || t('registerForm.errorFallback'));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleClick = () => {
-    setError(null);
-    try {
-      startGoogleLogin();
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : t('registerForm.errorGoogle')
-      );
     }
   };
 

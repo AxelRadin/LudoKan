@@ -17,7 +17,14 @@ import {
   DialogContentText,
   Tooltip,
 } from '@mui/material';
-import {useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -1367,7 +1374,7 @@ export default function ProfilePage() {
                   }}
                   sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
                 >
-                  {t('profilePage.bannerAdd')}
+                  {t('profilePage.addBanner')}
                 </MenuItem>
                 {user?.banner_url && (
                   <MenuItem
@@ -1381,7 +1388,7 @@ export default function ProfilePage() {
                       setConfirmDeleteBannerOpen(true);
                     }}
                   >
-                    {t('profilePage.bannerDelete')}
+                    {t('profilePage.deleteBanner')}
                   </MenuItem>
                 )}
               </Menu>
@@ -1416,7 +1423,7 @@ export default function ProfilePage() {
                       handleBannerRemoveNow();
                     }}
                   >
-                    {t('profilePage.bannerConfirmDelete')}
+                    {t('profilePage.deleteBannerConfirm')}
                   </Button>
                 </DialogActions>
               </Dialog>
@@ -1589,7 +1596,7 @@ export default function ProfilePage() {
                 fontFamily: FONT_BODY,
               }}
             >
-              {t('profilePage.aboutLabel')}
+              {t('profilePage.about')}
             </Typography>
             <Typography
               sx={{
@@ -1944,8 +1951,11 @@ export default function ProfilePage() {
             {libraryFilter === 'ALL' ? (
               <>
                 {[
-                  { games: gamesFavoris, label: 'Coups de cœur' },
-                  { games: gamesEnCours, label: t('profilePage.statusPlaying') },
+                  { games: gamesFavoris, label: t('profilePage.favorites') },
+                  {
+                    games: gamesEnCours,
+                    label: t('profilePage.statusPlaying'),
+                  },
                   { games: gamesTermines, label: t('profilePage.statusDone') },
                   { games: gamesEnvie, label: t('profilePage.statusWishlist') },
                 ].map(({ games, label }) => (

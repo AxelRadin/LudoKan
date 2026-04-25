@@ -7,15 +7,12 @@ import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { startGoogleLogin } from '../auth/googleOAuth';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginSection from './SocialLoginSection';
 import { useSocialAuth } from '../hooks/useSocialAuth';
-import { useAuth } from '../contexts/useAuth';
-import { apiPost } from '../services/api';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
@@ -78,15 +75,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       setCaptchaToken(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleClick = () => {
-    setError(null);
-    try {
-      startGoogleLogin();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : t('loginForm.errorGoogle'));
     }
   };
 
