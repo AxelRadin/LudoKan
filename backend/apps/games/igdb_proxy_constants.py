@@ -18,6 +18,8 @@ FIELDS_GAME_DETAIL = (
 )
 FIELDS_SEARCH_PAGE = "fields name,cover.url,first_release_date,platforms.name,total_rating,total_rating_count;"
 
+FIELDS_IGDB_DEMOGRAPHICS_SUFFIX = ",age_ratings,multiplayer_modes"
+
 NOW = int(time.time())
 TRENDING_SORTS = {
     "popularity": "where total_rating_count > 0; sort total_rating_count desc;",

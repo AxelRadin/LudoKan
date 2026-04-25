@@ -28,6 +28,21 @@ def test_normalize_igdb_game_alternative_names_french_comment_but_no_name():
     assert normalize_igdb_game(raw_game)["name"] == "Fallback"
 
 
+def test_normalize_igdb_game_includes_ludokan_demographics():
+    """Champs _ludokan_* (proxy IGDB filtré) → min_age / min_players / max_players sur le contrat."""
+    raw = {
+        "id": 7,
+        "name": "G",
+        "_ludokan_min_age": 12,
+        "_ludokan_min_players": 1,
+        "_ludokan_max_players": 4,
+    }
+    out = normalize_igdb_game(raw)
+    assert out["min_age"] == 12
+    assert out["min_players"] == 1
+    assert out["max_players"] == 4
+
+
 def test_normalize_igdb_game_basic():
     """Vérifie la normalisation avec tous les champs présents idéaux (mock d'une réponse de vue détails)."""
     raw_game = {
