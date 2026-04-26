@@ -218,6 +218,35 @@ function validateAvatarFile(file: File): string {
   return 'Format invalide. JPG, PNG ou WEBP uniquement.';
 }
 
+type ProfileSectionHeaderProps = {
+  label: string;
+};
+
+const ProfileSectionHeader = ({ label }: ProfileSectionHeaderProps) => {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+      <Typography
+        sx={{
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 700,
+          fontSize: 18,
+          color: C.title,
+          letterSpacing: -0.3,
+        }}
+      >
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          flex: 1,
+          height: '1px',
+          background: `linear-gradient(to right, ${C.border}, transparent)`,
+        }}
+      />
+    </Box>
+  );
+};
+
 type ProfileStatCardProps = {
   label: string;
   value: string | null | undefined;
@@ -1147,26 +1176,7 @@ function ProfileIntegrations({
 
   return (
     <Box sx={{ mb: 2.5 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-        <Typography
-          sx={{
-            fontFamily: FONT_DISPLAY,
-            fontWeight: 700,
-            fontSize: 18,
-            color: C.title,
-            letterSpacing: -0.3,
-          }}
-        >
-          {t('profilePage.integrationsLabel')}
-        </Typography>
-        <Box
-          sx={{
-            flex: 1,
-            height: '1px',
-            background: `linear-gradient(to right, ${C.border}, transparent)`,
-          }}
-        />
-      </Box>
+      <ProfileSectionHeader label={t('profilePage.integrationsLabel')} />
       <Paper
         elevation={0}
         sx={{
@@ -2011,26 +2021,7 @@ export default function ProfilePage() {
 
         {/* STATS */}
         <Box sx={{ mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              {t('profilePage.infoLabel')}
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${C.border}, transparent)`,
-              }}
-            />
-          </Box>
+          <ProfileSectionHeader label={t('profilePage.infoLabel')} />
           <Box
             sx={{
               display: 'grid',
@@ -2071,26 +2062,7 @@ export default function ProfilePage() {
 
         {/* ── STATS SECTION ── */}
         <Box sx={{ mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              {t('profilePage.statsLabel')}
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${C.border}, transparent)`,
-              }}
-            />
-          </Box>
+          <ProfileSectionHeader label={t('profilePage.statsLabel')} />
           <Box
             sx={{
               display: 'grid',
