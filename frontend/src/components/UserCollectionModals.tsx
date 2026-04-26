@@ -27,6 +27,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   addGameToCollection,
@@ -43,13 +44,20 @@ import { apiPost } from '../services/api';
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 
+/** Libellé du nombre de jeux (singulier / pluriel) pour les listes de collections. */
+function collectionGamesCountLabel(t: TFunction, count: number): string {
+  if (count === 1) {
+    return t('collections.manage.gamesCountOne', { count });
+  }
+  return t('collections.manage.gamesCountMany', { count });
+}
+
 type AddToCollectionPickRowProps = Readonly<{
   collection: UserCollection;
   already: boolean;
   busyId: number | null;
   onPickWithCatch: (col: UserCollection) => void;
   onRemoveWithCatch: (col: UserCollection) => void;
-  formatGamesCount: (n: number) => string;
 }>;
 
 function AddToCollectionPickRow({
@@ -58,7 +66,6 @@ function AddToCollectionPickRow({
   busyId,
   onPickWithCatch,
   onRemoveWithCatch,
-  formatGamesCount,
 }: AddToCollectionPickRowProps) {
   const { t } = useTranslation();
 
@@ -88,7 +95,7 @@ function AddToCollectionPickRow({
           secondary={
             already
               ? t('collections.addTo.alreadyIn')
-              : formatGamesCount(col.games_count)
+              : collectionGamesCountLabel(t, col.games_count)
           }
           primaryTypographyProps={{
             fontFamily: FONT_BODY,
@@ -334,11 +341,6 @@ export function ManageCollectionsModal({
   const [editTarget, setEditTarget] = useState<UserCollection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<UserCollection | null>(null);
 
-  const formatGamesCount = (n: number) =>
-    n === 1
-      ? t('collections.manage.gamesCountOne', { count: n })
-      : t('collections.manage.gamesCountMany', { count: n });
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -391,7 +393,7 @@ export function ManageCollectionsModal({
           >
             <ListItemText
               primary={c.name}
-              secondary={formatGamesCount(c.games_count)}
+              secondary={collectionGamesCountLabel(t, c.games_count)}
               primaryTypographyProps={{
                 fontFamily: FONT_BODY,
                 fontWeight: 600,
@@ -535,11 +537,6 @@ export function AddToCollectionModal({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const formatGamesCount = (n: number) =>
-    n === 1
-      ? t('collections.manage.gamesCountOne', { count: n })
-      : t('collections.manage.gamesCountMany', { count: n });
-
   const loadCollections = useCallback(async () => {
     setLoadingList(true);
     try {
@@ -661,7 +658,6 @@ export function AddToCollectionModal({
               busyId={busyId}
               onPickWithCatch={pickWithCatch}
               onRemoveWithCatch={removeWithCatch}
-              formatGamesCount={formatGamesCount}
             />
           ))}
         </List>
