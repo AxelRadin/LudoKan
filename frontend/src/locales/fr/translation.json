@@ -389,7 +389,11 @@
     "steamDisconnectError": "Erreur: Impossible de déconnecter le compte Steam",
     "saveError": "Erreur : ",
     "playtimeLabel": "Temps de jeu",
-    "reviewsLabel": "Critiques"
+    "reviewsLabel": "Critiques",
+    "statsLabel": "Statistiques",
+    "finishedRatioLabel": "% jeux terminés",
+    "playedRatioLabel": "% jeux joués",
+    "totalGamesLabel": "Total jeux"
   },
   "about": {
     "heroTitle": "Votre univers gaming,",

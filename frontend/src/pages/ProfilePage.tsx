@@ -2041,6 +2041,110 @@ export default function ProfilePage() {
           </Box>
         </Box>
 
+        {/* ── STATS SECTION ── */}
+        <Box sx={{ mb: 2.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 18,
+                color: C.title,
+                letterSpacing: -0.3,
+              }}
+            >
+              {t('profilePage.statsLabel')}
+            </Typography>
+            <Box
+              sx={{
+                flex: 1,
+                height: '1px',
+                background: `linear-gradient(to right, ${C.border}, transparent)`,
+              }}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              gap: 2,
+            }}
+          >
+            {[
+              {
+                label: t('profilePage.finishedRatioLabel'),
+                value: user?.games_finished_percentage
+                  ? `${user.games_finished_percentage}%`
+                  : '0%',
+                cls: 'stat-card-0',
+              },
+              {
+                label: t('profilePage.playedRatioLabel'),
+                value: user?.games_played_percentage
+                  ? `${user.games_played_percentage}%`
+                  : '0%',
+                cls: 'stat-card-1',
+              },
+              {
+                label: t('profilePage.totalGamesLabel'),
+                value: user?.total_games_count?.toString() || '0',
+                cls: 'stat-card-2',
+              },
+            ].map(({ label, value, cls }) => (
+              <Paper
+                key={label}
+                elevation={0}
+                className={cls}
+                sx={{
+                  ...glassCard,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  py: 4,
+                  gap: 1,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '40%',
+                    height: '2px',
+                    background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
+                  },
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    color: C.light,
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    letterSpacing: 1.8,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {label}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_DISPLAY,
+                    color: C.title,
+                    fontSize: 28,
+                    fontWeight: 900,
+                    letterSpacing: -0.4,
+                  }}
+                >
+                  {loading ? '...' : value}
+                </Typography>
+              </Paper>
+            ))}
+          </Box>
+        </Box>
+
         <ProfileIntegrations
           steam_id={user?.steam_id}
           steamBusy={steamBusy}
