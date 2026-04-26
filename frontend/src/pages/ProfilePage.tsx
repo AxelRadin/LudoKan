@@ -26,7 +26,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import {
@@ -119,6 +119,11 @@ type UserProfile = {
   description_courte?: string;
   created_at?: string;
   steam_id?: string | null;
+  review_count?: number;
+  total_playtime?: number;
+  games_finished_percentage?: number;
+  games_played_percentage?: number;
+  total_games_count?: number;
 };
 
 type UserGame = {
@@ -1223,6 +1228,7 @@ function ProfileIntegrations({
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const collectionFilterId = useMemo(
     () =>
@@ -1951,14 +1957,16 @@ export default function ProfilePage() {
           >
             {[
               {
-                label: t('profilePage.firstNameLabel'),
-                value: user?.first_name,
+                label: t('profilePage.playtimeLabel'),
+                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
                 cls: 'stat-card-0',
               },
               {
-                label: t('profilePage.lastNameLabel'),
-                value: user?.last_name,
+                label: t('profilePage.reviewsLabel'),
+                value: user?.review_count?.toString() || '0',
                 cls: 'stat-card-1',
+                onClick: () => navigate('/profile/reviews'),
+                clickable: true,
               },
               {
                 label: t('profilePage.registeredLabel'),
@@ -1967,11 +1975,12 @@ export default function ProfilePage() {
                   : null,
                 cls: 'stat-card-2',
               },
-            ].map(({ label, value, cls }) => (
+            ].map(({ label, value, cls, onClick, clickable }) => (
               <Paper
                 key={label}
                 elevation={0}
                 className={cls}
+                onClick={onClick}
                 sx={{
                   ...glassCard,
                   display: 'flex',
@@ -1982,6 +1991,15 @@ export default function ProfilePage() {
                   gap: 1,
                   position: 'relative',
                   overflow: 'hidden',
+                  cursor: clickable ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  '&:hover': clickable
+                    ? {
+                        transform: 'translateY(-5px)',
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+                      }
+                    : glassCard['&:hover'],
                   '&::before': {
                     content: '""',
                     position: 'absolute',

@@ -422,7 +422,9 @@
     "bannerDeleteError": "Unable to delete banner.",
     "steamConnectError": "Error: Unable to connect to Steam",
     "steamDisconnectError": "Error: Unable to disconnect Steam account",
-    "saveError": "Error: "
+    "saveError": "Error: ",
+    "playtimeLabel": "Playtime",
+    "reviewsLabel": "Reviews"
   },
   "searchResults": {
     "title": "Results for: « {{query}} »",

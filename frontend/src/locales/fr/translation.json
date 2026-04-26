@@ -387,7 +387,9 @@
     "bannerDeleteError": "Impossible de supprimer la bannière.",
     "steamConnectError": "Erreur: Impossible de se connecter à Steam",
     "steamDisconnectError": "Erreur: Impossible de déconnecter le compte Steam",
-    "saveError": "Erreur : "
+    "saveError": "Erreur : ",
+    "playtimeLabel": "Temps de jeu",
+    "reviewsLabel": "Critiques"
   },
   "about": {
     "heroTitle": "Votre univers gaming,",
