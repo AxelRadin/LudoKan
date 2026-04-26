@@ -1,4 +1,5 @@
 import DeleteIcon from '@mui/icons-material/Delete';
+import PlaylistRemoveIcon from '@mui/icons-material/PlaylistRemove';
 import {
   Box,
   Card,
@@ -30,6 +31,9 @@ export type GameListProps = {
   title?: string;
   showStatus?: boolean;
   onRemove?: (userGameId: number) => void;
+  /** Retirer le jeu de la collection affichée (sans supprimer le UserGame). */
+  onDetachFromCollection?: (userGameId: number) => void;
+  detachFromCollectionTitle?: string;
 };
 
 function isAllDigits(s: string): boolean {
@@ -66,6 +70,8 @@ export default function GameList({
   title,
   showStatus = true,
   onRemove,
+  onDetachFromCollection,
+  detachFromCollectionTitle,
 }: GameListProps) {
   const { t } = useTranslation();
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
@@ -190,7 +196,36 @@ export default function GameList({
                   )}
                 </Card>
               </Link>
-
+              {onDetachFromCollection && game.userGameId != null && (
+                <Tooltip
+                  title={
+                    detachFromCollectionTitle ??
+                    t('gameList.detachFromCollection')
+                  }
+                >
+                  <IconButton
+                    size="small"
+                    onClick={e => {
+                      e.preventDefault();
+                      onDetachFromCollection(game.userGameId!);
+                    }}
+                    aria-label={t('gameList.detachFromCollectionAria')}
+                    sx={{
+                      position: 'absolute',
+                      top: 4,
+                      right: onRemove ? 44 : 4,
+                      color: 'text.secondary',
+                      bgcolor: 'rgba(255,255,255,0.85)',
+                      '&:hover': {
+                        color: 'warning.main',
+                        bgcolor: 'warning.light',
+                      },
+                    }}
+                  >
+                    <PlaylistRemoveIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
               {onRemove && game.userGameId != null && (
                 <Tooltip title={t('gameList.removeTooltip')}>
                   <IconButton

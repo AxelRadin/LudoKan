@@ -29,6 +29,7 @@ export type GamePageLogic = Readonly<{
   setSelectedShot: Dispatch<SetStateAction<string | null>>;
   isMatching: boolean;
   ensureDjangoId: () => Promise<number | null>;
+  refreshUserLibrary: () => Promise<void>;
   handleSetStatus: (
     s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
     p?: boolean
@@ -118,6 +119,16 @@ export function useGamePageLogic(): GamePageLogic {
     })();
   }, [djangoId, isAuthenticated]);
 
+  async function refreshUserLibrary() {
+    if (!djangoId) return;
+    try {
+      const d: NormalizedGame = await apiGet(`/api/games/${djangoId}/`);
+      setUserGame(d.user_library ?? null);
+    } catch {
+      /* ignore */
+    }
+  }
+
   async function ensureDjangoId(): Promise<number | null> {
     if (djangoId) return djangoId;
     if (!game) return null;
@@ -146,11 +157,28 @@ export function useGamePageLogic(): GamePageLogic {
     if (!did) return;
     try {
       if (userGame) {
-        const u = await apiPatch(`/api/me/games/${did}/`, { status: s });
-        setUserGame({ ...userGame, status: u.status });
+        const u = (await apiPatch(`/api/me/games/${did}/`, {
+          status: s,
+        })) as UserLibraryData & { status: string };
+        setUserGame({
+          ...userGame,
+          status: u.status,
+          id: u.id ?? userGame.id,
+          collection_ids: u.collection_ids ?? userGame.collection_ids,
+          is_favorite: u.is_favorite ?? userGame.is_favorite,
+        });
       } else {
-        const c = await apiPost('/api/me/games/', { game_id: did, status: s });
-        setUserGame(c);
+        const c = (await apiPost('/api/me/games/', {
+          game_id: did,
+          status: s,
+        })) as UserLibraryData & { id?: number; collection_ids?: number[] };
+        setUserGame({
+          status: c.status,
+          is_favorite: Boolean(c.is_favorite),
+          playtime_forever: c.playtime_forever,
+          id: c.id,
+          collection_ids: c.collection_ids,
+        });
       }
     } catch {
       alert('Erreur lors de la mise à jour du statut');
@@ -166,10 +194,23 @@ export function useGamePageLogic(): GamePageLogic {
     const did = await ensureDjangoId();
     if (!did) return;
     try {
-      const u = await apiPatch(`/api/me/games/${did}/`, {
+      const u = (await apiPatch(`/api/me/games/${did}/`, {
         is_favorite: !userGame?.is_favorite,
+      })) as UserLibraryData & { id?: number; collection_ids?: number[] };
+      setUserGame(prev => {
+        const base: UserLibraryData = prev ?? {
+          status: u.status ?? 'EN_COURS',
+          is_favorite: false,
+        };
+        return {
+          ...base,
+          status: u.status ?? base.status,
+          is_favorite: Boolean(u.is_favorite),
+          id: u.id ?? base.id,
+          collection_ids: u.collection_ids ?? base.collection_ids,
+          playtime_forever: u.playtime_forever ?? base.playtime_forever,
+        };
       });
-      setUserGame(u);
     } catch {
       alert('Erreur lors de la mise à jour du coup de cœur');
     }
@@ -201,6 +242,7 @@ export function useGamePageLogic(): GamePageLogic {
     selectedShot,
     setSelectedShot,
     ensureDjangoId,
+    refreshUserLibrary,
     handleSetStatus,
     handleToggleFavorite,
     handleSetMatchmaking,

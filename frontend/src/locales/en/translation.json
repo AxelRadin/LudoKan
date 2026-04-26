@@ -72,6 +72,8 @@
     "empty": "No games to display.",
     "removeTooltip": "Remove from library",
     "removeAriaLabel": "Remove game",
+    "detachFromCollection": "Remove from this collection",
+    "detachFromCollectionAria": "Remove from collection",
     "confirmRemoveTitle": "Confirm removal",
     "confirmRemoveMessage": "Do you really want to remove this game from your library?",
     "confirmRemoveLabel": "Remove"
@@ -387,6 +389,11 @@
     "gamesByStatus": "Games by status",
     "libraryTotal": "{{count}} game total",
     "libraryTotalPlural": "{{count}} games total",
+    "libraryInViewOne": "{{count}} game in this view",
+    "libraryInViewMany": "{{count}} games in this view",
+    "libraryOptionsAria": "Library options",
+    "createCollection": "Create collection",
+    "manageCollections": "Manage collections",
     "totalGames": "{{count}} game total",
     "totalGamesPlural": "{{count}} games total",
     "inProgress": "In progress",
@@ -447,6 +454,65 @@
     "title": "Sentry test page",
     "desc": "Click to generate an error captured by Sentry.",
     "btn": "Trigger an error"
+  },
+  "libraryFilters": {
+    "statusAll": "All",
+    "collection": "Collection",
+    "allCollections": "All collections",
+    "filterByStatusAria": "Filter library by status"
+  },
+  "collections": {
+    "form": {
+      "titleCreate": "New collection",
+      "titleEdit": "Edit collection",
+      "nameLabel": "Name",
+      "colorLabel": "Color",
+      "colorPickerTooltip": "Pick a color",
+      "visibleOnProfile": "Visible on my public profile",
+      "cancel": "Cancel",
+      "create": "Create",
+      "save": "Save"
+    },
+    "manage": {
+      "title": "Manage collections",
+      "loading": "Loading…",
+      "empty": "No collections to manage.",
+      "close": "Close",
+      "editTooltip": "Edit",
+      "deleteTooltip": "Delete",
+      "editAria": "Edit {{name}}",
+      "deleteAria": "Delete {{name}}",
+      "gamesCountOne": "{{count}} game",
+      "gamesCountMany": "{{count}} games"
+    },
+    "deleteConfirm": {
+      "title": "Delete collection?",
+      "message": "Confirm deletion of « {{name}} ».",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "addTo": {
+      "title": "Add to a collection",
+      "loginPrompt": "Log in to manage your collections.",
+      "loading": "Loading…",
+      "alreadyIn": "Already in this collection",
+      "removeTooltip": "Remove from this collection",
+      "removeAria": "Remove from {{name}}",
+      "createNew": "Create a collection…",
+      "close": "Close",
+      "login": "Log in",
+      "back": "Back",
+      "newCollectionHeading": "New collection",
+      "createFlowHint": "Use the creation form; the game will then be added automatically.",
+      "openForm": "Open form",
+      "createAndAdd": "Create and add game"
+    },
+    "errors": {
+      "addFailed": "Could not add the game to this collection.",
+      "removeFailed": "Could not remove the game from this collection."
+    },
+    "profileDetachTooltip": "Remove from « {{name}} »",
+    "defaultCollectionName": "this collection"
   },
   "trendingCategory": {
     "rating": "Top rated games",

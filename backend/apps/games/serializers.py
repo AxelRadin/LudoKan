@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.games.models import Game, GameScreenshot, GameVideo, Genre, Platform, Publisher, Rating
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary
 from apps.library.serializers import GenreSerializer, PlatformSerializer, PublisherSerializer
 
 
@@ -93,9 +93,14 @@ class GameReadSerializer(serializers.ModelSerializer):
         if user_game is None:
             return None
 
+        collection_ids = list(
+            user_game.library_entries.exclude(library__system_key=UserLibrary.SystemKey.MA_LUDOTHEQUE).values_list("library_id", flat=True)
+        )
         return {
+            "id": user_game.id,
             "status": user_game.status,
             "is_favorite": user_game.is_favorite,
+            "collection_ids": collection_ids,
         }
 
     def get_user_rating(self, obj: Game):

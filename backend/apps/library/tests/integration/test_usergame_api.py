@@ -1,7 +1,7 @@
 import pytest
 from rest_framework import status
 
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary
 
 
 @pytest.mark.django_db
@@ -16,6 +16,8 @@ class TestUserGameAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["game"]["id"] == game.id
         assert response.data["status"] == "EN_COURS"
+        assert "collection_ids" in response.data
+        assert isinstance(response.data["collection_ids"], list)
 
     def test_create_usergame_duplicate(self, authenticated_api_client, user, game):
         UserGame.objects.create(user=user, game=game)
@@ -61,3 +63,34 @@ class TestUserGameAPI:
         delete_endpoint = f"{self.endpoint}{ug.game.id}/"
         response = authenticated_api_client.delete(delete_endpoint)
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_list_games_collection_filter_foreign_library_returns_empty(self, authenticated_api_client, user, another_user, game):
+        foreign_col = UserLibrary.objects.create(user=another_user, name="Autre", system_key="")
+        UserGame.objects.create(user=user, game=game)
+        response = authenticated_api_client.get(f"{self.endpoint}?collection={foreign_col.pk}")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["results"] == []
+
+    def test_list_games_filtered_by_owned_collection(self, authenticated_api_client, user, game):
+        r_game = authenticated_api_client.post(self.endpoint, {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        assert r_game.status_code == status.HTTP_201_CREATED
+        ug_id = r_game.data["id"]
+
+        r_col = authenticated_api_client.post("/api/me/collections/", {"name": "Vue test"}, format="json")
+        assert r_col.status_code == status.HTTP_201_CREATED
+        col_id = r_col.data["id"]
+
+        r_add = authenticated_api_client.post(
+            f"/api/me/collections/{col_id}/entries/",
+            {"user_game_id": ug_id},
+            format="json",
+        )
+        assert r_add.status_code in (
+            status.HTTP_200_OK,
+            status.HTTP_201_CREATED,
+        )
+
+        response = authenticated_api_client.get(f"{self.endpoint}?collection={col_id}")
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 1
+        assert response.data["results"][0]["id"] == ug_id

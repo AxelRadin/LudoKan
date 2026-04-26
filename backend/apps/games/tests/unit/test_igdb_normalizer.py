@@ -189,7 +189,12 @@ def test_enrich_normalized_games_authenticated(user, game):
     enrich_normalized_games(normalized_list, user=user)
 
     assert normalized_list[0]["django_id"] == game.id
-    assert normalized_list[0]["user_library"] == {"status": "playing", "is_favorite": True}
+    ul = normalized_list[0]["user_library"]
+    assert ul["status"] == "playing"
+    assert ul["is_favorite"] is True
+    assert "id" in ul
+    assert "collection_ids" in ul
+    assert isinstance(ul["collection_ids"], list)
     assert normalized_list[0]["user_rating"] == {"value": 90.0, "rating_type": "sur_100"}
 
 

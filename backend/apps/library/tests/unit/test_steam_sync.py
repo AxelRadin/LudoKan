@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from apps.games.models import Game, Publisher
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
 from apps.library.steam_sync import _resolve_and_save_missing_games, sync_steam_library
 from apps.users.models import CustomUser, SteamProfile
 
@@ -64,6 +64,13 @@ class SteamSyncTest(TestCase):
 
         # 180 minutes = 3.0 hours
         self.assertEqual(user_game.playtime_forever, 3.0, "Le temps de jeu devrait être de 3.0 heures.")
+
+        steam_lib = UserLibrary.objects.filter(user=self.user, system_key=UserLibrary.SystemKey.STEAM).first()
+        self.assertIsNotNone(steam_lib, "La collection Jeux Steam devrait exister.")
+        self.assertTrue(
+            UserLibraryEntry.objects.filter(library=steam_lib, user_game=user_game).exists(),
+            "Le jeu synchronisé doit être dans la collection Jeux Steam.",
+        )
 
     def test_sync_steam_library_no_steam_profile(self):
         user_no_profile = CustomUser.objects.create_user(email="no@ludo.com", pseudo="noprofile", password="pwd")
