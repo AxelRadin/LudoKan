@@ -24,7 +24,12 @@ class TestReviewSerializers:
         assert data["id"] == review.id
 
     def test_review_write_validate_content_calls_validator(self, user, game):
-        serializer = ReviewWriteSerializer(data={"game": game.id, "rating": None, "content": "ok content"})
+        request = factory.post("/api/reviews/")
+        request.user = user
+        serializer = ReviewWriteSerializer(
+            data={"game": game.id, "rating_value": 4, "content": "ok content"},
+            context={"request": request},
+        )
         assert serializer.is_valid(), serializer.errors
 
     def test_review_write_create_sets_user_from_context(self, user, game):
@@ -32,7 +37,7 @@ class TestReviewSerializers:
         request.user = user
 
         serializer = ReviewWriteSerializer(
-            data={"game": game.id, "rating": None, "content": "Great game!"},
+            data={"game": game.id, "rating_value": 4, "content": "Great game!"},
             context={"request": request},
         )
         assert serializer.is_valid(), serializer.errors
@@ -49,7 +54,7 @@ class TestReviewSerializers:
 
         serializer = ReviewWriteSerializer(
             instance=None,
-            data={"game": game.id, "rating": None, "content": "Another review"},
+            data={"game": game.id, "rating_value": 3, "content": "Another review"},
             context={"request": request},
         )
 
@@ -58,16 +63,16 @@ class TestReviewSerializers:
 
         assert "deja laisse un avis pour ce jeu" in str(exc.value)
 
-    def test_review_write_validate_fails_if_no_rating_and_no_content(self, user, game):
+    def test_review_write_validate_requires_rating_on_create(self, user, game):
         request = factory.post("/api/reviews/")
         request.user = user
 
         serializer = ReviewWriteSerializer(
-            data={"game": game.id, "content": ""},
+            data={"game": game.id, "content": "Seulement du texte"},
             context={"request": request},
         )
         assert not serializer.is_valid()
-        assert "Veuillez fournir une note ou un avis." in str(serializer.errors["non_field_errors"])
+        assert "rating_value" in serializer.errors
 
     def test_review_write_create_with_rating_value(self, user, game):
         request = factory.post("/api/reviews/")

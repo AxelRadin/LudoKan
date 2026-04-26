@@ -6,11 +6,30 @@ from apps.reviews.models import ContentReport, Review
 from apps.reviews.validators import validate_review_content_length
 from apps.users.serializers import UserSerializer
 
+# IDs fictifs pour les entrées « note sans avis » (liste fusionnée GET /api/reviews/).
+SYNTHETIC_REVIEW_ID_BASE = 1_000_000_000
+
 
 class RatingValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rating
         fields = ["value"]
+
+
+def build_rating_only_review_entry(rating: Rating, request) -> dict:
+    """Même forme qu'une Review lue, pour un Rating étoiles sans avis texte."""
+    ctx = {"request": request}
+    return {
+        "id": SYNTHETIC_REVIEW_ID_BASE + rating.id,
+        "rating_only": True,
+        "user": UserSerializer(rating.user, context=ctx).data,
+        "game": GameReadSerializer(rating.game, context=ctx).data,
+        "rating": RatingValueSerializer(rating).data,
+        "title": "",
+        "content": "",
+        "date_created": rating.date_created,
+        "date_modified": rating.date_modified,
+    }
 
 
 class ReviewReadSerializer(serializers.ModelSerializer):
@@ -54,7 +73,7 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
     def validate(self, data):
         """
         Validation supplementaire : empeche la creation de doublons.
-        Exige au moins une note ou un contenu.
+        À la création, une note est obligatoire (le texte peut rester vide).
         """
         request = self.context.get("request")
         user = request.user if request else None
@@ -65,9 +84,10 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Vous avez deja laisse un avis pour ce jeu.")
 
         rating_value = data.get("rating_value")
-        content = data.get("content", "")
-        if not rating_value and not content:
-            raise serializers.ValidationError("Veuillez fournir une note ou un avis.")
+
+        if not self.instance:
+            if rating_value is None:
+                raise serializers.ValidationError({"rating_value": "La note est obligatoire pour publier un avis."})
 
         return data
 

@@ -1,14 +1,24 @@
+from urllib.parse import urlencode
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
+from apps.games.models import Rating
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.permissions import CanDeleteReview, CanEditReport, CanEditReview, CanReadReport, CanReadReview
-from apps.reviews.serializers import ContentReportAdminSerializer, ContentReportCreateSerializer, ReviewReadSerializer, ReviewWriteSerializer
+from apps.reviews.serializers import (
+    ContentReportAdminSerializer,
+    ContentReportCreateSerializer,
+    ReviewReadSerializer,
+    ReviewWriteSerializer,
+    build_rating_only_review_entry,
+)
 from apps.users.utils import log_admin_action
 
 
@@ -27,6 +37,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     Filtres disponibles :
     - ?game=<id>  : Filtrer par jeu
     - ?user=<id>  : Filtrer par utilisateur
+    - ?rating_value=<1-5>  : Filtre sur la note (avis + entrées « note seule » sans texte)
     """
 
     queryset = Review.objects.select_related("user", "game", "rating").all()
@@ -59,7 +70,103 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if user_id:
             queryset = queryset.filter(user_id=user_id)
 
+        rating_value = self.request.query_params.get("rating_value")
+        if rating_value is not None:
+            try:
+                v = int(rating_value)
+            except (TypeError, ValueError):
+                v = None
+            if v is not None and 1 <= v <= 5:
+                queryset = queryset.filter(rating__value=v)
+
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        Liste fusionnée : avis du jeu + notes étoiles sans avis texte (même forme JSON),
+        tri par date, pagination identique à DRF. Sauté si ?user= (ex. avis de l'utilisateur).
+        """
+        game_id = request.query_params.get("game")
+        user_filter = request.query_params.get("user")
+        if not game_id or user_filter is not None:
+            return super().list(request, *args, **kwargs)
+
+        try:
+            game_id_int = int(game_id)
+        except (TypeError, ValueError):
+            return super().list(request, *args, **kwargs)
+
+        rating_val = None
+        raw_rv = request.query_params.get("rating_value")
+        if raw_rv is not None:
+            try:
+                v = int(raw_rv)
+            except (TypeError, ValueError):
+                v = None
+            if v is not None and 1 <= v <= 5:
+                rating_val = v
+
+        try:
+            page = max(1, int(request.query_params.get("page", 1)))
+        except (TypeError, ValueError):
+            page = 1
+
+        page_size = api_settings.PAGE_SIZE
+
+        reviews_qs = Review.objects.select_related("user", "game", "rating").filter(game_id=game_id_int).order_by("-date_created")
+        if rating_val is not None:
+            reviews_qs = reviews_qs.filter(rating__value=rating_val)
+
+        reviewed_user_ids = Review.objects.filter(game_id=game_id_int).values_list("user_id", flat=True)
+        orphans_qs = (
+            Rating.objects.select_related("user", "game")
+            .filter(game_id=game_id_int, rating_type=Rating.RATING_TYPE_ETOILES)
+            .exclude(user_id__in=reviewed_user_ids)
+            .order_by("-date_created")
+        )
+        if rating_val is not None:
+            orphans_qs = orphans_qs.filter(value=rating_val)
+
+        rows = []
+        for r in reviews_qs:
+            rows.append(("rev", r))
+        for rt in orphans_qs:
+            rows.append(("rt", rt))
+        rows.sort(
+            key=lambda t: t[1].date_created if t[0] == "rev" else t[1].date_created,
+            reverse=True,
+        )
+
+        total = len(rows)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_rows = rows[start:end]
+
+        ctx = self.get_serializer_context()
+        results = []
+        for kind, obj in page_rows:
+            if kind == "rev":
+                results.append(ReviewReadSerializer(obj, context=ctx).data)
+            else:
+                results.append(build_rating_only_review_entry(obj, request))
+
+        def page_url(p: int) -> str:
+            pdict: dict[str, str] = {"game": str(game_id_int), "page": str(p)}
+            if rating_val is not None:
+                pdict["rating_value"] = str(rating_val)
+            return f"{request.path}?{urlencode(pdict)}"
+
+        previous = page_url(page - 1) if page > 1 else None
+        next_url = page_url(page + 1) if end < total else None
+
+        return Response(
+            {
+                "count": total,
+                "next": request.build_absolute_uri(next_url) if next_url else None,
+                "previous": request.build_absolute_uri(previous) if previous else None,
+                "results": results,
+            }
+        )
 
     def perform_create(self, serializer):
         """

@@ -1,6 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
 
+from apps.games.models import Rating
 from apps.reviews.models import Review
 from apps.reviews.views import IsOwnerOrReadOnly
 
@@ -32,13 +33,40 @@ class TestReviewViewSet:
         assert len(response.data["results"]) == 1
         assert response.data["results"][0]["user"]["id"] == user.id
 
+    def test_list_reviews_filters_by_rating_value(self, user, another_user, game):
+        r4 = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+        Review.objects.create(user=user, game=game, content="Quatre étoiles", rating=r4)
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+
+        client = APIClient()
+        url = "/api/reviews/"
+        response = client.get(url, {"game": game.id, "rating_value": 4})
+        assert response.status_code == 200
+        assert response.data["count"] == 2
+        assert len(response.data["results"]) == 2
+        assert any(row.get("content") == "Quatre étoiles" for row in response.data["results"])
+        assert any(row.get("rating_only") for row in response.data["results"])
+
+        response_all = client.get(url, {"game": game.id})
+        assert response_all.data["count"] == 2
+
     def test_create_review_associates_authenticated_user(self, user, game):
         client = APIClient()
         client.force_authenticate(user=user)
 
         response = client.post(
             "/api/reviews/",
-            {"game": game.id, "content": "Nice game!", "rating": None},
+            {"game": game.id, "content": "Nice game!", "rating_value": 4},
             format="json",
         )
 
