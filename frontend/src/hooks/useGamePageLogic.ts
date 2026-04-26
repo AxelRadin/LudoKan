@@ -107,11 +107,15 @@ export function useGamePageLogic(): GamePageLogic {
       try {
         const m: { id: number } = await apiGet('/api/me');
         setCurrentUserId(m.id);
-        const d: unknown = await apiGet(`/api/reviews/?game=${djangoId}`);
+        // Filtrer par utilisateur : la liste paginée ?game= seule peut ne pas
+        // contenir l'avis courant (ex. avis ancien sur une page suivante).
+        const d: unknown = await apiGet(
+          `/api/reviews/?game=${djangoId}&user=${m.id}`
+        );
         const l = Array.isArray(d)
           ? d
           : ((d as { results?: Review[] }).results ?? []);
-        setUserReview(l.find(r => r.user?.id === m.id) ?? null);
+        setUserReview((l[0] as Review | undefined) ?? null);
       } catch {
         setCurrentUserId(null);
         setUserReview(null);

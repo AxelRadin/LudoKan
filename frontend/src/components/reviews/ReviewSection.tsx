@@ -223,8 +223,19 @@ export default function ReviewSection({
 }: ReviewSectionProps) {
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
-  const { reviews, isLoading, error, addReview, updateReview, removeReview } =
-    useReviews(gameId || null);
+  const {
+    reviews,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    addReview,
+    updateReview,
+    removeReview,
+  } = useReviews(gameId || null);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
@@ -243,7 +254,10 @@ export default function ReviewSection({
 
   return (
     <Box sx={{ width: '100%' }}>
-      <SectionAccentTitle label="Votre avis eededee" marginBottom={3} />
+      <SectionAccentTitle
+        label={t('gamePageBody.reviewsYourTitle')}
+        marginBottom={3}
+      />
       <UserReviewEditor
         gameId={gameId}
         resolveGameId={resolveGameId}
@@ -257,12 +271,15 @@ export default function ReviewSection({
         addReview={addReview}
       />
 
-      {otherReviews.length > 0 && <SectionAccentTitle label="Autres avis" />}
-
       <ReviewsList
         otherReviews={otherReviews}
+        totalCount={totalCount}
         isLoading={isLoading}
+        isLoadingMore={isLoadingMore}
         error={error}
+        loadMoreError={loadMoreError}
+        hasNext={hasNext}
+        onLoadMore={loadMorePage}
         currentUserId={currentUserId}
         onEditReview={review => setEditingReview(review as Review)}
         onDeleteReview={setReviewToDelete}
