@@ -57,115 +57,129 @@ export default function UserReviewsPage() {
     );
   }
 
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress color="error" />
+        </Box>
+      );
+    }
+
+    if (error) {
+      return (
+        <Typography color="error" align="center">
+          {error}
+        </Typography>
+      );
+    }
+
+    if (reviews.length === 0) {
+      return (
+        <Typography align="center" color="text.secondary">
+          Vous n'avez pas encore publié d'avis.
+        </Typography>
+      );
+    }
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {reviews.map(review => (
+          <Box key={review.id} sx={{ position: 'relative' }}>
+            {/* Header with game info */}
+            <Paper
+              elevation={0}
+              sx={{
+                p: 2,
+                mb: -2,
+                pb: 4,
+                borderRadius: '16px 16px 0 0',
+                background: 'rgba(255,255,255,0.6)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(0,0,0,0.05)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  background: 'rgba(255,255,255,0.8)',
+                },
+              }}
+              onClick={() => navigate(`/game/${review.game.id}`)}
+            >
+              <Box
+                component="img"
+                src={review.game.cover_url}
+                alt={review.game.name}
+                sx={{
+                  width: 50,
+                  height: 70,
+                  objectFit: 'cover',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              />
+              <Box>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_DISPLAY,
+                    fontWeight: 700,
+                    fontSize: 18,
+                    color: '#111',
+                  }}
+                >
+                  {review.game.name}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    fontSize: 12,
+                    color: 'text.secondary',
+                  }}
+                >
+                  Cliquez pour voir le jeu
+                </Typography>
+              </Box>
+            </Paper>
+
+            {/* Review Card */}
+            {editingReview?.id === review.id ? (
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: '#fff',
+                  borderRadius: 3,
+                  border: '1px solid #ffcfcf',
+                }}
+              >
+                <ReviewForm
+                  gameId={String(review.game.id)}
+                  initialValues={{
+                    ...review,
+                    rating: review.rating?.value,
+                  }}
+                  onSuccess={handleEditSuccess}
+                  onCancel={() => setEditingReview(null)}
+                />
+              </Box>
+            ) : (
+              <ReviewCard
+                review={review as any}
+                isOwner={true}
+                onEdit={() => setEditingReview(review)}
+                onDelete={id => setReviewToDelete(id)}
+              />
+            )}
+          </Box>
+        ))}
+      </Box>
+    );
+  };
+
   return (
     <PageLayout title={t('profilePage.reviewsLabel')}>
-      <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress color="error" />
-          </Box>
-        ) : error ? (
-          <Typography color="error" align="center">
-            {error}
-          </Typography>
-        ) : reviews.length === 0 ? (
-          <Typography align="center" color="text.secondary">
-            Vous n'avez pas encore publié d'avis.
-          </Typography>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {reviews.map(review => (
-              <Box key={review.id} sx={{ position: 'relative' }}>
-                {/* Header with game info */}
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    mb: -2,
-                    pb: 4,
-                    borderRadius: '16px 16px 0 0',
-                    background: 'rgba(255,255,255,0.6)',
-                    backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(0,0,0,0.05)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 2,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      background: 'rgba(255,255,255,0.8)',
-                    },
-                  }}
-                  onClick={() => navigate(`/game/${review.game.id}`)}
-                >
-                  <Box
-                    component="img"
-                    src={review.game.cover_url}
-                    alt={review.game.name}
-                    sx={{
-                      width: 50,
-                      height: 70,
-                      objectFit: 'cover',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    }}
-                  />
-                  <Box>
-                    <Typography
-                      sx={{
-                        fontFamily: FONT_DISPLAY,
-                        fontWeight: 700,
-                        fontSize: 18,
-                        color: '#111',
-                      }}
-                    >
-                      {review.game.name}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontFamily: FONT_BODY,
-                        fontSize: 12,
-                        color: 'text.secondary',
-                      }}
-                    >
-                      Cliquez pour voir le jeu
-                    </Typography>
-                  </Box>
-                </Paper>
-
-                {/* Review Card */}
-                {editingReview?.id === review.id ? (
-                  <Box
-                    sx={{
-                      p: 2,
-                      bgcolor: '#fff',
-                      borderRadius: 3,
-                      border: '1px solid #ffcfcf',
-                    }}
-                  >
-                    <ReviewForm
-                      gameId={String(review.game.id)}
-                      initialValues={{
-                        ...review,
-                        rating: review.rating?.value,
-                      }}
-                      onSuccess={handleEditSuccess}
-                      onCancel={() => setEditingReview(null)}
-                    />
-                  </Box>
-                ) : (
-                  <ReviewCard
-                    review={review as any}
-                    isOwner={true}
-                    onEdit={() => setEditingReview(review)}
-                    onDelete={id => setReviewToDelete(id)}
-                  />
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
-      </Box>
+      <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>{renderContent()}</Box>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
