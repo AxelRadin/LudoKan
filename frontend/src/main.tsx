@@ -18,6 +18,7 @@ import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
 import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
+import UserReviewsPage from './pages/UserReviewsPage.tsx';
 import SettingsPage from './pages/SettingsPage';
 import PolitiquesPage from './pages/PolitiquesPage.tsx';
 import CookiesPage from './pages/CookiesPage.tsx';
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
       { path: 'profile', element: <ProfilePage /> },
+      { path: 'profile/reviews', element: <UserReviewsPage /> },
       { path: 'game/:id', element: <GamePage /> },
       { path: 'game/igdb/:igdbId', element: <GamePage /> },
       { path: 'test', element: <TestSentry /> },
