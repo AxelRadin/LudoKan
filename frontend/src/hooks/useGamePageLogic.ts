@@ -107,8 +107,6 @@ export function useGamePageLogic(): GamePageLogic {
       try {
         const m: { id: number } = await apiGet('/api/me');
         setCurrentUserId(m.id);
-        // Filtrer par utilisateur : la liste paginée ?game= seule peut ne pas
-        // contenir l'avis courant (ex. avis ancien sur une page suivante).
         const d: unknown = await apiGet(
           `/api/reviews/?game=${djangoId}&user=${m.id}`
         );
