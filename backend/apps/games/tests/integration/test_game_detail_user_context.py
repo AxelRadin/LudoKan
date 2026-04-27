@@ -29,7 +29,12 @@ def test_game_detail_includes_user_library_and_rating(user, game):
     serializer = GameDetailSerializer(game, context={"request": request})
     data = serializer.data
 
-    assert data["user_library"] == {"status": UserGame.GameStatus.EN_COURS, "is_favorite": True}
+    lib = data["user_library"]
+    assert lib["status"] == UserGame.GameStatus.EN_COURS
+    assert lib["is_favorite"] is True
+    assert "id" in lib
+    assert lib["collection_ids"] is not None
+    assert isinstance(lib["collection_ids"], list)
     assert data["user_rating"]["value"] == 8.0
     assert data["user_rating"]["rating_type"] == Rating.RATING_TYPE_SUR_10
 

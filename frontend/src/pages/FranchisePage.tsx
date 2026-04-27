@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useFranchiseGames } from '../hooks/useFranchiseGames';
 import { type IgdbGame } from '../api/igdb';
 
 export default function FranchisePage() {
+  const { t } = useTranslation();
   const params = useParams();
   const franchiseId = Number(params.id);
-
   const [page, setPage] = useState(1);
   const pageSize = 50;
 
@@ -33,20 +34,26 @@ export default function FranchisePage() {
       >
         <div>
           <h2 style={{ margin: 0 }}>{title}</h2>
-          <div style={{ fontSize: 12, opacity: 0.75 }}>Page {page}</div>
+          <div style={{ fontSize: 12, opacity: 0.75 }}>
+            {t('franchise.page', { page })}
+          </div>
         </div>
-
         <Link to="/" style={{ fontSize: 14 }}>
-          ← Retour
+          {t('franchise.back')}
         </Link>
       </div>
 
       <div style={{ height: 12 }} />
 
-      {loading && <div>Chargement…</div>}
-      {error && <div style={{ color: 'crimson' }}>Erreur : {error}</div>}
-
-      {!loading && !error && games.length === 0 && <div>Aucun jeu trouvé.</div>}
+      {loading && <div>{t('franchise.loading')}</div>}
+      {error && (
+        <div style={{ color: 'crimson' }}>
+          {t('franchise.error', { message: error })}
+        </div>
+      )}
+      {!loading && !error && games.length === 0 && (
+        <div>{t('franchise.empty')}</div>
+      )}
 
       <div
         style={{
@@ -98,7 +105,6 @@ export default function FranchisePage() {
                   '—'
                 )}
               </div>
-
               <div style={{ minWidth: 0 }}>
                 <div
                   style={{
@@ -110,13 +116,11 @@ export default function FranchisePage() {
                 >
                   {g.name}
                 </div>
-
-                {release ? (
+                {release && (
                   <div style={{ fontSize: 12, opacity: 0.75 }}>
-                    Sortie : {release}
+                    {t('franchise.release', { date: release })}
                   </div>
-                ) : null}
-
+                )}
                 {g.platforms?.length ? (
                   <div
                     style={{
@@ -148,14 +152,13 @@ export default function FranchisePage() {
           disabled={page <= 1 || loading}
           onClick={() => setPage(p => Math.max(1, p - 1))}
         >
-          ← Précédent
+          {t('franchise.prev')}
         </button>
-
         <button
           disabled={loading || games.length < pageSize}
           onClick={() => setPage(p => p + 1)}
         >
-          Suivant →
+          {t('franchise.next')}
         </button>
       </div>
     </div>

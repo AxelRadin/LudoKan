@@ -16,6 +16,8 @@ export type UserGameStatus =
 
 export type UserGame = {
   id: number;
+  /** IDs des collections (`/api/me/collections/`) contenant ce jeu. */
+  collection_ids?: number[];
   game: {
     id: number;
     name: string;

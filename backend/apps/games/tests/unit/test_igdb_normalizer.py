@@ -5,6 +5,44 @@ from apps.games.models import Rating
 from apps.library.models import UserGame
 
 
+def test_normalize_igdb_game_french_title_from_alternative_names():
+    """alternative_names : ignore les entrées non-dict, puis titre avec commentaire 'French'."""
+    raw_game = {
+        "id": 40,
+        "name": "English Title",
+        "alternative_names": [
+            "not a dict",
+            {"comment": "Official French title", "name": "Titre français"},
+        ],
+    }
+    assert normalize_igdb_game(raw_game)["name"] == "Titre français"
+
+
+def test_normalize_igdb_game_alternative_names_french_comment_but_no_name():
+    """Entrée 'French' sans nom exploitable : pas de retour depuis alternative_names, fallback sur name."""
+    raw_game = {
+        "id": 41,
+        "name": "Fallback",
+        "alternative_names": [{"comment": "French title", "name": ""}],
+    }
+    assert normalize_igdb_game(raw_game)["name"] == "Fallback"
+
+
+def test_normalize_igdb_game_includes_ludokan_demographics():
+    """Champs _ludokan_* (proxy IGDB filtré) → min_age / min_players / max_players sur le contrat."""
+    raw = {
+        "id": 7,
+        "name": "G",
+        "_ludokan_min_age": 12,
+        "_ludokan_min_players": 1,
+        "_ludokan_max_players": 4,
+    }
+    out = normalize_igdb_game(raw)
+    assert out["min_age"] == 12
+    assert out["min_players"] == 1
+    assert out["max_players"] == 4
+
+
 def test_normalize_igdb_game_basic():
     """Vérifie la normalisation avec tous les champs présents idéaux (mock d'une réponse de vue détails)."""
     raw_game = {
@@ -151,7 +189,12 @@ def test_enrich_normalized_games_authenticated(user, game):
     enrich_normalized_games(normalized_list, user=user)
 
     assert normalized_list[0]["django_id"] == game.id
-    assert normalized_list[0]["user_library"] == {"status": "playing", "is_favorite": True}
+    ul = normalized_list[0]["user_library"]
+    assert ul["status"] == "playing"
+    assert ul["is_favorite"] is True
+    assert "id" in ul
+    assert "collection_ids" in ul
+    assert isinstance(ul["collection_ids"], list)
     assert normalized_list[0]["user_rating"] == {"value": 90.0, "rating_type": "sur_100"}
 
 

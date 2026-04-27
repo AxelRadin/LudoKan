@@ -14,10 +14,14 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PlatformLogos from '../components/PlatformLogos';
 import ReviewSection from '../components/reviews/ReviewSection';
 import { SectionAccentTitle } from '../components/SectionAccentTitle';
 import SecondaryButton from '../components/SecondaryButton';
+import { AddToCollectionModal } from '../components/UserCollectionModals';
+import { useAuth } from '../contexts/useAuth';
 import type { GamePageLogic } from '../hooks/useGamePageLogic';
 import type { NormalizedGame } from '../types/game';
 import type { GamePageAppearance } from './gamePageAppearance';
@@ -32,24 +36,17 @@ type GamePageLoadedBodyProps = Readonly<{
   logic: GamePageLogic;
   appearance: GamePageAppearance;
 }>;
-
 type PageSectionProps = Readonly<{
   game: NormalizedGame;
   logic: GamePageLogic;
   appearance: GamePageAppearance;
 }>;
-
-type DescriptionState = Readonly<{
-  displayText: string;
-  isTruncated: boolean;
-}>;
-
+type DescriptionState = Readonly<{ displayText: string; isTruncated: boolean }>;
 type DescriptionCardProps = Readonly<{
   logic: GamePageLogic;
   appearance: GamePageAppearance;
   description: DescriptionState;
 }>;
-
 type FavoriteGlyphProps = Readonly<{
   isFavorite: boolean;
   accent: string;
@@ -59,20 +56,18 @@ type FavoriteGlyphProps = Readonly<{
 
 function buildDescriptionState(
   logic: GamePageLogic,
-  game: NormalizedGame
+  game: NormalizedGame,
+  translatingText: string,
+  emptyText: string
 ): DescriptionState {
   const fullText = logic.translating
-    ? 'Traduction en cours…'
-    : (logic.translatedDesc ??
-      game.summary ??
-      'Aucune description disponible.');
-
+    ? translatingText
+    : (logic.translatedDesc ?? game.summary ?? emptyText);
   const isTruncated = !logic.translating && fullText.length > DLIMIT;
   const displayText =
     isTruncated && !logic.descExpanded
       ? `${fullText.slice(0, DLIMIT)}…`
       : fullText;
-
   return { displayText, isTruncated };
 }
 
@@ -91,10 +86,8 @@ function FavoriteGlyph({
   size,
   color,
 }: FavoriteGlyphProps) {
-  if (isFavorite) {
+  if (isFavorite)
     return <FavoriteIcon sx={{ fontSize: size, color: color ?? accent }} />;
-  }
-
   return (
     <FavoriteBorderIcon
       sx={{ fontSize: size, color: color ?? 'rgba(255,255,255,0.9)' }}
@@ -103,6 +96,7 @@ function FavoriteGlyph({
 }
 
 function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
+  const { t } = useTranslation();
   const { accent, isDark } = appearance;
   const mainGenre = game.genres?.[0]?.name;
   const publisherName = game.publisher?.name;
@@ -164,7 +158,7 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
         }}
       />
 
-      <Tooltip title="Coup de cœur" arrow>
+      <Tooltip title={t('gamePageBody.favoriteTooltip')} arrow>
         <Box
           onClick={() => logic.handleToggleFavorite()}
           sx={{
@@ -203,7 +197,7 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
         }}
       >
         <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', mb: 1 }}>
-          {mainGenre ? (
+          {mainGenre && (
             <Box
               sx={{
                 display: 'inline-flex',
@@ -229,9 +223,9 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
                 {mainGenre}
               </Typography>
             </Box>
-          ) : null}
+          )}
 
-          {playerLabel ? (
+          {playerLabel && (
             <Box
               sx={{
                 display: 'inline-flex',
@@ -259,7 +253,7 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
                 {playerLabel}
               </Typography>
             </Box>
-          ) : null}
+          )}
         </Box>
 
         <Typography
@@ -276,7 +270,6 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
         >
           {game.name}
         </Typography>
-
         <Box
           sx={{
             display: 'flex',
@@ -285,7 +278,7 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
             flexWrap: 'wrap',
           }}
         >
-          {publisherName ? (
+          {publisherName && (
             <Typography
               sx={{
                 fontFamily: GAME_PAGE_FONT,
@@ -296,9 +289,8 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
             >
               {publisherName}
             </Typography>
-          ) : null}
-
-          {releaseDate ? (
+          )}
+          {releaseDate && (
             <>
               <Box
                 sx={{
@@ -318,7 +310,7 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
                 {releaseDate}
               </Typography>
             </>
-          ) : null}
+          )}
         </Box>
       </Box>
     </Box>
@@ -326,13 +318,31 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
 }
 
 function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
+  const { t } = useTranslation();
   const { card, redBtnSx, accent, muted } = appearance;
   const isFavorite = Boolean(logic.userGame?.is_favorite);
   const isSolo = game.max_players === 1;
+  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
+  const [collectionModalOpen, setCollectionModalOpen] = useState(false);
+
+  const openCollectionModal = () => setCollectionModalOpen(true);
+
+  const requireAuthForCollection = () => {
+    setPendingAction(() => () => setCollectionModalOpen(true));
+    setAuthModalOpen(true);
+  };
+
+  const onAddToCollectionClick = () => {
+    if (!isAuthenticated) {
+      requireAuthForCollection();
+      return;
+    }
+    openCollectionModal();
+  };
 
   return (
     <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-      <SectionAccentTitle label="Actions" />
+      <SectionAccentTitle label={t('gamePageBody.actionsLabel')} />
       <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2.5 }}>
         <Tooltip
           title={isSolo ? 'Ce jeu est solo' : ''}
@@ -344,46 +354,59 @@ function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
               onClick={() => logic.handleSetMatchmaking()}
               disabled={logic.isMatching || isSolo}
             >
-              {logic.isMatching ? 'Recherche…' : 'Matchmaking'}
+              {logic.isMatching
+                ? t('gamePageBody.searching')
+                : t('gamePageBody.matchmaking')}
             </SecondaryButton>
           </span>
         </Tooltip>
         <Button
           variant="contained"
-          onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
+          onClick={onAddToCollectionClick}
           sx={redBtnSx}
         >
-          + Ajouter à la collection
+          {t('gamePageBody.addToCollection')}
         </Button>
       </Box>
 
+      <AddToCollectionModal
+        open={collectionModalOpen}
+        onClose={() => setCollectionModalOpen(false)}
+        djangoGameId={logic.djangoId}
+        ensureDjangoId={logic.ensureDjangoId}
+        isAuthenticated={isAuthenticated}
+        onRequireAuth={requireAuthForCollection}
+        userGameHint={logic.userGame}
+        onApplied={logic.refreshUserLibrary}
+      />
+
       <Sep />
 
-      <SectionAccentTitle label="Mon statut" />
+      <SectionAccentTitle label={t('gamePageBody.statusLabel')} />
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
         <StatusChip
           icon={<CheckCircleIcon />}
-          label="Terminé"
+          label={t('gamePageBody.statusDone')}
           active={logic.userGame?.status === 'TERMINE'}
           color="#43a047"
           onClick={() => logic.handleSetStatus('TERMINE')}
         />
         <StatusChip
           icon={<PlayCircleIcon />}
-          label="En cours"
+          label={t('gamePageBody.statusPlaying')}
           active={logic.userGame?.status === 'EN_COURS'}
           color={accent}
           onClick={() => logic.handleSetStatus('EN_COURS')}
         />
         <StatusChip
           icon={<BookmarkIcon />}
-          label="Envie"
+          label={t('gamePageBody.statusWishlist')}
           active={logic.userGame?.status === 'ENVIE_DE_JOUER'}
           color="#fb8c00"
           onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
         />
 
-        <Tooltip title="Coup de cœur" arrow>
+        <Tooltip title={t('gamePageBody.favoriteTooltip')} arrow>
           <Box
             onClick={() => logic.handleToggleFavorite()}
             sx={{
@@ -423,7 +446,7 @@ function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
                 color: 'inherit',
               }}
             >
-              Favori
+              {t('gamePageBody.favorite')}
             </Typography>
           </Box>
         </Tooltip>
@@ -433,12 +456,13 @@ function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
 }
 
 function GameGenresCard({ game, appearance }: PageSectionProps) {
+  const { t } = useTranslation();
   const { card, accent, muted, accentSoft, accentGlow } = appearance;
   const genres = game.genres ?? [];
 
   return (
     <Box className="gp-c2" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-      <SectionAccentTitle label="Genres" />
+      <SectionAccentTitle label={t('gamePageBody.genresLabel')} />
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.7 }}>
         {genres.length > 0 ? (
           genres.map((g: { name: string }) => (
@@ -463,13 +487,9 @@ function GameGenresCard({ game, appearance }: PageSectionProps) {
           ))
         ) : (
           <Typography
-            sx={{
-              fontFamily: GAME_PAGE_FONT,
-              fontSize: 13,
-              color: muted,
-            }}
+            sx={{ fontFamily: GAME_PAGE_FONT, fontSize: 13, color: muted }}
           >
-            Non renseigné
+            {t('gamePageBody.genresEmpty')}
           </Typography>
         )}
       </Box>
@@ -482,6 +502,7 @@ function GameDescriptionCard({
   appearance,
   description,
 }: DescriptionCardProps) {
+  const { t } = useTranslation();
   const { card, accent, ink, muted } = appearance;
 
   return (
@@ -497,10 +518,9 @@ function GameDescriptionCard({
             letterSpacing: -0.2,
           }}
         >
-          Description
+          {t('gamePageBody.descriptionLabel')}
         </Typography>
       </Box>
-
       <Typography
         sx={{
           fontFamily: GAME_PAGE_FONT,
@@ -511,8 +531,7 @@ function GameDescriptionCard({
       >
         {description.displayText}
       </Typography>
-
-      {description.isTruncated ? (
+      {description.isTruncated && (
         <Button
           size="small"
           onClick={() => logic.setDescExpanded(p => !p)}
@@ -526,28 +545,29 @@ function GameDescriptionCard({
             fontSize: 12,
           }}
         >
-          {logic.descExpanded ? 'Voir moins ↑' : 'Voir plus ↓'}
+          {logic.descExpanded
+            ? t('gamePageBody.showLess')
+            : t('gamePageBody.showMore')}
         </Button>
-      ) : null}
+      )}
     </Box>
   );
 }
 
 function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
+  const { t } = useTranslation();
   const { card, noHov, accentGlow, ink } = appearance;
   const videos = game.videos ?? [];
   const screenshots = game.screenshots ?? [];
 
-  if (videos.length === 0 && screenshots.length === 0) {
-    return null;
-  }
+  if (videos.length === 0 && screenshots.length === 0) return null;
 
   return (
     <Box
       className="gp-c5"
       sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2 }}
     >
-      <SectionAccentTitle label="Galerie" />
+      <SectionAccentTitle label={t('gamePageBody.galleryLabel')} />
       <Typography
         sx={{
           fontFamily: GAME_PAGE_FONT,
@@ -558,12 +578,11 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
           mb: 0.5,
         }}
       >
-        Médias
+        {t('gamePageBody.mediaLabel')}
       </Typography>
-
       <Sep />
 
-      {videos.length > 0 ? (
+      {videos.length > 0 && (
         <Box sx={{ mb: 2.5 }}>
           <Box
             sx={{
@@ -591,9 +610,9 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
             />
           </Box>
         </Box>
-      ) : null}
+      )}
 
-      {screenshots.length > 0 ? (
+      {screenshots.length > 0 && (
         <Box
           sx={{
             display: 'flex',
@@ -612,7 +631,11 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
               key={s.url}
               component="img"
               src={s.url}
-              alt={game.name ? `Capture — ${game.name}` : 'Capture'}
+              alt={
+                game.name
+                  ? t('gamePageBody.screenshotAlt', { name: game.name })
+                  : t('gamePageBody.screenshotAltFallback')
+              }
               onClick={() => logic.setSelectedShot(s.url)}
               sx={{
                 height: { xs: 130, sm: 185 },
@@ -625,15 +648,15 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
                 transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                 '&:hover': {
                   transform: 'scale(1.03)',
-                  boxShadow: `0 8px 24px rgba(198,40,40,0.15)`,
+                  boxShadow: '0 8px 24px rgba(198,40,40,0.15)',
                 },
               }}
             />
           ))}
         </Box>
-      ) : null}
+      )}
 
-      {logic.selectedShot ? (
+      {logic.selectedShot && (
         <Modal open onClose={() => logic.setSelectedShot(null)}>
           <Box
             onClick={() => logic.setSelectedShot(null)}
@@ -651,7 +674,7 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
             <Box
               component="img"
               src={logic.selectedShot}
-              alt="Screenshot agrandi"
+              alt={t('gamePageBody.screenshotEnlarged')}
               sx={{
                 maxWidth: '90vw',
                 maxHeight: '90vh',
@@ -661,7 +684,7 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
             />
           </Box>
         </Modal>
-      ) : null}
+      )}
     </Box>
   );
 }
@@ -670,10 +693,16 @@ export function GamePageLoadedBody({
   logic,
   appearance,
 }: GamePageLoadedBodyProps) {
+  const { t } = useTranslation();
   const game = logic.game as NormalizedGame;
   const { card, noHov, accent, ink } = appearance;
 
-  const description = buildDescriptionState(logic, game);
+  const description = buildDescriptionState(
+    logic,
+    game,
+    t('gamePageBody.translating'),
+    t('gamePageBody.descriptionEmpty')
+  );
   const communityRating = getCommunityRating(game);
   const reviewGameId = getReviewGameId(logic.djangoId);
 
@@ -689,17 +718,13 @@ export function GamePageLoadedBody({
         }}
       >
         <GameHeroCard game={game} logic={logic} appearance={appearance} />
-
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <GameActionsCard game={game} logic={logic} appearance={appearance} />
-
           <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-            <SectionAccentTitle label="Plateformes" />
+            <SectionAccentTitle label={t('gamePageBody.platformsLabel')} />
             <PlatformLogos platforms={game.platforms ?? []} />
           </Box>
-
           <GameGenresCard game={game} logic={logic} appearance={appearance} />
-
           <GameDescriptionCard
             logic={logic}
             appearance={appearance}
@@ -711,7 +736,7 @@ export function GamePageLoadedBody({
       <Box className="gp-c4" sx={{ ...card(), px: 3, py: 2.5, mb: 2 }}>
         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
           <Box>
-            <SectionAccentTitle label="Sortie" />
+            <SectionAccentTitle label={t('gamePageBody.releaseLabel')} />
             <Typography
               sx={{
                 fontFamily: GAME_PAGE_FONT,
@@ -724,7 +749,7 @@ export function GamePageLoadedBody({
             </Typography>
           </Box>
           <Box>
-            <SectionAccentTitle label="Éditeur" />
+            <SectionAccentTitle label={t('gamePageBody.publisherLabel')} />
             <Typography
               sx={{
                 fontFamily: GAME_PAGE_FONT,
@@ -740,7 +765,7 @@ export function GamePageLoadedBody({
       </Box>
 
       <Box className="gp-c4" sx={{ ...card(), px: 3, py: 2.5, mb: 2 }}>
-        <SectionAccentTitle label="Note communauté" />
+        <SectionAccentTitle label={t('gamePageBody.communityRatingLabel')} />
         <Rating
           value={communityRating}
           readOnly

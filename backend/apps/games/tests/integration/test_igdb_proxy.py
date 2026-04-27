@@ -225,7 +225,7 @@ class TestIgdbProxyTrending:
 
     def test_trending_with_genre_filter(self, api_client, mock_enrich, monkeypatch):
         def mock_igdb(ep, q):
-            if "where genres" in q:
+            if "genres =" in q or "genres=" in q:
                 return [
                     {"id": 1, "name": "Pure", "genres": [{"id": 1}], "total_rating_count": 10},
                     {"id": 2, "name": "Mix", "genres": [{"id": 1}, {"id": 2}], "total_rating_count": 20},

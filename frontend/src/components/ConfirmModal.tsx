@@ -6,6 +6,7 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
+import { t } from 'i18next';
 
 interface ConfirmModalProps {
   readonly open: boolean;
@@ -21,8 +22,8 @@ export default function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = 'Confirmer',
-  cancelLabel = 'Annuler',
+  confirmLabel = t('common.confirm'),
+  cancelLabel = t('common.cancel'),
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {

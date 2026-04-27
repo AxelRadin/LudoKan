@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import { useGamePageLogic } from '../hooks/useGamePageLogic';
 import { buildGamePageAppearance, GAME_PAGE_FONT } from './gamePageAppearance';
 import { GamePageLoadedBody } from './GamePageLoadedBody';
@@ -22,6 +23,7 @@ import { GamePageLoadedBody } from './GamePageLoadedBody';
 })();
 
 export default function GamePage() {
+  const { t } = useTranslation();
   const logic = useGamePageLogic();
   const theme = useTheme();
   const appearance = buildGamePageAppearance(theme.palette.mode === 'dark');
@@ -45,7 +47,7 @@ export default function GamePage() {
             color: appearance.ink,
           }}
         >
-          {logic.gameNotFound ? 'Jeu introuvable.' : 'Chargement…'}
+          {logic.gameNotFound ? t('gamePage.notFound') : t('gamePage.loading')}
         </Typography>
       </Box>
     );

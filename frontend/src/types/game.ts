@@ -33,9 +33,12 @@ export interface BasePublisher {
  * `is_favorite` is a boolean flag indicating if the user has marked the game as a favorite (coup de cœur).
  */
 export interface UserLibraryData {
+  /** ID du UserGame Django (pour les collections). */
+  id?: number;
   status: string;
   is_favorite: boolean;
   playtime_forever?: number | null;
+  collection_ids?: number[];
 }
 
 /**

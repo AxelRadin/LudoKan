@@ -1,14 +1,18 @@
+import { useTranslation } from 'react-i18next';
+
 export default function TestSentry() {
+  const { t } = useTranslation();
+
   return (
     <div style={{ padding: 16 }}>
-      <h1>Page de test Sentry</h1>
-      <p>Cliquez pour générer une erreur capturée par Sentry.</p>
+      <h1>{t('testSentry.title')}</h1>
+      <p>{t('testSentry.desc')}</p>
       <button
         onClick={() => {
           throw new Error('Test Sentry Frontend');
         }}
       >
-        Déclencher une erreur
+        {t('testSentry.btn')}
       </button>
     </div>
   );

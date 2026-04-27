@@ -1,0 +1,106 @@
+{
+  "confidentialite": {
+    "title": "Politique de Confidentialité",
+    "version": "Version 1.0 – Avril 2025",
+    "sections": [
+      {
+        "title": "Préambule",
+        "content": "La protection de vos données personnelles est une priorité pour Ludokan. La présente Politique de Confidentialité a pour objet de vous informer de manière transparente sur la nature des données collectées, les finalités de leur traitement, les bases légales applicables, ainsi que sur vos droits conformément au Règlement Général sur la Protection des Données (RGPD – Règlement (UE) 2016/679) et à la législation française en vigueur, notamment la loi n° 78-17 du 6 janvier 1978 modifiée (loi Informatique et Libertés), la loi SREN (2024) et le Digital Services Act (DSA)."
+      },
+      {
+        "title": "1. Identité du Responsable de Traitement",
+        "content": "Le responsable du traitement des données personnelles collectées via la plateforme Ludokan est :\n– Dénomination : Ludokan\n– Nature : Projet de fin de formation – Ludothèque numérique communautaire\n– Contact DPO / Référent RGPD : dpo@ludokan.fr\n– Adresse : [À compléter avant mise en ligne]"
+      },
+      {
+        "title": "2. Données Personnelles Collectées",
+        "content": "Ludokan collecte deux catégories de données :\n\n2.1 Données collectées directement\n– Données d'identité : nom, prénom, pseudonyme\n– Données de contact : adresse e-mail\n– Données démographiques : date de naissance / tranche d'âge\n– Données de connexion : identifiants et mots de passe (stockés sous forme hachée)\n\n2.2 Données collectées indirectement\n– Données comportementales : préférences de jeux, historique de navigation\n– Données de collection : jeux ajoutés à la bibliothèque personnelle, notes et avis\n– Données de communication : messages échangés via le chat en temps réel\n– Données techniques : adresse IP, type de navigateur, logs d'accès (anonymisés via Sentry)"
+      },
+      {
+        "title": "3. Finalités et Bases Légales des Traitements",
+        "content": "3.1 Exécution du contrat (art. 6.1.b RGPD)\n– Création et gestion de votre compte utilisateur\n– Fourniture des fonctionnalités de la plateforme\n– Gestion du chat en temps réel et des notifications\n\n3.2 Consentement (art. 6.1.a RGPD)\n– Dépôt de cookies non essentiels\n– Envoi de communications marketing et de newsletters\n– Traitement des données des mineurs de moins de 15 ans\n\n3.3 Intérêt légitime (art. 6.1.f RGPD)\n– Amélioration de la qualité du service\n– Sécurisation de la plateforme et prévention des fraudes\n– Modération des contenus illicites conformément au DSA\n\n3.4 Obligation légale (art. 6.1.c RGPD)\n– Vérification de l'âge et gestion du consentement parental\n– Conservation des logs à des fins légales et de sécurité"
+      },
+      {
+        "title": "4. Protection des Mineurs",
+        "content": "Ludokan accorde une attention particulière à la protection des mineurs, conformément à l'article 8 du RGPD et à la loi SREN (2024).\n– Une vérification d'âge est effectuée obligatoirement lors de l'inscription.\n– L'accès aux fonctionnalités sociales est bloqué pour les utilisateurs de moins de 15 ans sans consentement parental préalable.\n– Un filtrage renforcé du chat est appliqué pour les utilisateurs de moins de 18 ans.\n– Les parents ou tuteurs légaux peuvent exercer les droits RGPD au nom du mineur en contactant le DPO."
+      },
+      {
+        "title": "5. Cookies et Technologies de Traçage",
+        "content": "Ludokan utilise des cookies et technologies similaires. Lors de votre première visite, un bandeau de consentement vous permet d'accepter ou de refuser les catégories suivantes :\n– Cookies strictement nécessaires : indispensables au fonctionnement de la plateforme (session, sécurité). Ils ne requièrent pas de consentement.\n– Cookies de performance / analytics : mesure d'audience anonymisée. Soumis à consentement.\n– Cookies de personnalisation : mémorisation de vos préférences (langue, thème). Soumis à consentement.\n\nVous pouvez modifier vos préférences à tout moment via le lien « Gestion des cookies » présent en bas de chaque page."
+      },
+      {
+        "title": "6. Partage et Destinataires des Données",
+        "content": "Ludokan ne vend ni ne loue vos données à des tiers. Vos données peuvent être partagées uniquement avec :\n– Sous-traitants techniques : hébergeurs, services d'authentification et de messagerie, outils de monitoring.\n– API IGDB (Twitch/Amazon) : consultation du catalogue de jeux.\n– Outils de modération : service de modération de contenu.\n– Autorités compétentes : en cas d'obligation légale ou de réquisition judiciaire."
+      },
+      {
+        "title": "7. Durée de Conservation des Données",
+        "content": "– Données de compte actif : conservées pendant toute la durée d'utilisation du compte, puis supprimées dans un délai de 3 ans après la dernière connexion.\n– Données de messages (chat) : conservées 12 mois à des fins de modération et de sécurité.\n– Logs techniques (IP, accès) : anonymisés sous 30 jours, conservés 12 mois sous forme anonyme.\n– Données de consentement parental : conservées jusqu'aux 18 ans du mineur concerné.\n– Données comptables (abonnements) : 10 ans conformément au Code de commerce."
+      },
+      {
+        "title": "8. Sécurité des Données",
+        "content": "Ludokan met en œuvre des mesures techniques et organisationnelles adaptées :\n– Chiffrement des communications via HTTPS (TLS 1.3)\n– Hachage des mots de passe (bcrypt)\n– Anonymisation des logs de monitoring (Sentry)\n– Contrôle d'accès strict aux bases de données (principe du moindre privilège)\n– Privacy by design : minimisation des données dès la conception\n\nEn cas de violation de données, Ludokan s'engage à notifier la CNIL dans les 72 heures, conformément à l'article 33 du RGPD."
+      },
+      {
+        "title": "9. Vos Droits",
+        "content": "Conformément aux articles 15 à 22 du RGPD, vous disposez des droits suivants :\n– Droit d'accès (art. 15) : obtenir une copie de vos données traitées.\n– Droit de rectification (art. 16) : corriger des données inexactes ou incomplètes.\n– Droit à l'effacement (art. 17) : demander la suppression de vos données.\n– Droit à la limitation (art. 18) : suspendre temporairement l'utilisation de vos données.\n– Droit à la portabilité (art. 20) : recevoir vos données dans un format structuré.\n– Droit d'opposition (art. 21) : vous opposer à un traitement basé sur l'intérêt légitime.\n– Droit de retrait du consentement : retirer votre consentement à tout moment.\n\nPour exercer vos droits, contactez notre DPO : dpo@ludokan.fr"
+      },
+      {
+        "title": "13. Contact",
+        "content": "Pour toute question relative à la présente politique ou à l'exercice de vos droits :\n– E-mail : dpo@ludokan.fr\n– Courrier : [Adresse à compléter avant mise en ligne]\n\nNous nous engageons à répondre à toute demande dans un délai maximum d'un mois (art. 12 RGPD)."
+      }
+    ]
+  },
+  "cgu": {
+    "title": "Conditions Générales d'Utilisation",
+    "version": "Version 1.0 – Avril 2025",
+    "sections": [
+      {
+        "title": "Préambule",
+        "content": "Les présentes Conditions Générales d'Utilisation (ci-après « CGU ») régissent l'accès et l'utilisation de la plateforme Ludokan, ludothèque numérique communautaire accessible via le site internet ludokan.fr.\n\nToute utilisation de la Plateforme implique l'acceptation pleine et entière des présentes CGU. Les CGU sont conformes aux dispositions du RGPD, de la loi SREN (2024), du Digital Services Act (DSA), du Code de la consommation et du droit français en vigueur."
+      },
+      {
+        "title": "Article 1. Éditeur de la Plateforme",
+        "content": "La Plateforme Ludokan est éditée par :\n– Dénomination : Ludokan\n– Nature : Projet de fin de formation\n– Contact : contact@ludokan.fr\n– DPO / Référent RGPD : dpo@ludokan.fr\n– Adresse : [À compléter avant mise en ligne]"
+      },
+      {
+        "title": "Article 2. Accès à la Plateforme",
+        "content": "2.1 Conditions d'accès\nL'accès est réservé :\n– Aux personnes majeures (18 ans et plus) de plein droit ;\n– Aux mineurs de 15 à 17 ans, sous réserve de l'acceptation préalable par un parent ou tuteur légal ;\n– Aux mineurs de moins de 15 ans, uniquement avec consentement parental explicite, conformément à l'article 8 du RGPD et à la loi SREN (2024).\n\n2.2 Création de compte\nL'inscription nécessite la fourniture d'informations exactes et à jour : nom, prénom (ou pseudonyme), adresse e-mail valide, date de naissance."
+      },
+      {
+        "title": "Article 3. Services Proposés",
+        "content": "Ludokan propose les services suivants :\n– Catalogue de jeux vidéo : découverte, recherche et consultation de fiches de jeux issues de l'API IGDB (Twitch/Amazon).\n– Gestion de collection personnelle : ajout de jeux à votre bibliothèque, organisation et suivi.\n– Système de recommandations : suggestions personnalisées basées sur vos préférences.\n– Fonctionnalités sociales : matchmaking, chat en temps réel, notifications de la communauté.\n– Abonnements premium : soumis à des conditions tarifaires spécifiques affichées avant tout achat."
+      },
+      {
+        "title": "Article 4. Propriété Intellectuelle",
+        "content": "4.1 Contenu de la Plateforme\nL'ensemble des éléments constituant la Plateforme Ludokan est protégé par le droit d'auteur et le droit des marques. Toute reproduction, représentation ou exploitation non autorisée est strictement interdite.\n\n4.2 Contenu tiers (jeux vidéo)\nLes noms, images, descriptions et autres éléments relatifs aux jeux vidéo affichés sont la propriété de leurs éditeurs respectifs. Ludokan utilise l'API IGDB sous licence d'affichage public.\n\n4.3 Contenu utilisateur\nEn publiant du contenu sur la Plateforme, l'utilisateur accorde à Ludokan une licence non exclusive, mondiale et gratuite d'utilisation à des fins de fonctionnement et d'amélioration du service."
+      },
+      {
+        "title": "Article 5. Règles de Conduite et Modération",
+        "content": "5.1 Comportements interdits\nIl est strictement interdit sur la Plateforme de :\n– Publier des contenus illicites : harcèlement, incitation à la haine, discours discriminatoires, menaces, contenus pornographiques ou violents ;\n– Usurper l'identité d'un tiers ou créer des comptes fictifs ;\n– Diffuser des liens vers des contenus malveillants, illégaux ou non autorisés ;\n– Tenter de compromettre la sécurité de la Plateforme.\n\n5.2 Système de modération\nLudokan met en place une modération hybride : filtres automatiques et revue humaine des signalements.\n\n5.3 Sanctions\nEn cas de violation des CGU : avertissement, suspension temporaire, bannissement définitif, ou signalement aux autorités."
+      },
+      {
+        "title": "Article 6. Protection des Données Personnelles",
+        "content": "Le traitement de vos données personnelles est régi par la Politique de Confidentialité de Ludokan, disponible à l'adresse ludokan.fr/confidentialite.\n\nPour toute question relative à vos données : dpo@ludokan.fr — Réponse garantie sous 1 mois (art. 12 RGPD)."
+      },
+      {
+        "title": "Article 7. Conditions Financières et Droit de Rétractation",
+        "content": "7.1 Services gratuits\nL'accès aux fonctionnalités de base de Ludokan (catalogue, collection, chat) est gratuit.\n\n7.2 Abonnements premium\nCertaines fonctionnalités avancées pourront être proposées sous forme d'abonnement payant. Le prix, la durée et les conditions seront clairement affichés avant toute validation d'achat.\n\n7.3 Droit de rétractation\nConformément à l'article L221-18 du Code de la consommation, tout abonnement souscrit en ligne bénéficie d'un délai de rétractation de 14 jours calendaires à compter de la date de souscription, sans motif ni pénalité."
+      },
+      {
+        "title": "Article 8. Responsabilité",
+        "content": "8.1 Responsabilité de Ludokan\nLudokan s'engage à mettre en œuvre tous les moyens raisonnables pour assurer la disponibilité et la sécurité de la Plateforme. Toutefois, Ludokan ne saurait être tenu responsable des dommages résultant d'une interruption de service ou d'une défaillance technique.\n\n8.2 Responsabilité des utilisateurs\nChaque utilisateur est entièrement responsable des contenus qu'il publie et des interactions qu'il engage sur la Plateforme.\n\n8.3 Liens hypertextes\nLa Plateforme peut contenir des liens vers des sites tiers. Ludokan décline toute responsabilité quant à leur contenu."
+      },
+      {
+        "title": "Article 10. Résiliation et Suppression de Compte",
+        "content": "L'utilisateur peut à tout moment demander la suppression de son compte depuis son espace personnel ou en contactant le service client à contact@ludokan.fr. La suppression entraîne l'effacement de toutes les données personnelles, sous réserve des durées de conservation légales applicables."
+      },
+      {
+        "title": "Article 13. Droit Applicable et Juridiction Compétente",
+        "content": "Les présentes CGU sont soumises au droit français. En cas de litige, et à défaut de résolution amiable dans un délai de 30 jours, les tribunaux compétents du ressort du siège social de Ludokan seront seuls compétents.\n\nConformément à l'article L616-1 du Code de la consommation, les utilisateurs résidant en France peuvent recourir gratuitement à un médiateur de la consommation en cas de litige non résolu."
+      },
+      {
+        "title": "Article 14. Contact",
+        "content": "Pour toute question relative aux présentes CGU :\n– E-mail général : contact@ludokan.fr\n– DPO / RGPD : dpo@ludokan.fr\n– Accessibilité : accessibilite@ludokan.fr\n– Courrier : [Adresse à compléter avant mise en ligne]"
+      }
+    ]
+  }
+}

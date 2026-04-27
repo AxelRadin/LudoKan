@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { type IgdbGame } from '../api/igdb';
 import { useIgdbSuggestions } from '../hooks/useIgdbSuggestions';
 import { Link } from 'react-router-dom';
@@ -12,20 +13,18 @@ function getDisplayName(game: IgdbGame): string {
 }
 
 export default function GameSearchBar({ onSelect }: Props) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
 
   const { suggestions, loading, error, setSuggestions } =
     useIgdbSuggestions(query);
-
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (!containerRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', onDocClick);
   }, []);
@@ -43,7 +42,7 @@ export default function GameSearchBar({ onSelect }: Props) {
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder="Rechercher un jeu… (ex: Zelda, Mario, Pokemon)"
+        placeholder={t('gameSearchBar.placeholder')}
         style={{
           width: '100%',
           padding: 10,
@@ -76,21 +75,24 @@ export default function GameSearchBar({ onSelect }: Props) {
         >
           {loading && (
             <div style={{ padding: 10, borderBottom: '1px solid #eee' }}>
-              Recherche…
+              {t('gameSearchBar.searching')}
             </div>
           )}
 
-          {error && <div style={{ padding: 10 }}>Erreur : {error}</div>}
+          {error && (
+            <div style={{ padding: 10 }}>
+              {t('gameSearchBar.error', { message: error })}
+            </div>
+          )}
 
           {!loading && !error && suggestions.length === 0 && (
-            <div style={{ padding: 10 }}>Aucun résultat</div>
+            <div style={{ padding: 10 }}>{t('gameSearchBar.noResults')}</div>
           )}
 
           {!loading &&
             !error &&
             suggestions.map(g => {
               const cover = g.cover_url;
-
               return (
                 <button
                   key={g.igdb_id}
@@ -98,7 +100,6 @@ export default function GameSearchBar({ onSelect }: Props) {
                   onClick={() => {
                     onSelect(g);
                     setQuery(getDisplayName(g));
-
                     setOpen(false);
                     setSuggestions([]);
                   }}
@@ -115,7 +116,6 @@ export default function GameSearchBar({ onSelect }: Props) {
                     borderTop: '1px solid #eee',
                   }}
                 >
-                  {/* Cover */}
                   <div
                     style={{
                       width: 34,
@@ -145,7 +145,6 @@ export default function GameSearchBar({ onSelect }: Props) {
                     )}
                   </div>
 
-                  {/* Texte à droite */}
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div
                       style={{
@@ -178,7 +177,7 @@ export default function GameSearchBar({ onSelect }: Props) {
                               color: '#2563eb',
                             }}
                           >
-                            Voir plus →
+                            {t('gameSearchBar.seeMore')}
                           </Link>
                         </div>
                       ) : null}

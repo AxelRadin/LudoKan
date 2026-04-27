@@ -1,17 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
-// React + Vite + TypeScript
-// ------------------------------------------------------------
-// Placez ce composant dans: src/components/BackendConnector.tsx
-// Puis utilisez-le depuis src/App.tsx: <BackendConnector />
-// Optionnel: définissez une base via .env: VITE_API_BASE_URL=https://api.exemple.com
-// En dev, configurez un proxy Vite (voir message de chat) pour éviter les soucis CORS.
+import { useTranslation } from 'react-i18next';
 
 const LS_KEY = 'fx-backend-connector:v1';
-
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export default function BackendConnector() {
+  const { t } = useTranslation();
   const envBase = import.meta.env?.VITE_API_BASE_URL ?? '';
   const [baseUrl, setBaseUrl] = useState<string>(envBase);
   const [endpoint, setEndpoint] = useState('/health');
@@ -28,7 +22,6 @@ export default function BackendConnector() {
   const [error, setError] = useState<string | null>(null);
   const [sizeBytes, setSizeBytes] = useState<number | null>(null);
 
-  // Charger depuis localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem(LS_KEY);
@@ -42,8 +35,6 @@ export default function BackendConnector() {
         setBodyText(data.bodyText ?? '{\n  "hello": "world"\n}\n');
       }
     } catch (e) {
-      // Échec silencieux du chargement depuis le localStorage
-      // (ex. quota dépassé, JSON invalide, mode navigation privée, etc.)
       console.warn(
         'BackendConnector: unable to restore state from localStorage',
         e
@@ -51,13 +42,11 @@ export default function BackendConnector() {
     }
   }, [envBase]);
 
-  // Sauvegarder à chaque modif
   useEffect(() => {
     const data = { baseUrl, endpoint, method, headersText, bearer, bodyText };
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(data));
     } catch (e) {
-      // On ignore les erreurs d'écriture (quota, navigation privée, etc.)
       console.warn(
         'BackendConnector: unable to persist state to localStorage',
         e
@@ -68,14 +57,12 @@ export default function BackendConnector() {
   const url = useMemo(() => {
     const b = baseUrl.trim().replace(/\/$/, '');
     const trimmedEndpoint = endpoint.trim();
-
     let e = '';
     if (trimmedEndpoint.length > 0) {
       e = trimmedEndpoint.startsWith('/')
         ? trimmedEndpoint
         : `/${trimmedEndpoint}`;
     }
-
     return `${b}${e}`;
   }, [baseUrl, endpoint]);
 
@@ -99,10 +86,7 @@ export default function BackendConnector() {
 
   const curl = useMemo(() => {
     const headerFlags = Object.entries(parsedHeaders)
-      .map(([k, v]) => {
-        const header = `${k}: ${v}`;
-        return `-H ${JSON.stringify(header)}`;
-      })
+      .map(([k, v]) => `-H ${JSON.stringify(k + ': ' + v)}`)
       .join(' ');
     const bodyFlag =
       method === 'GET' || method === 'DELETE'
@@ -121,22 +105,18 @@ export default function BackendConnector() {
     setLatency(null);
     setResponsePreview('');
     setSizeBytes(null);
-
     try {
       if (!url || !/^https?:\/\//.test(url)) {
         throw new Error('URL invalide. Ex.: https://api.exemple.com/health');
       }
-
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 15000);
       const started = performance.now();
-
       const init: RequestInit = {
         method,
         headers: parsedHeaders,
         signal: controller.signal,
       };
-
       if (method !== 'GET' && method !== 'DELETE') {
         const looksJson =
           bodyText.trim().startsWith('{') || bodyText.trim().startsWith('[');
@@ -146,14 +126,11 @@ export default function BackendConnector() {
             'application/json';
         }
       }
-
       const res = await fetch(url, init);
       const ended = performance.now();
       clearTimeout(timeout);
-
       setLatency(Math.round(ended - started));
       setStatus(`${res.status} ${res.statusText || ''}`.trim());
-
       const ct = res.headers.get('content-type') || '';
       let txt = await res.text();
       setSizeBytes(new Blob([txt]).size);
@@ -161,17 +138,12 @@ export default function BackendConnector() {
         try {
           txt = JSON.stringify(JSON.parse(txt), null, 2);
         } catch (e) {
-          // Réponse JSON invalide : on affiche le texte brut
-          console.warn(
-            'BackendConnector: unable to pretty-print JSON response',
-            e
-          );
+          console.warn(e);
         }
       }
       setResponsePreview(txt);
     } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setError(message);
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -184,7 +156,7 @@ export default function BackendConnector() {
     send();
   }, [send]);
 
-  // ——— UI minimaliste (compatible même sans Tailwind) ———
+  // styles inchangés...
   const box: React.CSSProperties = {
     background: '#fff',
     borderRadius: 16,
@@ -229,13 +201,11 @@ export default function BackendConnector() {
           }}
         >
           <h1 style={{ fontSize: 22, fontWeight: 600 }}>
-            🔗 Frontend ↔ Backend Connector (React Vite)
+            🔗 {t('backendConnector.title')}
           </h1>
           <button
             type="button"
-            onClick={() => {
-              navigator.clipboard.writeText(curl);
-            }}
+            onClick={() => navigator.clipboard.writeText(curl)}
             style={{
               fontSize: 12,
               color: '#666',
@@ -246,7 +216,7 @@ export default function BackendConnector() {
               textDecoration: 'underline',
             }}
           >
-            Copier le cURL
+            {t('backendConnector.copyurl')}
           </button>
         </header>
 
@@ -260,7 +230,7 @@ export default function BackendConnector() {
         >
           <div style={{ ...box }}>
             <label htmlFor="base-url" style={{ fontSize: 13, fontWeight: 600 }}>
-              Base URL
+              {t('backendConnector.baseUrl')}
             </label>
             <input
               id="base-url"
@@ -283,7 +253,7 @@ export default function BackendConnector() {
                   htmlFor="http-method"
                   style={{ fontSize: 13, fontWeight: 600 }}
                 >
-                  Méthode
+                  {t('backendConnector.method')}
                 </label>
                 <select
                   id="http-method"
@@ -305,7 +275,7 @@ export default function BackendConnector() {
                   htmlFor="endpoint"
                   style={{ fontSize: 13, fontWeight: 600 }}
                 >
-                  Endpoint
+                  {t('backendConnector.endpoint')}
                 </label>
                 <input
                   id="endpoint"
@@ -320,7 +290,7 @@ export default function BackendConnector() {
             {method !== 'GET' && method !== 'DELETE' && (
               <div style={{ marginTop: 12 }}>
                 <label htmlFor="body" style={{ fontSize: 13, fontWeight: 600 }}>
-                  Body (texte/JSON)
+                  {t('backendConnector.body')}
                 </label>
                 <textarea
                   id="body"
@@ -340,7 +310,7 @@ export default function BackendConnector() {
                 htmlFor="bearer-token"
                 style={{ fontSize: 13, fontWeight: 600 }}
               >
-                Bearer token (facultatif)
+                {t('backendConnector.bearerToken')}
               </label>
               <input
                 id="bearer-token"
@@ -354,7 +324,7 @@ export default function BackendConnector() {
                   htmlFor="extra-headers"
                   style={{ fontSize: 13, fontWeight: 600 }}
                 >
-                  En-têtes additionnels (une ligne = key: value)
+                  {t('backendConnector.extraHeaders')}
                 </label>
                 <textarea
                   id="extra-headers"
@@ -376,14 +346,16 @@ export default function BackendConnector() {
                 }}
               >
                 <button disabled={loading} onClick={send} style={btn}>
-                  {loading ? 'Envoi...' : 'Envoyer la requête'}
+                  {loading
+                    ? t('backendConnector.sending')
+                    : t('backendConnector.send')}
                 </button>
                 <button
                   disabled={loading}
                   onClick={quickHealth}
                   style={btnGhost}
                 >
-                  Quick test: GET /health
+                  {t('backendConnector.quickTest')}
                 </button>
                 <code
                   style={{
@@ -399,13 +371,15 @@ export default function BackendConnector() {
                   }}
                   title={url}
                 >
-                  {url || 'URL complète affichée ici'}
+                  {url || t('backendConnector.fullUrl')}
                 </code>
               </div>
 
               <div style={{ marginTop: 12 }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>Réponse</span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>
+                    {t('backendConnector.response')}
+                  </span>
                   {status && (
                     <span
                       style={{
@@ -458,14 +432,14 @@ export default function BackendConnector() {
                 >
                   {responsePreview ||
                     (error
-                      ? `// Erreur\n${error}`
-                      : '// Aucune réponse pour l’instant.\n// Cliquez sur "Envoyer la requête".')}
+                      ? t('backendConnector.error', { message: error })
+                      : t('backendConnector.noResponse'))}
                 </pre>
               </div>
 
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-                  Commande cURL
+                  {t('backendConnector.curlCommand')}
                 </div>
                 <pre
                   style={{
@@ -487,20 +461,11 @@ export default function BackendConnector() {
 
         <div style={{ ...box, marginTop: 16, background: '#fffdf7' }}>
           <div style={{ fontSize: 12, color: '#555' }}>
-            <b>Conseils</b>
+            <b>{t('backendConnector.tips.title')}</b>
             <ul style={{ marginTop: 6, paddingLeft: 18, lineHeight: 1.6 }}>
-              <li>
-                En dev, utilisez <code>http://localhost:PORT</code> comme Base
-                URL.
-              </li>
-              <li>
-                Pour éviter les erreurs CORS en dev navigateur, configurez un
-                proxy Vite vers votre API.
-              </li>
-              <li>
-                Le Quick test suppose un endpoint <code>/health</code>{' '}
-                accessible en GET.
-              </li>
+              <li>{t('backendConnector.tips.dev')}</li>
+              <li>{t('backendConnector.tips.cors')}</li>
+              <li>{t('backendConnector.tips.health')}</li>
             </ul>
           </div>
         </div>

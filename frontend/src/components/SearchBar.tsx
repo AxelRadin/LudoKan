@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { type IgdbGame, searchIgdbGames } from '../api/igdb';
 import { useFuzzyGames, type MatchIndices } from '../hooks/useFuzzyGames';
@@ -114,13 +115,12 @@ const Dropdown = styled(Paper)(({ theme }) => ({
   overflow: 'hidden',
 }));
 
-function HighlightedText({
-  text,
-  indices,
-}: {
+type HighlightedTextProps = Readonly<{
   text: string;
   indices: MatchIndices;
-}) {
+}>;
+
+function HighlightedText({ text, indices }: HighlightedTextProps) {
   if (!indices.length) return <>{text}</>;
   const parts: React.ReactNode[] = [];
   let cursor = 0;
@@ -169,12 +169,48 @@ function mapLocalToSearchGame(g: any): SearchSourcedGame {
   };
 }
 
+function parseLocalSearchResponse(res: unknown): SearchSourcedGame[] {
+  const rawResults = Array.isArray(res)
+    ? res
+    : ((res as { results?: unknown[] })?.results ?? []);
+  return rawResults.map(mapLocalToSearchGame) as SearchSourcedGame[];
+}
+
+function mapIgdbGamesToSearch(games: IgdbGame[]): SearchSourcedGame[] {
+  return games.map(mapIgdbToSearchGame);
+}
+
+function mergeUniqueIntoPool(
+  prev: SearchSourcedGame[],
+  incoming: SearchSourcedGame[]
+): SearchSourcedGame[] {
+  const seen = new Set(prev.map(g => g.igdb_id));
+  const fresh = incoming.filter(g => !seen.has(g.igdb_id));
+  return [...prev, ...fresh];
+}
+
+async function fetchSearchGameLists(
+  q: string,
+  igdbMax: number,
+  signal: AbortSignal
+): Promise<{ local: SearchSourcedGame[]; igdb: SearchSourcedGame[] }> {
+  const localReq = apiGet(`/api/games/?search=${encodeURIComponent(q)}`)
+    .then(parseLocalSearchResponse)
+    .catch(() => [] as SearchSourcedGame[]);
+
+  const igdbReq = searchIgdbGames(q, igdbMax, false, signal)
+    .then(mapIgdbGamesToSearch)
+    .catch(() => [] as SearchSourcedGame[]);
+
+  const [local, igdb] = await Promise.all([localReq, igdbReq]);
+  return { local, igdb };
+}
+
 const GameSearchBar: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  // Pool of all games fetched across debounced queries — persists across keystrokes
-  // so Fuse.js can still match even when the API returns nothing for a typo.
   const [gamePool, setGamePool] = useState<SearchSourcedGame[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -218,42 +254,22 @@ const GameSearchBar: React.FC = () => {
     let cancelled = false;
     setLoading(true);
 
-    const localReq = apiGet(
-      `/api/games/?search=${encodeURIComponent(debouncedQuery)}`
-    )
-      .then(res => {
-        const rawResults = Array.isArray(res)
-          ? res
-          : ((res as { results?: unknown[] })?.results ?? []);
-        return rawResults.map((g: any) =>
-          mapLocalToSearchGame(g)
-        ) as SearchSourcedGame[];
-      })
-      .catch(() => [] as SearchSourcedGame[]);
-
-    const igdbReq = searchIgdbGames(
-      debouncedQuery,
-      DROPDOWN_IGDB_MAX,
-      false,
-      controller.signal
-    )
-      .then(games => games.map(mapIgdbToSearchGame))
-      .catch(() => [] as SearchSourcedGame[]);
-
-    Promise.all([localReq, igdbReq])
-      .then(([local, igdb]) => {
+    const run = async () => {
+      try {
+        const { local, igdb } = await fetchSearchGameLists(
+          debouncedQuery,
+          DROPDOWN_IGDB_MAX,
+          controller.signal
+        );
         if (cancelled) return;
         const incoming = [...local.slice(0, DROPDOWN_LOCAL_MAX), ...igdb];
-        // Merge into pool, deduplicating by igdb_id to avoid visual duplicates
-        setGamePool(prev => {
-          const seen = new Set(prev.map(g => g.igdb_id));
-          const fresh = incoming.filter(g => !seen.has(g.igdb_id));
-          return [...prev, ...fresh];
-        });
-      })
-      .finally(() => {
+        setGamePool(prev => mergeUniqueIntoPool(prev, incoming));
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    void run();
 
     return () => {
       cancelled = true;
@@ -272,15 +288,12 @@ const GameSearchBar: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Re-rank the pool against the live query so typo corrections update instantly
   const allResults = useFuzzyGames(gamePool, query);
 
-  // Reset active index whenever the result list changes
   useEffect(() => {
     setActiveIndex(-1);
   }, [allResults.length, debouncedQuery]);
 
-  // Scroll active item into view when navigating with keyboard
   useEffect(() => {
     if (activeIndex < 0 || !listRef.current) return;
     const el = listRef.current.querySelector<HTMLElement>(
@@ -317,7 +330,7 @@ const GameSearchBar: React.FC = () => {
           <SearchIcon fontSize="small" />
         </SearchIconWrapper>
         <StyledInputBase
-          placeholder="Recherchez des jeux…"
+          placeholder={t('searchBar.placeholder')}
           inputProps={{ 'aria-label': 'search' }}
           value={query}
           onChange={e => {
@@ -368,7 +381,7 @@ const GameSearchBar: React.FC = () => {
               color="text.secondary"
               sx={{ fontWeight: 700, letterSpacing: '0.08em' }}
             >
-              RÉSULTATS
+              {t('searchBar.results')}
             </Typography>
           </Box>
 
@@ -386,7 +399,7 @@ const GameSearchBar: React.FC = () => {
           ) : allResults.length === 0 ? (
             <Box sx={{ px: 2, py: 1, flexShrink: 0 }}>
               <Typography variant="body2" color="text.secondary">
-                Aucun résultat
+                {t('searchBar.noResults')}
               </Typography>
             </Box>
           ) : (
@@ -461,7 +474,7 @@ const GameSearchBar: React.FC = () => {
                               }}
                             >
                               {game.source === 'local'
-                                ? '● Base locale'
+                                ? t('searchBar.localSource')
                                 : 'IGDB'}
                             </Typography>
                           }
@@ -493,8 +506,8 @@ const GameSearchBar: React.FC = () => {
                   }}
                 >
                   {allResults.length > 0
-                    ? `Voir tous les résultats pour « ${query.trim()} »`
-                    : 'Recherche complète, filtres et pagination'}
+                    ? t('searchBar.seeAll', { query: query.trim() })
+                    : t('searchBar.fullSearch')}
                 </Button>
               </Box>
             </>

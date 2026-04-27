@@ -217,16 +217,28 @@ class TestGetUserView:
         assert user.first_name == data["first_name"]
         assert user.email == user.email  # Email unchanged
 
-    def test_update_user_cannot_change_email(self, auth_client_with_tokens, user):
-        """Test que l'email ne peut pas être modifié"""
+    def test_update_user_can_change_email(self, auth_client_with_tokens, user):
+        """Test que l'email peut être modifié (requis pour les comptes Steam temporaires)"""
         url = "/api/auth/user/"
-        original_email = user.email
-        data = {"email": "newemail@example.com"}
+        new_email = "newemail@example.com"
+        data = {"email": new_email}
 
-        auth_client_with_tokens.patch(url, data, format="json")
+        response = auth_client_with_tokens.patch(url, data, format="json")
 
+        assert response.status_code == status.HTTP_200_OK
         user.refresh_from_db()
-        assert user.email == original_email  # Email should not change
+        assert user.email == new_email
+
+    def test_update_user_cannot_use_existing_email(self, auth_client_with_tokens, user, another_user):
+        """Test qu'on ne peut pas utiliser l'email d'un autre utilisateur"""
+        url = "/api/auth/user/"
+        data = {"email": another_user.email}
+
+        response = auth_client_with_tokens.patch(url, data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        user.refresh_from_db()
+        assert user.email != another_user.email  # Email unchanged
 
 
 @pytest.mark.django_db

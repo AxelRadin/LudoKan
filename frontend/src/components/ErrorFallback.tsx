@@ -1,10 +1,14 @@
+import { useTranslation } from 'react-i18next';
+
 type Props = Readonly<{
   error?: unknown;
   resetError?: () => void;
 }>;
 
 export default function ErrorFallback({ error, resetError }: Props) {
-  let display = 'Une erreur inconnue est survenue';
+  const { t } = useTranslation();
+
+  let display = t('errorFallback.unknown');
 
   if (error instanceof Error) {
     display = error.message;
@@ -16,9 +20,9 @@ export default function ErrorFallback({ error, resetError }: Props) {
 
   return (
     <div style={{ padding: 16 }}>
-      <h2>Une erreur est survenue</h2>
+      <h2>{t('errorFallback.title')}</h2>
       <pre style={{ whiteSpace: 'pre-wrap' }}>{display}</pre>
-      <button onClick={resetError}>Recharger</button>
+      <button onClick={resetError}>{t('errorFallback.reload')}</button>
     </div>
   );
 }

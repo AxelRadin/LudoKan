@@ -1,8 +1,8 @@
 import React from 'react';
-import type { CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import ludokanLogo from '../assets/logo.png';
 
-const styles: Record<string, CSSProperties> = {
+const styles = {
   page: {
     minHeight: '100vh',
     backgroundColor: '#ffffff',
@@ -11,7 +11,7 @@ const styles: Record<string, CSSProperties> = {
     fontFamily:
       'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
   },
   header: {
@@ -25,7 +25,7 @@ const styles: Record<string, CSSProperties> = {
   logoImg: {
     maxHeight: 70,
     width: 'auto',
-    objectFit: 'contain',
+    objectFit: 'contain' as const,
     display: 'block',
   },
   main: {
@@ -33,10 +33,10 @@ const styles: Record<string, CSSProperties> = {
     width: '100%',
     maxWidth: 1100,
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
-    textAlign: 'center',
+    textAlign: 'center' as const,
     padding: '0 5vw 40px',
   },
   title: {
@@ -51,20 +51,16 @@ const styles: Record<string, CSSProperties> = {
 };
 
 const Error404: React.FC = () => {
+  const { t } = useTranslation();
+
   return (
     <div style={styles.page}>
-      {/* Logo en haut à gauche */}
       <header style={styles.header}>
         <img src={ludokanLogo} alt="Logo" style={styles.logoImg} />
       </header>
-
-      {/* Contenu centré */}
       <main style={styles.main}>
-        <h1 style={styles.title}>Error 404</h1>
-        <p style={styles.subtitle}>
-          Il semble qu&apos;un <br />
-          problème soit survenu
-        </p>
+        <h1 style={styles.title}>{t('error404.title')}</h1>
+        <p style={styles.subtitle}>{t('error404.subtitle')}</p>
       </main>
     </div>
   );
