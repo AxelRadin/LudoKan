@@ -21,6 +21,7 @@ styleEl.textContent = `
   .lux-s2 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
   .lux-s3 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
   .lux-s4 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.4s both; }
+  .lux-s5 { animation: luxFadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
 `;
 if (!document.head.querySelector('style[data-home-lux]')) {
   document.head.appendChild(styleEl);
@@ -335,7 +336,22 @@ export const HomePage = () => {
           />
         </Section>
 
-        <Box className="lux-s4">
+        <Section
+          className="lux-s4"
+          coverUrl={sections.coming_soon.games[0]?.cover_url ?? undefined}
+        >
+          <SectionLabel
+            label={t('homePage.comingSoonLabel')}
+            title={t('homePage.comingSoonTitle')}
+            to="/trending/coming_soon"
+          />
+          <TrendingGames
+            games={sections.coming_soon.games}
+            loading={sections.coming_soon.loading}
+          />
+        </Section>
+
+        <Box className="lux-s5">
           <Box
             sx={{
               display: 'flex',
