@@ -15,10 +15,10 @@ export default function AdminDashboard() {
         Dashboard
       </Typography>
 
+      <QuickActions />
       <KpiSection data={data} loading={loading} />
       <EngagementSection data={data} loading={loading} />
       <RecentActivity data={data} loading={loading} />
-      <QuickActions />
 
       {error && (
         <Typography
