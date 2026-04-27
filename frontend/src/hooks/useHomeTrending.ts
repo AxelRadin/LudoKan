@@ -13,6 +13,7 @@ const TRENDING_SORTS = [
   'popularity',
   'recent',
   'most_rated',
+  'coming_soon',
 ] as const;
 type SortKey = (typeof TRENDING_SORTS)[number];
 
