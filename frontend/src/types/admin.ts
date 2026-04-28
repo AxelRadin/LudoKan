@@ -8,6 +8,7 @@ export type AdminStats = {
     tickets: number;
     tickets_pending: number;
     reviews: number;
+    reports_unresolved: number;
   };
   engagement: {
     active_day: number;
