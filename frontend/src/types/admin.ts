@@ -6,6 +6,7 @@ export type AdminStats = {
     users_new_last_7_days: number;
     games: number;
     tickets: number;
+    tickets_pending: number;
     reviews: number;
   };
   engagement: {
