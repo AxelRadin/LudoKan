@@ -153,6 +153,7 @@ class AdminStatsView(APIView):
         # Totaux globaux pour le dashboard + engagement utilisateurs en une requête
         user_agg = User.objects.aggregate(
             total=Count("id"),
+            new_last_7_days=Count("id", filter=Q(date_joined__gte=week_ago)),
             active_day=Count("id", filter=Q(last_login__gte=day_ago)),
             active_week=Count("id", filter=Q(last_login__gte=week_ago)),
             active_month=Count("id", filter=Q(last_login__gte=month_ago)),
@@ -166,7 +167,12 @@ class AdminStatsView(APIView):
 
         # Totaux simples sur autres entités
         games_total = Game.objects.count()
-        tickets_total = GameTicket.objects.count()
+        ticket_agg = GameTicket.objects.aggregate(
+            total=Count("id"),
+            pending=Count("id", filter=Q(status="pending")),
+        )
+
+        reports_unresolved = ContentReport.objects.filter(handled=False).count()
 
         # Engagement contenu (ratings, messages) via agrégations conditionnelles
         ratings_agg = Rating.objects.aggregate(last_30d=Count("id", filter=Q(date_created__gte=month_ago)))
@@ -174,9 +180,12 @@ class AdminStatsView(APIView):
 
         totals = {
             "users": user_agg["total"],
+            "users_new_last_7_days": user_agg["new_last_7_days"],
             "games": games_total,
-            "tickets": tickets_total,
+            "tickets": ticket_agg["total"],
+            "tickets_pending": ticket_agg["pending"],
             "reviews": review_agg["total"],
+            "reports_unresolved": reports_unresolved,
         }
 
         engagement = {
