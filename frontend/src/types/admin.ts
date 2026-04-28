@@ -3,6 +3,7 @@ export type AdminRole = 'moderator' | 'admin' | 'superadmin';
 export type AdminStats = {
   totals: {
     users: number;
+    users_new_last_7_days: number;
     games: number;
     tickets: number;
     reviews: number;
