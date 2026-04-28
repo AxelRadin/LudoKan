@@ -32,6 +32,16 @@ function isPaginated(data: unknown): data is PaginatedReviews {
   );
 }
 
+/** Appends reviews not already present in `prev` (by id). */
+function appendUniqueReviews(
+  prev: ReviewItem[],
+  incoming: ReviewItem[]
+): ReviewItem[] {
+  const seen = new Set(prev.map(r => r.id));
+  const extra = incoming.filter(r => !seen.has(r.id));
+  return [...prev, ...extra];
+}
+
 /** Extrait `/path?query` depuis une URL absolue DRF ou relative. */
 function toApiPath(nextUrl: string | null): string | null {
   if (!nextUrl) return null;
@@ -139,32 +149,26 @@ export function useReviews(
     };
   }, [gameId, reviewStarFilter]);
 
-  const loadMorePage = useCallback(() => {
+  const loadMorePage = useCallback(async () => {
     const path = toApiPath(nextUrl);
     if (!path || isLoadingMore) return;
 
     setLoadMoreError(null);
     setIsLoadingMore(true);
-    apiGet(path)
-      .then((data: ReviewItem[] | PaginatedReviews) => {
-        if (Array.isArray(data)) {
-          setReviews(prev => {
-            const seen = new Set(prev.map(r => r.id));
-            const extra = data.filter(r => !seen.has(r.id));
-            return [...prev, ...extra];
-          });
-          setNextUrl(null);
-        } else if (isPaginated(data)) {
-          setReviews(prev => {
-            const seen = new Set(prev.map(r => r.id));
-            const extra = data.results.filter(r => !seen.has(r.id));
-            return [...prev, ...extra];
-          });
-          setNextUrl(data.next);
-        }
-      })
-      .catch(() => setLoadMoreError(i18n.t('gamePageBody.reviewsLoadError')))
-      .finally(() => setIsLoadingMore(false));
+    try {
+      const data = (await apiGet(path)) as ReviewItem[] | PaginatedReviews;
+      if (Array.isArray(data)) {
+        setReviews(prev => appendUniqueReviews(prev, data));
+        setNextUrl(null);
+      } else if (isPaginated(data)) {
+        setReviews(prev => appendUniqueReviews(prev, data.results));
+        setNextUrl(data.next);
+      }
+    } catch {
+      setLoadMoreError(i18n.t('gamePageBody.reviewsLoadError'));
+    } finally {
+      setIsLoadingMore(false);
+    }
   }, [nextUrl, isLoadingMore]);
 
   function addReview(review: ReviewItem) {
