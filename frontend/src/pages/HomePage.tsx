@@ -293,6 +293,21 @@ export const HomePage = () => {
       >
         <Section
           className="lux-s1"
+          coverUrl={sections.coming_soon.games[0]?.cover_url ?? undefined}
+        >
+          <SectionLabel
+            label={t('homePage.comingSoonLabel')}
+            title={t('homePage.comingSoonTitle')}
+            to="/trending/coming_soon"
+          />
+          <TrendingGames
+            games={sections.coming_soon.games}
+            loading={sections.coming_soon.loading}
+          />
+        </Section>
+
+        <Section
+          className="lux-s2"
           coverUrl={sections.recent.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
@@ -307,7 +322,7 @@ export const HomePage = () => {
         </Section>
 
         <Section
-          className="lux-s2"
+          className="lux-s3"
           coverUrl={sections.rating.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
@@ -322,7 +337,7 @@ export const HomePage = () => {
         </Section>
 
         <Section
-          className="lux-s3"
+          className="lux-s4"
           coverUrl={sections.popularity.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
@@ -333,21 +348,6 @@ export const HomePage = () => {
           <TrendingGames
             games={sections.popularity.games}
             loading={sections.popularity.loading}
-          />
-        </Section>
-
-        <Section
-          className="lux-s4"
-          coverUrl={sections.coming_soon.games[0]?.cover_url ?? undefined}
-        >
-          <SectionLabel
-            label={t('homePage.comingSoonLabel')}
-            title={t('homePage.comingSoonTitle')}
-            to="/trending/coming_soon"
-          />
-          <TrendingGames
-            games={sections.coming_soon.games}
-            loading={sections.coming_soon.loading}
           />
         </Section>
 
