@@ -266,7 +266,14 @@
     "platformsLabel": "Plateformes",
     "releaseLabel": "Sortie",
     "publisherLabel": "Éditeur",
-    "communityRatingLabel": "Note communauté"
+    "communityRatingLabel": "Note communauté",
+    "reviewsYourTitle": "Votre avis",
+    "reviewsCommunityHeading": "Avis de la communauté",
+    "reviewsBeFirst": "Soyez le premier à donner votre avis.",
+    "reviewsNoOthersYet": "Aucun autre avis pour le moment.",
+    "reviewsLoadError": "Impossible de charger les avis.",
+    "reviewsLoadMore": "Charger plus d'avis",
+    "reviewsLoadingMore": "Chargement…"
   },
   "homePage": {
     "recentLabel": "Découverte",

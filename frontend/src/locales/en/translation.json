@@ -301,7 +301,14 @@
     "platformsLabel": "Platforms",
     "releaseLabel": "Release",
     "publisherLabel": "Publisher",
-    "communityRatingLabel": "Community rating"
+    "communityRatingLabel": "Community rating",
+    "reviewsYourTitle": "Your review",
+    "reviewsCommunityHeading": "Community reviews",
+    "reviewsBeFirst": "Be the first to leave a review.",
+    "reviewsNoOthersYet": "No other reviews yet.",
+    "reviewsLoadError": "Could not load reviews.",
+    "reviewsLoadMore": "Load more reviews",
+    "reviewsLoadingMore": "Loading…"
   },
   "homePage": {
     "recentLabel": "Discovery",

@@ -170,3 +170,58 @@ PATCH /api/reviews/7/
   "rating": 5
 }
 ```
+
+---
+
+## Liste des avis sur la fiche jeu (pagination DRF)
+
+### Fichiers
+
+- `src/hooks/useReviews.ts` — chargement initial `page=1`, fusion des pages suivantes, `totalCount`, `hasNext`, `loadMorePage`
+- `src/components/reviews/ReviewsList.tsx` — liste, états chargement / vide / erreur, bouton « Charger plus »
+- `src/components/reviews/ReviewCard.tsx` — carte d’un avis (auteur, date, texte, note)
+- `src/components/reviews/ReviewSection.tsx` — compose formulaire + liste
+
+### Endpoint
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/api/reviews/?game=<django_id>&page=<n>` | Liste paginée des avis pour un jeu (`PAGE_SIZE` défini côté Django REST, typiquement 10) |
+| GET | `/api/reviews/?game=<django_id>&user=<user_id>` | Avis de cet utilisateur pour ce jeu (au plus un) — utilisé sur la fiche jeu pour éviter de rater l’avis connecté quand il n’est pas sur la page 1 de `?game=` |
+
+Réponse paginée (format Django REST Framework) :
+
+```json
+{
+  "count": 42,
+  "next": "http://localhost:8000/api/reviews/?game=5&page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "user": { "id": 3, "pseudo": "joueur", "username": "joueur", "review_count": 6 },
+      "game": 5,
+      "content": "Texte de l'avis…",
+      "title": "Titre optionnel",
+      "rating": { "value": 4 },
+      "date_created": "2026-04-20T12:00:00Z"
+    }
+  ]
+}
+```
+
+Le hook extrait `pathname` + `query` de `next` pour les requêtes suivantes (compatible `VITE_API_BASE_URL`).
+
+### Retour de `useReviews(gameId)`
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `reviews` | `ReviewItem[]` | Tous les avis chargés (pages fusionnées) |
+| `totalCount` | `number` | `count` renvoyé par l’API |
+| `isLoading` | `boolean` | Premier chargement |
+| `isLoadingMore` | `boolean` | Page suivante en cours |
+| `error` | `string \| null` | Erreur réseau / API (chargement initial) |
+| `loadMoreError` | `string \| null` | Erreur sur « Charger plus » (la liste déjà chargée reste affichée) |
+| `hasNext` | `boolean` | Page suivante disponible |
+| `loadMorePage` | `() => void` | Charge la page suivante |
+| `addReview` / `updateReview` / `removeReview` | — | Mise à jour optimiste locale après création / édition / suppression |
