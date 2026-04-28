@@ -85,9 +85,8 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
 
         rating_value = data.get("rating_value")
 
-        if not self.instance:
-            if rating_value is None:
-                raise serializers.ValidationError({"rating_value": "La note est obligatoire pour publier un avis."})
+        if not self.instance and rating_value is None:
+            raise serializers.ValidationError({"rating_value": "La note est obligatoire pour publier un avis."})
 
         return data
 

@@ -1,5 +1,5 @@
 import { Box, Rating, Skeleton, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiGet } from '../services/api';
 import type { NormalizedGame } from '../types/game';
@@ -45,6 +45,121 @@ type GameRatingsSummaryProps = Readonly<{
   reviewStarFilter?: number | null;
   onReviewStarFilterChange?: (star: number | null) => void;
 }>;
+
+function interactiveRowHoverBg(
+  isActive: boolean,
+  isDark: boolean,
+  accentSoft: string
+): string {
+  if (isActive) return accentSoft;
+  return isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+}
+
+type RatingsHistogramRowProps = Readonly<{
+  star: '1' | '2' | '3' | '4' | '5';
+  count: number;
+  barPct: number;
+  ink: string;
+  muted: string;
+  accent: string;
+  accentSoft: string;
+  isDark: boolean;
+  interactive: boolean;
+  isActive: boolean;
+  starLabelAria: string;
+  onToggleFilter?: () => void;
+}>;
+
+function RatingsHistogramRow({
+  star,
+  count,
+  barPct,
+  ink,
+  muted,
+  accent,
+  accentSoft,
+  isDark,
+  interactive,
+  isActive,
+  starLabelAria,
+  onToggleFilter,
+}: RatingsHistogramRowProps) {
+  const trackBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const hoverBg = interactiveRowHoverBg(isActive, isDark, accentSoft);
+
+  return (
+    <Box
+      component={interactive ? 'button' : 'div'}
+      {...(interactive ? { type: 'button' as const } : {})}
+      onClick={interactive ? onToggleFilter : undefined}
+      aria-pressed={interactive ? isActive : undefined}
+      aria-label={starLabelAria}
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '22px 1fr 36px',
+        alignItems: 'center',
+        gap: 1,
+        ...(interactive
+          ? {
+              m: 0,
+              p: '6px 8px',
+              mx: -1,
+              border: 'none',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              textAlign: 'left',
+              font: 'inherit',
+              color: 'inherit',
+              bgcolor: isActive ? accentSoft : 'transparent',
+              transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+              '&:hover': {
+                bgcolor: hoverBg,
+              },
+            }
+          : {}),
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{
+          fontFamily: GAME_PAGE_FONT,
+          color: ink,
+          fontWeight: 600,
+        }}
+      >
+        {star}★
+      </Typography>
+      <Box
+        sx={{
+          height: 8,
+          borderRadius: 999,
+          bgcolor: trackBg,
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            height: '100%',
+            width: `${barPct}%`,
+            borderRadius: 999,
+            bgcolor: accent,
+            transition: 'width 0.35s ease',
+          }}
+        />
+      </Box>
+      <Typography
+        variant="caption"
+        sx={{
+          fontFamily: GAME_PAGE_FONT,
+          color: muted,
+          textAlign: 'right',
+        }}
+      >
+        {count}
+      </Typography>
+    </Box>
+  );
+}
 
 export default function GameRatingsSummary({
   game,
@@ -97,6 +212,82 @@ export default function GameRatingsSummary({
 
   const showHistogram =
     distribution != null && distributionTotal(distribution) > 0;
+
+  let histogramSection: ReactNode = null;
+  if (statsLoading) {
+    histogramSection = (
+      <Box sx={{ mt: 2.5 }}>
+        <Skeleton variant="text" width="45%" height={20} />
+        <Skeleton variant="rounded" width="100%" height={12} sx={{ mt: 1 }} />
+        <Skeleton variant="rounded" width="100%" height={12} sx={{ mt: 1 }} />
+        <Skeleton variant="rounded" width="100%" height={12} sx={{ mt: 1 }} />
+      </Box>
+    );
+  } else if (showHistogram && distribution) {
+    const dist = distribution;
+    histogramSection = (
+      <Box sx={{ mt: 2.5 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            fontFamily: GAME_PAGE_FONT,
+            color: muted,
+            display: 'block',
+            mb: 0.5,
+            letterSpacing: 0.02,
+          }}
+        >
+          {t('gamePageBody.ratingsDistributionTitle')}
+        </Typography>
+        {onReviewStarFilterChange ? (
+          <Typography
+            variant="caption"
+            sx={{
+              fontFamily: GAME_PAGE_FONT,
+              color: muted,
+              display: 'block',
+              mb: 1.25,
+              opacity: 0.92,
+            }}
+          >
+            {t('gamePageBody.ratingsHistogramFilterHint')}
+          </Typography>
+        ) : null}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+          {(['1', '2', '3', '4', '5'] as const).map(star => {
+            const n = dist[star] ?? 0;
+            const pct = (n / maxBar) * 100;
+            const starNum = Number(star);
+            const isActive = reviewStarFilter === starNum;
+            const interactive = Boolean(onReviewStarFilterChange);
+            return (
+              <RatingsHistogramRow
+                key={star}
+                star={star}
+                count={n}
+                barPct={pct}
+                ink={ink}
+                muted={muted}
+                accent={accent}
+                accentSoft={accentSoft}
+                isDark={appearance.isDark}
+                interactive={interactive}
+                isActive={isActive}
+                starLabelAria={t('gamePageBody.ratingsFilterRowAria', {
+                  stars: star,
+                })}
+                onToggleFilter={
+                  interactive
+                    ? () => onReviewStarFilterChange!(isActive ? null : starNum)
+                    : undefined
+                }
+              />
+            );
+          })}
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box className="gp-c4" sx={{ ...card(), px: 2.5, py: 2.5, mb: 2 }}>
@@ -153,156 +344,7 @@ export default function GameRatingsSummary({
             </Typography>
           </Box>
 
-          {statsLoading ? (
-            <Box sx={{ mt: 2.5 }}>
-              <Skeleton variant="text" width="45%" height={20} />
-              <Skeleton
-                variant="rounded"
-                width="100%"
-                height={12}
-                sx={{ mt: 1 }}
-              />
-              <Skeleton
-                variant="rounded"
-                width="100%"
-                height={12}
-                sx={{ mt: 1 }}
-              />
-              <Skeleton
-                variant="rounded"
-                width="100%"
-                height={12}
-                sx={{ mt: 1 }}
-              />
-            </Box>
-          ) : showHistogram ? (
-            <Box sx={{ mt: 2.5 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontFamily: GAME_PAGE_FONT,
-                  color: muted,
-                  display: 'block',
-                  mb: 0.5,
-                  letterSpacing: 0.02,
-                }}
-              >
-                {t('gamePageBody.ratingsDistributionTitle')}
-              </Typography>
-              {onReviewStarFilterChange ? (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontFamily: GAME_PAGE_FONT,
-                    color: muted,
-                    display: 'block',
-                    mb: 1.25,
-                    opacity: 0.92,
-                  }}
-                >
-                  {t('gamePageBody.ratingsHistogramFilterHint')}
-                </Typography>
-              ) : null}
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-                {(['1', '2', '3', '4', '5'] as const).map(star => {
-                  const n = distribution![star] ?? 0;
-                  const pct = (n / maxBar) * 100;
-                  const starNum = Number(star);
-                  const isActive = reviewStarFilter === starNum;
-                  const interactive = Boolean(onReviewStarFilterChange);
-                  return (
-                    <Box
-                      key={star}
-                      component={interactive ? 'button' : 'div'}
-                      {...(interactive ? { type: 'button' as const } : {})}
-                      onClick={
-                        interactive
-                          ? () =>
-                              onReviewStarFilterChange!(
-                                isActive ? null : starNum
-                              )
-                          : undefined
-                      }
-                      aria-pressed={interactive ? isActive : undefined}
-                      aria-label={t('gamePageBody.ratingsFilterRowAria', {
-                        stars: star,
-                      })}
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '22px 1fr 36px',
-                        alignItems: 'center',
-                        gap: 1,
-                        ...(interactive
-                          ? {
-                              m: 0,
-                              p: '6px 8px',
-                              mx: -1,
-                              border: 'none',
-                              borderRadius: '12px',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              font: 'inherit',
-                              color: 'inherit',
-                              bgcolor: isActive ? accentSoft : 'transparent',
-                              transition:
-                                'background-color 0.2s ease, box-shadow 0.2s ease',
-                              '&:hover': {
-                                bgcolor: isActive
-                                  ? accentSoft
-                                  : appearance.isDark
-                                    ? 'rgba(255,255,255,0.06)'
-                                    : 'rgba(0,0,0,0.04)',
-                              },
-                            }
-                          : {}),
-                      }}
-                    >
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontFamily: GAME_PAGE_FONT,
-                          color: ink,
-                          fontWeight: 600,
-                        }}
-                      >
-                        {star}★
-                      </Typography>
-                      <Box
-                        sx={{
-                          height: 8,
-                          borderRadius: 999,
-                          bgcolor: appearance.isDark
-                            ? 'rgba(255,255,255,0.08)'
-                            : 'rgba(0,0,0,0.06)',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            height: '100%',
-                            width: `${pct}%`,
-                            borderRadius: 999,
-                            bgcolor: accent,
-                            transition: 'width 0.35s ease',
-                          }}
-                        />
-                      </Box>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          fontFamily: GAME_PAGE_FONT,
-                          color: muted,
-                          textAlign: 'right',
-                        }}
-                      >
-                        {n}
-                      </Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
-            </Box>
-          ) : null}
+          {histogramSection}
         </>
       )}
     </Box>
