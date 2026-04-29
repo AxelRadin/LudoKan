@@ -1,12 +1,5 @@
-import i18n from 'i18next';
-import { useCallback, useEffect, useState } from 'react';
-import { apiGet } from '../services/api';
-import {
-  appendUniqueByReviewId,
-  drfNextToApiPath,
-  normalizePaginatedOrArray,
-  type PaginatedResults,
-} from '../utils/reviewsPagination';
+import { useMemo } from 'react';
+import { useReviewsPaginatedQuery } from './useReviewsPaginatedQuery';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
@@ -61,78 +54,24 @@ export function useReviews(
   gameId: string | null,
   reviewStarFilter: number | null = null
 ): UseReviewsReturn {
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [nextUrl, setNextUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const listUrl = useMemo(
+    () => (gameId ? buildReviewsListUrl(gameId, 1, reviewStarFilter) : null),
+    [gameId, reviewStarFilter]
+  );
 
-  useEffect(() => {
-    if (!gameId) {
-      setReviews([]);
-      setTotalCount(0);
-      setNextUrl(null);
-      setError(null);
-      setLoadMoreError(null);
-      setIsLoading(false);
-      setIsLoadingMore(false);
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoading(true);
-    setIsLoadingMore(false);
-    setError(null);
-    setLoadMoreError(null);
-
-    const url = buildReviewsListUrl(gameId, 1, reviewStarFilter);
-    apiGet(url)
-      .then((data: ReviewItem[] | PaginatedResults<ReviewItem>) => {
-        if (cancelled) return;
-        const {
-          rows,
-          totalCount: tc,
-          nextUrl: nu,
-        } = normalizePaginatedOrArray<ReviewItem>(data);
-        setReviews(rows);
-        setTotalCount(tc);
-        setNextUrl(nu);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(i18n.t('gamePageBody.reviewsLoadError'));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [gameId, reviewStarFilter]);
-
-  const loadMorePage = useCallback(async () => {
-    const path = drfNextToApiPath(nextUrl);
-    if (!path || isLoadingMore) return;
-
-    setLoadMoreError(null);
-    setIsLoadingMore(true);
-    try {
-      const data = (await apiGet(path)) as
-        | ReviewItem[]
-        | PaginatedResults<ReviewItem>;
-      const { rows, nextUrl: nu } = normalizePaginatedOrArray<ReviewItem>(data);
-      setReviews(prev => appendUniqueByReviewId(prev, rows));
-      setNextUrl(nu);
-    } catch {
-      setLoadMoreError(i18n.t('gamePageBody.reviewsLoadError'));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [nextUrl, isLoadingMore]);
+  const {
+    reviews,
+    setReviews,
+    totalCount,
+    setTotalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    removeReview,
+  } = useReviewsPaginatedQuery<ReviewItem>(listUrl);
 
   function addReview(review: ReviewItem) {
     if (
@@ -153,11 +92,6 @@ export function useReviews(
     });
   }
 
-  function removeReview(reviewId: number) {
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
-    setTotalCount(c => Math.max(0, c - 1));
-  }
-
   return {
     reviews,
     totalCount,
@@ -165,7 +99,7 @@ export function useReviews(
     isLoadingMore,
     error,
     loadMoreError,
-    hasNext: Boolean(nextUrl),
+    hasNext,
     loadMorePage,
     addReview,
     updateReview,

@@ -1,17 +1,10 @@
-import i18n from 'i18next';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { apiGet } from '../services/api';
+import { useMemo } from 'react';
 import {
   buildUserReviewsListUrl,
   type UserReviewsListFilters,
 } from '../constants/userReviewsFilters';
-import {
-  appendUniqueByReviewId,
-  drfNextToApiPath,
-  normalizePaginatedOrArray,
-  type PaginatedResults,
-} from '../utils/reviewsPagination';
 import { useDebouncedValue } from './useDebouncedValue';
+import { useReviewsPaginatedQuery } from './useReviewsPaginatedQuery';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
@@ -84,109 +77,25 @@ export function useUserReviews(
     return buildUserReviewsListUrl(userId, effectiveFilters);
   }, [userId, effectiveFilters]);
 
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [nextUrl, setNextUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!userId || !listUrl) {
-      setReviews([]);
-      setTotalCount(0);
-      setNextUrl(null);
-      setError(null);
-      setLoadMoreError(null);
-      setIsLoading(false);
-      setIsLoadingMore(false);
-      return;
-    }
-
-    let cancelled = false;
-    setIsLoading(true);
-    setIsLoadingMore(false);
-    setError(null);
-    setLoadMoreError(null);
-
-    apiGet(listUrl)
-      .then((data: ReviewItem[] | PaginatedResults<ReviewItem>) => {
-        if (cancelled) return;
-        const {
-          rows,
-          totalCount: tc,
-          nextUrl: nu,
-        } = normalizePaginatedOrArray<ReviewItem>(data);
-        setReviews(rows);
-        setTotalCount(tc);
-        setNextUrl(nu);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setError(i18n.t('gamePageBody.reviewsLoadError'));
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, listUrl]);
-
-  const loadMorePage = useCallback(async () => {
-    const path = drfNextToApiPath(nextUrl);
-    if (!path || isLoadingMore) return;
-
-    setLoadMoreError(null);
-    setIsLoadingMore(true);
-    try {
-      const data = (await apiGet(path)) as
-        | ReviewItem[]
-        | PaginatedResults<ReviewItem>;
-      const { rows, nextUrl: nu } = normalizePaginatedOrArray<ReviewItem>(data);
-      setReviews(prev => appendUniqueByReviewId(prev, rows));
-      setNextUrl(nu);
-    } catch {
-      setLoadMoreError(i18n.t('gamePageBody.reviewsLoadError'));
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [nextUrl, isLoadingMore]);
-
-  const refresh = useCallback(() => {
-    if (!userId || !listUrl) return;
-    setIsLoading(true);
-    setIsLoadingMore(false);
-    setError(null);
-    setLoadMoreError(null);
-    apiGet(listUrl)
-      .then((data: ReviewItem[] | PaginatedResults<ReviewItem>) => {
-        const {
-          rows,
-          totalCount: tc,
-          nextUrl: nu,
-        } = normalizePaginatedOrArray<ReviewItem>(data);
-        setReviews(rows);
-        setTotalCount(tc);
-        setNextUrl(nu);
-      })
-      .catch(() => setError(i18n.t('gamePageBody.reviewsLoadError')))
-      .finally(() => setIsLoading(false));
-  }, [userId, listUrl]);
+  const {
+    reviews,
+    setReviews,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    removeReview,
+    reload,
+  } = useReviewsPaginatedQuery<ReviewItem>(listUrl);
 
   function updateReview(review: ReviewItem) {
     setReviews(prev => {
       const mapped = prev.map(r => (r.id === review.id ? review : r));
       return mapped.filter(r => reviewMatchesFilters(r, effectiveFilters));
     });
-  }
-
-  function removeReview(reviewId: number) {
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
-    setTotalCount(c => Math.max(0, c - 1));
   }
 
   return {
@@ -196,10 +105,10 @@ export function useUserReviews(
     isLoadingMore,
     error,
     loadMoreError,
-    hasNext: Boolean(nextUrl),
+    hasNext,
     loadMorePage,
     updateReview,
     removeReview,
-    refresh,
+    refresh: reload,
   };
 }

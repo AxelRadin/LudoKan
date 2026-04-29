@@ -1,3 +1,5 @@
+import { apiGet } from '../services/api';
+
 export type PaginatedResults<T> = {
   count: number;
   next: string | null;
@@ -15,9 +17,15 @@ export function isPaginatedResults<T>(
   );
 }
 
+export type NormalizedReviewPage<T extends { id: number }> = {
+  rows: T[];
+  totalCount: number;
+  nextUrl: string | null;
+};
+
 export function normalizePaginatedOrArray<T extends { id: number }>(
   data: T[] | PaginatedResults<T>
-): { rows: T[]; totalCount: number; nextUrl: string | null } {
+): NormalizedReviewPage<T> {
   if (Array.isArray(data)) {
     return { rows: data, totalCount: data.length, nextUrl: null };
   }
@@ -49,4 +57,11 @@ export function drfNextToApiPath(nextUrl: string | null): string | null {
   } catch {
     return nextUrl.startsWith('/') ? nextUrl : null;
   }
+}
+
+export async function fetchNormalizedReviewPage<T extends { id: number }>(
+  url: string
+): Promise<NormalizedReviewPage<T>> {
+  const data = (await apiGet(url)) as T[] | PaginatedResults<T>;
+  return normalizePaginatedOrArray(data);
 }

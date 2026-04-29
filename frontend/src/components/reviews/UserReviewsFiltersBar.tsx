@@ -12,8 +12,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_USER_REVIEWS_FILTERS,
+  selectStringToRatingFilter,
   type UserReviewsListFilters,
-  type UserReviewsRatingFilter,
 } from '../../constants/userReviewsFilters';
 
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -41,15 +41,7 @@ export default function UserReviewsFiltersBar({
     JSON.stringify(filters) !== JSON.stringify(DEFAULT_USER_REVIEWS_FILTERS);
 
   const handleRatingChange = (e: SelectChangeEvent) => {
-    const v = e.target.value;
-    const ratingFilter: UserReviewsRatingFilter =
-      v === ''
-        ? 'all'
-        : v === 'none'
-          ? 'none'
-          : (Number(v) as 1 | 2 | 3 | 4 | 5);
-
-    onPatch({ ratingFilter });
+    onPatch({ ratingFilter: selectStringToRatingFilter(e.target.value) });
   };
 
   return (

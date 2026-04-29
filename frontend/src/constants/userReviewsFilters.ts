@@ -53,3 +53,10 @@ export function userReviewsFiltersActive(
 ): boolean {
   return filters.ratingFilter !== 'all' || filters.search.trim() !== '';
 }
+
+/** Valeur du `<Select>` note → filtre (évite branches redondantes côté UI). */
+export function selectStringToRatingFilter(v: string): UserReviewsRatingFilter {
+  if (v === '') return 'all';
+  if (v === 'none') return 'none';
+  return Number(v) as 1 | 2 | 3 | 4 | 5;
+}
