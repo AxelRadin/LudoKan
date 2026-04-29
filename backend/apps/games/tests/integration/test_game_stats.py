@@ -80,6 +80,35 @@ class TestGameStatsView:
             "5": 1,
         }
 
+    def test_game_stats_distribution_counts_etoiles_with_and_without_review(
+        self,
+        api_client,
+        user,
+        another_user,
+        game,
+    ):
+        """Histogramme = tous les Rating étoiles (avis ou note seule)."""
+        r4_a = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+        Rating.objects.create(
+            user=another_user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+        Review.objects.create(user=user, game=game, content="Avec avis 4★", rating=r4_a)
+
+        response = api_client.get(f"/api/games/{game.id}/stats/")
+
+        assert response.status_code == status.HTTP_200_OK
+        ratings = response.data["ratings"]
+        assert ratings["count"] == 2
+        assert ratings["distribution"]["4"] == 2
+
     @override_settings(DEBUG=True)
     def test_game_stats_with_reviews(self, api_client, user, another_user, game):
         Review.objects.create(user=user, game=game, content="Très bon jeu")

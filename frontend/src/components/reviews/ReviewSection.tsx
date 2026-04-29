@@ -13,6 +13,7 @@ const F = "'Outfit', sans-serif";
 
 export type Review = {
   id: number;
+  rating_only?: boolean;
   title?: string;
   content: string;
   rating?: { value: number };
@@ -27,6 +28,8 @@ type ReviewSectionProps = Readonly<{
   userReview: Review | null;
   currentUserId: number | null;
   onReviewChange: (review: Review | null) => void;
+  reviewStarFilter?: number | null;
+  onClearReviewStarFilter?: () => void;
 }>;
 
 async function deleteReviewOnServer(
@@ -220,6 +223,8 @@ export default function ReviewSection({
   userReview,
   currentUserId,
   onReviewChange,
+  reviewStarFilter = null,
+  onClearReviewStarFilter,
 }: ReviewSectionProps) {
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
@@ -235,7 +240,7 @@ export default function ReviewSection({
     addReview,
     updateReview,
     removeReview,
-  } = useReviews(gameId || null);
+  } = useReviews(gameId || null, reviewStarFilter ?? null);
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
@@ -283,6 +288,8 @@ export default function ReviewSection({
         currentUserId={currentUserId}
         onEditReview={review => setEditingReview(review as Review)}
         onDeleteReview={setReviewToDelete}
+        reviewStarFilter={reviewStarFilter}
+        onClearReviewStarFilter={onClearReviewStarFilter}
       />
 
       <DeleteReviewDialog

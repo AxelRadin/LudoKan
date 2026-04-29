@@ -648,7 +648,7 @@ class GameStatsView(APIView):
         description=(
             "Retourne les statistiques de possession, de notation et d’avis pour un jeu donné.\n\n"
             "- **Possession** : nombre total d’utilisateurs et répartition par statut\n"
-            "- **Notes** : moyenne, nombre de votes et distribution (1 à 5 étoiles)\n"
+            "- **Notes** : moyenne, nombre de votes et distribution (1 à 5 étoiles, tous les `Rating` étoiles du jeu)\n"
             "- **Avis** : nombre total et date du dernier avis"
         ),
         responses={
@@ -764,6 +764,7 @@ class GameStatsView(APIView):
                 owners_by_status[api_key] = row["count"]
 
         # ---------- RATINGS ----------
+        # Histogramme = toutes les notes étoiles (Rating), aligné sur rating_count.
         ratings_distribution = {str(i): 0 for i in range(1, 6)}
 
         stars_qs = Rating.objects.filter(game=game, rating_type=Rating.RATING_TYPE_ETOILES).values("value").annotate(count=Count("id"))

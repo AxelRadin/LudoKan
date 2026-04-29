@@ -8,7 +8,8 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { t } from 'i18next';
 
 const RATING_LABELS: Record<number, string> = {
   1: 'Mauvais',
@@ -46,6 +47,7 @@ const StarRating = ({ rating }: { rating: number }) => (
 
 type Review = {
   id: number;
+  rating_only?: boolean;
   title?: string;
   content: string;
   rating?: { value: number };
@@ -94,6 +96,38 @@ export default function ReviewCard({
   const ratingValue = review.rating?.value
     ? Math.round(Number(review.rating.value))
     : null;
+
+  let reviewBody: ReactNode = null;
+  if (review.content) {
+    reviewBody = (
+      <Typography
+        variant="body2"
+        sx={{
+          color: '#555',
+          lineHeight: 1.7,
+          fontSize: 13,
+          textAlign: 'left',
+        }}
+      >
+        {review.content}
+      </Typography>
+    );
+  } else if (review.rating_only) {
+    reviewBody = (
+      <Typography
+        variant="body2"
+        sx={{
+          color: '#888',
+          fontStyle: 'italic',
+          fontSize: 13,
+          lineHeight: 1.7,
+          textAlign: 'left',
+        }}
+      >
+        {t('gamePageBody.reviewsRatingOnlyPlaceholder')}
+      </Typography>
+    );
+  }
 
   return (
     <Box
@@ -223,8 +257,8 @@ export default function ReviewCard({
             </Box>
           </Box>
 
-          {/* Menu modifier/supprimer */}
-          {isOwner && (
+          {/* Menu modifier/supprimer — pas pour une entrée « note seule » */}
+          {isOwner && !review.rating_only && (
             <>
               <IconButton
                 size="small"
@@ -269,7 +303,7 @@ export default function ReviewCard({
                 <MenuItem
                   onClick={() => {
                     handleCloseMenu();
-                    onDelete(review.id);
+                    if (!review.rating_only) onDelete(review.id);
                   }}
                   sx={{ color: 'error.main' }}
                 >
@@ -338,19 +372,7 @@ export default function ReviewCard({
             </Typography>
           )}
 
-          {review.content && (
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#555',
-                lineHeight: 1.7,
-                fontSize: 13,
-                textAlign: 'left',
-              }}
-            >
-              {review.content}
-            </Typography>
-          )}
+          {reviewBody}
         </Box>
 
         {formattedDate && (
