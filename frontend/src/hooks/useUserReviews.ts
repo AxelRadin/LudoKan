@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'react';
-import { apiGet } from '../services/api';
+import { useMemo } from 'react';
+import {
+  buildUserReviewsListUrl,
+  type UserReviewsListFilters,
+} from '../constants/userReviewsFilters';
+import { useDebouncedValue } from './useDebouncedValue';
+import { useReviewsPaginatedQuery } from './useReviewsPaginatedQuery';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
@@ -19,50 +24,91 @@ export type ReviewItem = {
   };
 };
 
+function reviewMatchesFilters(
+  review: ReviewItem,
+  f: UserReviewsListFilters
+): boolean {
+  if (f.ratingFilter === 'none') {
+    if (review.rating?.value != null) {
+      return false;
+    }
+  } else if (f.ratingFilter !== 'all') {
+    const v = review.rating?.value;
+    if (v == null || Math.round(Number(v)) !== f.ratingFilter) {
+      return false;
+    }
+  }
+  const q = f.search.trim().toLowerCase();
+  if (q && !(review.game.name || '').toLowerCase().includes(q)) {
+    return false;
+  }
+  return true;
+}
+
 type UseUserReviewsReturn = {
   reviews: ReviewItem[];
+  totalCount: number;
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
+  loadMoreError: string | null;
+  hasNext: boolean;
+  loadMorePage: () => void;
   updateReview: (review: ReviewItem) => void;
   removeReview: (reviewId: number) => void;
   refresh: () => void;
 };
 
-export function useUserReviews(userId: number | null): UseUserReviewsReturn {
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function useUserReviews(
+  userId: number | null,
+  filters: UserReviewsListFilters
+): UseUserReviewsReturn {
+  const searchDebounced = useDebouncedValue(filters.search, 400);
+  const effectiveFilters = useMemo(
+    (): UserReviewsListFilters => ({
+      ...filters,
+      search: searchDebounced,
+    }),
+    [filters.ratingFilter, filters.ordering, searchDebounced]
+  );
 
-  const fetchReviews = () => {
-    if (!userId) return;
-    setIsLoading(true);
-    setError(null);
-    apiGet(`/api/reviews/?user=${userId}`)
-      .then((data: ReviewItem[] | { results: ReviewItem[] }) => {
-        setReviews(Array.isArray(data) ? data : data.results);
-      })
-      .catch(() => setError('Impossible de charger vos avis.'))
-      .finally(() => setIsLoading(false));
-  };
+  const listUrl = useMemo(() => {
+    if (!userId) return null;
+    return buildUserReviewsListUrl(userId, effectiveFilters);
+  }, [userId, effectiveFilters]);
 
-  useEffect(() => {
-    fetchReviews();
-  }, [userId]);
+  const {
+    reviews,
+    setReviews,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    removeReview,
+    reload,
+  } = useReviewsPaginatedQuery<ReviewItem>(listUrl);
 
   function updateReview(review: ReviewItem) {
-    setReviews(prev => prev.map(r => (r.id === review.id ? review : r)));
-  }
-
-  function removeReview(reviewId: number) {
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
+    setReviews(prev => {
+      const mapped = prev.map(r => (r.id === review.id ? review : r));
+      return mapped.filter(r => reviewMatchesFilters(r, effectiveFilters));
+    });
   }
 
   return {
     reviews,
+    totalCount,
     isLoading,
+    isLoadingMore,
     error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
     updateReview,
     removeReview,
-    refresh: fetchReviews,
+    refresh: reload,
   };
 }

@@ -448,6 +448,27 @@
     "playedRatioLabel": "% games played",
     "totalGamesLabel": "Total games"
   },
+  "userReviewsPage": {
+    "filterRating": "Rating",
+    "allRatings": "All ratings",
+    "starsOption": "{{n}} stars",
+    "noRatingOption": "No rating",
+    "filterSort": "Sort",
+    "sortRecent": "Newest first",
+    "sortOldest": "Oldest first",
+    "sortRecentEdit": "Recently edited",
+    "searchGameLabel": "Game",
+    "searchGamePlaceholder": "Game name…",
+    "resetFilters": "Reset filters",
+    "emptyNone": "You have not published any reviews yet.",
+    "emptyFiltered": "No reviews match these filters.",
+    "bannerStarFilter": "Active filter: reviews rated {{stars}} star(s).",
+    "bannerNoRatingFilter": "Active filter: reviews with no rating.",
+    "clickToOpenGame": "Click to open the game page",
+    "deleteConfirmTitle": "Delete this review?",
+    "deleteCancel": "Cancel",
+    "deleteConfirm": "Delete"
+  },
   "searchResults": {
     "title": "Results for: « {{query}} »",
     "filterBy": "Filter by license:",
