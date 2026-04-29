@@ -70,6 +70,12 @@ class UserSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     is_superuser = serializers.BooleanField(read_only=True)
 
+    # Statistiques
+    total_playtime = serializers.SerializerMethodField()
+    games_finished_percentage = serializers.SerializerMethodField()
+    games_played_percentage = serializers.SerializerMethodField()
+    total_games_count = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -88,8 +94,22 @@ class UserSerializer(serializers.ModelSerializer):
             "steam_id",
             "roles",
             "is_superuser",
+            "total_playtime",
+            "games_finished_percentage",
+            "games_played_percentage",
+            "total_games_count",
         ]
-        read_only_fields = ["id", "created_at", "steam_id", "roles", "is_superuser"]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "steam_id",
+            "roles",
+            "is_superuser",
+            "total_playtime",
+            "games_finished_percentage",
+            "games_played_percentage",
+            "total_games_count",
+        ]
 
     def validate_email(self, value):
         request = self.context.get("request")
@@ -114,6 +134,33 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_review_count(self, obj):
         return obj.reviews.count()
+
+    def get_total_playtime(self, obj) -> float:
+        from django.db.models import Sum
+
+        return obj.library_entries.aggregate(Sum("playtime_forever"))["playtime_forever__sum"] or 0.0
+
+    def get_total_games_count(self, obj) -> int:
+        return obj.library_entries.count()
+
+    def get_games_finished_percentage(self, obj) -> float:
+        from apps.library.models import UserGame
+
+        total = self.get_total_games_count(obj)
+        if total == 0:
+            return 0.0
+        finished = obj.library_entries.filter(status=UserGame.GameStatus.TERMINE).count()
+        return round((finished / total) * 100, 1)
+
+    def get_games_played_percentage(self, obj) -> float:
+        from apps.library.models import UserGame
+
+        total = self.get_total_games_count(obj)
+        if total == 0:
+            return 0.0
+        # On considère "joué" tout ce qui n'est pas "ENVIE_DE_JOUER"
+        played = obj.library_entries.exclude(status=UserGame.GameStatus.ENVIE_DE_JOUER).count()
+        return round((played / total) * 100, 1)
 
     def get_avatar_url(self, obj):
         """Retourne l'URL absolue de l'avatar si présent"""
