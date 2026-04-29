@@ -153,7 +153,7 @@ class AdminStatsView(APIView):
         # Totaux globaux pour le dashboard + engagement utilisateurs en une requête
         user_agg = User.objects.aggregate(
             total=Count("id"),
-            new_last_7_days=Count("id", filter=Q(date_joined__gte=week_ago)),
+            new_last_7_days=Count("id", filter=Q(created_at__gte=week_ago)),
             active_day=Count("id", filter=Q(last_login__gte=day_ago)),
             active_week=Count("id", filter=Q(last_login__gte=week_ago)),
             active_month=Count("id", filter=Q(last_login__gte=month_ago)),
