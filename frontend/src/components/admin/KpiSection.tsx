@@ -1,6 +1,7 @@
 import GamesIcon from '@mui/icons-material/SportsEsports';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import { Box, Typography } from '@mui/material';
@@ -59,6 +60,11 @@ export default function KpiSection({ data, loading }: Props) {
             title="Nouveaux utilisateurs (7j)"
             value={data.totals.users_new_last_7_days}
             icon={<PersonAddIcon fontSize="small" />}
+          />
+          <KpiCard
+            title="Tickets en attente"
+            value={data.totals.tickets_pending}
+            icon={<PendingActionsIcon fontSize="small" />}
           />
         </Box>
       )}
