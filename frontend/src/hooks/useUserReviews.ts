@@ -5,6 +5,13 @@ import {
   buildUserReviewsListUrl,
   type UserReviewsListFilters,
 } from '../constants/userReviewsFilters';
+import {
+  appendUniqueByReviewId,
+  drfNextToApiPath,
+  normalizePaginatedOrArray,
+  type PaginatedResults,
+} from '../utils/reviewsPagination';
+import { useDebouncedValue } from './useDebouncedValue';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
@@ -23,49 +30,6 @@ export type ReviewItem = {
     cover_url?: string;
   };
 };
-
-type PaginatedReviews = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: ReviewItem[];
-};
-
-function isPaginated(data: unknown): data is PaginatedReviews {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    Array.isArray((data as PaginatedReviews).results)
-  );
-}
-
-function appendUniqueReviews(
-  prev: ReviewItem[],
-  incoming: ReviewItem[]
-): ReviewItem[] {
-  const seen = new Set(prev.map(r => r.id));
-  const extra = incoming.filter(r => !seen.has(r.id));
-  return [...prev, ...extra];
-}
-
-function toApiPath(nextUrl: string | null): string | null {
-  if (!nextUrl) return null;
-  try {
-    const u = new URL(nextUrl);
-    return `${u.pathname}${u.search}`;
-  } catch {
-    return nextUrl.startsWith('/') ? nextUrl : null;
-  }
-}
-
-function useDebouncedSearch(search: string, ms: number): string {
-  const [debounced, setDebounced] = useState(search);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(search), ms);
-    return () => clearTimeout(id);
-  }, [search, ms]);
-  return debounced;
-}
 
 function reviewMatchesFilters(
   review: ReviewItem,
@@ -106,7 +70,7 @@ export function useUserReviews(
   userId: number | null,
   filters: UserReviewsListFilters
 ): UseUserReviewsReturn {
-  const searchDebounced = useDebouncedSearch(filters.search, 400);
+  const searchDebounced = useDebouncedValue(filters.search, 400);
   const effectiveFilters = useMemo(
     (): UserReviewsListFilters => ({
       ...filters,
@@ -147,21 +111,16 @@ export function useUserReviews(
     setLoadMoreError(null);
 
     apiGet(listUrl)
-      .then((data: ReviewItem[] | PaginatedReviews) => {
+      .then((data: ReviewItem[] | PaginatedResults<ReviewItem>) => {
         if (cancelled) return;
-        if (Array.isArray(data)) {
-          setReviews(data);
-          setTotalCount(data.length);
-          setNextUrl(null);
-        } else if (isPaginated(data)) {
-          setReviews(data.results);
-          setTotalCount(data.count);
-          setNextUrl(data.next);
-        } else {
-          setReviews([]);
-          setTotalCount(0);
-          setNextUrl(null);
-        }
+        const {
+          rows,
+          totalCount: tc,
+          nextUrl: nu,
+        } = normalizePaginatedOrArray<ReviewItem>(data);
+        setReviews(rows);
+        setTotalCount(tc);
+        setNextUrl(nu);
       })
       .catch(() => {
         if (!cancelled) {
@@ -178,20 +137,18 @@ export function useUserReviews(
   }, [userId, listUrl]);
 
   const loadMorePage = useCallback(async () => {
-    const path = toApiPath(nextUrl);
+    const path = drfNextToApiPath(nextUrl);
     if (!path || isLoadingMore) return;
 
     setLoadMoreError(null);
     setIsLoadingMore(true);
     try {
-      const data = (await apiGet(path)) as ReviewItem[] | PaginatedReviews;
-      if (Array.isArray(data)) {
-        setReviews(prev => appendUniqueReviews(prev, data));
-        setNextUrl(null);
-      } else if (isPaginated(data)) {
-        setReviews(prev => appendUniqueReviews(prev, data.results));
-        setNextUrl(data.next);
-      }
+      const data = (await apiGet(path)) as
+        | ReviewItem[]
+        | PaginatedResults<ReviewItem>;
+      const { rows, nextUrl: nu } = normalizePaginatedOrArray<ReviewItem>(data);
+      setReviews(prev => appendUniqueByReviewId(prev, rows));
+      setNextUrl(nu);
     } catch {
       setLoadMoreError(i18n.t('gamePageBody.reviewsLoadError'));
     } finally {
@@ -206,20 +163,15 @@ export function useUserReviews(
     setError(null);
     setLoadMoreError(null);
     apiGet(listUrl)
-      .then((data: ReviewItem[] | PaginatedReviews) => {
-        if (Array.isArray(data)) {
-          setReviews(data);
-          setTotalCount(data.length);
-          setNextUrl(null);
-        } else if (isPaginated(data)) {
-          setReviews(data.results);
-          setTotalCount(data.count);
-          setNextUrl(data.next);
-        } else {
-          setReviews([]);
-          setTotalCount(0);
-          setNextUrl(null);
-        }
+      .then((data: ReviewItem[] | PaginatedResults<ReviewItem>) => {
+        const {
+          rows,
+          totalCount: tc,
+          nextUrl: nu,
+        } = normalizePaginatedOrArray<ReviewItem>(data);
+        setReviews(rows);
+        setTotalCount(tc);
+        setNextUrl(nu);
       })
       .catch(() => setError(i18n.t('gamePageBody.reviewsLoadError')))
       .finally(() => setIsLoading(false));

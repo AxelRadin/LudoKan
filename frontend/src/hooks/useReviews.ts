@@ -1,6 +1,12 @@
 import i18n from 'i18next';
 import { useCallback, useEffect, useState } from 'react';
 import { apiGet } from '../services/api';
+import {
+  appendUniqueByReviewId,
+  drfNextToApiPath,
+  normalizePaginatedOrArray,
+  type PaginatedResults,
+} from '../utils/reviewsPagination';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
@@ -16,42 +22,6 @@ export type ReviewItem = {
   date_created?: string;
   created_at?: string;
 };
-
-type PaginatedReviews = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: ReviewItem[];
-};
-
-function isPaginated(data: unknown): data is PaginatedReviews {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    Array.isArray((data as PaginatedReviews).results)
-  );
-}
-
-/** Appends reviews not already present in `prev` (by id). */
-function appendUniqueReviews(
-  prev: ReviewItem[],
-  incoming: ReviewItem[]
-): ReviewItem[] {
-  const seen = new Set(prev.map(r => r.id));
-  const extra = incoming.filter(r => !seen.has(r.id));
-  return [...prev, ...extra];
-}
-
-/** Extrait `/path?query` depuis une URL absolue DRF ou relative. */
-function toApiPath(nextUrl: string | null): string | null {
-  if (!nextUrl) return null;
-  try {
-    const u = new URL(nextUrl);
-    return `${u.pathname}${u.search}`;
-  } catch {
-    return nextUrl.startsWith('/') ? nextUrl : null;
-  }
-}
 
 function reviewMatchesStarFilter(review: ReviewItem, stars: number): boolean {
   const v = review.rating?.value;
@@ -119,21 +89,16 @@ export function useReviews(
 
     const url = buildReviewsListUrl(gameId, 1, reviewStarFilter);
     apiGet(url)
-      .then((data: ReviewItem[] | PaginatedReviews) => {
+      .then((data: ReviewItem[] | PaginatedResults<ReviewItem>) => {
         if (cancelled) return;
-        if (Array.isArray(data)) {
-          setReviews(data);
-          setTotalCount(data.length);
-          setNextUrl(null);
-        } else if (isPaginated(data)) {
-          setReviews(data.results);
-          setTotalCount(data.count);
-          setNextUrl(data.next);
-        } else {
-          setReviews([]);
-          setTotalCount(0);
-          setNextUrl(null);
-        }
+        const {
+          rows,
+          totalCount: tc,
+          nextUrl: nu,
+        } = normalizePaginatedOrArray<ReviewItem>(data);
+        setReviews(rows);
+        setTotalCount(tc);
+        setNextUrl(nu);
       })
       .catch(() => {
         if (!cancelled) {
@@ -150,20 +115,18 @@ export function useReviews(
   }, [gameId, reviewStarFilter]);
 
   const loadMorePage = useCallback(async () => {
-    const path = toApiPath(nextUrl);
+    const path = drfNextToApiPath(nextUrl);
     if (!path || isLoadingMore) return;
 
     setLoadMoreError(null);
     setIsLoadingMore(true);
     try {
-      const data = (await apiGet(path)) as ReviewItem[] | PaginatedReviews;
-      if (Array.isArray(data)) {
-        setReviews(prev => appendUniqueReviews(prev, data));
-        setNextUrl(null);
-      } else if (isPaginated(data)) {
-        setReviews(prev => appendUniqueReviews(prev, data.results));
-        setNextUrl(data.next);
-      }
+      const data = (await apiGet(path)) as
+        | ReviewItem[]
+        | PaginatedResults<ReviewItem>;
+      const { rows, nextUrl: nu } = normalizePaginatedOrArray<ReviewItem>(data);
+      setReviews(prev => appendUniqueByReviewId(prev, rows));
+      setNextUrl(nu);
     } catch {
       setLoadMoreError(i18n.t('gamePageBody.reviewsLoadError'));
     } finally {
