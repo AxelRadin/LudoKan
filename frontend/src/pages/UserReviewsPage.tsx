@@ -211,7 +211,7 @@ export default function UserReviewsPage() {
             <Button
               variant="outlined"
               size="small"
-              onClick={() => void loadMorePage()}
+              onClick={loadMorePage}
               disabled={isLoadingMore}
               sx={{ textTransform: 'none' }}
             >

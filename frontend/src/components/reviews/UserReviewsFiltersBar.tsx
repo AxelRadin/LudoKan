@@ -5,6 +5,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  SelectChangeEvent,
   Stack,
   TextField,
 } from '@mui/material';
@@ -39,6 +40,18 @@ export default function UserReviewsFiltersBar({
   const reset =
     JSON.stringify(filters) !== JSON.stringify(DEFAULT_USER_REVIEWS_FILTERS);
 
+  const handleRatingChange = (e: SelectChangeEvent) => {
+    const v = e.target.value;
+    const ratingFilter: UserReviewsRatingFilter =
+      v === ''
+        ? 'all'
+        : v === 'none'
+          ? 'none'
+          : (Number(v) as 1 | 2 | 3 | 4 | 5);
+
+    onPatch({ ratingFilter });
+  };
+
   return (
     <Stack
       direction={{ xs: 'column', sm: 'row' }}
@@ -59,14 +72,7 @@ export default function UserReviewsFiltersBar({
           label={t('userReviewsPage.filterRating')}
           value={ratingSelectValue(filters)}
           disabled={disabled}
-          onChange={e => {
-            const v = e.target.value;
-            let ratingFilter: UserReviewsRatingFilter = 'all';
-            if (v === '') ratingFilter = 'all';
-            else if (v === 'none') ratingFilter = 'none';
-            else ratingFilter = Number(v) as 1 | 2 | 3 | 4 | 5;
-            onPatch({ ratingFilter });
-          }}
+          onChange={handleRatingChange}
           sx={{ fontFamily: FONT_BODY, borderRadius: '12px' }}
         >
           <MenuItem value="">

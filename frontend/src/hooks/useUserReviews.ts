@@ -36,7 +36,7 @@ function reviewMatchesFilters(
   f: UserReviewsListFilters
 ): boolean {
   if (f.ratingFilter === 'none') {
-    if (review.rating != null && review.rating.value != null) {
+    if (review.rating?.value != null) {
       return false;
     }
   } else if (f.ratingFilter !== 'all') {
