@@ -279,6 +279,44 @@ class TestReviewViewSet:
         assert resp.data["count"] == 1
         assert resp.data["results"][0]["content"] == "Avec note"
 
+    def test_list_user_filters_has_rating_false(self, user, game):
+        """has_rating false / 0 / no : _parse_has_rating_filter + filtre sans note (views ~55-56, 172)."""
+        g2 = Game.objects.create(
+            igdb_id=90040,
+            name="Other Game NoRating",
+            description="",
+            publisher=game.publisher,
+        )
+        r = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+        Review.objects.create(user=user, game=game, content="Avec note", rating=r)
+        Review.objects.create(user=user, game=g2, content="Sans note")
+        client = APIClient()
+        for param in ("false", "0", "no"):
+            resp = client.get("/api/reviews/", {"user": str(user.id), "has_rating": param})
+            assert resp.status_code == 200
+            assert resp.data["count"] == 1
+            assert resp.data["results"][0]["content"] == "Sans note"
+
+    def test_list_user_filters_has_rating_invalid_skipped(self, user, game):
+        """Valeur has_rating non reconnue : _parse_has_rating_filter retourne None (views ~57)."""
+        g2 = Game.objects.create(
+            igdb_id=90043,
+            name="Other Invalid HasRating",
+            description="",
+            publisher=game.publisher,
+        )
+        Review.objects.create(user=user, game=game, content="Un")
+        Review.objects.create(user=user, game=g2, content="Deux")
+        client = APIClient()
+        resp = client.get("/api/reviews/", {"user": str(user.id), "has_rating": "maybe"})
+        assert resp.status_code == 200
+        assert resp.data["count"] == 2
+
     def test_list_user_ordering_oldest_first(self, user, game):
         from datetime import timedelta
 
