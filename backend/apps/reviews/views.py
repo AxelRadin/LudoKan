@@ -22,6 +22,16 @@ from apps.reviews.serializers import (
 from apps.users.utils import log_admin_action
 
 
+def _parse_optional_query_int(raw: str | None) -> int | None:
+    """Entier depuis un query param ; None si absent ou non convertible."""
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _parse_rating_value_filter(raw: str | None) -> int | None:
     """Retourne un entier 1–5 si le paramètre est valide, sinon None."""
     if raw is None:
@@ -114,35 +124,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
         - /api/reviews/?user=3
         """
         queryset = super().get_queryset()
+        params = self.request.query_params
 
-        # Filtre par jeu (ignorer une valeur non entière, cohérent avec list() fusionné)
-        game_id = self.request.query_params.get("game")
-        if game_id is not None:
-            try:
-                gid = int(game_id)
-            except (TypeError, ValueError):
-                gid = None
-            if gid is not None:
-                queryset = queryset.filter(game_id=gid)
+        gid = _parse_optional_query_int(params.get("game"))
+        if gid is not None:
+            queryset = queryset.filter(game_id=gid)
 
-        # Filtre par utilisateur
-        user_id = self.request.query_params.get("user")
-        if user_id is not None:
-            try:
-                uid = int(user_id)
-            except (TypeError, ValueError):
-                uid = None
-            if uid is not None:
-                queryset = queryset.filter(user_id=uid)
+        uid = _parse_optional_query_int(params.get("user"))
+        if uid is not None:
+            queryset = queryset.filter(user_id=uid)
 
-        rating_value = self.request.query_params.get("rating_value")
-        if rating_value is not None:
-            try:
-                v = int(rating_value)
-            except (TypeError, ValueError):
-                v = None
-            if v is not None and 1 <= v <= 5:
-                queryset = queryset.filter(rating__value=v)
+        stars = _parse_rating_value_filter(params.get("rating_value"))
+        if stars is not None:
+            queryset = queryset.filter(rating__value=stars)
 
         return queryset
 
