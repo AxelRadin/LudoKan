@@ -25,8 +25,18 @@ export default function UserReviewsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { reviews, isLoading, error, removeReview, updateReview } =
-    useUserReviews(user?.id ?? null);
+  const {
+    reviews,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    removeReview,
+    updateReview,
+  } = useUserReviews(user?.id ?? null);
 
   const [editingReview, setEditingReview] = useState<ReviewItem | null>(null);
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
@@ -74,7 +84,7 @@ export default function UserReviewsPage() {
       );
     }
 
-    if (reviews.length === 0) {
+    if (totalCount === 0) {
       return (
         <Typography align="center" color="text.secondary">
           Vous n'avez pas encore publié d'avis.
@@ -173,6 +183,39 @@ export default function UserReviewsPage() {
             )}
           </Box>
         ))}
+        {hasNext ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 1,
+              pt: 1,
+            }}
+          >
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => void loadMorePage()}
+              disabled={isLoadingMore}
+              sx={{ textTransform: 'none' }}
+            >
+              {isLoadingMore ? (
+                <>
+                  <CircularProgress size={16} sx={{ mr: 1 }} />
+                  {t('gamePageBody.reviewsLoadingMore')}
+                </>
+              ) : (
+                t('gamePageBody.reviewsLoadMore')
+              )}
+            </Button>
+            {loadMoreError ? (
+              <Typography variant="caption" color="error">
+                {loadMoreError}
+              </Typography>
+            ) : null}
+          </Box>
+        ) : null}
       </Box>
     );
   };
