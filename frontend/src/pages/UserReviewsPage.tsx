@@ -235,6 +235,16 @@ export default function UserReviewsPage() {
     );
   };
 
+  let filtersBannerText: string | null = null;
+
+  if (typeof filters.ratingFilter === 'number') {
+    filtersBannerText = t('userReviewsPage.bannerStarFilter', {
+      stars: filters.ratingFilter,
+    });
+  } else if (filters.ratingFilter === 'none') {
+    filtersBannerText = t('userReviewsPage.bannerNoRatingFilter');
+  }
+
   return (
     <PageLayout title={t('profilePage.reviewsLabel')}>
       <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>
@@ -245,23 +255,13 @@ export default function UserReviewsPage() {
             disabled={isLoading}
           />
         ) : null}
-        {typeof filters.ratingFilter === 'number' ? (
+        {filtersBannerText ? (
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mb: 2, lineHeight: 1.6 }}
           >
-            {t('userReviewsPage.bannerStarFilter', {
-              stars: filters.ratingFilter,
-            })}
-          </Typography>
-        ) : filters.ratingFilter === 'none' ? (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 2, lineHeight: 1.6 }}
-          >
-            {t('userReviewsPage.bannerNoRatingFilter')}
+            {filtersBannerText}
           </Typography>
         ) : null}
         {renderContent()}
