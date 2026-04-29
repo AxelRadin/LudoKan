@@ -361,6 +361,7 @@ type ProfilePageModel = {
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
   reloadUserGames: () => Promise<void>;
+  gamesLoading: boolean;
 };
 
 function useProfilePageModel(
@@ -386,6 +387,7 @@ function useProfilePageModel(
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   // Sync with global user if it updates (e.g. email from ForcedEmailModal)
   useEffect(() => {
@@ -526,7 +528,8 @@ function useProfilePageModel(
       .finally(() => setLoading(false));
     fetchUserGames()
       .then(games => setUserGames(games as UserGame[]))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setGamesLoading(false));
   }, []);
 
   const avatarSrc = useMemo(
@@ -837,6 +840,7 @@ function useProfilePageModel(
     handleSteamDisconnect,
     handleSteamSync,
     reloadUserGames,
+    gamesLoading,
   };
 }
 
@@ -1362,6 +1366,7 @@ export default function ProfilePage() {
     handleSteamDisconnect,
     handleSteamSync,
     reloadUserGames,
+    gamesLoading,
   } = useProfilePageModel(collectionFilterId);
 
   const [collections, setCollections] = useState<UserCollection[]>([]);
@@ -2130,6 +2135,7 @@ export default function ProfilePage() {
           singleFilterTitle={singleFilterTitle}
           removeGame={removeGame}
           gameListCollectionProps={gameListCollectionProps}
+          gamesLoading={gamesLoading}
         />
       </Box>
 
