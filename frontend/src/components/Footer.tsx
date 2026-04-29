@@ -2,8 +2,10 @@ import Box from '@mui/material/Box';
 import { Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
@@ -60,7 +62,6 @@ const Footer = () => {
           gap: 3,
         }}
       >
-        {/* Gauche — Logo + nom + tagline */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <Box
             component="img"
@@ -88,12 +89,11 @@ const Footer = () => {
               Ludokan
             </Typography>
             <Typography sx={{ fontSize: 12, color: muted, letterSpacing: 0.3 }}>
-              Votre collection, maîtrisée.
+              {t('footer.tagline')}
             </Typography>
           </Box>
         </Box>
 
-        {/* Centre — Liens */}
         <Box
           sx={{
             display: 'flex',
@@ -102,53 +102,29 @@ const Footer = () => {
             justifyContent: 'center',
           }}
         >
-          <Typography
-            onClick={handleHome}
-            sx={{
-              fontSize: 13,
-              fontWeight: 500,
-              color: muted,
-              letterSpacing: 0.2,
-              cursor: 'pointer',
-              transition: 'color 0.2s ease',
-              '&:hover': { color: accent },
-            }}
-          >
-            Accueil
-          </Typography>
-
-          <Typography
-            onClick={handleSearch}
-            sx={{
-              fontSize: 13,
-              fontWeight: 500,
-              color: muted,
-              letterSpacing: 0.2,
-              cursor: 'pointer',
-              transition: 'color 0.2s ease',
-              '&:hover': { color: accent },
-            }}
-          >
-            Recherche
-          </Typography>
-
-          <Typography
-            onClick={handleAbout}
-            sx={{
-              fontSize: 13,
-              fontWeight: 500,
-              color: muted,
-              letterSpacing: 0.2,
-              cursor: 'pointer',
-              transition: 'color 0.2s ease',
-              '&:hover': { color: accent },
-            }}
-          >
-            À propos
-          </Typography>
+          {[
+            { label: t('footer.home'), handler: handleHome },
+            { label: t('footer.search'), handler: handleSearch },
+            { label: t('footer.about'), handler: handleAbout },
+          ].map(({ label, handler }) => (
+            <Typography
+              key={label}
+              onClick={handler}
+              sx={{
+                fontSize: 13,
+                fontWeight: 500,
+                color: muted,
+                letterSpacing: 0.2,
+                cursor: 'pointer',
+                transition: 'color 0.2s ease',
+                '&:hover': { color: accent },
+              }}
+            >
+              {label}
+            </Typography>
+          ))}
         </Box>
 
-        {/* Droite — copyright */}
         <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
           <Typography
             sx={{
@@ -159,7 +135,7 @@ const Footer = () => {
               color: muted,
             }}
           >
-            © 2026 Ludokan
+            {t('footer.copyright')}
           </Typography>
         </Box>
       </Box>

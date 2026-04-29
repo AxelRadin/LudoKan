@@ -1,10 +1,8 @@
-/* Full-width app root (Vite default max-width removed — it capped the whole UI at 1280px) */
+/* Full-width app root — no padding on #root (layout is handled in App.tsx / pages). */
 #root {
   width: 100%;
   min-height: 100vh;
-  padding: 2rem;
   margin: 0 auto;
-  text-align: center;
 }
 
 .logo {

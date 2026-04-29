@@ -30,6 +30,31 @@ describe('userGames API', () => {
     expect(data).toEqual(mockResponse.results);
   });
 
+  it('fetchUserGames suit les liens next pour agréger toutes les pages', async () => {
+    const page1 = {
+      count: 3,
+      next: 'http://localhost:8000/api/me/games/?page=2',
+      previous: null,
+      results: [{ id: 1, status: 'EN_COURS', game: { id: 101 } }],
+    };
+    const page2 = {
+      count: 3,
+      next: null,
+      previous: 'http://localhost:8000/api/me/games/',
+      results: [
+        { id: 2, status: 'TERMINE', game: { id: 102 } },
+        { id: 3, status: 'ENVIE_DE_JOUER', game: { id: 103 } },
+      ],
+    };
+    vi.mocked(apiGet).mockResolvedValueOnce(page1).mockResolvedValueOnce(page2);
+
+    const data = await fetchUserGames();
+
+    expect(apiGet).toHaveBeenNthCalledWith(1, '/api/me/games/');
+    expect(apiGet).toHaveBeenNthCalledWith(2, '/api/me/games/?page=2');
+    expect(data).toHaveLength(3);
+  });
+
   it("fetchUserGames retourne la donnée directement si ce n'est pas paginé", async () => {
     const mockArray = [{ id: 2, status: 'TERMINE', game: { id: 102 } }];
     vi.mocked(apiGet).mockResolvedValueOnce(mockArray);

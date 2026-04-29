@@ -6,12 +6,13 @@ import Typography from '@mui/material/Typography';
 import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { startGoogleLogin } from '../auth/googleOAuth';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
-import SocialLoginButton from './SocialLoginButton';
+import SocialLoginSection from './SocialLoginSection';
+import { useSocialAuth } from '../hooks/useSocialAuth';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
@@ -24,6 +25,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onSwitchToRegister,
   onLoginSuccess,
 }) => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -32,44 +34,43 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const recaptchaRef = useRef<ReCAPTCHA>(null);
   const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
+  const {
+    error: socialError,
+    handleGoogleClick,
+    handleSteamClick,
+  } = useSocialAuth();
+
+  const displayError = error || socialError;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
 
     if (!email || !password) {
-      setError('Veuillez remplir tous les champs.');
+      setError(t('loginForm.errorFillFields'));
       return;
     }
-
     if (!RECAPTCHA_SITE_KEY) {
-      setError(
-        'reCAPTCHA non configuré : définissez VITE_RECAPTCHA_SITE_KEY (voir frontend/.env.example).'
-      );
+      setError(t('loginForm.errorRecaptchaNotConfigured'));
       return;
     }
-
     if (!captchaToken) {
-      setError('Veuillez valider le reCAPTCHA.');
+      setError(t('loginForm.errorRecaptcha'));
       return;
     }
 
     try {
       setLoading(true);
       await apiPost('/api/auth/login/', {
-        email: email,
-        password: password,
+        email,
+        password,
         recaptcha_token: captchaToken,
       });
-
       setAuthenticated(true);
-      if (onLoginSuccess) {
-        onLoginSuccess();
-      } else {
-        navigate('/', { replace: true });
-      }
+      if (onLoginSuccess) onLoginSuccess();
+      else navigate('/', { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue.');
+      setError(err.message || t('loginForm.errorFallback'));
       recaptchaRef.current?.reset();
       setCaptchaToken(null);
     } finally {
@@ -77,33 +78,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
-  const handleGoogleClick = () => {
-    setError(null);
-    try {
-      startGoogleLogin();
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Connexion Google indisponible.'
-      );
-    }
-  };
-
   return (
     <AuthFormContainer
-      title="Connexion"
-      switchLabel="S’inscrire"
+      title={t('loginForm.title')}
+      switchLabel={t('loginForm.switchLabel')}
       onSwitch={onSwitchToRegister}
     >
       <form onSubmit={handleSubmit}>
         <Stack spacing={2.5} width={320}>
           <TextField
-            label="Email"
+            label={t('loginForm.email')}
             variant="outlined"
             value={email}
             onChange={e => setEmail(e.target.value)}
           />
           <TextField
-            label="Mot de passe"
+            label={t('loginForm.password')}
             type="password"
             variant="outlined"
             value={password}
@@ -117,39 +107,33 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             />
           ) : (
             <Alert severity="warning" sx={{ width: '100%' }}>
-              Variable VITE_RECAPTCHA_SITE_KEY manquante : le login ne peut pas
-              fonctionner.
+              {t('loginForm.recaptchaMissing')}
             </Alert>
           )}
         </Stack>
 
-        {error && (
+        {displayError && (
           <Alert severity="error" sx={{ mt: 2.5, width: 320 }}>
-            {error}
+            {displayError}
           </Alert>
         )}
 
-        <Typography variant="body1" mt={5}>
-          Se connecter avec
-        </Typography>
-
-        <Stack direction="row" spacing={3} mt={1.5}>
-          <SocialLoginButton icon="google" onClick={handleGoogleClick} />
-          <SocialLoginButton icon="apple" />
-          <SocialLoginButton icon="x" />
-          <SocialLoginButton icon="instagram" />
-        </Stack>
+        <SocialLoginSection
+          title="Se connecter avec"
+          onGoogleClick={handleGoogleClick}
+          onSteamClick={handleSteamClick}
+        />
 
         <PrimaryButton
           sx={{ mt: 5, width: 320, height: 48, fontSize: 18 }}
           type="submit"
           disabled={loading}
         >
-          {loading ? 'Connexion...' : 'Se connecter'}
+          {loading ? t('loginForm.submitting') : t('loginForm.submit')}
         </PrimaryButton>
 
         <Typography variant="body2" mt={2}>
-          Tu n&apos;as pas encore de compte ?{' '}
+          {t('loginForm.noAccount')}{' '}
           <Link
             component="button"
             type="button"
@@ -157,31 +141,32 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             underline="hover"
             sx={{ fontWeight: 600 }}
           >
-            Créer un compte
+            {t('loginForm.createAccount')}
           </Link>
         </Typography>
+
         <Typography
           variant="body2"
           mt={2}
           sx={{ width: 320, textAlign: 'center' }}
         >
-          En vous connectant, vous acceptez nos{' '}
+          {t('loginForm.terms')}{' '}
           <Link
             component={RouterLink}
             to="/conditions"
             underline="hover"
             sx={{ fontWeight: 600 }}
           >
-            Conditions d&apos;utilisation
+            {t('loginForm.termsLink')}
           </Link>{' '}
-          et notre{' '}
+          {t('loginForm.and')}{' '}
           <Link
             component={RouterLink}
             to="/politique"
             underline="hover"
             sx={{ fontWeight: 600 }}
           >
-            Politique de confidentialité
+            {t('loginForm.privacyLink')}
           </Link>
           .
         </Typography>

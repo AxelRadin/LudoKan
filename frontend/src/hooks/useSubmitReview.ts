@@ -39,7 +39,9 @@ export function useSubmitReview(): UseSubmitReviewReturn {
 
     const payload: Record<string, unknown> = { game: gameId, content };
     if (title) payload.title = title;
-    if (rating) payload.rating_value = rating;
+    if (rating != null && rating >= 1) {
+      payload.rating_value = Math.round(rating);
+    }
 
     try {
       let result: ReviewResult;

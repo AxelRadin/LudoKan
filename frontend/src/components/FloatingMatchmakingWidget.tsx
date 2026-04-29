@@ -1,6 +1,7 @@
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import { Box, Paper, Typography } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useTranslation } from 'react-i18next';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 
 interface FloatingMatchmakingWidgetProps {
@@ -14,6 +15,7 @@ export default function FloatingMatchmakingWidget({
   hasNewMatch,
   onClick,
 }: FloatingMatchmakingWidgetProps) {
+  const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
 
   if (!startedAt) return null;
@@ -65,7 +67,9 @@ export default function FloatingMatchmakingWidget({
           variant="body2"
           sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
         >
-          {hasNewMatch ? 'Joueur trouvé !' : 'Recherche en cours...'}
+          {hasNewMatch
+            ? t('matchmakingWidget.found')
+            : t('matchmakingWidget.searching')}
         </Typography>
         <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: 600 }}>
           {elapsedTime}

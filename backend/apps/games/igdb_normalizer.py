@@ -1,8 +1,10 @@
 from datetime import datetime
 from typing import Any
 
+from django.db.models import Prefetch
+
 from apps.games.models import Game, Rating
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
 
 
 def _extract_release_date(first_release_date: Any) -> str | None:
@@ -80,7 +82,7 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
     name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
 
-    return {
+    out = {
         "igdb_id": igdb_id,
         "django_id": None,
         "name": name,
@@ -97,6 +99,13 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "screenshots": _extract_screenshots(g.get("screenshots")),
         "videos": g.get("videos") or [],
     }
+    if "_ludokan_min_age" in g:
+        out["min_age"] = g.get("_ludokan_min_age")
+    if "_ludokan_min_players" in g:
+        out["min_players"] = g.get("_ludokan_min_players")
+    if "_ludokan_max_players" in g:
+        out["max_players"] = g.get("_ludokan_max_players")
+    return out
 
 
 def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -> list[dict[str, Any]]:
@@ -120,7 +129,16 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
     user_games_map = {}
     ratings_map = {}
     if user and user.is_authenticated:
-        user_games = UserGame.objects.filter(user=user, game__igdb_id__in=igdb_ids)
+        user_games = UserGame.objects.filter(user=user, game__igdb_id__in=igdb_ids).prefetch_related(
+            Prefetch(
+                "library_entries",
+                queryset=UserLibraryEntry.objects.select_related("library").only(
+                    "library_id",
+                    "user_game_id",
+                    "library__system_key",
+                ),
+            )
+        )
         user_games_map = {ug.game.igdb_id: ug for ug in user_games}
 
         user_ratings = Rating.objects.filter(user=user, game__igdb_id__in=igdb_ids)
@@ -138,8 +156,12 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
         if igdb_id in user_games_map:
             ug = user_games_map[igdb_id]
             g["user_library"] = {
+                "id": ug.id,
                 "status": ug.status,
                 "is_favorite": ug.is_favorite,
+                "collection_ids": [
+                    e.library_id for e in ug.library_entries.all() if getattr(e.library, "system_key", None) != UserLibrary.SystemKey.MA_LUDOTHEQUE
+                ],
             }
 
         if igdb_id in ratings_map:

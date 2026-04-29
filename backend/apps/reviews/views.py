@@ -1,15 +1,90 @@
+from urllib.parse import urlencode
+
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
+from apps.games.models import Rating
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.permissions import CanDeleteReview, CanEditReport, CanEditReview, CanReadReport, CanReadReview
-from apps.reviews.serializers import ContentReportAdminSerializer, ContentReportCreateSerializer, ReviewReadSerializer, ReviewWriteSerializer
+from apps.reviews.serializers import (
+    ContentReportAdminSerializer,
+    ContentReportCreateSerializer,
+    ReviewReadSerializer,
+    ReviewWriteSerializer,
+    build_rating_only_review_entry,
+)
 from apps.users.utils import log_admin_action
+
+
+def _parse_optional_query_int(raw: str | None) -> int | None:
+    """Entier depuis un query param ; None si absent ou non convertible."""
+    if raw is None:
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_rating_value_filter(raw: str | None) -> int | None:
+    """Retourne un entier 1–5 si le paramètre est valide, sinon None."""
+    if raw is None:
+        return None
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if 1 <= v <= 5:
+        return v
+    return None
+
+
+def _parse_list_page(raw_page: str | None) -> int:
+    try:
+        return max(1, int(raw_page or 1))
+    except (TypeError, ValueError):
+        return 1
+
+
+def _merged_review_rows_for_game(game_id: int, rating_val: int | None) -> list[tuple[str, Review | Rating]]:
+    """Avis texte + notes orphelines, triées par date_created décroissante."""
+    reviews_qs = Review.objects.select_related("user", "game", "rating").filter(game_id=game_id).order_by("-date_created")
+    if rating_val is not None:
+        reviews_qs = reviews_qs.filter(rating__value=rating_val)
+
+    reviewed_user_ids = Review.objects.filter(game_id=game_id).values_list("user_id", flat=True)
+    orphans_qs = (
+        Rating.objects.select_related("user", "game")
+        .filter(game_id=game_id, rating_type=Rating.RATING_TYPE_ETOILES)
+        .exclude(user_id__in=reviewed_user_ids)
+        .order_by("-date_created")
+    )
+    if rating_val is not None:
+        orphans_qs = orphans_qs.filter(value=rating_val)
+
+    rows: list[tuple[str, Review | Rating]] = [("rev", r) for r in reviews_qs]
+    rows.extend(("rt", rt) for rt in orphans_qs)
+    rows.sort(key=lambda t: t[1].date_created, reverse=True)
+    return rows
+
+
+def _reviews_merged_page_url(request, game_id_int: int, page: int, rating_val: int | None) -> str:
+    pdict: dict[str, str] = {"game": str(game_id_int), "page": str(page)}
+    if rating_val is not None:
+        pdict["rating_value"] = str(rating_val)
+    return f"{request.path}?{urlencode(pdict)}"
+
+
+def _serialize_merged_row(kind: str, obj: Review | Rating, ctx: dict, request) -> dict:
+    if kind == "rev":
+        return ReviewReadSerializer(obj, context=ctx).data
+    return build_rating_only_review_entry(obj, request)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -27,6 +102,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     Filtres disponibles :
     - ?game=<id>  : Filtrer par jeu
     - ?user=<id>  : Filtrer par utilisateur
+    - ?rating_value=<1-5>  : Filtre sur la note (avis + entrées « note seule » sans texte)
     """
 
     queryset = Review.objects.select_related("user", "game", "rating").all()
@@ -48,18 +124,61 @@ class ReviewViewSet(viewsets.ModelViewSet):
         - /api/reviews/?user=3
         """
         queryset = super().get_queryset()
+        params = self.request.query_params
 
-        # Filtre par jeu
-        game_id = self.request.query_params.get("game")
-        if game_id:
-            queryset = queryset.filter(game_id=game_id)
+        gid = _parse_optional_query_int(params.get("game"))
+        if gid is not None:
+            queryset = queryset.filter(game_id=gid)
 
-        # Filtre par utilisateur
-        user_id = self.request.query_params.get("user")
-        if user_id:
-            queryset = queryset.filter(user_id=user_id)
+        uid = _parse_optional_query_int(params.get("user"))
+        if uid is not None:
+            queryset = queryset.filter(user_id=uid)
+
+        stars = _parse_rating_value_filter(params.get("rating_value"))
+        if stars is not None:
+            queryset = queryset.filter(rating__value=stars)
 
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """
+        Liste fusionnée : avis du jeu + notes étoiles sans avis texte (même forme JSON),
+        tri par date, pagination identique à DRF. Sauté si ?user= (ex. avis de l'utilisateur).
+        """
+        game_id = request.query_params.get("game")
+        user_filter = request.query_params.get("user")
+        if not game_id or user_filter is not None:
+            return super().list(request, *args, **kwargs)
+
+        try:
+            game_id_int = int(game_id)
+        except (TypeError, ValueError):
+            return super().list(request, *args, **kwargs)
+
+        rating_val = _parse_rating_value_filter(request.query_params.get("rating_value"))
+        page = _parse_list_page(request.query_params.get("page"))
+        page_size = api_settings.PAGE_SIZE
+
+        rows = _merged_review_rows_for_game(game_id_int, rating_val)
+        total = len(rows)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_rows = rows[start:end]
+
+        ctx = self.get_serializer_context()
+        results = [_serialize_merged_row(kind, obj, ctx, request) for kind, obj in page_rows]
+
+        previous = _reviews_merged_page_url(request, game_id_int, page - 1, rating_val) if page > 1 else None
+        next_url = _reviews_merged_page_url(request, game_id_int, page + 1, rating_val) if end < total else None
+
+        return Response(
+            {
+                "count": total,
+                "next": request.build_absolute_uri(next_url) if next_url else None,
+                "previous": request.build_absolute_uri(previous) if previous else None,
+                "results": results,
+            }
+        )
 
     def perform_create(self, serializer):
         """

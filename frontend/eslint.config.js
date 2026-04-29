@@ -8,7 +8,7 @@ import tseslint from 'typescript-eslint';
 export default [
   // Ignore build and dependency directories
   {
-    ignores: ['dist/**', 'node_modules/**', 'build/**'],
+    ignores: ['dist/**', 'node_modules/**', 'build/**', '**/*.css'],
   },
 
   // JavaScript/TypeScript/React files

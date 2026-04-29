@@ -4,6 +4,7 @@ import { useTheme } from '@mui/material/styles';
 import type { ReactNode } from 'react';
 import { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
@@ -58,7 +59,6 @@ type SectionLabelProps = Readonly<{
   linkState?: object;
 }>;
 
-/* ── Section header ── */
 function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -67,20 +67,6 @@ function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
 
   return (
     <Box sx={{ mb: 3, position: 'relative' }}>
-      {/* <Box
-        sx={{
-          position: 'absolute',
-          left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '3px',
-          height: '70%',
-          background: `linear-gradient(to bottom, transparent, ${accentColor}, transparent)`,
-          borderRadius: '2px',
-          opacity: 0.7,
-        }}
-      /> */}
-
       <Box sx={{ pl: '18px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
           <Box
@@ -106,7 +92,6 @@ function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
             {label}
           </Typography>
         </Box>
-
         <Box sx={{ position: 'relative', display: 'inline-block' }}>
           <Typography
             {...(to ? { component: Link, to, state: linkState } : {})}
@@ -126,10 +111,7 @@ function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
               '&:active': { color: inkColor },
               '&:focus': { color: inkColor, outline: 'none' },
               ...(to && {
-                '&:hover': {
-                  color: accentColor,
-                  letterSpacing: 0,
-                },
+                '&:hover': { color: accentColor, letterSpacing: 0 },
               }),
             }}
           >
@@ -153,34 +135,6 @@ function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
             />
           )}
         </Box>
-
-        {/* <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box
-            sx={{
-              width: 40,
-              height: '1px',
-              background: `linear-gradient(to right, ${accentColor}, transparent)`,
-              opacity: isDark ? 0.5 : 0.35,
-            }}
-          />
-          <Box
-            sx={{
-              width: 4,
-              height: 4,
-              borderRadius: '50%',
-              background: accentColor,
-              opacity: isDark ? 0.5 : 0.35,
-            }}
-          />
-          <Box
-            sx={{
-              width: 20,
-              height: '1px',
-              background: `linear-gradient(to right, ${accentColor}, transparent)`,
-              opacity: isDark ? 0.25 : 0.18,
-            }}
-          />
-        </Box> */}
       </Box>
     </Box>
   );
@@ -192,7 +146,6 @@ type SectionProps = Readonly<{
   coverUrl?: string;
 }>;
 
-/* ── Section avec fond jaquette ── */
 function Section({ children, className, coverUrl }: SectionProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -255,20 +208,18 @@ function Section({ children, className, coverUrl }: SectionProps) {
           }}
         />
       )}
-
       <Box
         sx={{
           position: 'absolute',
           inset: 0,
           background: isDark
-            ? `linear-gradient(135deg, rgba(198,40,40,0.35) 0%, rgba(120,20,20,0.75) 100%)`
-            : `linear-gradient(135deg, rgba(198,40,40,0.18) 0%, rgba(255,220,220,0.75) 100%)`,
+            ? 'linear-gradient(135deg, rgba(198,40,40,0.35) 0%, rgba(120,20,20,0.75) 100%)'
+            : 'linear-gradient(135deg, rgba(198,40,40,0.18) 0%, rgba(255,220,220,0.75) 100%)',
           backdropFilter: 'blur(8px) saturate(140%)',
           WebkitBackdropFilter: 'blur(8px) saturate(140%)',
           zIndex: 1,
         }}
       />
-
       <Box
         sx={{
           position: 'absolute',
@@ -281,7 +232,6 @@ function Section({ children, className, coverUrl }: SectionProps) {
           zIndex: 2,
         }}
       />
-
       <Box
         sx={{
           position: 'relative',
@@ -296,6 +246,7 @@ function Section({ children, className, coverUrl }: SectionProps) {
 }
 
 export const HomePage = () => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
@@ -304,6 +255,7 @@ export const HomePage = () => {
 
   const handleGenreClick = (id: number, name: string) => {
     navigate(`/trending/genre/${id}`, { state: { genreName: name } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -313,20 +265,20 @@ export const HomePage = () => {
         fontFamily: F,
         background: isDark
           ? `
-              url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
-              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 28%),
-              radial-gradient(circle at 86% 16%, rgba(120,20,20,0.18) 0%, transparent 28%),
-              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.07) 0%, transparent 24%),
-              linear-gradient(180deg, ${C.darkBgBase} 0%, ${C.darkBgSoft} 55%, ${C.darkBgWarm} 100%)
-            `
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
+            radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 28%),
+            radial-gradient(circle at 86% 16%, rgba(120,20,20,0.18) 0%, transparent 28%),
+            radial-gradient(circle at 78% 84%, rgba(198,40,40,0.07) 0%, transparent 24%),
+            linear-gradient(180deg, ${C.darkBgBase} 0%, ${C.darkBgSoft} 55%, ${C.darkBgWarm} 100%)
+          `
           : `
-              url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
-              radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
-              radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 24%),
-              radial-gradient(circle at 86% 16%, rgba(255,210,210,0.80) 0%, transparent 26%),
-              radial-gradient(circle at 78% 84%, rgba(198,40,40,0.08) 0%, transparent 24%),
-              linear-gradient(180deg, ${C.bgBase} 0%, ${C.bgSoft} 55%, ${C.bgWarm} 100%)
-            `,
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.022'/%3E%3C/svg%3E"),
+            radial-gradient(ellipse 120% 80% at 0% 0%, rgba(255,255,255,0.92) 0%, transparent 46%),
+            radial-gradient(circle at 14% 18%, rgba(198,40,40,0.10) 0%, transparent 24%),
+            radial-gradient(circle at 86% 16%, rgba(255,210,210,0.80) 0%, transparent 26%),
+            radial-gradient(circle at 78% 84%, rgba(198,40,40,0.08) 0%, transparent 24%),
+            linear-gradient(180deg, ${C.bgBase} 0%, ${C.bgSoft} 55%, ${C.bgWarm} 100%)
+          `,
       }}
     >
       <Box
@@ -343,8 +295,8 @@ export const HomePage = () => {
           coverUrl={sections.recent.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
-            label="Découverte"
-            title="Jeux les plus récents"
+            label={t('homePage.recentLabel')}
+            title={t('homePage.recentTitle')}
             to="/trending/recent"
           />
           <TrendingGames
@@ -358,8 +310,8 @@ export const HomePage = () => {
           coverUrl={sections.rating.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
-            label="Excellence"
-            title="Jeux les mieux notés"
+            label={t('homePage.ratingLabel')}
+            title={t('homePage.ratingTitle')}
             to="/trending/rating"
           />
           <TrendingGames
@@ -373,8 +325,8 @@ export const HomePage = () => {
           coverUrl={sections.popularity.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
-            label="Tendances"
-            title="Jeux les plus populaires"
+            label={t('homePage.popularityLabel')}
+            title={t('homePage.popularityTitle')}
             to="/trending/popularity"
           />
           <TrendingGames
@@ -404,7 +356,7 @@ export const HomePage = () => {
                 transition: 'color 0.3s ease',
               }}
             >
-              Explorer par genre
+              {t('homePage.exploreByGenre')}
             </Typography>
             <Box
               sx={{
@@ -425,10 +377,9 @@ export const HomePage = () => {
                 transition: 'color 0.3s ease',
               }}
             >
-              Tous les genres
+              {t('homePage.allGenres')}
             </Typography>
           </Box>
-
           <Section>
             <GenreGrid onGenreClick={handleGenreClick} />
           </Section>
