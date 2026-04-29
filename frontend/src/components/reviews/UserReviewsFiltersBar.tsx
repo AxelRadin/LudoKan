@@ -5,10 +5,10 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  SelectChangeEvent,
   Stack,
   TextField,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_USER_REVIEWS_FILTERS,
