@@ -413,6 +413,27 @@
     "playedRatioLabel": "% jeux joués",
     "totalGamesLabel": "Total jeux"
   },
+  "userReviewsPage": {
+    "filterRating": "Note",
+    "allRatings": "Toutes les notes",
+    "starsOption": "{{n}} étoiles",
+    "noRatingOption": "Sans note",
+    "filterSort": "Tri",
+    "sortRecent": "Plus récents",
+    "sortOldest": "Plus anciens",
+    "sortRecentEdit": "Dernière modification",
+    "searchGameLabel": "Jeu",
+    "searchGamePlaceholder": "Nom du jeu…",
+    "resetFilters": "Réinitialiser les filtres",
+    "emptyNone": "Tu n'as pas encore publié d'avis.",
+    "emptyFiltered": "Aucun avis ne correspond à ces filtres.",
+    "bannerStarFilter": "Filtre actif : avis notés {{stars}} étoile(s).",
+    "bannerNoRatingFilter": "Filtre actif : avis sans note.",
+    "clickToOpenGame": "Clique pour ouvrir la fiche du jeu",
+    "deleteConfirmTitle": "Supprimer cet avis ?",
+    "deleteCancel": "Annuler",
+    "deleteConfirm": "Supprimer"
+  },
   "about": {
     "heroTitle": "Votre univers gaming,",
     "heroTitleAccent": "maîtrisé.",

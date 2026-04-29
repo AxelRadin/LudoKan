@@ -1,6 +1,10 @@
 import i18n from 'i18next';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiGet } from '../services/api';
+import {
+  buildUserReviewsListUrl,
+  type UserReviewsListFilters,
+} from '../constants/userReviewsFilters';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
@@ -54,6 +58,36 @@ function toApiPath(nextUrl: string | null): string | null {
   }
 }
 
+function useDebouncedSearch(search: string, ms: number): string {
+  const [debounced, setDebounced] = useState(search);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(search), ms);
+    return () => clearTimeout(id);
+  }, [search, ms]);
+  return debounced;
+}
+
+function reviewMatchesFilters(
+  review: ReviewItem,
+  f: UserReviewsListFilters
+): boolean {
+  if (f.ratingFilter === 'none') {
+    if (review.rating != null && review.rating.value != null) {
+      return false;
+    }
+  } else if (f.ratingFilter !== 'all') {
+    const v = review.rating?.value;
+    if (v == null || Math.round(Number(v)) !== f.ratingFilter) {
+      return false;
+    }
+  }
+  const q = f.search.trim().toLowerCase();
+  if (q && !(review.game.name || '').toLowerCase().includes(q)) {
+    return false;
+  }
+  return true;
+}
+
 type UseUserReviewsReturn = {
   reviews: ReviewItem[];
   totalCount: number;
@@ -68,7 +102,24 @@ type UseUserReviewsReturn = {
   refresh: () => void;
 };
 
-export function useUserReviews(userId: number | null): UseUserReviewsReturn {
+export function useUserReviews(
+  userId: number | null,
+  filters: UserReviewsListFilters
+): UseUserReviewsReturn {
+  const searchDebounced = useDebouncedSearch(filters.search, 400);
+  const effectiveFilters = useMemo(
+    (): UserReviewsListFilters => ({
+      ...filters,
+      search: searchDebounced,
+    }),
+    [filters.ratingFilter, filters.ordering, searchDebounced]
+  );
+
+  const listUrl = useMemo(() => {
+    if (!userId) return null;
+    return buildUserReviewsListUrl(userId, effectiveFilters);
+  }, [userId, effectiveFilters]);
+
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
@@ -78,7 +129,7 @@ export function useUserReviews(userId: number | null): UseUserReviewsReturn {
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || !listUrl) {
       setReviews([]);
       setTotalCount(0);
       setNextUrl(null);
@@ -95,7 +146,7 @@ export function useUserReviews(userId: number | null): UseUserReviewsReturn {
     setError(null);
     setLoadMoreError(null);
 
-    apiGet(`/api/reviews/?user=${userId}`)
+    apiGet(listUrl)
       .then((data: ReviewItem[] | PaginatedReviews) => {
         if (cancelled) return;
         if (Array.isArray(data)) {
@@ -124,7 +175,7 @@ export function useUserReviews(userId: number | null): UseUserReviewsReturn {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, listUrl]);
 
   const loadMorePage = useCallback(async () => {
     const path = toApiPath(nextUrl);
@@ -149,12 +200,12 @@ export function useUserReviews(userId: number | null): UseUserReviewsReturn {
   }, [nextUrl, isLoadingMore]);
 
   const refresh = useCallback(() => {
-    if (!userId) return;
+    if (!userId || !listUrl) return;
     setIsLoading(true);
     setIsLoadingMore(false);
     setError(null);
     setLoadMoreError(null);
-    apiGet(`/api/reviews/?user=${userId}`)
+    apiGet(listUrl)
       .then((data: ReviewItem[] | PaginatedReviews) => {
         if (Array.isArray(data)) {
           setReviews(data);
@@ -172,10 +223,13 @@ export function useUserReviews(userId: number | null): UseUserReviewsReturn {
       })
       .catch(() => setError(i18n.t('gamePageBody.reviewsLoadError')))
       .finally(() => setIsLoading(false));
-  }, [userId]);
+  }, [userId, listUrl]);
 
   function updateReview(review: ReviewItem) {
-    setReviews(prev => prev.map(r => (r.id === review.id ? review : r)));
+    setReviews(prev => {
+      const mapped = prev.map(r => (r.id === review.id ? review : r));
+      return mapped.filter(r => reviewMatchesFilters(r, effectiveFilters));
+    });
   }
 
   function removeReview(reviewId: number) {

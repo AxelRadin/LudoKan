@@ -8,15 +8,21 @@ import {
   Paper,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
+import {
+  DEFAULT_USER_REVIEWS_FILTERS,
+  userReviewsFiltersActive,
+  type UserReviewsListFilters,
+} from '../constants/userReviewsFilters';
 import { useUserReviews, type ReviewItem } from '../hooks/useUserReviews';
 import { apiDelete } from '../services/api';
 import PageLayout from '../components/PageLayout';
 import ReviewCard from '../components/reviews/ReviewCard';
 import ReviewForm from '../components/reviews/ReviewForm';
+import UserReviewsFiltersBar from '../components/reviews/UserReviewsFiltersBar';
 
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -25,6 +31,11 @@ export default function UserReviewsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [filters, setFilters] = useState(DEFAULT_USER_REVIEWS_FILTERS);
+  const patchFilters = useCallback((patch: Partial<UserReviewsListFilters>) => {
+    setFilters(prev => ({ ...prev, ...patch }));
+  }, []);
+
   const {
     reviews,
     totalCount,
@@ -36,7 +47,9 @@ export default function UserReviewsPage() {
     loadMorePage,
     removeReview,
     updateReview,
-  } = useUserReviews(user?.id ?? null);
+  } = useUserReviews(user?.id ?? null, filters);
+
+  const filtersActive = userReviewsFiltersActive(filters);
 
   const [editingReview, setEditingReview] = useState<ReviewItem | null>(null);
   const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
@@ -87,7 +100,9 @@ export default function UserReviewsPage() {
     if (totalCount === 0) {
       return (
         <Typography align="center" color="text.secondary">
-          Vous n'avez pas encore publié d'avis.
+          {filtersActive
+            ? t('userReviewsPage.emptyFiltered')
+            : t('userReviewsPage.emptyNone')}
         </Typography>
       );
     }
@@ -148,7 +163,7 @@ export default function UserReviewsPage() {
                     color: 'text.secondary',
                   }}
                 >
-                  Cliquez pour voir le jeu
+                  {t('userReviewsPage.clickToOpenGame')}
                 </Typography>
               </Box>
             </Paper>
@@ -222,7 +237,35 @@ export default function UserReviewsPage() {
 
   return (
     <PageLayout title={t('profilePage.reviewsLabel')}>
-      <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>{renderContent()}</Box>
+      <Box sx={{ maxWidth: 800, mx: 'auto', py: 4 }}>
+        {user ? (
+          <UserReviewsFiltersBar
+            filters={filters}
+            onPatch={patchFilters}
+            disabled={isLoading}
+          />
+        ) : null}
+        {typeof filters.ratingFilter === 'number' ? (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.6 }}
+          >
+            {t('userReviewsPage.bannerStarFilter', {
+              stars: filters.ratingFilter,
+            })}
+          </Typography>
+        ) : filters.ratingFilter === 'none' ? (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 2, lineHeight: 1.6 }}
+          >
+            {t('userReviewsPage.bannerNoRatingFilter')}
+          </Typography>
+        ) : null}
+        {renderContent()}
+      </Box>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -233,14 +276,14 @@ export default function UserReviewsPage() {
         }}
       >
         <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-          Supprimer cet avis ?
+          {t('userReviewsPage.deleteConfirmTitle')}
         </DialogTitle>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button
             onClick={() => setReviewToDelete(null)}
             sx={{ borderRadius: 2 }}
           >
-            Annuler
+            {t('userReviewsPage.deleteCancel')}
           </Button>
           <Button
             color="error"
@@ -249,7 +292,7 @@ export default function UserReviewsPage() {
             onClick={handleDeleteConfirm}
             sx={{ borderRadius: 2 }}
           >
-            Supprimer
+            {t('userReviewsPage.deleteConfirm')}
           </Button>
         </DialogActions>
       </Dialog>
