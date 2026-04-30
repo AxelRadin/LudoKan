@@ -15,7 +15,16 @@ describe('ReviewSection', () => {
   it("affiche le formulaire si l'utilisateur n'a pas d'avis", () => {
     vi.mocked(useReviews).mockReturnValue({
       reviews: [],
+      totalCount: 0,
       isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      loadMoreError: null,
+      hasNext: false,
+      loadMorePage: vi.fn(),
+      addReview: vi.fn(),
+      updateReview: vi.fn(),
+      removeReview: vi.fn(),
     } as any);
 
     render(
@@ -32,7 +41,16 @@ describe('ReviewSection', () => {
   it("affiche la ReviewCard si l'utilisateur a déjà un avis", () => {
     vi.mocked(useReviews).mockReturnValue({
       reviews: [{ id: 10, user: { id: 99 } }],
+      totalCount: 1,
       isLoading: false,
+      isLoadingMore: false,
+      error: null,
+      loadMoreError: null,
+      hasNext: false,
+      loadMorePage: vi.fn(),
+      addReview: vi.fn(),
+      updateReview: vi.fn(),
+      removeReview: vi.fn(),
     } as any);
 
     render(

@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
-import { apiGet } from '../services/api';
+import { useMemo } from 'react';
+import { useReviewsPaginatedQuery } from './useReviewsPaginatedQuery';
 
 type ReviewUser = { id: number; pseudo?: string; username?: string };
 type ReviewRating = { value: number };
 
 export type ReviewItem = {
   id: number;
+  /** Entrée liste « note seule » (pas d’avis texte), id = 1e9 + rating.id côté API */
+  rating_only?: boolean;
   user?: ReviewUser;
   content: string;
   title?: string;
@@ -14,43 +16,93 @@ export type ReviewItem = {
   created_at?: string;
 };
 
+function reviewMatchesStarFilter(review: ReviewItem, stars: number): boolean {
+  const v = review.rating?.value;
+  if (v == null) return false;
+  return Math.round(Number(v)) === stars;
+}
+
+function buildReviewsListUrl(
+  gameId: string,
+  page: number,
+  reviewStarFilter: number | null
+): string {
+  const params = new URLSearchParams();
+  params.set('game', gameId);
+  params.set('page', String(page));
+  if (reviewStarFilter != null) {
+    params.set('rating_value', String(reviewStarFilter));
+  }
+  return `/api/reviews/?${params.toString()}`;
+}
+
 type UseReviewsReturn = {
   reviews: ReviewItem[];
+  totalCount: number;
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
+  loadMoreError: string | null;
+  hasNext: boolean;
+  loadMorePage: () => void;
   addReview: (review: ReviewItem) => void;
   updateReview: (review: ReviewItem) => void;
   removeReview: (reviewId: number) => void;
 };
 
-export function useReviews(gameId: string | null): UseReviewsReturn {
-  const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export function useReviews(
+  gameId: string | null,
+  reviewStarFilter: number | null = null
+): UseReviewsReturn {
+  const listUrl = useMemo(
+    () => (gameId ? buildReviewsListUrl(gameId, 1, reviewStarFilter) : null),
+    [gameId, reviewStarFilter]
+  );
 
-  useEffect(() => {
-    if (!gameId) return;
-    setIsLoading(true);
-    setError(null);
-    apiGet(`/api/reviews/?game=${gameId}`)
-      .then((data: ReviewItem[] | { results: ReviewItem[] }) => {
-        setReviews(Array.isArray(data) ? data : data.results);
-      })
-      .catch(() => setError('Impossible de charger les avis.'))
-      .finally(() => setIsLoading(false));
-  }, [gameId]);
+  const {
+    reviews,
+    setReviews,
+    totalCount,
+    setTotalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    removeReview,
+  } = useReviewsPaginatedQuery<ReviewItem>(listUrl);
 
   function addReview(review: ReviewItem) {
+    if (
+      reviewStarFilter != null &&
+      !reviewMatchesStarFilter(review, reviewStarFilter)
+    ) {
+      return;
+    }
     setReviews(prev => [review, ...prev]);
+    setTotalCount(c => c + 1);
   }
 
   function updateReview(review: ReviewItem) {
-    setReviews(prev => prev.map(r => (r.id === review.id ? review : r)));
+    setReviews(prev => {
+      const mapped = prev.map(r => (r.id === review.id ? review : r));
+      if (reviewStarFilter == null) return mapped;
+      return mapped.filter(r => reviewMatchesStarFilter(r, reviewStarFilter));
+    });
   }
 
-  function removeReview(reviewId: number) {
-    setReviews(prev => prev.filter(r => r.id !== reviewId));
-  }
-
-  return { reviews, isLoading, error, addReview, updateReview, removeReview };
+  return {
+    reviews,
+    totalCount,
+    isLoading,
+    isLoadingMore,
+    error,
+    loadMoreError,
+    hasNext,
+    loadMorePage,
+    addReview,
+    updateReview,
+    removeReview,
+  };
 }

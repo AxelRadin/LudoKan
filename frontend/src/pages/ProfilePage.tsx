@@ -26,7 +26,7 @@ import {
   type ChangeEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import {
@@ -47,7 +47,7 @@ import {
   removeGameFromCollection,
   type UserCollection,
 } from '../api/collections';
-import { deleteUserGame } from '../api/userGames';
+import { deleteUserGame, fetchUserGames } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
@@ -119,14 +119,19 @@ type UserProfile = {
   description_courte?: string;
   created_at?: string;
   steam_id?: string | null;
+  review_count?: number;
+  total_playtime?: number;
+  games_finished_percentage?: number;
+  games_played_percentage?: number;
+  total_games_count?: number;
 };
 
 type UserGame = {
   id: number;
   collection_ids?: number[];
   status: string;
-  is_favorite: boolean;
-  date_added: string;
+  is_favorite?: boolean;
+  date_added?: string;
   playtime_forever?: number | null;
   game: {
     id: number;
@@ -212,6 +217,118 @@ function validateAvatarFile(file: File): string {
     return 'Format HEIC non pris en charge. Exporte en JPG ou PNG.';
   return 'Format invalide. JPG, PNG ou WEBP uniquement.';
 }
+
+type ProfileSectionHeaderProps = {
+  label: string;
+};
+
+const ProfileSectionHeader = ({ label }: ProfileSectionHeaderProps) => {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+      <Typography
+        sx={{
+          fontFamily: FONT_DISPLAY,
+          fontWeight: 700,
+          fontSize: 18,
+          color: C.title,
+          letterSpacing: -0.3,
+        }}
+      >
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          flex: 1,
+          height: '1px',
+          background: `linear-gradient(to right, ${C.border}, transparent)`,
+        }}
+      />
+    </Box>
+  );
+};
+
+type ProfileStatCardProps = {
+  label: string;
+  value: string | null | undefined;
+  cls: string;
+  loading?: boolean;
+  onClick?: () => void;
+  clickable?: boolean;
+  smallValue?: boolean;
+};
+
+const ProfileStatCard = ({
+  label,
+  value,
+  cls,
+  loading,
+  onClick,
+  clickable,
+  smallValue,
+}: ProfileStatCardProps) => {
+  return (
+    <Paper
+      elevation={0}
+      className={cls}
+      onClick={onClick}
+      sx={{
+        ...glassCard,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4,
+        gap: 1,
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: clickable ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        '&:hover': clickable
+          ? {
+              transform: 'translateY(-5px)',
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+            }
+          : glassCard['&:hover'],
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '40%',
+          height: '2px',
+          background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
+        },
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: FONT_BODY,
+          color: C.light,
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: 1.8,
+          textTransform: 'uppercase',
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: FONT_DISPLAY,
+          color: C.title,
+          fontSize: smallValue ? 22 : 28,
+          fontWeight: 900,
+          letterSpacing: -0.4,
+        }}
+      >
+        {loading ? '...' : value || 'N/A'}
+      </Typography>
+    </Paper>
+  );
+};
+
 type ProfilePageModel = {
   user: UserProfile | null;
   loading: boolean;
@@ -244,6 +361,7 @@ type ProfilePageModel = {
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
   reloadUserGames: () => Promise<void>;
+  gamesLoading: boolean;
 };
 
 function useProfilePageModel(
@@ -269,6 +387,7 @@ function useProfilePageModel(
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   // Sync with global user if it updates (e.g. email from ForcedEmailModal)
   useEffect(() => {
@@ -330,8 +449,7 @@ function useProfilePageModel(
 
   const reloadUserGames = useCallback(async () => {
     try {
-      const res = await apiGet('/api/me/games/');
-      setUserGames(res.results || res || []);
+      setUserGames((await fetchUserGames()) as UserGame[]);
     } catch {
       // ignore
     }
@@ -368,11 +486,11 @@ function useProfilePageModel(
       const pollInterval = setInterval(async () => {
         polls++;
         try {
-          const [gamesRes, meRes] = await Promise.all([
-            apiGet('/api/me/games/'),
+          const [games, meRes] = await Promise.all([
+            fetchUserGames(),
             apiGet('/api/me/'),
           ]);
-          setUserGames(gamesRes.results || gamesRes || []);
+          setUserGames(games as UserGame[]);
           setUser(meRes);
         } catch {
           /* ignore */
@@ -408,9 +526,10 @@ function useProfilePageModel(
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-    apiGet('/api/me/games/').then(res =>
-      setUserGames(res.results || res || [])
-    );
+    fetchUserGames()
+      .then(games => setUserGames(games as UserGame[]))
+      .catch(() => {})
+      .finally(() => setGamesLoading(false));
   }, []);
 
   const avatarSrc = useMemo(
@@ -721,6 +840,7 @@ function useProfilePageModel(
     handleSteamDisconnect,
     handleSteamSync,
     reloadUserGames,
+    gamesLoading,
   };
 }
 
@@ -1059,26 +1179,7 @@ function ProfileIntegrations({
 
   return (
     <Box sx={{ mb: 2.5 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-        <Typography
-          sx={{
-            fontFamily: FONT_DISPLAY,
-            fontWeight: 700,
-            fontSize: 18,
-            color: C.title,
-            letterSpacing: -0.3,
-          }}
-        >
-          {t('profilePage.integrationsLabel')}
-        </Typography>
-        <Box
-          sx={{
-            flex: 1,
-            height: '1px',
-            background: `linear-gradient(to right, ${C.border}, transparent)`,
-          }}
-        />
-      </Box>
+      <ProfileSectionHeader label={t('profilePage.integrationsLabel')} />
       <Paper
         elevation={0}
         sx={{
@@ -1223,6 +1324,7 @@ function ProfileIntegrations({
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const collectionFilterId = useMemo(
     () =>
@@ -1264,6 +1366,7 @@ export default function ProfilePage() {
     handleSteamDisconnect,
     handleSteamSync,
     reloadUserGames,
+    gamesLoading,
   } = useProfilePageModel(collectionFilterId);
 
   const [collections, setCollections] = useState<UserCollection[]>([]);
@@ -1922,26 +2025,7 @@ export default function ProfilePage() {
 
         {/* STATS */}
         <Box sx={{ mb: 2.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 18,
-                color: C.title,
-                letterSpacing: -0.3,
-              }}
-            >
-              {t('profilePage.infoLabel')}
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${C.border}, transparent)`,
-              }}
-            />
-          </Box>
+          <ProfileSectionHeader label={t('profilePage.infoLabel')} />
           <Box
             sx={{
               display: 'grid',
@@ -1951,14 +2035,16 @@ export default function ProfilePage() {
           >
             {[
               {
-                label: t('profilePage.firstNameLabel'),
-                value: user?.first_name,
+                label: t('profilePage.playtimeLabel'),
+                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
                 cls: 'stat-card-0',
               },
               {
-                label: t('profilePage.lastNameLabel'),
-                value: user?.last_name,
+                label: t('profilePage.reviewsLabel'),
+                value: user?.review_count?.toString() || '0',
                 cls: 'stat-card-1',
+                onClick: () => navigate('/profile/reviews'),
+                clickable: true,
               },
               {
                 label: t('profilePage.registeredLabel'),
@@ -1967,58 +2053,49 @@ export default function ProfilePage() {
                   : null,
                 cls: 'stat-card-2',
               },
-            ].map(({ label, value, cls }) => (
-              <Paper
-                key={label}
-                elevation={0}
-                className={cls}
-                sx={{
-                  ...glassCard,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  py: 4,
-                  gap: 1,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '40%',
-                    height: '2px',
-                    background: `linear-gradient(to right, transparent, ${C.accent}55, transparent)`,
-                  },
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    color: C.light,
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    letterSpacing: 1.8,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {label}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_DISPLAY,
-                    color: C.title,
-                    fontSize:
-                      label === t('profilePage.registeredLabel') ? 22 : 28,
-                    fontWeight: 900,
-                    letterSpacing: -0.4,
-                  }}
-                >
-                  {loading ? '...' : value || 'N/A'}
-                </Typography>
-              </Paper>
+            ].map(props => (
+              <ProfileStatCard
+                key={props.label}
+                {...props}
+                loading={loading}
+                smallValue={props.label === t('profilePage.registeredLabel')}
+              />
+            ))}
+          </Box>
+        </Box>
+
+        {/* ── STATS SECTION ── */}
+        <Box sx={{ mb: 2.5 }}>
+          <ProfileSectionHeader label={t('profilePage.statsLabel')} />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              gap: 2,
+            }}
+          >
+            {[
+              {
+                label: t('profilePage.finishedRatioLabel'),
+                value: user?.games_finished_percentage
+                  ? `${user.games_finished_percentage}%`
+                  : '0%',
+                cls: 'stat-card-0',
+              },
+              {
+                label: t('profilePage.playedRatioLabel'),
+                value: user?.games_played_percentage
+                  ? `${user.games_played_percentage}%`
+                  : '0%',
+                cls: 'stat-card-1',
+              },
+              {
+                label: t('profilePage.totalGamesLabel'),
+                value: user?.total_games_count?.toString() || '0',
+                cls: 'stat-card-2',
+              },
+            ].map(props => (
+              <ProfileStatCard key={props.label} {...props} loading={loading} />
             ))}
           </Box>
         </Box>
@@ -2058,6 +2135,7 @@ export default function ProfilePage() {
           singleFilterTitle={singleFilterTitle}
           removeGame={removeGame}
           gameListCollectionProps={gameListCollectionProps}
+          gamesLoading={gamesLoading}
         />
       </Box>
 

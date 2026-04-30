@@ -409,6 +409,31 @@ These values are automatically updated on **every** rating `POST`, `PATCH` et `D
 
 ---
 
+## Game stats (`GET /api/games/{game_id}/stats/`)
+
+Returns aggregated stats for a game (owners, ratings, reviews). For the ratings UI, the relevant part is the `ratings` object:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `average` | number | Same scale as `average_rating` on the game (0–10, mixed rating types normalized). |
+| `count` | integer | Total number of ratings (`rating_count`). |
+| `distribution` | object | Counts all **`Rating`** rows of type `etoiles` (1–5 stars) for the game. Aligns with `rating_count` for star votes. `GET /api/reviews/?game=` also returns **rating-only** rows (same star) as synthetic entries with `rating_only: true`. |
+
+Example (excerpt):
+
+```json
+{
+  "game_id": 42,
+  "ratings": {
+    "average": 8.2,
+    "count": 134,
+    "distribution": { "1": 2, "2": 5, "3": 20, "4": 60, "5": 47 }
+  }
+}
+```
+
+---
+
 ## Frontend integration guide
 
 ### Basic flow to display ratings for a game

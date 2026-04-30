@@ -1,6 +1,7 @@
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   Box,
+  CircularProgress,
   IconButton,
   Menu,
   MenuItem,
@@ -47,6 +48,7 @@ type ProfilePageLibrarySectionProps = Readonly<{
   gameListCollectionProps: Partial<
     Pick<GameListProps, 'onDetachFromCollection' | 'detachFromCollectionTitle'>
   >;
+  gamesLoading: boolean;
 }>;
 
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -78,6 +80,7 @@ export default function ProfilePageLibrarySection({
   singleFilterTitle,
   removeGame,
   gameListCollectionProps,
+  gamesLoading,
 }: ProfilePageLibrarySectionProps) {
   const { t } = useTranslation();
 
@@ -228,25 +231,40 @@ export default function ProfilePageLibrarySection({
           </Menu>
         </Box>
       </Box>
-      <LibraryFilters
-        value={libraryFilter}
-        onChange={setLibraryFilter}
-        counts={libraryCounts}
-        collections={collections}
-        collectionValue={collectionFilterId}
-        onCollectionChange={setLibraryCollectionFilter}
-        collectionsLoading={collectionsLoading}
-      />
-      <Box
-        sx={{
-          height: '1px',
-          background: `linear-gradient(to right, ${accent}33, ${borderColor}, transparent)`,
-          mb: 3,
-        }}
-      />
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {libraryLists}
-      </Box>
+      {gamesLoading ? (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <LibraryFilters
+            value={libraryFilter}
+            onChange={setLibraryFilter}
+            counts={libraryCounts}
+            collections={collections}
+            collectionValue={collectionFilterId}
+            onCollectionChange={setLibraryCollectionFilter}
+            collectionsLoading={collectionsLoading}
+          />
+          <Box
+            sx={{
+              height: '1px',
+              background: `linear-gradient(to right, ${accent}33, ${borderColor}, transparent)`,
+              mb: 3,
+            }}
+          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {libraryLists}
+          </Box>
+        </>
+      )}
     </Paper>
   );
 }
