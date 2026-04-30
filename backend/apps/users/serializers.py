@@ -1,7 +1,9 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from django.db.models import Sum
 from rest_framework import serializers
 
 from apps.core.tasks import send_welcome_email
+from apps.library.models import UserGame
 
 from .errors import UserErrors
 from .models import AdminAction
@@ -149,7 +151,6 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.reviews.count()
 
     def get_total_playtime(self, obj) -> float:
-        from django.db.models import Sum
 
         return obj.library_entries.aggregate(Sum("playtime_forever"))["playtime_forever__sum"] or 0.0
 
@@ -157,7 +158,6 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.library_entries.count()
 
     def get_games_finished_percentage(self, obj) -> float:
-        from apps.library.models import UserGame
 
         total = self.get_total_games_count(obj)
         if total == 0:
@@ -166,7 +166,6 @@ class UserSerializer(serializers.ModelSerializer):
         return round((finished / total) * 100, 1)
 
     def get_games_played_percentage(self, obj) -> float:
-        from apps.library.models import UserGame
 
         total = self.get_total_games_count(obj)
         if total == 0:
