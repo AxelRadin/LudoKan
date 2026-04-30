@@ -243,6 +243,103 @@ class TestReviewViewSet:
         assert resp.data["count"] == 1
         assert resp.data["results"][0]["content"] == "Sur jeu 2"
 
+    def test_list_user_filters_by_search_game_name(self, user, game):
+        g2 = Game.objects.create(
+            igdb_id=9003,
+            name="Zelda Adventures",
+            description="",
+            publisher=game.publisher,
+        )
+        Review.objects.create(user=user, game=game, content="Sur Test Game")
+        Review.objects.create(user=user, game=g2, content="Sur Zelda")
+        client = APIClient()
+        resp = client.get("/api/reviews/", {"user": str(user.id), "search": "zelda"})
+        assert resp.status_code == 200
+        assert resp.data["count"] == 1
+        assert "Zelda" in resp.data["results"][0]["game"]["name"]
+
+    def test_list_user_filters_has_rating_true(self, user, game):
+        g2 = Game.objects.create(
+            igdb_id=9004,
+            name="Other Game",
+            description="",
+            publisher=game.publisher,
+        )
+        r = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+        Review.objects.create(user=user, game=game, content="Avec note", rating=r)
+        Review.objects.create(user=user, game=g2, content="Sans note")
+        client = APIClient()
+        resp = client.get("/api/reviews/", {"user": str(user.id), "has_rating": "true"})
+        assert resp.status_code == 200
+        assert resp.data["count"] == 1
+        assert resp.data["results"][0]["content"] == "Avec note"
+
+    def test_list_user_filters_has_rating_false(self, user, game):
+        """has_rating false / 0 / no : _parse_has_rating_filter + filtre sans note (views ~55-56, 172)."""
+        g2 = Game.objects.create(
+            igdb_id=90040,
+            name="Other Game NoRating",
+            description="",
+            publisher=game.publisher,
+        )
+        r = Rating.objects.create(
+            user=user,
+            game=game,
+            rating_type=Rating.RATING_TYPE_ETOILES,
+            value=4,
+        )
+        Review.objects.create(user=user, game=game, content="Avec note", rating=r)
+        Review.objects.create(user=user, game=g2, content="Sans note")
+        client = APIClient()
+        for param in ("false", "0", "no"):
+            resp = client.get("/api/reviews/", {"user": str(user.id), "has_rating": param})
+            assert resp.status_code == 200
+            assert resp.data["count"] == 1
+            assert resp.data["results"][0]["content"] == "Sans note"
+
+    def test_list_user_filters_has_rating_invalid_skipped(self, user, game):
+        """Valeur has_rating non reconnue : _parse_has_rating_filter retourne None (views ~57)."""
+        g2 = Game.objects.create(
+            igdb_id=90043,
+            name="Other Invalid HasRating",
+            description="",
+            publisher=game.publisher,
+        )
+        Review.objects.create(user=user, game=game, content="Un")
+        Review.objects.create(user=user, game=g2, content="Deux")
+        client = APIClient()
+        resp = client.get("/api/reviews/", {"user": str(user.id), "has_rating": "maybe"})
+        assert resp.status_code == 200
+        assert resp.data["count"] == 2
+
+    def test_list_user_ordering_oldest_first(self, user, game):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        g2 = Game.objects.create(
+            igdb_id=9005,
+            name="Second",
+            description="",
+            publisher=game.publisher,
+        )
+        Review.objects.create(user=user, game=game, content="First")
+        Review.objects.create(user=user, game=g2, content="Second")
+        now = timezone.now()
+        Review.objects.filter(user=user, game=game).update(date_created=now - timedelta(days=2))
+        Review.objects.filter(user=user, game=g2).update(date_created=now - timedelta(days=1))
+        client = APIClient()
+        resp = client.get("/api/reviews/", {"user": str(user.id), "ordering": "date_created"})
+        assert resp.status_code == 200
+        assert len(resp.data["results"]) == 2
+        assert resp.data["results"][0]["content"] == "First"
+        assert resp.data["results"][1]["content"] == "Second"
+
     def test_merged_list_invalid_game_id_falls_back_to_default_list(self, game):
         client = APIClient()
         response = client.get("/api/reviews/", {"game": "not-an-int"})

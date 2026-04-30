@@ -45,6 +45,30 @@ def _parse_rating_value_filter(raw: str | None) -> int | None:
     return None
 
 
+def _parse_has_rating_filter(raw: str | None) -> bool | None:
+    """True = avis avec note liée ; False = sans note ; None = ignorer."""
+    if raw is None:
+        return None
+    s = str(raw).strip().lower()
+    if s in ("true", "1", "yes"):
+        return True
+    if s in ("false", "0", "no"):
+        return False
+    return None
+
+
+def _review_list_ordering_tuple(params) -> tuple[str, ...]:
+    """Tri whitelist pour GET /api/reviews/ (liste classique DRF)."""
+    raw = (params.get("ordering") or "").strip()
+    allowed: dict[str, tuple[str, ...]] = {
+        "date_created": ("date_created",),
+        "-date_created": ("-date_created",),
+        "date_modified": ("date_modified",),
+        "-date_modified": ("-date_modified",),
+    }
+    return allowed.get(raw, ("-date_created",))
+
+
 def _parse_list_page(raw_page: str | None) -> int:
     try:
         return max(1, int(raw_page or 1))
@@ -102,7 +126,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
     Filtres disponibles :
     - ?game=<id>  : Filtrer par jeu
     - ?user=<id>  : Filtrer par utilisateur
-    - ?rating_value=<1-5>  : Filtre sur la note (avis + entrées « note seule » sans texte)
+    - ?rating_value=<1-5>  : Filtre sur la note (étoiles)
+    - ?has_rating=true|false  : Avec note liée / sans note
+    - ?search=<texte>  : Nom du jeu (contient, insensible à la casse)
+    - ?ordering=date_created|-date_created|date_modified|-date_modified  : Tri (défaut -date_created)
     """
 
     queryset = Review.objects.select_related("user", "game", "rating").all()
@@ -138,7 +165,17 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if stars is not None:
             queryset = queryset.filter(rating__value=stars)
 
-        return queryset
+        has_rt = _parse_has_rating_filter(params.get("has_rating"))
+        if has_rt is True:
+            queryset = queryset.filter(rating__isnull=False)
+        elif has_rt is False:
+            queryset = queryset.filter(rating__isnull=True)
+
+        search = (params.get("search") or "").strip()
+        if search:
+            queryset = queryset.filter(game__name__icontains=search)
+
+        return queryset.order_by(*_review_list_ordering_tuple(params))
 
     def list(self, request, *args, **kwargs):
         """
