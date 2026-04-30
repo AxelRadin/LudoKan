@@ -1,6 +1,6 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 
-from apps.users.models import CustomUser
+from apps.users.models import CustomUser, XboxProfile
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):
@@ -33,3 +33,38 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
 
         user.pseudo = CustomUser.objects.generate_unique_pseudo(seed)
         return user
+
+    def save_user(self, request, sociallogin, form=None):
+        """
+        Appelé lors de la création d'un nouvel utilisateur via social login.
+        """
+        user = super().save_user(request, sociallogin, form)
+        self._create_social_profiles(user, sociallogin)
+        return user
+
+    def save_socialaccount(self, request, sociallogin):
+        """
+        Appelé lorsqu'un compte social est lié à un utilisateur existant.
+        """
+        super().save_socialaccount(request, sociallogin)
+        self._create_social_profiles(sociallogin.user, sociallogin)
+
+    def _create_social_profiles(self, user, sociallogin):
+        """
+        Crée les profils spécifiques (Xbox, etc.) selon le provider.
+        """
+
+        if sociallogin.account.provider == "microsoft":
+            extra_data = sociallogin.account.extra_data
+            # L'ID Microsoft Graph (GUID) servira d'identifiant par défaut
+            # en attendant la première synchro Xbox qui récupérera le vrai XUID.
+            m_id = extra_data.get("id")
+            gamertag = extra_data.get("displayName", "")
+
+            XboxProfile.objects.get_or_create(
+                user=user,
+                defaults={
+                    "xbox_xuid": m_id,
+                    "gamertag": gamertag,
+                },
+            )

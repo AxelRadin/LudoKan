@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.openid",
     "allauth.socialaccount.providers.steam",
     "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.microsoft",
     "corsheaders",
     "django_filters",
     "notifications",
@@ -531,6 +532,13 @@ GOOGLE_CALLBACK_URL = config(
 )
 
 # -------------------------------------------------------------------
+# Microsoft API & Provider Config
+# -------------------------------------------------------------------
+
+MICROSOFT_CLIENT_ID = config("MICROSOFT_CLIENT_ID", default="")
+MICROSOFT_CLIENT_SECRET = config("MICROSOFT_CLIENT_SECRET", default="")
+
+# -------------------------------------------------------------------
 # Social Account Providers
 # -------------------------------------------------------------------
 
@@ -556,5 +564,9 @@ SOCIALACCOUNT_PROVIDERS = {
                 "key": "",
             }
         ],
+    },
+    "microsoft": {
+        "TENANT": "common",  # "common", "organizations", or "consumers"
+        "SCOPE": ["user.read", "openid", "profile", "offline_access"],
     },
 }

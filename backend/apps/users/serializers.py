@@ -67,6 +67,7 @@ class UserSerializer(serializers.ModelSerializer):
     banner_url = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     steam_id = serializers.SerializerMethodField()
+    xbox_profile = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
     is_superuser = serializers.BooleanField(read_only=True)
 
@@ -92,6 +93,7 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "review_count",
             "steam_id",
+            "xbox_profile",
             "roles",
             "is_superuser",
             "total_playtime",
@@ -103,6 +105,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "steam_id",
+            "xbox_profile",
             "roles",
             "is_superuser",
             "total_playtime",
@@ -130,6 +133,16 @@ class UserSerializer(serializers.ModelSerializer):
     def get_steam_id(self, obj):
         if hasattr(obj, "steam_profile"):
             return obj.steam_profile.steam_id
+        return None
+
+    def get_xbox_profile(self, obj):
+        if hasattr(obj, "xbox_profile"):
+            return {
+                "xuid": obj.xbox_profile.xbox_xuid,
+                "gamertag": obj.xbox_profile.gamertag,
+                "gamerscore": obj.xbox_profile.gamerscore,
+                "last_sync_at": obj.xbox_profile.last_sync_at,
+            }
         return None
 
     def get_review_count(self, obj):
