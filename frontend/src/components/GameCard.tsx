@@ -6,7 +6,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FaSteam } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +26,9 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(!!game.user_library);
 
-  const isIgdbOnly = !game.django_id;
+  useEffect(() => {
+    setAdded(!!game.user_library);
+  }, [game.user_library]);
 
   const handleNavigate = () => {
     if (game.django_id) navigate(`/game/${game.django_id}`);
@@ -35,7 +37,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
 
   const handleAdd = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (adding || added || !isIgdbOnly) return;
+    if (adding || added) return;
     setAdding(true);
     try {
       const { game_id } = await resolveGameIdIfNeeded(game);
@@ -79,7 +81,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
         sx={{ objectFit: 'cover' }}
       />
 
-      {isIgdbOnly && isAuthenticated && (
+      {isAuthenticated && (
         <Box sx={{ position: 'absolute', bottom: 6, right: 6 }}>
           <Tooltip
             title={added ? t('gameCard.added') : t('gameCard.addToLibrary')}
@@ -88,13 +90,19 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
               <IconButton
                 size="small"
                 onClick={handleAdd}
-                disabled={adding}
+                disabled={adding || added}
                 sx={{
-                  bgcolor: added ? 'success.main' : 'rgba(0,0,0,0.6)',
+                  bgcolor: 'rgba(0,0,0,0.6)',
                   color: '#fff',
                   '&:hover': {
                     bgcolor: added ? 'success.dark' : 'rgba(0,0,0,0.85)',
                   },
+                  ...(added && {
+                    '&.Mui-disabled': {
+                      bgcolor: 'success.main',
+                      color: '#fff',
+                    },
+                  }),
                   width: 28,
                   height: 28,
                 }}
