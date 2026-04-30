@@ -44,10 +44,10 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("accounts/", include("allauth.urls")),
     # Auth
     path("api/auth/", include("apps.users.urls_auth")),
     path("api/", include("apps.users.urls")),
-    path("accounts/", include("allauth.urls")),
     # Core / notifications
     path("api/", include("apps.core.urls")),
     # Library
