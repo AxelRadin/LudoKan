@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Skeleton, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
 type Props = {
@@ -6,9 +6,10 @@ type Props = {
   value: number | string;
   icon?: ReactNode;
   sub?: string;
+  loading?: boolean;
 };
 
-export default function KpiCard({ title, value, icon, sub }: Props) {
+export default function KpiCard({ title, value, icon, sub, loading }: Props) {
   return (
     <Box
       sx={{
@@ -42,12 +43,16 @@ export default function KpiCard({ title, value, icon, sub }: Props) {
         </Typography>
         {icon && <Box sx={{ color: '#C41A1A', opacity: 0.7 }}>{icon}</Box>}
       </Box>
-      <Typography
-        variant="h4"
-        sx={{ fontWeight: 700, fontSize: 28, color: '#111' }}
-      >
-        {value}
-      </Typography>
+      {loading ? (
+        <Skeleton variant="text" width={60} height={40} />
+      ) : (
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 700, fontSize: 28, color: '#111' }}
+        >
+          {value}
+        </Typography>
+      )}
       {sub && (
         <Typography
           variant="caption"
