@@ -16,8 +16,8 @@ export default function KpiCard({ title, value, icon, sub }: Props) {
         border: '0.5px solid rgba(0,0,0,0.1)',
         borderRadius: 3,
         p: 3,
-        minWidth: 160,
-        flex: 1,
+        height: '100%',
+        boxSizing: 'border-box',
       }}
     >
       <Box
