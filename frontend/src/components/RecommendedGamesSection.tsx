@@ -1,6 +1,10 @@
+import RefreshIcon from '@mui/icons-material/Refresh';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import { Link } from 'react-router-dom';
 import { useRecommendations } from '../hooks/useRecommendations';
 import TrendingGames from './TrendingGames';
 
@@ -19,7 +23,9 @@ export function RecommendedGamesSection() {
   const accentColor = isDark ? C.darkAccent : C.accent;
   const inkColor = isDark ? C.darkInk : C.ink;
 
-  const { games, loading } = useRecommendations();
+  const { games, loading, refetch } = useRecommendations();
+
+  const isEmpty = !loading && games.length === 0;
 
   return (
     <Box sx={{ mb: 6 }}>
@@ -47,21 +53,71 @@ export function RecommendedGamesSection() {
             Personnalisé
           </Typography>
         </Box>
-        <Typography
-          sx={{
-            fontFamily: F,
-            fontWeight: 700,
-            fontSize: { xs: 24, md: 32 },
-            color: inkColor,
-            letterSpacing: -0.3,
-            lineHeight: 1.15,
-          }}
-        >
-          Suggestions pour vous
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography
+            sx={{
+              fontFamily: F,
+              fontWeight: 700,
+              fontSize: { xs: 24, md: 32 },
+              color: inkColor,
+              letterSpacing: -0.3,
+              lineHeight: 1.15,
+            }}
+          >
+            Suggestions pour vous
+          </Typography>
+          <Button
+            onClick={refetch}
+            disabled={loading}
+            size="small"
+            startIcon={
+              loading ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : (
+                <RefreshIcon />
+              )
+            }
+            sx={{
+              fontFamily: F,
+              color: accentColor,
+              borderColor: accentColor,
+              '&:hover': { opacity: 0.8 },
+            }}
+          >
+            Actualiser
+          </Button>
+        </Box>
       </Box>
 
-      <TrendingGames games={games} loading={loading} />
+      {isEmpty ? (
+        <Box
+          sx={{ pl: '18px', display: 'flex', flexDirection: 'column', gap: 2 }}
+        >
+          <Typography sx={{ fontFamily: F, color: inkColor, opacity: 0.6 }}>
+            Aucune suggestion disponible pour le moment.
+          </Typography>
+          <Button
+            component={Link}
+            to="/search"
+            variant="outlined"
+            sx={{
+              alignSelf: 'flex-start',
+              fontFamily: F,
+              borderColor: accentColor,
+              color: accentColor,
+              '&:hover': {
+                borderColor: accentColor,
+                bgcolor: 'transparent',
+                opacity: 0.8,
+              },
+            }}
+          >
+            Explorer le catalogue
+          </Button>
+        </Box>
+      ) : (
+        <TrendingGames games={games} loading={loading} />
+      )}
     </Box>
   );
 }
