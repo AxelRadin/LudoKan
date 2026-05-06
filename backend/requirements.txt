@@ -36,7 +36,7 @@ django-redis==5.4.0  # pour brancher Redis comme cache Django
 # WebSockets / Channels
 channels==4.1.0
 channels-redis==4.2.0
-twisted>=26.4.0
+twisted==26.4.0rc2
 
 # ASGI server (pour servir HTTP + WebSockets)
 daphne==4.1.0
