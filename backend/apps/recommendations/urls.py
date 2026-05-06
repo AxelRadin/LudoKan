@@ -1,5 +1,6 @@
+
 app_name = "recommendations"
 
 urlpatterns = [
-    # URLs à développer plus tard
+    # GET /api/recommendations/
 ]
