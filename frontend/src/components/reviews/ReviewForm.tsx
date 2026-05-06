@@ -156,7 +156,7 @@ export default function ReviewForm({
   const content = watch('content') ?? '';
   const rating = watch('rating') ?? 0;
 
-  const canSubmit = rating > 0 || content.length > 0;
+  const canSubmit = rating >= 1;
   const displayRating = hoveredRating || rating;
 
   useEffect(() => {
@@ -189,7 +189,7 @@ export default function ReviewForm({
       data.content,
       initialValues?.id,
       data.title || undefined,
-      data.rating || undefined
+      data.rating >= 1 ? Math.round(data.rating) : undefined
     );
 
     if (result && onSuccess) {

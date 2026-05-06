@@ -47,7 +47,7 @@ import {
   removeGameFromCollection,
   type UserCollection,
 } from '../api/collections';
-import { deleteUserGame } from '../api/userGames';
+import { deleteUserGame, fetchUserGames } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
@@ -130,8 +130,8 @@ type UserGame = {
   id: number;
   collection_ids?: number[];
   status: string;
-  is_favorite: boolean;
-  date_added: string;
+  is_favorite?: boolean;
+  date_added?: string;
   playtime_forever?: number | null;
   game: {
     id: number;
@@ -361,6 +361,7 @@ type ProfilePageModel = {
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
   reloadUserGames: () => Promise<void>;
+  gamesLoading: boolean;
 };
 
 function useProfilePageModel(
@@ -386,6 +387,7 @@ function useProfilePageModel(
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
   // Sync with global user if it updates (e.g. email from ForcedEmailModal)
   useEffect(() => {
@@ -447,8 +449,7 @@ function useProfilePageModel(
 
   const reloadUserGames = useCallback(async () => {
     try {
-      const res = await apiGet('/api/me/games/');
-      setUserGames(res.results || res || []);
+      setUserGames((await fetchUserGames()) as UserGame[]);
     } catch {
       // ignore
     }
@@ -485,11 +486,11 @@ function useProfilePageModel(
       const pollInterval = setInterval(async () => {
         polls++;
         try {
-          const [gamesRes, meRes] = await Promise.all([
-            apiGet('/api/me/games/'),
+          const [games, meRes] = await Promise.all([
+            fetchUserGames(),
             apiGet('/api/me/'),
           ]);
-          setUserGames(gamesRes.results || gamesRes || []);
+          setUserGames(games as UserGame[]);
           setUser(meRes);
         } catch {
           /* ignore */
@@ -525,9 +526,10 @@ function useProfilePageModel(
       })
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
-    apiGet('/api/me/games/').then(res =>
-      setUserGames(res.results || res || [])
-    );
+    fetchUserGames()
+      .then(games => setUserGames(games as UserGame[]))
+      .catch(() => {})
+      .finally(() => setGamesLoading(false));
   }, []);
 
   const avatarSrc = useMemo(
@@ -838,6 +840,7 @@ function useProfilePageModel(
     handleSteamDisconnect,
     handleSteamSync,
     reloadUserGames,
+    gamesLoading,
   };
 }
 
@@ -1363,6 +1366,7 @@ export default function ProfilePage() {
     handleSteamDisconnect,
     handleSteamSync,
     reloadUserGames,
+    gamesLoading,
   } = useProfilePageModel(collectionFilterId);
 
   const [collections, setCollections] = useState<UserCollection[]>([]);
@@ -2131,6 +2135,7 @@ export default function ProfilePage() {
           singleFilterTitle={singleFilterTitle}
           removeGame={removeGame}
           gameListCollectionProps={gameListCollectionProps}
+          gamesLoading={gamesLoading}
         />
       </Box>
 

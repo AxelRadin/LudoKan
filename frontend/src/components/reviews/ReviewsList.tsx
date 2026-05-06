@@ -21,6 +21,9 @@ type ReviewsListProps = Readonly<{
   currentUserId: number | null;
   onEditReview: (review: ReviewItem) => void;
   onDeleteReview: (reviewId: number) => void;
+  /** 1–5 : n’affiche que les avis avec cette note (étoiles entières) */
+  reviewStarFilter?: number | null;
+  onClearReviewStarFilter?: () => void;
 }>;
 
 export default function ReviewsList({
@@ -35,7 +38,11 @@ export default function ReviewsList({
   currentUserId,
   onEditReview,
   onDeleteReview,
+  reviewStarFilter = null,
+  onClearReviewStarFilter,
 }: ReviewsListProps) {
+  const hasStarFilter = reviewStarFilter != null;
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -64,9 +71,42 @@ export default function ReviewsList({
   return (
     <Box sx={{ width: '100%', mt: 3 }}>
       <Divider sx={{ mb: 3 }} />
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
-        {t('gamePageBody.reviewsCommunityHeading')}
-      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1.5,
+          mb: 2,
+        }}
+      >
+        <Typography variant="h6" sx={{ fontWeight: 700, m: 0 }}>
+          {t('gamePageBody.reviewsCommunityHeading')}
+        </Typography>
+        {hasStarFilter && onClearReviewStarFilter ? (
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={onClearReviewStarFilter}
+            sx={{ textTransform: 'none', flexShrink: 0 }}
+          >
+            {t('gamePageBody.reviewsClearStarFilter')}
+          </Button>
+        ) : null}
+      </Box>
+
+      {hasStarFilter ? (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ lineHeight: 1.6, mb: 2 }}
+        >
+          {t('gamePageBody.reviewsFilteredBanner', {
+            stars: reviewStarFilter,
+          })}
+        </Typography>
+      ) : null}
 
       {otherReviews.length === 0 ? (
         <Typography
@@ -74,7 +114,9 @@ export default function ReviewsList({
           color="text.secondary"
           sx={{ lineHeight: 1.7, mb: 2 }}
         >
-          {emptyMessage}
+          {hasStarFilter
+            ? t('gamePageBody.reviewsFilteredEmpty')
+            : emptyMessage}
         </Typography>
       ) : (
         <>

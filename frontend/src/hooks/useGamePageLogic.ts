@@ -30,6 +30,8 @@ export type GamePageLogic = Readonly<{
   isMatching: boolean;
   ensureDjangoId: () => Promise<number | null>;
   refreshUserLibrary: () => Promise<void>;
+  /** Recharge le jeu Django (moyenne, nombre de notes, bibliothèque, etc.) */
+  refreshGame: () => Promise<void>;
   handleSetStatus: (
     s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
     p?: boolean
@@ -125,6 +127,31 @@ export function useGamePageLogic(): GamePageLogic {
     if (!djangoId) return;
     try {
       const d: NormalizedGame = await apiGet(`/api/games/${djangoId}/`);
+      setUserGame(d.user_library ?? null);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function refreshGame() {
+    if (!djangoId) return;
+    try {
+      const d = (await apiGet(`/api/games/${djangoId}/`)) as NormalizedGame & {
+        name_fr?: string;
+      };
+      const displayName = d.name_fr || d.name;
+      setGame(prev => {
+        if (!prev) {
+          return { ...d, name: displayName };
+        }
+        return {
+          ...prev,
+          ...d,
+          name: displayName || prev.name,
+          igdb_id: prev.igdb_id,
+          django_id: djangoId,
+        };
+      });
       setUserGame(d.user_library ?? null);
     } catch {
       /* ignore */
@@ -245,6 +272,7 @@ export function useGamePageLogic(): GamePageLogic {
     setSelectedShot,
     ensureDjangoId,
     refreshUserLibrary,
+    refreshGame,
     handleSetStatus,
     handleToggleFavorite,
     handleSetMatchmaking,

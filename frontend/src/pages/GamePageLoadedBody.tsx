@@ -4,17 +4,10 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import {
-  Box,
-  Button,
-  Chip,
-  Modal,
-  Rating,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Chip, Modal, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import GameRatingsSummary from '../components/GameRatingsSummary';
 import PlatformLogos from '../components/PlatformLogos';
 import ReviewSection from '../components/reviews/ReviewSection';
 import { SectionAccentTitle } from '../components/SectionAccentTitle';
@@ -68,10 +61,6 @@ function buildDescriptionState(
       ? `${fullText.slice(0, DLIMIT)}…`
       : fullText;
   return { displayText, isTruncated };
-}
-
-function getCommunityRating(game: NormalizedGame): number {
-  return (game.average_rating ?? game.rating_avg ?? 0) / 2;
 }
 
 function getReviewGameId(djangoId: number | null | undefined): string {
@@ -652,7 +641,7 @@ export function GamePageLoadedBody({
 }: GamePageLoadedBodyProps) {
   const { t } = useTranslation();
   const game = logic.game as NormalizedGame;
-  const { card, noHov, accent, ink } = appearance;
+  const { card, noHov, ink } = appearance;
 
   const description = buildDescriptionState(
     logic,
@@ -660,8 +649,8 @@ export function GamePageLoadedBody({
     t('gamePageBody.translating'),
     t('gamePageBody.descriptionEmpty')
   );
-  const communityRating = getCommunityRating(game);
   const reviewGameId = getReviewGameId(logic.djangoId);
+  const [reviewStarFilter, setReviewStarFilter] = useState<number | null>(null);
 
   return (
     <>
@@ -720,20 +709,13 @@ export function GamePageLoadedBody({
           </Box>
         </Box>
       </Box>
-
-      <Box className="gp-c4" sx={{ ...card(), px: 3, py: 2.5, mb: 2 }}>
-        <SectionAccentTitle label={t('gamePageBody.communityRatingLabel')} />
-        <Rating
-          value={communityRating}
-          readOnly
-          precision={0.5}
-          sx={{
-            fontSize: 24,
-            mt: 0.5,
-            '& .MuiRating-iconFilled': { color: accent },
-          }}
-        />
-      </Box>
+      <GameRatingsSummary
+        game={game}
+        gameApiId={logic.djangoId}
+        appearance={appearance}
+        reviewStarFilter={reviewStarFilter}
+        onReviewStarFilterChange={setReviewStarFilter}
+      />
 
       <GameGallerySection game={game} logic={logic} appearance={appearance} />
 
@@ -743,7 +725,12 @@ export function GamePageLoadedBody({
           resolveGameId={logic.ensureDjangoId}
           userReview={logic.userReview}
           currentUserId={logic.currentUserId}
-          onReviewChange={review => logic.setUserReview(review)}
+          onReviewChange={review => {
+            logic.setUserReview(review);
+            void logic.refreshGame();
+          }}
+          reviewStarFilter={reviewStarFilter}
+          onClearReviewStarFilter={() => setReviewStarFilter(null)}
         />
       </Box>
     </>
