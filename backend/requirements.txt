@@ -7,7 +7,7 @@ django-import-export[all]==4.4.0
 
 # Authentification
 django-allauth==65.14.1
-python3-openid>=3.2.0
+python3-openid==3.2.0
 dj-rest-auth==5.0.2
 djangorestframework-simplejwt==5.5.1  
 dj-rest-auth[with_jwt]==5.0.2
@@ -49,17 +49,17 @@ gunicorn==23.0.0
 
 
 # HTTP client (reCAPTCHA siteverify)
-requests>=2.31.0,<3
+requests==2.32.4
 
 # Logging
 sentry-sdk[django]==2.20.0
 
 # Runtime tooling (pkg_resources used by rest_framework_simplejwt; removed in setuptools 82+)
-setuptools>=81.0.0,<82.0.0
+setuptools==81.0.0
 jaraco.context==6.1.2  # GHSA-58pv-8j8x-9vj2 (site-packages; keep explicit)
 
 # transitions for state tickets
 django-fsm==3.0.1
 
 # Export PDF des rapports (BACK-021E)
-reportlab>=4.0.0
+reportlab==4.4.3
