@@ -14,7 +14,7 @@ RUN apt-get update \
 COPY requirements.txt .
 COPY requirements-dev.txt .
 
-RUN python -m pip install --upgrade pip \
+RUN python -m pip install --upgrade "pip==26.1.1" \
     && pip install --root-user-action=ignore -r requirements.txt \
     && pip install --root-user-action=ignore -r requirements-dev.txt
     
