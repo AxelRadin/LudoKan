@@ -158,6 +158,35 @@ def test_normalize_igdb_game_publisher_none_when_company_invalid():
     assert normalize_igdb_game(raw_game)["publisher"] is None
 
 
+def test_normalize_igdb_game_player_counts_from_multiplayer_modes():
+    """Couvre l'extraction explicite des joueurs depuis multiplayer_modes."""
+    raw_game = {
+        "id": 77,
+        "name": "MP Game",
+        "multiplayer_modes": [
+            "skip-non-dict",
+            {"onlinemax": 3, "offlinemax": 2},
+            {"offlinecoopmax": 6},
+        ],
+    }
+    out = normalize_igdb_game(raw_game)
+    assert out["min_players"] == 1
+    assert out["max_players"] == 6
+
+
+def test_normalize_igdb_game_player_counts_solo_inference_from_modes():
+    """Si game_modes existent mais sans mode multi connu, on infère solo (1,1)."""
+    raw_game = {
+        "id": 78,
+        "name": "Solo Game",
+        "game_modes": [{"name": "Single player"}],
+        "multiplayer_modes": [],
+    }
+    out = normalize_igdb_game(raw_game)
+    assert out["min_players"] == 1
+    assert out["max_players"] == 1
+
+
 @pytest.mark.django_db
 def test_enrich_normalized_games_anonymous(game):
     """Vérifie que pour un utilisateur anonyme, seul le django_id est injecté."""
