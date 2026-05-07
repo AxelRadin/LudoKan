@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchTrendingGamesWithCount } from '../api/igdb';
@@ -19,6 +19,7 @@ export default function TrendingCategoryPage() {
   const [games, setGames] = useState<NormalizedGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const maxDiscoveredPage = useRef(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const isGenre = genreId != null;
@@ -37,6 +38,7 @@ export default function TrendingCategoryPage() {
   useEffect(() => {
     setPage(1);
     setTotalPages(1);
+    maxDiscoveredPage.current = 1;
   }, [sort, genreId]);
 
   useEffect(() => {
@@ -53,7 +55,6 @@ export default function TrendingCategoryPage() {
       offset,
       controller.signal
     );
-
     const fetchNext = fetchTrendingGamesWithCount(
       sortKey,
       PAGE_SIZE,
@@ -64,21 +65,23 @@ export default function TrendingCategoryPage() {
 
     Promise.all([fetchCurrent, fetchNext])
       .then(([current, next]) => {
-        if (!controller.signal.aborted) {
-          setGames(current.games);
-          // si la page suivante a des jeux, totalPages = page + 1, sinon page actuelle
-          if (next.games.length > 0) {
-            setTotalPages(page + 1);
-          } else {
-            setTotalPages(page);
-          }
+        if (controller.signal.aborted) return;
+
+        setGames(current.games);
+
+        if (next.games.length > 0) {
+          maxDiscoveredPage.current = Math.max(
+            maxDiscoveredPage.current,
+            page + 1
+          );
+        } else {
+          maxDiscoveredPage.current = Math.max(maxDiscoveredPage.current, page);
         }
+
+        setTotalPages(maxDiscoveredPage.current);
       })
       .catch(() => {
-        if (!controller.signal.aborted) {
-          setGames([]);
-          setTotalPages(page);
-        }
+        if (!controller.signal.aborted) setGames([]);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -99,7 +102,10 @@ export default function TrendingCategoryPage() {
           <Pagination
             count={totalPages}
             page={page}
-            onChange={(_, value) => setPage(value)}
+            onChange={(_, value) => {
+              setPage(value);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             color="primary"
             siblingCount={1}
             boundaryCount={1}
