@@ -8,6 +8,7 @@ import './i18n';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import './index.css';
+import 'driver.js/dist/driver.css';
 import { initSentry } from './monitoring/sentry';
 import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
