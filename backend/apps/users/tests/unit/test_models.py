@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.utils import timezone
 
-from apps.users.models import AdminAction, SteamProfile, UserRole, UserSuspension
+from apps.users.models import AdminAction, SteamProfile, UserRole, UserSuspension, XboxProfile
 
 User = get_user_model()
 
@@ -230,3 +230,24 @@ class TestSteamProfileModel:
             display_name="",
         )
         assert str(profile) == f"{user.pseudo} (Steam: 1234567890)"
+
+
+@pytest.mark.django_db
+class TestXboxProfileModel:
+    """Tests pour le modèle XboxProfile."""
+
+    def test_xbox_profile_str_representation(self, user):
+        profile = XboxProfile.objects.create(
+            user=user,
+            xbox_xuid="2533274791381930",
+            gamertag="TestGamer",
+        )
+        assert str(profile) == f"{user.pseudo} (Xbox: TestGamer)"
+
+    def test_xbox_profile_str_representation_without_gamertag(self, user):
+        profile = XboxProfile.objects.create(
+            user=user,
+            xbox_xuid="2533274791381930",
+            gamertag="",
+        )
+        assert str(profile) == f"{user.pseudo} (Xbox: 2533274791381930)"
