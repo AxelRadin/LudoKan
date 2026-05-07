@@ -1,12 +1,12 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { useImperativeHandle, forwardRef } from 'react';
+import { MemoryRouter } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { apiPost } from '../../services/api';
-import { useAuth } from '../../contexts/useAuth';
 import * as googleOAuth from '../../auth/googleOAuth';
 import LoginForm from '../../components/LoginForm';
+import { useAuth } from '../../contexts/useAuth';
+import { apiPost } from '../../services/api';
 
 // --- MOCKS ---
 vi.mock('../../services/api', () => ({ apiPost: vi.fn() }));
