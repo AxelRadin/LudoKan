@@ -17,6 +17,13 @@ class CustomRegisterSerializer(RegisterSerializer):
     last_name = serializers.CharField(required=False, allow_blank=True)
     description_courte = serializers.CharField(required=False, allow_blank=True)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "username" in self.fields:
+            self.fields["username"].required = False
+            self.fields["username"].allow_blank = True
+            self.fields["username"].allow_null = True
+
     def validate_email(self, value):
         """
         Valide l'unicité de l'email avec un message d'erreur explicite.
