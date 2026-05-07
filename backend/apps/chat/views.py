@@ -1,10 +1,22 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import generics
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 
 from apps.chat.models import ChatRoom, ChatRoomUser, Message
 from apps.chat.serializers import MessageSerializer
+
+
+class ChatMessagePagination(PageNumberPagination):
+    """
+    Gestion de la pagination pour les messages de chat.
+    Permet au frontend d'utiliser le paramètre ?page=.
+    """
+
+    page_size = 30
+    page_size_query_param = "page_size"
+    max_page_size = 100
 
 
 class ChatMessageListCreateView(generics.ListCreateAPIView):
@@ -20,10 +32,11 @@ class ChatMessageListCreateView(generics.ListCreateAPIView):
 
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = ChatMessagePagination
 
     def _get_room_for_request_user(self) -> ChatRoom:
         """
-        Récupere le ChatRoom ciblé et vérifie que l'utilisateur courant en est membre.
+        Récupère le ChatRoom ciblé et vérifie que l'utilisateur courant en est membre.
         """
         room_id = self.kwargs.get("room_id")
         room = get_object_or_404(ChatRoom, id=room_id)
@@ -35,9 +48,11 @@ class ChatMessageListCreateView(generics.ListCreateAPIView):
         return room
 
     def get_queryset(self):
+        """Retourne les messages du salon par ordre chronologique."""
         room = self._get_room_for_request_user()
         return Message.objects.filter(room=room).order_by("created_at")
 
     def perform_create(self, serializer):
+        """Associe le message au salon et à l'utilisateur authentifié."""
         room = self._get_room_for_request_user()
         serializer.save(room=room, user=self.request.user)
