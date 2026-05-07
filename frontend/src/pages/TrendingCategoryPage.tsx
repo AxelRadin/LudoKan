@@ -19,7 +19,7 @@ export default function TrendingCategoryPage() {
   const [games, setGames] = useState<NormalizedGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
 
   const isGenre = genreId != null;
 
@@ -36,7 +36,7 @@ export default function TrendingCategoryPage() {
 
   useEffect(() => {
     setPage(1);
-    setHasMore(false);
+    setTotalPages(1);
   }, [sort, genreId]);
 
   useEffect(() => {
@@ -46,23 +46,38 @@ export default function TrendingCategoryPage() {
     const sortKey = isGenre ? 'popularity' : (sort ?? 'popularity');
     const genreArg = isGenre ? Number(genreId) : undefined;
 
-    fetchTrendingGamesWithCount(
+    const fetchCurrent = fetchTrendingGamesWithCount(
       sortKey,
       PAGE_SIZE,
       genreArg,
       offset,
       controller.signal
-    )
-      .then(({ games: data }) => {
+    );
+
+    const fetchNext = fetchTrendingGamesWithCount(
+      sortKey,
+      PAGE_SIZE,
+      genreArg,
+      offset + PAGE_SIZE,
+      controller.signal
+    );
+
+    Promise.all([fetchCurrent, fetchNext])
+      .then(([current, next]) => {
         if (!controller.signal.aborted) {
-          setGames(data);
-          setHasMore(data.length === PAGE_SIZE);
+          setGames(current.games);
+          // si la page suivante a des jeux, totalPages = page + 1, sinon page actuelle
+          if (next.games.length > 0) {
+            setTotalPages(page + 1);
+          } else {
+            setTotalPages(page);
+          }
         }
       })
       .catch(() => {
         if (!controller.signal.aborted) {
           setGames([]);
-          setHasMore(false);
+          setTotalPages(page);
         }
       })
       .finally(() => {
@@ -72,9 +87,6 @@ export default function TrendingCategoryPage() {
     return () => controller.abort();
   }, [sort, genreId, isGenre, page]);
 
-  // count = pages connues + 1 si il y en a peut-être d'autres
-  const count = hasMore ? page + 1 : page;
-
   return (
     <PageLayout title={title}>
       <GamesGrid
@@ -82,10 +94,10 @@ export default function TrendingCategoryPage() {
         loading={loading}
         emptyMessage={t('trendingCategory.empty')}
       />
-      {!loading && (page > 1 || hasMore) && (
+      {!loading && totalPages > 1 && (
         <Box mt={5} display="flex" justifyContent="center">
           <Pagination
-            count={count}
+            count={totalPages}
             page={page}
             onChange={(_, value) => setPage(value)}
             color="primary"
