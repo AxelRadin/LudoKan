@@ -213,3 +213,31 @@ class SteamProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.pseudo} (Steam: {self.display_name or self.steam_id})"
+
+
+class XboxProfile(models.Model):
+    """
+    Lien 1:1 entre un CustomUser et son identité Xbox.
+    """
+
+    user = models.OneToOneField(
+        "CustomUser",
+        on_delete=models.CASCADE,
+        related_name="xbox_profile",
+    )
+    xbox_xuid = models.CharField(
+        max_length=64,
+        unique=True,
+        help_text="Xbox User ID (XUID)",
+    )
+    gamertag = models.CharField(max_length=255, blank=True)
+    gamerscore = models.IntegerField(default=0)
+    linked_at = models.DateTimeField(auto_now_add=True)
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Xbox Profile"
+        verbose_name_plural = "Xbox Profiles"
+
+    def __str__(self):
+        return f"{self.user.pseudo} (Xbox: {self.gamertag or self.xbox_xuid})"

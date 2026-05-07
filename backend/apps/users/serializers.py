@@ -1,7 +1,9 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from django.db.models import Sum
 from rest_framework import serializers
 
 from apps.core.tasks import send_welcome_email
+from apps.library.models import UserGame
 
 from .errors import UserErrors
 from .models import AdminAction
@@ -15,6 +17,13 @@ class CustomRegisterSerializer(RegisterSerializer):
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     description_courte = serializers.CharField(required=False, allow_blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "username" in self.fields:
+            self.fields["username"].required = False
+            self.fields["username"].allow_blank = True
+            self.fields["username"].allow_null = True
 
     def validate_email(self, value):
         """
@@ -68,6 +77,7 @@ class UserSerializer(serializers.ModelSerializer):
     banner_url = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     steam_id = serializers.SerializerMethodField()
+    xbox_profile = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
     is_superuser = serializers.BooleanField(read_only=True)
 
@@ -93,6 +103,7 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "review_count",
             "steam_id",
+            "xbox_profile",
             "roles",
             "is_superuser",
             "total_playtime",
@@ -104,6 +115,7 @@ class UserSerializer(serializers.ModelSerializer):
             "id",
             "created_at",
             "steam_id",
+            "xbox_profile",
             "roles",
             "is_superuser",
             "total_playtime",
@@ -133,11 +145,20 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.steam_profile.steam_id
         return None
 
+    def get_xbox_profile(self, obj):
+        if hasattr(obj, "xbox_profile"):
+            return {
+                "xuid": obj.xbox_profile.xbox_xuid,
+                "gamertag": obj.xbox_profile.gamertag,
+                "gamerscore": obj.xbox_profile.gamerscore,
+                "last_sync_at": obj.xbox_profile.last_sync_at,
+            }
+        return None
+
     def get_review_count(self, obj):
         return obj.reviews.count()
 
     def get_total_playtime(self, obj) -> float:
-        from django.db.models import Sum
 
         return obj.library_entries.aggregate(Sum("playtime_forever"))["playtime_forever__sum"] or 0.0
 
@@ -145,7 +166,6 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.library_entries.count()
 
     def get_games_finished_percentage(self, obj) -> float:
-        from apps.library.models import UserGame
 
         total = self.get_total_games_count(obj)
         if total == 0:
@@ -154,7 +174,6 @@ class UserSerializer(serializers.ModelSerializer):
         return round((finished / total) * 100, 1)
 
     def get_games_played_percentage(self, obj) -> float:
-        from apps.library.models import UserGame
 
         total = self.get_total_games_count(obj)
         if total == 0:
