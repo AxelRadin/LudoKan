@@ -1,5 +1,4 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PersonIcon from '@mui/icons-material/Person';
 import RadarIcon from '@mui/icons-material/Radar';
 import {
@@ -36,8 +35,12 @@ interface MatchmakingModalProps {
   readonly onCancel: () => void;
   readonly matches: Match[];
   readonly startedAt: Date | null;
-  readonly game: { readonly name: string; readonly image: string } | null;
-  readonly onContactPlayer?: (targetUserId: number) => void;
+  readonly game: {
+    readonly id?: string;
+    readonly name: string;
+    readonly image: string;
+  } | null;
+  readonly onJoinLobby?: () => void;
 }
 
 export default function MatchmakingModal({
@@ -47,7 +50,7 @@ export default function MatchmakingModal({
   matches,
   startedAt,
   game,
-  onContactPlayer,
+  onJoinLobby,
 }: MatchmakingModalProps) {
   const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
@@ -126,61 +129,72 @@ export default function MatchmakingModal({
 
       <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
         {matches.length > 0 ? (
-          <List sx={{ pt: 0 }}>
-            {matches.map(match => {
-              const user = match.user;
-              const targetUserId =
-                typeof user === 'object' && user !== null ? user.id : user;
-              const userName =
-                typeof user === 'object' && user !== null
-                  ? user.username ||
-                    t('matchmakingModal.player', { id: user.id })
-                  : t('matchmakingModal.player', { id: user });
+          <>
+            <List sx={{ pt: 0 }}>
+              {matches.map(match => {
+                const user = match.user;
+                const userName =
+                  typeof user === 'object' && user !== null
+                    ? user.username ||
+                      t('matchmakingModal.player', { id: user.id })
+                    : t('matchmakingModal.player', { id: user });
 
-              return (
-                <Paper
-                  key={match.id}
-                  elevation={1}
-                  sx={{ mb: 2, borderRadius: 3, overflow: 'hidden' }}
-                >
-                  <ListItem sx={{ py: 2 }}>
-                    <ListItemAvatar>
-                      <Avatar
-                        sx={{ bgcolor: 'primary.main', width: 50, height: 50 }}
-                      >
-                        <PersonIcon />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={userName}
-                      secondary={t('matchmakingModal.distance', {
-                        km: match.distance_km,
-                      })}
-                      primaryTypographyProps={{
-                        fontWeight: 700,
-                        variant: 'subtitle1',
-                      }}
-                      secondaryTypographyProps={{
-                        color: 'success.main',
-                        fontWeight: 600,
-                      }}
-                      sx={{ ml: 1 }}
-                    />
-                    <Button
-                      variant="contained"
-                      size="small"
-                      color="primary"
-                      startIcon={<ChatBubbleOutlineIcon />}
-                      sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}
-                      onClick={() => onContactPlayer?.(targetUserId)}
-                    >
-                      {t('matchmakingModal.contact')}
-                    </Button>
-                  </ListItem>
-                </Paper>
-              );
-            })}
-          </List>
+                return (
+                  <Paper
+                    key={match.id}
+                    elevation={1}
+                    sx={{ mb: 2, borderRadius: 3, overflow: 'hidden' }}
+                  >
+                    <ListItem sx={{ py: 2 }}>
+                      <ListItemAvatar>
+                        <Avatar
+                          sx={{
+                            bgcolor: 'primary.main',
+                            width: 50,
+                            height: 50,
+                          }}
+                        >
+                          <PersonIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={userName}
+                        secondary={t('matchmakingModal.distance', {
+                          km: match.distance_km,
+                        })}
+                        primaryTypographyProps={{
+                          fontWeight: 700,
+                          variant: 'subtitle1',
+                        }}
+                        secondaryTypographyProps={{
+                          color: 'success.main',
+                          fontWeight: 600,
+                        }}
+                        sx={{ ml: 1 }}
+                      />
+                    </ListItem>
+                  </Paper>
+                );
+              })}
+            </List>
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="contained"
+                size="large"
+                color="primary"
+                sx={{
+                  borderRadius: 8,
+                  textTransform: 'none',
+                  px: 4,
+                  py: 1.5,
+                  fontWeight: 'bold',
+                }}
+                onClick={onJoinLobby}
+              >
+                Rejoindre le Lobby
+              </Button>
+            </Box>
+          </>
         ) : (
           <Box
             sx={{

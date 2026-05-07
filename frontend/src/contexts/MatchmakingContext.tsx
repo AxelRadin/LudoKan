@@ -10,9 +10,10 @@ import { useNavigate } from 'react-router-dom';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
-import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
-import { useAuth } from './useAuth';
 import i18n from '../i18n';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
+import { joinOrCreateParty } from '../services/party';
+import { useAuth } from './useAuth';
 
 interface MatchmakingContextType {
   startMatchmaking: (
@@ -72,6 +73,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const [hasNewMatch, setHasNewMatch] = useState(false);
 
   const [activeGame, setActiveGame] = useState<{
+    id: string;
     name: string;
     image: string;
   } | null>(null);
@@ -101,7 +103,11 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
               } else if (image?.includes('t_cover_big')) {
                 image = image.replace('t_cover_big', 't_1080p');
               }
-              setActiveGame({ name: gameData.name_fr || gameData.name, image });
+              setActiveGame({
+                id: active.game,
+                name: gameData.name_fr || gameData.name,
+                image,
+              });
             } catch (e) {
               console.error(e);
             }
@@ -158,7 +164,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         setActiveRequestId(reqId);
         setCurrentRadius(radius);
         setActiveRequestStartedAt(startedDate);
-        setActiveGame({ name: gameName, image: gameImage });
+        setActiveGame({ id: gameId, name: gameName, image: gameImage });
 
         const matchesData = await apiGet('/api/matchmaking/matches/');
         setMatches(matchesData);
@@ -293,16 +299,15 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         matches={matches}
         startedAt={activeRequestStartedAt}
         game={activeGame}
-        onContactPlayer={async targetUserId => {
+        onJoinLobby={async () => {
+          if (!activeGame) return;
           try {
-            const data = await apiPost('/api/chats/get-or-create/', {
-              target_user_id: targetUserId,
-            });
-            const roomId = data.room_id || data.id;
+            await joinOrCreateParty(Number(activeGame.id));
             setIsMatchmakingModalOpen(false);
-            navigate(`/chat/${roomId}`);
+            navigate('/lobby');
           } catch (error) {
-            console.error('Impossible de contacter le joueur :', error);
+            console.error('Impossible de rejoindre le lobby :', error);
+            alert("Erreur lors de l'accès au lobby.");
           }
         }}
       />
