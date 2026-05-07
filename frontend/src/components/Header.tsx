@@ -183,7 +183,11 @@ export const Header: React.FC = () => {
       }}
       aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
     >
-      {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+      {darkMode ? (
+        <LightModeIcon sx={{ color: '#FDB813' }} />
+      ) : (
+        <DarkModeIcon sx={{ color: '#5B21B6' }} />
+      )}
     </IconButton>
   );
 
@@ -350,80 +354,106 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <AppBar
-        position="fixed"
-        color="inherit"
-        elevation={2}
-        sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+      {/* Wrapper pour créer l'effet arrondi */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+          px: { xs: 1, md: 2 },
+          pt: { xs: 1, md: 2 },
+        }}
       >
-        <Toolbar
+        <AppBar
+          position="static"
+          color="inherit"
+          elevation={0}
           sx={{
-            justifyContent: 'space-between',
-            py: 1,
-            px: { xs: 2, md: 4 },
-            minHeight: 64,
-            width: '100%',
-            boxSizing: 'border-box',
+            borderRadius: { xs: '20px', md: '24px' },
+            boxShadow: darkMode
+              ? '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)'
+              : '0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)',
+            backdropFilter: 'blur(20px)',
+            background: darkMode
+              ? 'rgba(26,16,16,0.85)'
+              : 'rgba(255,255,255,0.85)',
+            transition: 'all 0.3s ease',
           }}
         >
-          <Box
-            onClick={() => {
-              navigate('/');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+          <Toolbar
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.2,
-              cursor: 'pointer',
+              justifyContent: 'space-between',
+              py: 1,
+              px: { xs: 2, md: 4 },
+              minHeight: 64,
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
             <Box
-              component="img"
-              src="/logo.png"
-              alt="Ludokan"
-              sx={{
-                height: 44,
-                width: 44,
-                objectFit: 'contain',
-                borderRadius: '50%',
-                display: 'block',
+              onClick={() => {
+                navigate('/');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-            />
-            <Typography
               sx={{
-                fontWeight: 800,
-                fontSize: 20,
-                letterSpacing: '-0.5px',
-                color: 'inherit',
-                userSelect: 'none',
-                fontFamily: "'Outfit', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                cursor: 'pointer',
               }}
             >
-              Ludokan
-            </Typography>
-          </Box>
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Ludokan"
+                sx={{
+                  height: 44,
+                  width: 44,
+                  objectFit: 'contain',
+                  borderRadius: '50%',
+                  display: 'block',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: 20,
+                  letterSpacing: '-0.5px',
+                  color: 'inherit',
+                  userSelect: 'none',
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                Ludokan
+              </Typography>
+            </Box>
 
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              edge="end"
-              onClick={() => setDrawerOpen(true)}
-              aria-label={t('header.openMenu')}
-              sx={rippleSx}
-            >
-              <MenuIcon />
-            </IconButton>
-          ) : (
-            <>
-              <SearchBar />
-              <Box display="flex" alignItems="center" gap={2}>
-                {desktopActions}
-              </Box>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
+            {isMobile ? (
+              <IconButton
+                color="inherit"
+                edge="end"
+                onClick={() => setDrawerOpen(true)}
+                aria-label={t('header.openMenu')}
+                sx={rippleSx}
+              >
+                <MenuIcon />
+              </IconButton>
+            ) : (
+              <>
+                <SearchBar />
+                <Box display="flex" alignItems="center" gap={2}>
+                  {desktopActions}
+                </Box>
+              </>
+            )}
+          </Toolbar>
+        </AppBar>
+      </Box>
+
+      {/* Spacer pour compenser le header fixed */}
+      <Box sx={{ height: { xs: 80, md: 88 } }} />
 
       <Drawer
         anchor="right"
