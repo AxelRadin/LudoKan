@@ -488,8 +488,8 @@ class TestAvatarUpload:
         assert response1.status_code == status.HTTP_200_OK
         first_avatar_url = response1.data["avatar"]
 
-        # Upload de remplacement
-        second_image = self.create_test_image(color="blue")
+        # Upload de remplacement (format PNG → nom de fichier différent → URL différente)
+        second_image = self.create_test_image(color="blue", format="PNG")
         response2 = auth_client_with_tokens.patch(url, {"avatar": second_image}, format="multipart")
 
         assert response2.status_code == status.HTTP_200_OK

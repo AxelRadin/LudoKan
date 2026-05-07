@@ -27,6 +27,7 @@ import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
 import { Root } from './Root.tsx';
 import { ThemeModeProvider } from './contexts/ThemeContext';
+import { AdminRoot } from './AdminRoot.tsx';
 
 initSentry();
 
@@ -59,8 +60,14 @@ const router = createBrowserRouter([
       { path: 'about', element: <AboutPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
       { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
+    ],
+  },
+  {
+    path: '/admin',
+    element: <AdminRoot />,
+    children: [
       {
-        path: 'admin/dashboard',
+        path: 'dashboard',
         element: (
           <ProtectedAdminRoute>
             <AdminDashboard />

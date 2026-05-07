@@ -59,7 +59,13 @@ type SectionLabelProps = Readonly<{
   linkState?: object;
 }>;
 
-function SectionLabel({ label, title, to, linkState }: SectionLabelProps) {
+/* ── Section header ── */
+export function SectionLabel({
+  label,
+  title,
+  to,
+  linkState,
+}: SectionLabelProps) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const inkColor = isDark ? C.darkInk : C.ink;
@@ -153,8 +159,7 @@ function Section({ children, className, coverUrl }: SectionProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
+    const el = sectionRef.current!;
     const observer = new IntersectionObserver(
       ([entry]) => setVisible(entry.isIntersecting),
       { threshold: 0.1 }

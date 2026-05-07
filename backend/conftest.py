@@ -107,6 +107,11 @@ def mock_redis():
     return mock_redis
 
 
+@pytest.fixture(autouse=True)
+def temp_media_root(settings, tmp_path):
+    settings.MEDIA_ROOT = str(tmp_path / "media")
+
+
 @pytest.fixture
 def mock_celery_task():
     """Mock pour les tâches Celery"""

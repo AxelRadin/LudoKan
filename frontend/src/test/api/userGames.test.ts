@@ -1,8 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiGet, apiPost } from '../services/api';
-import { fetchUserGames, addUserGame } from '../api/userGames';
+import { apiGet, apiPost, apiPatch, apiDelete } from '../../services/api';
+import {
+  fetchUserGames,
+  addUserGame,
+  updateUserGame,
+  deleteUserGame,
+} from '../../api/userGames';
 
-vi.mock('../services/api', () => ({
+vi.mock('../../services/api', () => ({
   apiGet: vi.fn(),
   apiPost: vi.fn(),
   apiPatch: vi.fn(),
@@ -75,5 +80,24 @@ describe('userGames API', () => {
       hours_played: 50,
     });
     expect(result).toEqual(mockCreatedGame);
+  });
+
+  it('updateUserGame envoie les bonnes données via PATCH', async () => {
+    const mockUpdatedGame = { id: 4, status: 'TERMINE', is_favorite: true };
+    vi.mocked(apiPatch).mockResolvedValueOnce(mockUpdatedGame);
+
+    const updateData = { status: 'TERMINE' as const, is_favorite: true };
+    const result = await updateUserGame(123, updateData);
+
+    expect(apiPatch).toHaveBeenCalledWith('/api/me/games/123/', updateData);
+    expect(result).toEqual(mockUpdatedGame);
+  });
+
+  it('deleteUserGame appelle la bonne URL via DELETE', async () => {
+    vi.mocked(apiDelete).mockResolvedValueOnce(undefined);
+
+    await deleteUserGame(456);
+
+    expect(apiDelete).toHaveBeenCalledWith('/api/me/games/456/');
   });
 });
