@@ -15,9 +15,12 @@ COPY requirements.txt .
 COPY requirements-dev.txt .
 
 RUN python -m pip install --upgrade "pip==26.1.1" \
-    && pip install --root-user-action=ignore -r requirements.txt \
-    && pip install --root-user-action=ignore -r requirements-dev.txt
-    
+    && pip install --root-user-action=ignore \
+        --only-binary=:all: \
+        --no-binary=dj-rest-auth \
+        -r requirements.txt \
+    && pip install --root-user-action=ignore --only-binary=:all: -r requirements-dev.txt
+
 COPY manage.py ./manage.py
 COPY config/ ./config/
 COPY apps/ ./apps/
