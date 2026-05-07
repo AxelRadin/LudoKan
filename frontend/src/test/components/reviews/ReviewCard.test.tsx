@@ -63,9 +63,13 @@ describe('ReviewCard', () => {
 
     const cardBox = container.firstChild as HTMLElement;
 
+    expect(cardBox).toBeInTheDocument();
+
     fireEvent.mouseEnter(cardBox);
+    expect(cardBox).toBeInTheDocument();
 
     fireEvent.mouseLeave(cardBox);
+    expect(cardBox).toBeInTheDocument();
   });
 
   it('affiche les détails complets (note, titre, date_created, pseudo)', () => {
