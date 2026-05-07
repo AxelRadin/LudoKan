@@ -95,18 +95,14 @@ class GameViewSet(ModelViewSet):
 
         if is_stub and instance.igdb_id:
             try:
-                # Fetch rich data from IGDB
                 query = f"{FIELDS_GAME_DETAIL} where id = {instance.igdb_id}; limit 1;"
                 igdb_data = igdb_client.igdb_request("games", query)
                 if igdb_data and isinstance(igdb_data, list):
                     from apps.games.igdb_wikidata import enrich_with_wikidata_display_name
-                    from apps.games.services import get_or_create_game_from_igdb
 
-                    # Normalize & Enrich (Wikidata for name_fr)
                     enriched = enrich_with_wikidata_display_name(igdb_data)
-                    norm = enriched[0]  # normalize_igdb_game is already called inside enrich_...
+                    norm = enriched[0]
 
-                    # Update local record using the service (which now handles updates)
                     get_or_create_game_from_igdb(
                         igdb_id=instance.igdb_id,
                         name=norm.get("name"),
@@ -117,11 +113,11 @@ class GameViewSet(ModelViewSet):
                         genres=norm.get("genres"),
                         screenshots=norm.get("screenshots"),
                         videos=norm.get("videos"),
+                        min_players=norm.get("min_players"),
+                        max_players=norm.get("max_players"),
                     )
-                    # Refresh instance to get updated data
                     instance.refresh_from_db()
             except Exception:
-                # If IGDB fails, we still return the stub to avoid breaking the page
                 pass
 
         serializer = self.get_serializer(instance)
@@ -286,6 +282,8 @@ class GameByIgdbIdView(APIView):
                 genres=norm.get("genres"),
                 screenshots=norm.get("screenshots"),
                 videos=norm.get("videos"),
+                min_players=norm.get("min_players"),
+                max_players=norm.get("max_players"),
             )
             serializer = GameReadSerializer(game_obj, context={"request": request})
             return Response(serializer.data)
