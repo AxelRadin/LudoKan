@@ -3,6 +3,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import PeopleIcon from '@mui/icons-material/People';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import { Box, Button, Chip, Modal, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
@@ -20,7 +21,7 @@ import type { GamePageAppearance } from './gamePageAppearance';
 import { GAME_PAGE_FONT } from './gamePageAppearance';
 import { GENRE_ICON_MAP } from './gamePageGenreIcons';
 import { Sep, StatusChip } from './GamePageFragments';
-import { fdate, hi } from './gamePageUtils';
+import { buildPlayerLabel, fdate, hi } from './gamePageUtils';
 
 const DLIMIT = 220;
 
@@ -90,6 +91,7 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
   const publisherName = game.publisher?.name;
   const releaseDate = game.release_date ? fdate(game.release_date) : null;
   const isFavorite = Boolean(logic.userGame?.is_favorite);
+  const playerLabel = buildPlayerLabel(game.min_players, game.max_players);
 
   return (
     <Box
@@ -183,34 +185,66 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
           p: '20px 22px 24px',
         }}
       >
-        {mainGenre && (
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              px: 1.2,
-              py: 0.35,
-              mb: 1,
-              borderRadius: 999,
-              background: `${accent}22`,
-              backdropFilter: 'blur(10px)',
-              border: `1px solid ${accent}40`,
-            }}
-          >
-            <Typography
+        <Box sx={{ display: 'flex', gap: 0.8, flexWrap: 'wrap', mb: 1 }}>
+          {mainGenre && (
+            <Box
               sx={{
-                fontFamily: GAME_PAGE_FONT,
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 1.8,
-                textTransform: 'uppercase',
-                color: '#fff',
+                display: 'inline-flex',
+                alignItems: 'center',
+                px: 1.2,
+                py: 0.35,
+                borderRadius: 999,
+                background: `${accent}22`,
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${accent}40`,
               }}
             >
-              {mainGenre}
-            </Typography>
-          </Box>
-        )}
+              <Typography
+                sx={{
+                  fontFamily: GAME_PAGE_FONT,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 1.8,
+                  textTransform: 'uppercase',
+                  color: '#fff',
+                }}
+              >
+                {mainGenre}
+              </Typography>
+            </Box>
+          )}
+
+          {playerLabel && (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1.2,
+                py: 0.35,
+                borderRadius: 999,
+                background: 'rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.25)',
+              }}
+            >
+              <PeopleIcon sx={{ fontSize: 11, color: '#fff' }} />
+              <Typography
+                sx={{
+                  fontFamily: GAME_PAGE_FONT,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 1.2,
+                  textTransform: 'uppercase',
+                  color: '#fff',
+                }}
+              >
+                {playerLabel}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
         <Typography
           sx={{
             fontFamily: GAME_PAGE_FONT,
@@ -272,10 +306,11 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
   );
 }
 
-function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
+function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
   const { t } = useTranslation();
   const { card, redBtnSx, accent, muted } = appearance;
   const isFavorite = Boolean(logic.userGame?.is_favorite);
+  const isSolo = game.max_players === 1;
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
 
@@ -298,14 +333,22 @@ function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
     <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
       <SectionAccentTitle label={t('gamePageBody.actionsLabel')} />
       <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2.5 }}>
-        <SecondaryButton
-          onClick={() => logic.handleSetMatchmaking()}
-          disabled={logic.isMatching}
+        <Tooltip
+          title={isSolo ? 'Ce jeu est solo' : ''}
+          arrow
+          disableHoverListener={!isSolo}
         >
-          {logic.isMatching
-            ? t('gamePageBody.searching')
-            : t('gamePageBody.matchmaking')}
-        </SecondaryButton>
+          <span>
+            <SecondaryButton
+              onClick={() => logic.handleSetMatchmaking()}
+              disabled={logic.isMatching || isSolo}
+            >
+              {logic.isMatching
+                ? t('gamePageBody.searching')
+                : t('gamePageBody.matchmaking')}
+            </SecondaryButton>
+          </span>
+        </Tooltip>
         <Button
           variant="contained"
           onClick={onAddToCollectionClick}

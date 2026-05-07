@@ -60,3 +60,39 @@ def test_get_or_create_game_from_igdb_fallback_name():
     assert game.igdb_id == 9999
     assert "Unknown Game" in game.name
     assert str(9999) in game.name
+
+
+def test_get_or_create_game_from_igdb_creates_with_player_counts():
+    """Les min/max players sont persistés dès la création."""
+    game, created = get_or_create_game_from_igdb(
+        igdb_id=2468,
+        name="Party Game",
+        min_players=2,
+        max_players=8,
+    )
+
+    assert created is True
+    assert game.min_players == 2
+    assert game.max_players == 8
+
+
+def test_get_or_create_game_from_igdb_heals_missing_player_counts():
+    """Un jeu existant sans counts doit être healé si IGDB fournit les valeurs."""
+    existing, created = get_or_create_game_from_igdb(
+        igdb_id=1357,
+        name="Needs Healing",
+    )
+    assert created is True
+    assert existing.min_players is None
+    assert existing.max_players is None
+
+    healed, created_again = get_or_create_game_from_igdb(
+        igdb_id=1357,
+        min_players=1,
+        max_players=4,
+    )
+
+    assert created_again is False
+    assert healed.id == existing.id
+    assert healed.min_players == 1
+    assert healed.max_players == 4
