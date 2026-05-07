@@ -1,9 +1,9 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { apiPost, apiPatch } from '../services/api';
-import { useSubmitReview } from '../hooks/useSubmitReview';
+import { apiPost, apiPatch } from '../../services/api';
+import { useSubmitReview } from '../../hooks/useSubmitReview';
 
-vi.mock('../services/api', () => ({
+vi.mock('../../services/api', () => ({
   apiPost: vi.fn(),
   apiPatch: vi.fn(),
 }));

@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
+import { useMatchmakingTimer } from '../../hooks/useMatchmakingTimer';
 
 describe('useMatchmakingTimer', () => {
   beforeEach(() => vi.useFakeTimers());
@@ -22,5 +22,16 @@ describe('useMatchmakingTimer', () => {
     });
 
     expect(result.current).toBe('1:05');
+  });
+
+  it('ignore les temps négatifs si startedAt est dans le futur', () => {
+    const now = new Date('2024-01-01T12:00:00Z');
+    vi.setSystemTime(now);
+
+    const futureDate = new Date('2024-01-01T12:01:00Z');
+
+    const { result } = renderHook(() => useMatchmakingTimer(futureDate));
+
+    expect(result.current).toBe('0:00');
   });
 });

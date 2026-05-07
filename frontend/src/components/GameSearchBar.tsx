@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { type IgdbGame } from '../api/igdb';
 import { useIgdbSuggestions } from '../hooks/useIgdbSuggestions';
-import { Link } from 'react-router-dom';
 
 type Props = Readonly<{
   onSelect: (game: IgdbGame) => void;
@@ -29,7 +29,9 @@ export default function GameSearchBar({ onSelect }: Props) {
     document.addEventListener('mousedown', onDocClick);
   }, []);
 
-  const showDropdown = open && (loading || error || suggestions.length > 0);
+  const showDropdown =
+    open &&
+    (loading || error || suggestions.length > 0 || query.trim().length > 0);
   const bestLicenseId = suggestions.find(g => g.collections?.length)
     ?.collections?.[0]?.id;
 
