@@ -175,6 +175,7 @@ export const Header: React.FC = () => {
       {isAuthenticated ? (
         <>
           <Button
+            data-tour="profile"
             color="inherit"
             onClick={handleProfileMenuOpen}
             endIcon={
@@ -377,7 +378,9 @@ export const Header: React.FC = () => {
             </IconButton>
           ) : (
             <>
-              <SearchBar />
+              <Box data-tour="search">
+                <SearchBar />
+              </Box>
               <Box display="flex" alignItems="center" gap={2}>
                 {desktopActions}
               </Box>

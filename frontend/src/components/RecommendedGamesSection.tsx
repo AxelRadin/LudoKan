@@ -271,7 +271,7 @@ export function RecommendedGamesSection() {
   const current = games[index] ?? null;
 
   return (
-    <Box sx={{ mb: 6 }}>
+    <Box data-tour="suggestions" sx={{ mb: 6 }}>
       {/* Header */}
       <Box sx={{ mb: 3, pl: '18px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>

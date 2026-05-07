@@ -22,6 +22,7 @@ export default function FloatingMatchmakingWidget({
 
   return (
     <Paper
+      data-tour="matchmaking"
       elevation={6}
       onClick={onClick}
       sx={{
