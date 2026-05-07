@@ -15,8 +15,8 @@ COPY requirements.txt .
 COPY requirements-dev.txt .
 
 RUN python -m pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && pip install -r requirements-dev.txt
+    && pip install --root-user-action=ignore -r requirements.txt \
+    && pip install --root-user-action=ignore -r requirements-dev.txt
 
 COPY manage.py ./manage.py
 COPY config/ ./config/
