@@ -14,6 +14,11 @@ RUN apt-get update \
 COPY requirements.txt .
 COPY requirements-dev.txt .
 
+# Installer deps avant de copier tout le code -> meilleur cache
+# Dependencies are pinned in requirements.txt and requirements-dev.txt.
+# --only-binary=:all: cannot be enforced because dj-rest-auth==5.0.2 has no compatible wheel for this build and requires source distribution installation.
+# Risk accepted for this controlled Docker build.
+
 RUN python -m pip install --upgrade pip \
     && pip install --root-user-action=ignore -r requirements.txt \
     && pip install --root-user-action=ignore -r requirements-dev.txt
