@@ -4,6 +4,8 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -25,6 +27,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
+import { useThemeMode } from '../contexts/ThemeContext';
 import { apiPost } from '../services/api';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -46,6 +49,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
   const { t, i18n } = useTranslation();
+  const { darkMode, toggleDarkMode } = useThemeMode();
 
   const {
     isAuthenticated,
@@ -169,8 +173,23 @@ export const Header: React.FC = () => {
     </>
   );
 
+  const themeToggleButton = (
+    <IconButton
+      color="inherit"
+      onClick={toggleDarkMode}
+      sx={{
+        transition: 'transform 0.3s ease',
+        '&:hover': { transform: 'rotate(20deg)' },
+      }}
+      aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
+    >
+      {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+    </IconButton>
+  );
+
   const desktopActions = (
     <>
+      {themeToggleButton}
       {langDropdown}
       {isAuthenticated ? (
         <>
@@ -309,6 +328,22 @@ export const Header: React.FC = () => {
           </Button>
         </>
       )}
+
+      <Divider sx={{ my: 1 }} />
+
+      {/* Theme toggle dans le drawer mobile */}
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        px={1}
+      >
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {darkMode ? 'Mode sombre' : 'Mode clair'}
+        </Typography>
+        {themeToggleButton}
+      </Box>
+
       {langDropdown}
     </Box>
   );
