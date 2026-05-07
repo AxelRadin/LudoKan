@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
-import PlatformLogos from '../components/PlatformLogos';
+import { describe, expect, it } from 'vitest';
+import PlatformLogos from '../../components/PlatformLogos';
 
 describe('PlatformLogos', () => {
   it('affiche les bonnes étiquettes selon le dictionnaire', () => {

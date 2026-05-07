@@ -185,7 +185,14 @@ function mergeUniqueIntoPool(
   incoming: SearchSourcedGame[]
 ): SearchSourcedGame[] {
   const seen = new Set(prev.map(g => g.igdb_id));
-  const fresh = incoming.filter(g => !seen.has(g.igdb_id));
+
+  const fresh = incoming.filter(g => {
+    if (seen.has(g.igdb_id)) return false;
+
+    seen.add(g.igdb_id);
+    return true;
+  });
+
   return [...prev, ...fresh];
 }
 

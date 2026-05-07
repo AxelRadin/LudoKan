@@ -4,14 +4,13 @@ import pluginReactHooks from 'eslint-plugin-react-hooks';
 import pluginReactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+import unusedImports from 'eslint-plugin-unused-imports';
 
 export default [
-  // Ignore build and dependency directories
   {
     ignores: ['dist/**', 'node_modules/**', 'build/**', '**/*.css'],
   },
 
-  // JavaScript/TypeScript/React files
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -20,6 +19,7 @@ export default [
       react: pluginReact,
       'react-hooks': pluginReactHooks,
       'react-refresh': pluginReactRefresh,
+      'unused-imports': unusedImports,
     },
     languageOptions: {
       globals: globals.browser,
@@ -46,9 +46,16 @@ export default [
         { allowConstantExport: true },
       ],
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': [
+      '@typescript-eslint/no-unused-vars': 'off',
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_' },
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+        },
       ],
     },
   },
