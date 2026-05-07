@@ -1,8 +1,11 @@
 import Box from '@mui/material/Box';
-import { Typography } from '@mui/material';
+import { Typography, IconButton } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import InstagramIcon from '@mui/icons-material/Instagram';
+import YouTubeIcon from '@mui/icons-material/YouTube';
+import EmailIcon from '@mui/icons-material/Email';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -35,6 +38,27 @@ const Footer = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const socialLinks = [
+    {
+      name: 'Instagram',
+      icon: <InstagramIcon />,
+      url: 'https://www.instagram.com/ludokan_site/',
+      color: '#E4405F',
+    },
+    {
+      name: 'YouTube',
+      icon: <YouTubeIcon />,
+      url: 'https://youtube.com/@ludokan?si=Dfm5V1Uw-Jixvb7a',
+      color: '#FF0000',
+    },
+    {
+      name: 'Email',
+      icon: <EmailIcon />,
+      url: 'mailto:ludokan68@gmail.com',
+      color: '#EA4335',
+    },
+  ];
+
   return (
     <Box
       component="footer"
@@ -62,6 +86,7 @@ const Footer = () => {
           gap: 3,
         }}
       >
+        {/* Logo + Description */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <Box
             component="img"
@@ -94,37 +119,71 @@ const Footer = () => {
           </Box>
         </Box>
 
+        {/* Navigation + Réseaux sociaux */}
         <Box
           sx={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            gap: 3,
-            justifyContent: 'center',
+            gap: 2,
           }}
         >
-          {[
-            { label: t('footer.home'), handler: handleHome },
-            { label: t('footer.search'), handler: handleSearch },
-            { label: t('footer.about'), handler: handleAbout },
-          ].map(({ label, handler }) => (
-            <Typography
-              key={label}
-              onClick={handler}
-              sx={{
-                fontSize: 13,
-                fontWeight: 500,
-                color: muted,
-                letterSpacing: 0.2,
-                cursor: 'pointer',
-                transition: 'color 0.2s ease',
-                '&:hover': { color: accent },
-              }}
-            >
-              {label}
-            </Typography>
-          ))}
+          {/* Navigation */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
+            }}
+          >
+            {[
+              { label: t('footer.home'), handler: handleHome },
+              { label: t('footer.search'), handler: handleSearch },
+              { label: t('footer.about'), handler: handleAbout },
+            ].map(({ label, handler }) => (
+              <Typography
+                key={label}
+                onClick={handler}
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: muted,
+                  letterSpacing: 0.2,
+                  cursor: 'pointer',
+                  transition: 'color 0.2s ease',
+                  '&:hover': { color: accent },
+                }}
+              >
+                {label}
+              </Typography>
+            ))}
+          </Box>
+
+          {/* Réseaux sociaux */}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {socialLinks.map(social => (
+              <IconButton
+                key={social.name}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.name}
+                sx={{
+                  color: muted,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    color: social.color,
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                {social.icon}
+              </IconButton>
+            ))}
+          </Box>
         </Box>
 
+        {/* Copyright */}
         <Box sx={{ textAlign: { xs: 'left', md: 'right' } }}>
           <Typography
             sx={{
