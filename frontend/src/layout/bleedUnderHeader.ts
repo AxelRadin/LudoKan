@@ -7,6 +7,8 @@ const MAIN_TOP_PADDING_UNITS = 8;
 
 type TopPad = { xs: string; md: string };
 
+const zeroPad: TopPad = { xs: '0px', md: '0px' };
+
 export function bleedUnderHeader(
   theme: Theme,
   extraTopPadding: TopPad = zeroPad

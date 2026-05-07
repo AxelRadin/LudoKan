@@ -70,7 +70,7 @@ const Footer = () => {
     <Box
       component="footer"
       sx={{
-        mt: 6,
+        // mt: 6,
         borderTop: `1px solid ${border}`,
         background: isDark ? 'rgba(26,16,16,0.95)' : 'rgba(253,244,244,0.95)',
       }}
