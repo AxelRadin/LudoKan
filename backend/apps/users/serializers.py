@@ -10,6 +10,7 @@ from .models import UserRole, UserSuspension
 
 
 class CustomRegisterSerializer(RegisterSerializer):
+    username = serializers.CharField(required=False, allow_blank=True, write_only=True)
     pseudo = serializers.CharField(required=False, max_length=150)
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
