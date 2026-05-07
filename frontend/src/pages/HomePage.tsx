@@ -335,51 +335,56 @@ export const HomePage = () => {
           />
         </Section>
 
-        <Box className="lux-s4">
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              mb: 2.5,
-              mt: 1,
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: F,
-                fontWeight: 600,
-                fontSize: { xs: 22, md: 28 },
-                color: isDark ? C.darkInk : C.ink,
-                letterSpacing: -0.3,
-                flexShrink: 0,
-                transition: 'color 0.3s ease',
-              }}
-            >
-              {t('homePage.exploreByGenre')}
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${isDark ? C.darkBorder : C.border}, transparent)`,
-              }}
-            />
+        {/* SECTION EXPLORER PAR GENRE - VERSION AMÉLIORÉE */}
+        <Box className="lux-s4" sx={{ mt: 5 }}>
+          {/* Header stylé */}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography
               sx={{
                 fontFamily: F,
                 fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: 2.5,
+                fontWeight: 700,
+                letterSpacing: 3,
                 textTransform: 'uppercase',
                 color: isDark ? C.darkAccentSoft : C.accentSoft,
-                flexShrink: 0,
-                transition: 'color 0.3s ease',
+                opacity: 0.85,
+                mb: 1,
               }}
             >
               {t('homePage.allGenres')}
             </Typography>
+            <Typography
+              sx={{
+                fontFamily: F,
+                fontWeight: 800,
+                fontSize: { xs: 28, md: 36 },
+                color: isDark ? C.darkInk : C.ink,
+                letterSpacing: -0.5,
+                mb: 1,
+                background: isDark
+                  ? 'linear-gradient(135deg, #FF3D3D 0%, #FF8A80 100%)'
+                  : 'linear-gradient(135deg, #FF3D3D 0%, #D32F2F 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              {t('homePage.exploreByGenre')}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: F,
+                fontSize: 15,
+                color: isDark ? C.darkLight : C.light,
+                maxWidth: 600,
+                mx: 'auto',
+              }}
+            >
+              Plongez dans l'univers qui vous correspond
+            </Typography>
           </Box>
+
+          {/* Grille des genres */}
           <Section>
             <GenreGrid onGenreClick={handleGenreClick} />
           </Section>
