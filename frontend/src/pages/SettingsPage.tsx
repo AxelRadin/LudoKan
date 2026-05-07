@@ -17,8 +17,9 @@ import {
   Typography,
   ListItemButton,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useThemeMode } from '../contexts/ThemeContext';
 
 const settingsSectionHeadingSx = {
   color: 'text.secondary',
@@ -40,7 +41,7 @@ const settingsListRowButtonSx = {
 } as const;
 
 const SettingsPage: React.FC = () => {
-  const [darkMode, setDarkMode] = useState(false);
+  const { darkMode, toggleDarkMode } = useThemeMode();
   const navigate = useNavigate();
 
   const externalLinks = [
@@ -87,7 +88,7 @@ const SettingsPage: React.FC = () => {
             <ListItemSecondaryAction>
               <Switch
                 checked={darkMode}
-                onChange={e => setDarkMode(e.target.checked)}
+                onChange={toggleDarkMode}
                 color="primary"
               />
             </ListItemSecondaryAction>
@@ -104,7 +105,10 @@ const SettingsPage: React.FC = () => {
         <List disablePadding>
           {/* Politiques — navigation interne */}
           <ListItemButton
-            onClick={() => navigate('/politiques')}
+            onClick={() => {
+              navigate('/politiques');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             sx={settingsListRowButtonSx}
           >
             <ListItemIcon sx={{ color: 'text.secondary' }}>
