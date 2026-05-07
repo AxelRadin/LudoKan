@@ -1,13 +1,13 @@
 import { Box, Skeleton, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
-type Props = {
+type Props = Readonly<{
   title: string;
   value: number | string;
   icon?: ReactNode;
   sub?: string;
   loading?: boolean;
-};
+}>;
 
 export default function KpiCard({ title, value, icon, sub, loading }: Props) {
   return (
