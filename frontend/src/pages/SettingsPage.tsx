@@ -49,11 +49,7 @@ const SettingsPage: React.FC = () => {
       label: 'Cookies',
       icon: <CookieOutlinedIcon />,
       href: 'https://ludokan.fr/cookies',
-    },
-    {
-      label: 'À propos',
-      icon: <InfoOutlinedIcon />,
-      href: 'https://ludokan.fr/a-propos',
+      external: true,
     },
   ];
 
@@ -116,6 +112,26 @@ const SettingsPage: React.FC = () => {
             </ListItemIcon>
             <ListItemText
               primary="Politiques"
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+          </ListItemButton>
+
+          <Divider variant="inset" component="li" />
+
+          {/* À propos — navigation interne */}
+          <ListItemButton
+            onClick={() => {
+              navigate('/about');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={settingsListRowButtonSx}
+          >
+            <ListItemIcon sx={{ color: 'text.secondary' }}>
+              <InfoOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="À propos"
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
