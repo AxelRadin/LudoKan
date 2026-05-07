@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -8,6 +9,7 @@ from apps.recommendations.serializers import RecommendedGameSerializer
 from apps.recommendations.utils import get_user_preferred_genre_ids
 
 _RECOMMENDATIONS_LIMIT = 10
+_MIN_SCREENSHOTS = 4
 
 
 class RecommendationsView(APIView):
@@ -20,7 +22,12 @@ class RecommendationsView(APIView):
         genre_ids = get_user_preferred_genre_ids(user)
         owned_game_ids = UserGame.objects.filter(user=user).values_list("game_id", flat=True)
 
-        qs = Game.objects.prefetch_related("genres", "platforms").exclude(id__in=owned_game_ids)
+        qs = (
+            Game.objects.prefetch_related("genres", "platforms", "screenshots")
+            .annotate(screenshot_count=Count("screenshots", distinct=True))
+            .filter(screenshot_count__gte=_MIN_SCREENSHOTS)
+            .exclude(id__in=owned_game_ids)
+        )
 
         if genre_ids:
             qs = qs.filter(genres__id__in=genre_ids).distinct()
