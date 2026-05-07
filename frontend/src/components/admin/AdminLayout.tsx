@@ -2,7 +2,7 @@ import { Box } from '@mui/material';
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
 
-type Props = { children: React.ReactNode };
+type Props = Readonly<{ children: React.ReactNode }>;
 
 export default function AdminLayout({ children }: Props) {
   return (
