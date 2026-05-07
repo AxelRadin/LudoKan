@@ -2,17 +2,17 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import GavelIcon from '@mui/icons-material/Gavel';
 import PrivacyTipOutlinedIcon from '@mui/icons-material/PrivacyTipOutlined';
 import { Box, Button, Container, Typography } from '@mui/material';
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LegalPolicyPickCard } from '../components/legal/LegalPolicyPickCard';
 import { LegalDocumentSections } from './politiques/LegalDocumentSections';
 import { getPolicies, type PolicyId } from './politiques/politiquesDocuments';
 
 const PolitiquesPage: React.FC = () => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [active, setActive] = useState<PolicyId | null>(null);
 
-  const POLICIES = useMemo(() => getPolicies(), [i18n.language]);
+  const POLICIES = getPolicies();
   const policy = active ? POLICIES[active] : null;
 
   return (

@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-} from 'react';
+import React, { createContext, useMemo, useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 
@@ -13,12 +7,10 @@ interface ThemeContextType {
   toggleDarkMode: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
+export const ThemeContext = createContext<ThemeContextType>({
   darkMode: false,
   toggleDarkMode: () => {},
 });
-
-export const useThemeMode = () => useContext(ThemeContext);
 
 export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -35,6 +27,11 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
   const toggleDarkMode = () => {
     setDarkMode((prev: boolean) => !prev);
   };
+
+  const contextValue = useMemo(
+    () => ({ darkMode, toggleDarkMode }),
+    [darkMode]
+  );
 
   const theme = useMemo(
     () =>
@@ -124,7 +121,7 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+    <ThemeContext.Provider value={contextValue}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         {children}

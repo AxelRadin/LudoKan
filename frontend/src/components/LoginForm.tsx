@@ -21,6 +21,24 @@ import { useSocialAuth } from '../hooks/useSocialAuth';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
+const isValidEmail = (value: string): boolean => {
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length > 254) {
+    return false;
+  }
+
+  const atIndex = trimmedValue.indexOf('@');
+  const lastDotIndex = trimmedValue.lastIndexOf('.');
+
+  return (
+    atIndex > 0 &&
+    lastDotIndex > atIndex + 1 &&
+    lastDotIndex < trimmedValue.length - 1 &&
+    !trimmedValue.includes(' ')
+  );
+};
+
 type LoginFormProps = {
   onSwitchToRegister: () => void;
   onLoginSuccess?: () => void;
@@ -112,16 +130,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       return;
     }
 
-    // Validation email simple
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(resetEmail)) {
+    if (!isValidEmail(resetEmail)) {
       setResetError('Adresse email invalide.');
       return;
     }
 
     try {
       setResetLoading(true);
-      await apiPost('/api/auth/password-reset/', { email: resetEmail });
+      await apiPost('/api/auth/password-reset/', {
+        email: resetEmail.trim(),
+      });
       setResetSuccess(true);
     } catch (err: any) {
       setResetError(

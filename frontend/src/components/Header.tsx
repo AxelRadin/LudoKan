@@ -27,7 +27,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
-import { useThemeMode } from '../contexts/ThemeContext';
+import { useThemeMode } from '../contexts/useThemeMode';
 import { apiPost } from '../services/api';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';

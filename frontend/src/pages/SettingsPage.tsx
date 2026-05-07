@@ -20,7 +20,7 @@ import {
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useThemeMode } from '../contexts/ThemeContext';
+import { useThemeMode } from '../contexts/useThemeMode';
 
 const settingsSectionHeadingSx = {
   color: 'text.secondary',
