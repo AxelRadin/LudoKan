@@ -49,15 +49,25 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
           },
           ...(darkMode
             ? {
+                // Mode sombre
                 background: {
                   default: '#1a1010',
                   paper: '#2a2020',
                 },
+                text: {
+                  primary: '#f5e6e6',
+                  secondary: '#9e7070',
+                },
               }
             : {
+                // Mode clair
                 background: {
                   default: '#fdf4f4',
                   paper: '#ffffff',
+                },
+                text: {
+                  primary: '#241818',
+                  secondary: '#b49393',
                 },
               }),
         },
@@ -69,6 +79,42 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
             styleOverrides: {
               body: {
                 backgroundColor: darkMode ? '#1a1010' : '#fdf4f4',
+                color: darkMode ? '#f5e6e6' : '#241818',
+                transition: 'background-color 0.3s ease, color 0.3s ease',
+              },
+              '*': {
+                scrollbarWidth: 'thin',
+                scrollbarColor: darkMode
+                  ? '#4a3030 #1a1010'
+                  : '#d4a4a4 #fdf4f4',
+              },
+              '*::-webkit-scrollbar': {
+                width: '8px',
+                height: '8px',
+              },
+              '*::-webkit-scrollbar-track': {
+                background: darkMode ? '#1a1010' : '#fdf4f4',
+              },
+              '*::-webkit-scrollbar-thumb': {
+                backgroundColor: darkMode ? '#4a3030' : '#d4a4a4',
+                borderRadius: '4px',
+                '&:hover': {
+                  backgroundColor: darkMode ? '#5a4040' : '#c49393',
+                },
+              },
+            },
+          },
+          MuiPaper: {
+            styleOverrides: {
+              root: {
+                backgroundImage: 'none',
+              },
+            },
+          },
+          MuiAppBar: {
+            styleOverrides: {
+              root: {
+                backgroundImage: 'none',
               },
             },
           },
