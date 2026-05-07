@@ -283,10 +283,10 @@ export const HomePage = () => {
     >
       <Box
         sx={{
-          maxWidth: { md: '100%', lg: '70%' },
+          maxWidth: { md: '100%', lg: '85%' },
           mx: 'auto',
-          px: { xs: 2.5, md: 5, lg: 7 },
-          pt: { xs: 4, md: 6 },
+          px: { xs: 0, md: 0, lg: 0 },
+          pt: { xs: 1, md: 1.5 },
           pb: { xs: 4, md: 5 },
         }}
       >

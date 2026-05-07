@@ -362,8 +362,8 @@ export const Header: React.FC = () => {
           left: 0,
           right: 0,
           zIndex: 1100,
-          px: { xs: 1, md: 2 },
-          pt: { xs: 1, md: 2 },
+          px: { xs: 0.5, md: 1 },
+          pt: { xs: 0.5, md: 0.5 },
         }}
       >
         <AppBar
@@ -452,8 +452,8 @@ export const Header: React.FC = () => {
         </AppBar>
       </Box>
 
-      {/* Spacer pour compenser le header fixed */}
-      <Box sx={{ height: { xs: 80, md: 88 } }} />
+      {/* Spacer MINIMAL */}
+      <Box sx={{ height: { xs: 66, md: 68 } }} />
 
       <Drawer
         anchor="right"
