@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '../contexts/ThemeContext';
 
 const settingsSectionHeadingSx = {
@@ -41,15 +42,15 @@ const settingsListRowButtonSx = {
 } as const;
 
 const SettingsPage: React.FC = () => {
+  const { t } = useTranslation();
   const { darkMode, toggleDarkMode } = useThemeMode();
   const navigate = useNavigate();
 
   const externalLinks = [
     {
-      label: 'Cookies',
+      label: t('settings.cookies'),
       icon: <CookieOutlinedIcon />,
       href: 'https://ludokan.fr/cookies',
-      external: true,
     },
   ];
 
@@ -60,12 +61,11 @@ const SettingsPage: React.FC = () => {
         fontWeight={600}
         sx={{ mb: 4, color: 'secondary.main' }}
       >
-        Paramètres
+        {t('settings.title')}
       </Typography>
 
-      {/* Section Apparence */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
-        Apparence
+        {t('settings.appearanceSection')}
       </Typography>
 
       <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
@@ -77,8 +77,8 @@ const SettingsPage: React.FC = () => {
               <DarkModeIcon />
             </ListItemIcon>
             <ListItemText
-              primary="Mode sombre"
-              secondary="Changer l'apparence de l'application"
+              primary={t('settings.darkMode')}
+              secondary={t('settings.darkModeDesc')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ListItemSecondaryAction>
@@ -92,14 +92,12 @@ const SettingsPage: React.FC = () => {
         </List>
       </Box>
 
-      {/* Section Informations */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
-        Informations
+        {t('settings.infoSection')}
       </Typography>
 
       <Box sx={{ ...settingsListCardBaseSx, mt: 1 }}>
         <List disablePadding>
-          {/* Politiques — navigation interne */}
           <ListItemButton
             onClick={() => {
               navigate('/politiques');
@@ -111,7 +109,7 @@ const SettingsPage: React.FC = () => {
               <PolicyOutlinedIcon />
             </ListItemIcon>
             <ListItemText
-              primary="Politiques"
+              primary={t('settings.policies')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -119,7 +117,6 @@ const SettingsPage: React.FC = () => {
 
           <Divider variant="inset" component="li" />
 
-          {/* À propos — navigation interne */}
           <ListItemButton
             onClick={() => {
               navigate('/about');
@@ -131,7 +128,7 @@ const SettingsPage: React.FC = () => {
               <InfoOutlinedIcon />
             </ListItemIcon>
             <ListItemText
-              primary="À propos"
+              primary={t('settings.about')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -139,7 +136,6 @@ const SettingsPage: React.FC = () => {
 
           <Divider variant="inset" component="li" />
 
-          {/* Liens externes */}
           {externalLinks.map((item, index) => (
             <React.Fragment key={item.label}>
               <ListItemButton
@@ -172,7 +168,7 @@ const SettingsPage: React.FC = () => {
         textAlign="center"
         sx={{ mt: 5, color: 'text.disabled' }}
       >
-        Ludokan • v1.0.0
+        {t('settings.version')}
       </Typography>
     </Container>
   );
