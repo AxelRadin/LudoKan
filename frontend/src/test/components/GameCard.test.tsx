@@ -92,7 +92,7 @@ describe('GameCard', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it("n'affiche pas le bouton ajouter si le jeu a déjà un django_id", () => {
+  it('affiche le bouton ajouter même si le jeu a un django_id (non ajouté à la bibliothèque)', () => {
     vi.mocked(useAuth).mockReturnValue({ isAuthenticated: true } as any);
     const gameWithDjangoId = { ...baseGame, django_id: 50 };
 
@@ -101,7 +101,7 @@ describe('GameCard', () => {
         <GameCard game={gameWithDjangoId} />
       </MemoryRouter>
     );
-    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('ajoute le jeu à la bibliothèque au clic sur le bouton (Succès)', async () => {
