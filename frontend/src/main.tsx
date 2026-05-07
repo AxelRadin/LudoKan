@@ -32,6 +32,7 @@ import AboutPage from './pages/AboutPage.tsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.tsx';
 import VerifyEmailPage from './pages/VerifyEmailPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
+import UsersAdmin from './pages/admin/UsersAdmin.tsx';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
 import { Root } from './Root.tsx';
 import { ThemeModeProvider } from './contexts/ThemeContext';
@@ -93,6 +94,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedAdminRoute>
             <AdminDashboard />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: 'users',
+        element: (
+          <ProtectedAdminRoute>
+            <UsersAdmin />
           </ProtectedAdminRoute>
         ),
       },
