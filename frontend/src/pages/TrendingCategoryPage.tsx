@@ -19,7 +19,7 @@ export default function TrendingCategoryPage() {
   const [games, setGames] = useState<NormalizedGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
   const isGenre = genreId != null;
 
@@ -34,11 +34,9 @@ export default function TrendingCategoryPage() {
     ? (state?.genreName ?? `Genre #${genreId}`)
     : ((sort && SORT_TITLES[sort]) ?? t('trendingCategory.default'));
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
   useEffect(() => {
     setPage(1);
-    setTotalCount(0);
+    setHasMore(false);
   }, [sort, genreId]);
 
   useEffect(() => {
@@ -55,14 +53,17 @@ export default function TrendingCategoryPage() {
       offset,
       controller.signal
     )
-      .then(({ games: data, totalCount: count }) => {
+      .then(({ games: data }) => {
         if (!controller.signal.aborted) {
           setGames(data);
-          setTotalCount(count);
+          setHasMore(data.length === PAGE_SIZE);
         }
       })
       .catch(() => {
-        if (!controller.signal.aborted) setGames([]);
+        if (!controller.signal.aborted) {
+          setGames([]);
+          setHasMore(false);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -71,6 +72,9 @@ export default function TrendingCategoryPage() {
     return () => controller.abort();
   }, [sort, genreId, isGenre, page]);
 
+  // count = pages connues + 1 si il y en a peut-être d'autres
+  const count = hasMore ? page + 1 : page;
+
   return (
     <PageLayout title={title}>
       <GamesGrid
@@ -78,10 +82,10 @@ export default function TrendingCategoryPage() {
         loading={loading}
         emptyMessage={t('trendingCategory.empty')}
       />
-      {!loading && totalPages > 1 && (
+      {!loading && (page > 1 || hasMore) && (
         <Box mt={5} display="flex" justifyContent="center">
           <Pagination
-            count={totalPages}
+            count={count}
             page={page}
             onChange={(_, value) => setPage(value)}
             color="primary"
