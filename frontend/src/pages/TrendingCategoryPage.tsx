@@ -8,7 +8,8 @@ import GamesGrid from '../components/GamesGrid';
 import PageLayout from '../components/PageLayout';
 import type { NormalizedGame } from '../types/game';
 
-const PAGE_SIZE = 25;
+// 24 au lieu de 25 -> divisible par 2, 3, 4, 6
+const PAGE_SIZE = 24;
 
 export default function TrendingCategoryPage() {
   const { t } = useTranslation();
