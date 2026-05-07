@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 import EmailIcon from '@mui/icons-material/Email';
+import { SiTiktok } from 'react-icons/si';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -50,6 +51,12 @@ const Footer = () => {
       icon: <YouTubeIcon />,
       url: 'https://youtube.com/@ludokan?si=Dfm5V1Uw-Jixvb7a',
       color: '#FF0000',
+    },
+    {
+      name: 'TikTok',
+      icon: <SiTiktok size={20} />,
+      url: 'https://tiktok.com/@ludokan',
+      color: '#000000',
     },
     {
       name: 'Email',
