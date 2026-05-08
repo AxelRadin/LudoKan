@@ -2,10 +2,10 @@ import { Box, Divider, Typography } from '@mui/material';
 import type { AdminStats } from '../../types/admin';
 import LoadingSkeleton from './LoadingSkeleton';
 
-type Props = {
+type Props = Readonly<{
   data: AdminStats | null;
   loading: boolean;
-};
+}>;
 
 export default function RecentActivity({ data, loading }: Props) {
   return (

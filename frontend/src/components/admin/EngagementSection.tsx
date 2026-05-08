@@ -2,10 +2,10 @@ import { Box, Typography } from '@mui/material';
 import type { AdminStats } from '../../types/admin';
 import LoadingSkeleton from './LoadingSkeleton';
 
-type Props = {
+type Props = Readonly<{
   data: AdminStats | null;
   loading: boolean;
-};
+}>;
 
 export default function EngagementSection({ data, loading }: Props) {
   return (
