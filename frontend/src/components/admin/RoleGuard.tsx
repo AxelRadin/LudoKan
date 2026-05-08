@@ -1,9 +1,9 @@
 import { useAuth } from '../../contexts/useAuth';
 
-type Props = {
+type Props = Readonly<{
   roles: string[];
   children: React.ReactNode;
-};
+}>;
 
 export default function RoleGuard({ roles, children }: Props) {
   const { user } = useAuth();
