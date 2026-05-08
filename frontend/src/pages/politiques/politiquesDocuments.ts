@@ -1,4 +1,6 @@
-import politiquesContent from './politiquesContent.json';
+import politiquesContentFr from './politiquesContent.json';
+import politiquesContentEn from './politiquesContent.en.json';
+import i18n from '../../i18n';
 
 type PolicyDoc = {
   title: string;
@@ -6,9 +8,13 @@ type PolicyDoc = {
   sections: Array<{ title: string; content: string }>;
 };
 
-export const POLICIES = politiquesContent as Record<
-  'confidentialite' | 'cgu',
-  PolicyDoc
->;
+type PoliciesRecord = Record<'confidentialite' | 'cgu', PolicyDoc>;
 
-export type PolicyId = keyof typeof POLICIES;
+export function getPolicies(): PoliciesRecord {
+  return (
+    i18n.language === 'en' ? politiquesContentEn : politiquesContentFr
+  ) as PoliciesRecord;
+}
+
+export const POLICIES = politiquesContentFr as PoliciesRecord;
+export type PolicyId = keyof PoliciesRecord;

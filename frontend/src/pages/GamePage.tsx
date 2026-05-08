@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import { useGamePageLogic } from '../hooks/useGamePageLogic';
+import { bleedUnderHeader } from '../layout/bleedUnderHeader';
 import { buildGamePageAppearance, GAME_PAGE_FONT } from './gamePageAppearance';
 import { GamePageLoadedBody } from './GamePageLoadedBody';
 
@@ -37,6 +38,7 @@ export default function GamePage() {
           alignItems: 'center',
           justifyContent: 'center',
           background: appearance.loadingBackground,
+          ...bleedUnderHeader(theme),
         }}
       >
         <Typography
@@ -60,7 +62,11 @@ export default function GamePage() {
         fontFamily: GAME_PAGE_FONT,
         background: appearance.pageBackground,
         px: { xs: 2, md: 4, lg: 6 },
-        py: { xs: 3, md: 5 },
+        ...bleedUnderHeader(theme, {
+          xs: theme.spacing(3),
+          md: theme.spacing(5),
+        }),
+        paddingBottom: { xs: 3, md: 5 },
       }}
     >
       <Box sx={{ maxWidth: 1140, mx: 'auto' }}>

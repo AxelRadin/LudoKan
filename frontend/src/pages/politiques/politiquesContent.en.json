@@ -1,0 +1,106 @@
+{
+  "confidentialite": {
+    "title": "Privacy Policy",
+    "version": "Version 1.0 – April 2025",
+    "sections": [
+      {
+        "title": "Preamble",
+        "content": "Protecting your personal data is a priority for Ludokan. This Privacy Policy aims to inform you transparently about the nature of the data collected, the purposes of its processing, the applicable legal bases, and your rights under the General Data Protection Regulation (GDPR – Regulation (EU) 2016/679) and applicable French law, including the law of 6 January 1978 as amended (Informatique et Libertés), the SREN Act (2024) and the Digital Services Act (DSA)."
+      },
+      {
+        "title": "1. Data Controller Identity",
+        "content": "The data controller for personal data collected via the Ludokan platform is:\n– Name: Ludokan\n– Nature: End-of-training project – Community digital game library\n– DPO / GDPR contact: dpo@ludokan.fr\n– Address: [To be completed before launch]"
+      },
+      {
+        "title": "2. Personal Data Collected",
+        "content": "Ludokan collects two categories of data:\n\n2.1 Directly collected data\n– Identity data: surname, first name, username\n– Contact data: email address\n– Demographic data: date of birth / age range\n– Login data: identifiers and passwords (stored in hashed form)\n\n2.2 Indirectly collected data\n– Behavioral data: game preferences, browsing history\n– Collection data: games added to personal library, ratings and reviews\n– Communication data: messages exchanged via real-time chat\n– Technical data: IP address, browser type, access logs (anonymized via Sentry)"
+      },
+      {
+        "title": "3. Purposes and Legal Bases",
+        "content": "3.1 Contract performance (art. 6.1.b GDPR)\n– Creation and management of your user account\n– Provision of platform features\n– Management of real-time chat and notifications\n\n3.2 Consent (art. 6.1.a GDPR)\n– Placing non-essential cookies\n– Sending marketing communications and newsletters\n– Processing data of minors under 15\n\n3.3 Legitimate interest (art. 6.1.f GDPR)\n– Improving service quality\n– Securing the platform and preventing fraud\n– Moderating illegal content in accordance with the DSA\n\n3.4 Legal obligation (art. 6.1.c GDPR)\n– Age verification and parental consent management\n– Retaining logs for legal and security purposes"
+      },
+      {
+        "title": "4. Protection of Minors",
+        "content": "Ludokan pays particular attention to the protection of minors, in accordance with Article 8 of the GDPR and the SREN Act (2024).\n– Age verification is mandatory upon registration.\n– Access to social features is blocked for users under 15 without prior parental consent.\n– Enhanced chat filtering is applied for users under 18.\n– Parents or legal guardians may exercise GDPR rights on behalf of the minor by contacting the DPO."
+      },
+      {
+        "title": "5. Cookies and Tracking Technologies",
+        "content": "Ludokan uses cookies and similar technologies. On your first visit, a consent banner allows you to accept or decline the following categories:\n– Strictly necessary cookies: essential for the platform to function (session, security). No consent required.\n– Performance / analytics cookies: anonymized audience measurement. Consent required.\n– Personalization cookies: remembering your preferences (language, theme). Consent required.\n\nYou can change your preferences at any time via the 'Cookie settings' link at the bottom of each page."
+      },
+      {
+        "title": "6. Data Sharing and Recipients",
+        "content": "Ludokan does not sell or rent your data to third parties. Your data may only be shared with:\n– Technical subcontractors: hosting providers, authentication and messaging services, monitoring tools.\n– IGDB API (Twitch/Amazon): game catalog consultation.\n– Moderation tools: content moderation service.\n– Competent authorities: in cases of legal obligation or judicial requisition."
+      },
+      {
+        "title": "7. Data Retention",
+        "content": "– Active account data: retained for the duration of account use, then deleted within 3 years of the last login.\n– Message data (chat): retained for 12 months for moderation and security purposes.\n– Technical logs (IP, access): anonymized within 30 days, retained for 12 months in anonymous form.\n– Parental consent data: retained until the minor's 18th birthday.\n– Accounting data (subscriptions): 10 years in accordance with the Commercial Code."
+      },
+      {
+        "title": "8. Data Security",
+        "content": "Ludokan implements appropriate technical and organizational measures:\n– Encrypted communications via HTTPS (TLS 1.3)\n– Password hashing (bcrypt)\n– Anonymization of monitoring logs (Sentry)\n– Strict access control to databases (least privilege principle)\n– Privacy by design: data minimization from the design stage\n\nIn the event of a data breach, Ludokan undertakes to notify the CNIL within 72 hours, in accordance with Article 33 of the GDPR."
+      },
+      {
+        "title": "9. Your Rights",
+        "content": "In accordance with Articles 15 to 22 of the GDPR, you have the following rights:\n– Right of access (art. 15): obtain a copy of your processed data.\n– Right of rectification (art. 16): correct inaccurate or incomplete data.\n– Right to erasure (art. 17): request deletion of your data.\n– Right to restriction (art. 18): temporarily suspend the use of your data.\n– Right to portability (art. 20): receive your data in a structured format.\n– Right to object (art. 21): object to processing based on legitimate interest.\n– Right to withdraw consent: withdraw your consent at any time.\n\nTo exercise your rights, contact our DPO: dpo@ludokan.fr"
+      },
+      {
+        "title": "13. Contact",
+        "content": "For any questions regarding this policy or the exercise of your rights:\n– Email: dpo@ludokan.fr\n– Mail: [Address to be completed before launch]\n\nWe undertake to respond to any request within a maximum of one month (art. 12 GDPR)."
+      }
+    ]
+  },
+  "cgu": {
+    "title": "Terms of Use",
+    "version": "Version 1.0 – April 2025",
+    "sections": [
+      {
+        "title": "Preamble",
+        "content": "These Terms of Use (hereinafter 'ToU') govern access to and use of the Ludokan platform, a community digital game library accessible via the website ludokan.fr.\n\nAny use of the Platform implies full acceptance of these ToU. The ToU comply with the GDPR, the SREN Act (2024), the Digital Services Act (DSA), the Consumer Code and applicable French law."
+      },
+      {
+        "title": "Article 1. Platform Publisher",
+        "content": "The Ludokan Platform is published by:\n– Name: Ludokan\n– Nature: End-of-training project\n– Contact: contact@ludokan.fr\n– DPO / GDPR: dpo@ludokan.fr\n– Address: [To be completed before launch]"
+      },
+      {
+        "title": "Article 2. Platform Access",
+        "content": "2.1 Access conditions\nAccess is reserved for:\n– Adults (18 years and over) by right;\n– Minors aged 15 to 17, subject to prior acceptance by a parent or legal guardian;\n– Minors under 15, only with explicit parental consent, in accordance with Article 8 of the GDPR and the SREN Act (2024).\n\n2.2 Account creation\nRegistration requires the provision of accurate and up-to-date information: surname, first name (or username), valid email address, date of birth."
+      },
+      {
+        "title": "Article 3. Services Offered",
+        "content": "Ludokan offers the following services:\n– Game catalog: discovery, search and consultation of game profiles from the IGDB API (Twitch/Amazon).\n– Personal collection management: adding games to your library, organization and tracking.\n– Recommendation system: personalized suggestions based on your preferences.\n– Social features: matchmaking, real-time chat, community notifications.\n– Premium subscriptions: subject to specific pricing conditions displayed before any purchase."
+      },
+      {
+        "title": "Article 4. Intellectual Property",
+        "content": "4.1 Platform content\nAll elements of the Ludokan Platform are protected by copyright and trademark law. Any unauthorized reproduction, representation or exploitation is strictly prohibited.\n\n4.2 Third-party content (video games)\nNames, images, descriptions and other elements relating to video games displayed are the property of their respective publishers. Ludokan uses the IGDB API under a public display license.\n\n4.3 User content\nBy publishing content on the Platform, the user grants Ludokan a non-exclusive, worldwide, royalty-free license to use it for the purposes of operating and improving the service."
+      },
+      {
+        "title": "Article 5. Rules of Conduct and Moderation",
+        "content": "5.1 Prohibited behavior\nThe following are strictly prohibited on the Platform:\n– Publishing illegal content: harassment, incitement to hatred, discriminatory speech, threats, pornographic or violent content;\n– Impersonating a third party or creating fictitious accounts;\n– Sharing links to malicious, illegal or unauthorized content;\n– Attempting to compromise the security of the Platform.\n\n5.2 Moderation system\nLudokan implements hybrid moderation: automatic filters and human review of reports.\n\n5.3 Sanctions\nIn case of ToU violation: warning, temporary suspension, permanent ban, or reporting to authorities."
+      },
+      {
+        "title": "Article 6. Personal Data Protection",
+        "content": "The processing of your personal data is governed by Ludokan's Privacy Policy, available at ludokan.fr/confidentialite.\n\nFor any questions regarding your data: dpo@ludokan.fr — Response guaranteed within 1 month (art. 12 GDPR)."
+      },
+      {
+        "title": "Article 7. Financial Conditions and Right of Withdrawal",
+        "content": "7.1 Free services\nAccess to Ludokan's basic features (catalog, collection, chat) is free.\n\n7.2 Premium subscriptions\nCertain advanced features may be offered as paid subscriptions. The price, duration and conditions will be clearly displayed before any purchase validation.\n\n7.3 Right of withdrawal\nIn accordance with Article L221-18 of the Consumer Code, any subscription taken out online benefits from a 14-day withdrawal period from the date of subscription, without reason or penalty."
+      },
+      {
+        "title": "Article 8. Liability",
+        "content": "8.1 Ludokan's liability\nLudokan undertakes to implement all reasonable means to ensure the availability and security of the Platform. However, Ludokan cannot be held liable for damages resulting from a service interruption or technical failure.\n\n8.2 User liability\nEach user is solely responsible for the content they publish and the interactions they engage in on the Platform.\n\n8.3 Hyperlinks\nThe Platform may contain links to third-party sites. Ludokan declines all responsibility for their content."
+      },
+      {
+        "title": "Article 10. Termination and Account Deletion",
+        "content": "The user may at any time request deletion of their account from their personal space or by contacting customer service at contact@ludokan.fr. Deletion results in the erasure of all personal data, subject to applicable legal retention periods."
+      },
+      {
+        "title": "Article 13. Applicable Law and Jurisdiction",
+        "content": "These ToU are governed by French law. In the event of a dispute, and failing amicable resolution within 30 days, the competent courts of Ludokan's registered office will have sole jurisdiction.\n\nIn accordance with Article L616-1 of the Consumer Code, users residing in France may use a consumer mediator free of charge in the event of an unresolved dispute."
+      },
+      {
+        "title": "Article 14. Contact",
+        "content": "For any questions regarding these ToU:\n– General email: contact@ludokan.fr\n– DPO / GDPR: dpo@ludokan.fr\n– Accessibility: accessibilite@ludokan.fr\n– Mail: [Address to be completed before launch]"
+      }
+    ]
+  }
+}

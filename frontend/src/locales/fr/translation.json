@@ -566,5 +566,25 @@
     "mostRated": "Jeux les plus notés",
     "default": "Jeux tendances",
     "empty": "Aucun jeu dans cette catégorie."
+  },
+  "politiques": {
+    "title": "Politiques",
+    "subtitle": "Consultez nos documents juridiques et politiques en vigueur.",
+    "privacyTitle": "Politique de Confidentialité",
+    "privacySubtitle": "RGPD, données personnelles, cookies, vos droits",
+    "cguTitle": "Conditions Générales d'Utilisation",
+    "cguSubtitle": "Règles d'accès, services, responsabilités, modération",
+    "back": "Retour aux politiques"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "appearanceSection": "Apparence",
+    "darkMode": "Mode sombre",
+    "darkModeDesc": "Changer l'apparence de l'application",
+    "infoSection": "Informations",
+    "policies": "Politiques",
+    "about": "À propos",
+    "cookies": "Cookies",
+    "version": "Ludokan • v1.0.0"
   }
 }
