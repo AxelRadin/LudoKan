@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import GenreGrid from '../components/GenreGrid';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
+import { bleedUnderHeader } from '../layout/bleedUnderHeader';
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
@@ -268,6 +269,7 @@ export const HomePage = () => {
       sx={{
         minHeight: '100vh',
         fontFamily: F,
+        ...bleedUnderHeader(theme),
         background: isDark
           ? `
             url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"),
@@ -288,10 +290,10 @@ export const HomePage = () => {
     >
       <Box
         sx={{
-          maxWidth: { md: '100%', lg: '70%' },
+          maxWidth: { md: '100%', lg: '85%' },
           mx: 'auto',
-          px: { xs: 2.5, md: 5, lg: 7 },
-          pt: { xs: 4, md: 6 },
+          px: { xs: 0, md: 0, lg: 0 },
+          pt: { xs: 1, md: 1.5 },
           pb: { xs: 4, md: 5 },
         }}
       >
@@ -340,51 +342,56 @@ export const HomePage = () => {
           />
         </Section>
 
-        <Box className="lux-s4">
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              mb: 2.5,
-              mt: 1,
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: F,
-                fontWeight: 600,
-                fontSize: { xs: 22, md: 28 },
-                color: isDark ? C.darkInk : C.ink,
-                letterSpacing: -0.3,
-                flexShrink: 0,
-                transition: 'color 0.3s ease',
-              }}
-            >
-              {t('homePage.exploreByGenre')}
-            </Typography>
-            <Box
-              sx={{
-                flex: 1,
-                height: '1px',
-                background: `linear-gradient(to right, ${isDark ? C.darkBorder : C.border}, transparent)`,
-              }}
-            />
+        {/* SECTION EXPLORER PAR GENRE - VERSION AMÉLIORÉE */}
+        <Box className="lux-s4" sx={{ mt: 5 }}>
+          {/* Header stylé */}
+          <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography
               sx={{
                 fontFamily: F,
                 fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: 2.5,
+                fontWeight: 700,
+                letterSpacing: 3,
                 textTransform: 'uppercase',
                 color: isDark ? C.darkAccentSoft : C.accentSoft,
-                flexShrink: 0,
-                transition: 'color 0.3s ease',
+                opacity: 0.85,
+                mb: 1,
               }}
             >
               {t('homePage.allGenres')}
             </Typography>
+            <Typography
+              sx={{
+                fontFamily: F,
+                fontWeight: 800,
+                fontSize: { xs: 28, md: 36 },
+                color: isDark ? C.darkInk : C.ink,
+                letterSpacing: -0.5,
+                mb: 1,
+                background: isDark
+                  ? 'linear-gradient(135deg, #FF3D3D 0%, #FF8A80 100%)'
+                  : 'linear-gradient(135deg, #FF3D3D 0%, #D32F2F 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              {t('homePage.exploreByGenre')}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: F,
+                fontSize: 15,
+                color: isDark ? C.darkLight : C.light,
+                maxWidth: 600,
+                mx: 'auto',
+              }}
+            >
+              Plongez dans l'univers qui vous correspond
+            </Typography>
           </Box>
+
+          {/* Grille des genres */}
           <Section>
             <GenreGrid onGenreClick={handleGenreClick} />
           </Section>

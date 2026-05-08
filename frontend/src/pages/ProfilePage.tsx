@@ -27,6 +27,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
 import {
@@ -62,24 +63,6 @@ document.head.appendChild(fontLink);
 
 const defaultAvatar = '';
 
-const C = {
-  pageBg: '#ffd3d3',
-  shellBg: '#fff7f7',
-  cardBg: 'rgba(255,255,255,0.72)',
-  border: '#f1c7c7',
-  softBorder: 'rgba(241,199,199,0.5)',
-  title: '#0f0f0f',
-  text: '#2b2b2b',
-  muted: '#6e6e73',
-  light: '#a0a0a8',
-  accent: '#d32f2f',
-  accentDark: '#b71c1c',
-  accentGlow: 'rgba(211,47,47,0.15)',
-  glass: 'rgba(255,250,250,0.78)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  dialogBg: 'rgba(255,249,249,0.96)',
-};
-
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
 
@@ -107,6 +90,35 @@ styleEl.textContent = `
   .lib-section  { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.5s both; }
 `;
 document.head.appendChild(styleEl);
+
+// Hook pour obtenir les couleurs dynamiques basées sur le thème
+function useThemeColors() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  return useMemo(
+    () => ({
+      pageBg: isDark ? '#1a1010' : '#ffd3d3',
+      shellBg: isDark ? '#2a2020' : '#fff7f7',
+      cardBg: isDark ? 'rgba(42,32,32,0.72)' : 'rgba(255,255,255,0.72)',
+      border: isDark ? '#4a3030' : '#f1c7c7',
+      softBorder: isDark ? 'rgba(74,48,48,0.5)' : 'rgba(241,199,199,0.5)',
+      title: isDark ? '#f5e6e6' : '#0f0f0f',
+      text: isDark ? '#e0d0d0' : '#2b2b2b',
+      muted: isDark ? '#9e7070' : '#6e6e73',
+      light: isDark ? '#b49393' : '#a0a0a8',
+      accent: '#FF3D3D',
+      accentDark: '#b71c1c',
+      accentGlow: isDark ? 'rgba(255,61,61,0.25)' : 'rgba(211,47,47,0.15)',
+      glass: isDark ? 'rgba(42,32,32,0.78)' : 'rgba(255,250,250,0.78)',
+      glassBorder: isDark ? 'rgba(74,48,48,0.9)' : 'rgba(255,255,255,0.9)',
+      dialogBg: isDark ? 'rgba(42,32,32,0.96)' : 'rgba(255,249,249,0.96)',
+    }),
+    [isDark]
+  );
+}
+
+// ... (le reste du code reste identique jusqu'aux types et fonctions utilitaires)
 
 type UserProfile = {
   id: number;
@@ -160,36 +172,6 @@ const fileInputOverlaySx: React.CSSProperties = {
   fontSize: 0,
 };
 
-const glassCard = {
-  background: C.cardBg,
-  backdropFilter: 'blur(20px) saturate(160%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-  border: `1px solid ${C.glassBorder}`,
-  borderRadius: '20px',
-  boxShadow: '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-  '&:hover': {
-    transform: 'translateY(-3px)',
-    boxShadow:
-      '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
-  },
-};
-
-const fieldSx = {
-  fontFamily: FONT_BODY,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '14px',
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    fontFamily: FONT_BODY,
-    fontSize: 14.5,
-    '& fieldset': { borderColor: C.softBorder },
-    '&:hover fieldset': { borderColor: C.border },
-    '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
-  },
-  '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
-  '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
-};
-
 function formatProfileDate(iso?: string) {
   return iso
     ? new Date(iso).toLocaleDateString('fr-FR', {
@@ -220,9 +202,10 @@ function validateAvatarFile(file: File): string {
 
 type ProfileSectionHeaderProps = {
   label: string;
+  C: ReturnType<typeof useThemeColors>;
 };
 
-const ProfileSectionHeader = ({ label }: ProfileSectionHeaderProps) => {
+const ProfileSectionHeader = ({ label, C }: ProfileSectionHeaderProps) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
       <Typography
@@ -255,6 +238,8 @@ type ProfileStatCardProps = {
   onClick?: () => void;
   clickable?: boolean;
   smallValue?: boolean;
+  C: ReturnType<typeof useThemeColors>;
+  glassCard: any;
 };
 
 const ProfileStatCard = ({
@@ -265,6 +250,8 @@ const ProfileStatCard = ({
   onClick,
   clickable,
   smallValue,
+  C,
+  glassCard,
 }: ProfileStatCardProps) => {
   return (
     <Paper
@@ -286,7 +273,7 @@ const ProfileStatCard = ({
         '&:hover': clickable
           ? {
               transform: 'translateY(-5px)',
-              backgroundColor: 'rgba(255,255,255,0.9)',
+              backgroundColor: C.cardBg,
               boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
             }
           : glassCard['&:hover'],
@@ -328,6 +315,8 @@ const ProfileStatCard = ({
     </Paper>
   );
 };
+
+// ... (continuez avec les types et le hook useProfilePageModel - même code)
 
 type ProfilePageModel = {
   user: UserProfile | null;
@@ -389,7 +378,9 @@ function useProfilePageModel(
   const [userGames, setUserGames] = useState<UserGame[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
 
-  // Sync with global user if it updates (e.g. email from ForcedEmailModal)
+  // ... (tout le code du hook reste identique)
+  // Je ne recopie pas tout pour gagner de la place, mais gardez tout le code existant du hook
+
   useEffect(() => {
     if (globalUser && user && globalUser.id === user.id) {
       if (
@@ -844,6 +835,8 @@ function useProfilePageModel(
   };
 }
 
+// Continuez dans le prochain message pour les composants dialog...
+
 type ProfileEditDialogProps = Readonly<{
   open: boolean;
   onClose: () => void;
@@ -856,6 +849,7 @@ type ProfileEditDialogProps = Readonly<{
   onAvatarRemove: () => void | Promise<void>;
   onFieldChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSave: () => void | Promise<void>;
+  C: ReturnType<typeof useThemeColors>;
 }>;
 
 function ProfileEditDialog({
@@ -870,8 +864,24 @@ function ProfileEditDialog({
   onAvatarRemove,
   onFieldChange,
   onSave,
+  C,
 }: ProfileEditDialogProps) {
   const { t } = useTranslation();
+
+  const fieldSx = {
+    fontFamily: FONT_BODY,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '14px',
+      backgroundColor: C.glass,
+      fontFamily: FONT_BODY,
+      fontSize: 14.5,
+      '& fieldset': { borderColor: C.softBorder },
+      '&:hover fieldset': { borderColor: C.border },
+      '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
+    },
+    '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
+    '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
+  };
 
   return (
     <Dialog
@@ -892,7 +902,7 @@ function ProfileEditDialog({
       BackdropProps={{
         sx: {
           backdropFilter: 'blur(6px)',
-          backgroundColor: 'rgba(255,200,200,0.25)',
+          backgroundColor: C.accentGlow,
         },
       }}
     >
@@ -937,7 +947,7 @@ function ProfileEditDialog({
                     width: 22,
                     height: 22,
                     borderRadius: '50%',
-                    bgcolor: '#d32f2f',
+                    bgcolor: C.accentDark,
                     border: '2px solid white',
                     display: 'flex',
                     alignItems: 'center',
@@ -948,7 +958,7 @@ function ProfileEditDialog({
                     transition: 'transform 0.15s ease, background 0.15s ease',
                     p: 0,
                     '&:hover': {
-                      bgcolor: avatarBusy ? '#d32f2f' : '#b71c1c',
+                      bgcolor: avatarBusy ? C.accentDark : C.accent,
                       transform: avatarBusy ? 'none' : 'scale(1.15)',
                     },
                   }}
@@ -1147,7 +1157,7 @@ function ProfileEditDialog({
             boxShadow: `0 4px 18px ${C.accentGlow}`,
             '&:hover': {
               background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-              boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
+              boxShadow: `0 6px 24px ${C.accentGlow}`,
               transform: 'translateY(-1px)',
             },
             transition: 'all 0.18s ease',
@@ -1166,6 +1176,8 @@ type ProfileIntegrationsProps = Readonly<{
   onSteamConnect: () => void;
   onSteamDisconnect: () => void;
   onSteamSync: () => void;
+  C: ReturnType<typeof useThemeColors>;
+  glassCard: any;
 }>;
 
 function ProfileIntegrations({
@@ -1174,12 +1186,14 @@ function ProfileIntegrations({
   onSteamConnect,
   onSteamDisconnect,
   onSteamSync,
+  C,
+  glassCard,
 }: ProfileIntegrationsProps) {
   const { t } = useTranslation();
 
   return (
     <Box sx={{ mb: 2.5 }}>
-      <ProfileSectionHeader label={t('profilePage.integrationsLabel')} />
+      <ProfileSectionHeader label={t('profilePage.integrationsLabel')} C={C} />
       <Paper
         elevation={0}
         sx={{
@@ -1207,7 +1221,12 @@ function ProfileIntegrations({
           </Avatar>
           <Box>
             <Typography
-              sx={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16 }}
+              sx={{
+                fontFamily: FONT_BODY,
+                fontWeight: 700,
+                fontSize: 16,
+                color: C.title,
+              }}
             >
               {t('profilePage.steamLabel')}
             </Typography>
@@ -1326,6 +1345,10 @@ export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const C = useThemeColors();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
   const collectionFilterId = useMemo(
     () =>
       parseLibraryCollectionParam(
@@ -1541,17 +1564,43 @@ export default function ProfilePage() {
   const bannerMenuOpen = Boolean(bannerMenuAnchor);
   const [confirmDeleteBannerOpen, setConfirmDeleteBannerOpen] = useState(false);
 
+  const glassCard = useMemo(
+    () => ({
+      background: C.cardBg,
+      backdropFilter: 'blur(20px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+      border: `1px solid ${C.glassBorder}`,
+      borderRadius: '20px',
+      boxShadow:
+        '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+      transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+      '&:hover': {
+        transform: 'translateY(-3px)',
+        boxShadow:
+          '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+      },
+    }),
+    [C]
+  );
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
-        background: `
-        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
-        radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-        radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
-        ${C.pageBg}
-      `,
+        background: isDark
+          ? `
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(74,48,48,0.6) 0%, transparent 55%),
+            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(255,61,61,0.12) 0%, transparent 50%),
+            ${C.pageBg}
+          `
+          : `
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+            ${C.pageBg}
+          `,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
@@ -1568,7 +1617,7 @@ export default function ProfilePage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: C.cardBg,
                 boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
               }}
             >
@@ -2025,7 +2074,7 @@ export default function ProfilePage() {
 
         {/* STATS */}
         <Box sx={{ mb: 2.5 }}>
-          <ProfileSectionHeader label={t('profilePage.infoLabel')} />
+          <ProfileSectionHeader label={t('profilePage.infoLabel')} C={C} />
           <Box
             sx={{
               display: 'grid',
@@ -2059,6 +2108,8 @@ export default function ProfilePage() {
                 {...props}
                 loading={loading}
                 smallValue={props.label === t('profilePage.registeredLabel')}
+                C={C}
+                glassCard={glassCard}
               />
             ))}
           </Box>
@@ -2066,7 +2117,7 @@ export default function ProfilePage() {
 
         {/* ── STATS SECTION ── */}
         <Box sx={{ mb: 2.5 }}>
-          <ProfileSectionHeader label={t('profilePage.statsLabel')} />
+          <ProfileSectionHeader label={t('profilePage.statsLabel')} C={C} />
           <Box
             sx={{
               display: 'grid',
@@ -2095,7 +2146,13 @@ export default function ProfilePage() {
                 cls: 'stat-card-2',
               },
             ].map(props => (
-              <ProfileStatCard key={props.label} {...props} loading={loading} />
+              <ProfileStatCard
+                key={props.label}
+                {...props}
+                loading={loading}
+                C={C}
+                glassCard={glassCard}
+              />
             ))}
           </Box>
         </Box>
@@ -2106,6 +2163,8 @@ export default function ProfilePage() {
           onSteamConnect={handleSteamConnect}
           onSteamDisconnect={handleSteamDisconnect}
           onSteamSync={handleSteamSync}
+          C={C}
+          glassCard={glassCard}
         />
 
         {/* ── LIBRARY ── */}
@@ -2185,6 +2244,7 @@ export default function ProfilePage() {
         onAvatarRemove={handleAvatarRemoveNow}
         onFieldChange={handleChange}
         onSave={handleSave}
+        C={C}
       />
     </Box>
   );

@@ -566,5 +566,25 @@
     "mostRated": "Most rated games",
     "default": "Trending games",
     "empty": "No games in this category."
+  },
+  "settings": {
+    "title": "Settings",
+    "appearanceSection": "Appearance",
+    "darkMode": "Dark mode",
+    "darkModeDesc": "Change the application appearance",
+    "infoSection": "Information",
+    "policies": "Policies",
+    "about": "About",
+    "cookies": "Cookies",
+    "version": "Ludokan • v1.0.0"
+  },
+  "politiques": {
+    "title": "Policies",
+    "subtitle": "Consult our legal documents and current policies.",
+    "privacyTitle": "Privacy Policy",
+    "privacySubtitle": "GDPR, personal data, cookies, your rights",
+    "cguTitle": "Terms of Use",
+    "cguSubtitle": "Access rules, services, responsibilities, moderation",
+    "back": "Back to policies"
   }
 }

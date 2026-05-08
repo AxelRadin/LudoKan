@@ -1,5 +1,4 @@
-import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { StyledEngineProvider } from '@mui/material/styles';
 import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -23,11 +22,11 @@ import SettingsPage from './pages/SettingsPage';
 import PolitiquesPage from './pages/PolitiquesPage.tsx';
 import CookiesPage from './pages/CookiesPage.tsx';
 import CookieBanner from './pages/CookieBanner.tsx';
-import { muiTheme } from './muiTheme';
 import AboutPage from './pages/AboutPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
 import { Root } from './Root.tsx';
+import { ThemeModeProvider } from './contexts/ThemeContext';
 import { AdminRoot } from './AdminRoot.tsx';
 
 initSentry();
@@ -82,12 +81,11 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={muiTheme}>
-        <CssBaseline />
+      <ThemeModeProvider>
         <Sentry.ErrorBoundary fallback={errorFallback}>
           <RouterProvider router={router} />
         </Sentry.ErrorBoundary>
-      </ThemeProvider>
+      </ThemeModeProvider>
     </StyledEngineProvider>
   </StrictMode>
 );
