@@ -9,7 +9,7 @@ type UseAdminUsersReturn = {
   refetch: () => void;
 };
 
-export function useAdminUsers(): UseAdminUsersReturn {
+export function useAdminUsers(search = ''): UseAdminUsersReturn {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,10 @@ export function useAdminUsers(): UseAdminUsersReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiGet('/api/admin/users/');
+      const params = search.trim()
+        ? `?pseudo=${encodeURIComponent(search.trim())}`
+        : '';
+      const data = await apiGet(`/api/admin/users/${params}`);
       const list = Array.isArray(data) ? data : (data.results ?? []);
       setUsers(list);
     } catch {
@@ -26,7 +29,7 @@ export function useAdminUsers(): UseAdminUsersReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     fetchUsers();
