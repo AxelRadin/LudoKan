@@ -10,7 +10,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AdminUser } from '../../types/admin';
 import { apiPost } from '../../services/api';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
@@ -19,18 +19,18 @@ import LoadingSkeleton from './LoadingSkeleton';
 import ErrorAlert from './ErrorAlert';
 
 export default function UsersTable() {
-  const { users, loading, error, refetch } = useAdminUsers();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const filtered = users.filter(u => {
-    const q = search.toLowerCase();
-    return (
-      u.email.toLowerCase().includes(q) ||
-      (u.pseudo ?? '').toLowerCase().includes(q)
-    );
-  });
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const { users, loading, error, refetch } = useAdminUsers(debouncedSearch);
+  const filtered = users;
 
   async function handleSuspend(userId: number, reason: string) {
     await apiPost(`/api/admin/users/${userId}/suspend/`, { reason });
