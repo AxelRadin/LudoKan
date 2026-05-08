@@ -15,7 +15,6 @@ import type { AdminUser } from '../../types/admin';
 import { apiPost } from '../../services/api';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
 import SuspendUserModal from './SuspendUserModal';
-import LoadingSkeleton from './LoadingSkeleton';
 import ErrorAlert from './ErrorAlert';
 
 export default function UsersTable() {
@@ -29,7 +28,7 @@ export default function UsersTable() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { users, loading, error, refetch } = useAdminUsers(debouncedSearch);
+  const { users, error, refetch } = useAdminUsers(debouncedSearch);
   const filtered = users;
 
   async function handleSuspend(userId: number, reason: string) {
@@ -45,7 +44,6 @@ export default function UsersTable() {
     refetch();
   }
 
-  if (loading) return <LoadingSkeleton variant="table" count={8} />;
   if (error) return <ErrorAlert message={error} />;
 
   return (
