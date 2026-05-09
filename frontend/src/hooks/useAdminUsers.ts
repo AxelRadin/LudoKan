@@ -18,9 +18,8 @@ export function useAdminUsers(search = ''): UseAdminUsersReturn {
     setLoading(true);
     setError(null);
     try {
-      const params = search.trim()
-        ? `?pseudo=${encodeURIComponent(search.trim())}`
-        : '';
+      const q = search.trim();
+      const params = q ? `?search=${encodeURIComponent(q)}` : '';
       const data = await apiGet(`/api/admin/users/${params}`);
       const list = Array.isArray(data) ? data : (data.results ?? []);
       setUsers(list);
