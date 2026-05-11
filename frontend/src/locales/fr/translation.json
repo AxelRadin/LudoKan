@@ -3,6 +3,7 @@
     "home": "Accueil",
     "profile": "Profil",
     "findFriends": "Trouver des amis",
+    "friends": "Amis",
     "logout": "Déconnexion",
     "login": "Connexion",
     "register": "S'inscrire",
@@ -319,6 +320,16 @@
     "unknownPlatforms": "Plateformes inconnues",
     "noDescription": "Pas de description."
   },
+  "friendsPage": {
+    "title": "Amis",
+    "tabFriends": "Amis",
+    "tabRequests": "Demandes",
+    "addFriend": "Ajouter un ami",
+    "addFriendModalTitle": "Rechercher un joueur",
+    "invite": "Inviter",
+    "inviteSent": "Demande d’ami envoyée.",
+    "inviteError": "Impossible d’envoyer la demande."
+  },
   "findFriendsPage": {
     "title": "Trouver des amis",
     "shortLink": "Trouver des amis",
@@ -443,6 +454,7 @@
     "saveError": "Erreur : ",
     "playtimeLabel": "Temps de jeu",
     "reviewsLabel": "Avis",
+    "friendsLabelStat": "Amis",
     "friendRequestsTitle": "Demandes d’ami",
     "friendRequestsIncoming": "Reçues — en attente de ta réponse",
     "friendRequestsIncomingEmpty": "Aucune demande en attente.",

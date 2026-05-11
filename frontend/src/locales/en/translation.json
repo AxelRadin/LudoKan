@@ -3,6 +3,7 @@
     "home": "Home",
     "profile": "Profile",
     "findFriends": "Find friends",
+    "friends": "Friends",
     "logout": "Log out",
     "login": "Log in",
     "register": "Register",
@@ -354,6 +355,16 @@
     "unknownPlatforms": "Unknown platforms",
     "noDescription": "No description."
   },
+  "friendsPage": {
+    "title": "Friends",
+    "tabFriends": "Friends",
+    "tabRequests": "Requests",
+    "addFriend": "Add a friend",
+    "addFriendModalTitle": "Find a player",
+    "invite": "Invite",
+    "inviteSent": "Friend request sent.",
+    "inviteError": "Could not send the request."
+  },
   "findFriendsPage": {
     "title": "Find friends",
     "shortLink": "Find friends",
@@ -478,6 +489,7 @@
     "saveError": "Error: ",
     "playtimeLabel": "Playtime",
     "reviewsLabel": "Reviews",
+    "friendsLabelStat": "Friends",
     "friendRequestsTitle": "Friend requests",
     "friendRequestsIncoming": "Received — your response",
     "friendRequestsIncomingEmpty": "No pending requests.",
