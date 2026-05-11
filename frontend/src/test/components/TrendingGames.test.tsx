@@ -236,6 +236,7 @@ describe('TrendingGames', () => {
 
     forceNull.current = true;
 
+    const scrollLeftWithNullRef = scrollContainer.scrollLeft;
     fireEvent.click(leftButton);
     fireEvent.click(rightButton);
     fireEvent.scroll(scrollContainer);
@@ -244,7 +245,7 @@ describe('TrendingGames', () => {
       vi.advanceTimersByTime(50);
     });
 
-    expect(true).toBe(true);
+    expect(scrollContainer.scrollLeft).toBe(scrollLeftWithNullRef);
   });
 
   it('couvre L38 (early return sur ref null) et L66 (cancelAnimationFrame ignoré si rafRef est null)', () => {

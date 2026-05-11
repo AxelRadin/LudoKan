@@ -24,7 +24,8 @@ export default function GameSearchBar({ onSelect }: Props) {
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!containerRef.current) return;
-      if (!containerRef.current.contains(e.target as Node)) setOpen(false);
+      if (e.target instanceof Node && !containerRef.current.contains(e.target))
+        setOpen(false);
     }
     document.addEventListener('mousedown', onDocClick);
   }, []);
