@@ -79,3 +79,11 @@ class TestUserBlocks:
     def test_cannot_block_self(self, jwt_authenticated_client, user):
         r = jwt_authenticated_client.post("/api/social/blocks/", {"user_id": user.pk}, format="json")
         assert r.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_block_unknown_user_returns_400(self, jwt_authenticated_client, user):
+        r = jwt_authenticated_client.post("/api/social/blocks/", {"user_id": 999999999}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_unblock_unknown_returns_404(self, jwt_authenticated_client, user):
+        r = jwt_authenticated_client.delete("/api/social/blocks/999999999/")
+        assert r.status_code == status.HTTP_404_NOT_FOUND
