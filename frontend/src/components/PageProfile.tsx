@@ -489,7 +489,7 @@ const PageProfile: React.FC = () => {
             </div>
             <div style={styles.topStatCell}>
               <div style={styles.topStatValue}>
-                {user?.friends_count != null ? user.friends_count : '—'}
+                {user?.friends_count ?? '—'}
               </div>
               <div style={styles.topStatLabel}>{t('profile.friends')}</div>
             </div>

@@ -191,7 +191,7 @@ export default function ProfilePageLibrarySection({
               {libraryBadgeText}
             </Typography>
           </Box>
-          {!readOnly ? (
+          {readOnly ? null : (
             <>
               <IconButton
                 aria-label={t('profilePage.libraryOptionsAria')}
@@ -246,7 +246,7 @@ export default function ProfilePageLibrarySection({
                 </MenuItem>
               </Menu>
             </>
-          ) : null}
+          )}
         </Box>
       </Box>
       {gamesLoading ? (
