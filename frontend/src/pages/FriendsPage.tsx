@@ -1,22 +1,27 @@
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { Alert, Box, Button, Paper, Snackbar, Tab, Tabs } from '@mui/material';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import PageLayout from '../components/PageLayout';
 import AddFriendSearchModal from '../components/social/AddFriendSearchModal';
+import BlockedUsersPanel from '../components/social/BlockedUsersPanel';
 import FriendRequestsPanel from '../components/social/FriendRequestsPanel';
 import FriendsListPanel from '../components/social/FriendsListPanel';
 import {
   acceptFriendRequest,
   cancelFriendRequest,
   declineFriendRequest,
+  fetchBlockedUsers,
+  unblockUser,
+  type BlockedUserRow,
 } from '../api/social';
 import { useFriendsSocial } from '../hooks/useFriendsSocial';
 import { useAuth } from '../contexts/useAuth';
 
 const TAB_REQUESTS = 'requests';
+const TAB_BLOCKED = 'blocked';
 
 export default function FriendsPage() {
   const { t } = useTranslation();
@@ -33,7 +38,8 @@ export default function FriendsPage() {
   }>({ open: false, message: '', isError: false });
 
   const tabParam = searchParams.get('tab');
-  const tabIndex = tabParam === TAB_REQUESTS ? 1 : 0;
+  const tabIndex =
+    tabParam === TAB_BLOCKED ? 2 : tabParam === TAB_REQUESTS ? 1 : 0;
 
   const setTabIndex = useCallback(
     (index: number) => {
@@ -41,7 +47,8 @@ export default function FriendsPage() {
         prev => {
           const p = new URLSearchParams(prev);
           if (index === 0) p.delete('tab');
-          else p.set('tab', TAB_REQUESTS);
+          else if (index === 1) p.set('tab', TAB_REQUESTS);
+          else p.set('tab', TAB_BLOCKED);
           return p;
         },
         { replace: true }
@@ -52,6 +59,52 @@ export default function FriendsPage() {
 
   const { friendsList, incomingRequests, outgoingRequests, loading, refresh } =
     useFriendsSocial(authUser?.id);
+
+  const [blockedList, setBlockedList] = useState<BlockedUserRow[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [busyUnblockId, setBusyUnblockId] = useState<number | null>(null);
+
+  const loadBlocked = useCallback(async () => {
+    setBlockedLoading(true);
+    try {
+      setBlockedList(await fetchBlockedUsers());
+    } catch {
+      setBlockedList([]);
+    } finally {
+      setBlockedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tabIndex === 2) {
+      void loadBlocked();
+    }
+  }, [tabIndex, loadBlocked]);
+
+  const handleUnblock = useCallback(
+    async (userId: number) => {
+      setBusyUnblockId(userId);
+      try {
+        await unblockUser(userId);
+        setSnackbar({
+          open: true,
+          message: t('friendsPage.unblocked'),
+          isError: false,
+        });
+        await loadBlocked();
+        await refresh();
+      } catch {
+        setSnackbar({
+          open: true,
+          message: t('friendsPage.unblockError'),
+          isError: true,
+        });
+      } finally {
+        setBusyUnblockId(null);
+      }
+    },
+    [loadBlocked, refresh, t]
+  );
 
   const borderColor = isDark ? '#4a3030' : '#f1c7c7';
   const titleColor = isDark ? '#f5e6e6' : '#0f0f0f';
@@ -166,8 +219,12 @@ export default function FriendsPage() {
         <Tabs
           value={tabIndex}
           onChange={(_, v) => setTabIndex(v)}
+          variant="scrollable"
+          allowScrollButtonsMobile
           sx={{
             minHeight: 40,
+            flex: { sm: '1 1 auto' },
+            maxWidth: { sm: '100%' },
             '& .MuiTab-root': {
               fontFamily: "'DM Sans', system-ui, sans-serif",
               textTransform: 'none',
@@ -177,6 +234,7 @@ export default function FriendsPage() {
         >
           <Tab label={t('friendsPage.tabFriends')} />
           <Tab label={t('friendsPage.tabRequests')} />
+          <Tab label={t('friendsPage.tabBlocked')} />
         </Tabs>
         <Button
           variant="contained"
@@ -203,7 +261,7 @@ export default function FriendsPage() {
             accentColor={accentColor}
             isDark={isDark}
           />
-        ) : (
+        ) : tabIndex === 1 ? (
           <FriendRequestsPanel
             incoming={incomingRequests}
             outgoing={outgoingRequests}
@@ -212,6 +270,16 @@ export default function FriendsPage() {
             onAcceptIncoming={id => void handleAcceptIncoming(id)}
             onDeclineIncoming={id => void handleDeclineIncoming(id)}
             onCancelOutgoing={id => void handleCancelOutgoing(id)}
+            borderColor={borderColor}
+            titleColor={titleColor}
+            mutedColor={mutedColor}
+          />
+        ) : (
+          <BlockedUsersPanel
+            users={blockedList}
+            loading={blockedLoading}
+            busyUserId={busyUnblockId}
+            onUnblock={id => void handleUnblock(id)}
             borderColor={borderColor}
             titleColor={titleColor}
             mutedColor={mutedColor}
