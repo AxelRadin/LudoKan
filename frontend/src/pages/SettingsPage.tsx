@@ -4,6 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import {
   Box,
   Container,
@@ -19,6 +20,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useOnboarding } from '../hooks/useOnboarding';
 
 const settingsSectionHeadingSx = {
   color: 'text.secondary',
@@ -42,6 +44,12 @@ const settingsListRowButtonSx = {
 const SettingsPage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
+  const { reset } = useOnboarding();
+
+  const handleRestartTour = () => {
+    reset();
+    navigate('/', { state: { startTour: true } });
+  };
 
   const externalLinks = [
     {
@@ -92,6 +100,30 @@ const SettingsPage: React.FC = () => {
               />
             </ListItemSecondaryAction>
           </ListItem>
+        </List>
+      </Box>
+
+      {/* Section Aide */}
+      <Typography variant="overline" sx={settingsSectionHeadingSx}>
+        Aide
+      </Typography>
+
+      <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
+        <List disablePadding>
+          <ListItemButton
+            onClick={handleRestartTour}
+            sx={settingsListRowButtonSx}
+          >
+            <ListItemIcon sx={{ color: 'text.secondary' }}>
+              <SchoolOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Revoir le didacticiel"
+              secondary="Relance le guide de prise en main"
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+          </ListItemButton>
         </List>
       </Box>
 

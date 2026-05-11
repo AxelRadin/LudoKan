@@ -5,6 +5,7 @@ const STORAGE_KEY = 'onboarding_done';
 export interface UseOnboardingResult {
   shouldShow: boolean;
   markAsDone: () => void;
+  reset: () => void;
 }
 
 export function useOnboarding(): UseOnboardingResult {
@@ -16,5 +17,9 @@ export function useOnboarding(): UseOnboardingResult {
     localStorage.setItem(STORAGE_KEY, 'true');
   }, []);
 
-  return { shouldShow, markAsDone };
+  const reset = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  return { shouldShow, markAsDone, reset };
 }
