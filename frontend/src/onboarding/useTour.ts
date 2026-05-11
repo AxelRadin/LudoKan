@@ -32,6 +32,10 @@ export function useTour({ onDone }: UseTourOptions) {
         if (!element) return;
         const handler = () => {
           clickedRef.current = true;
+          // profile step: auto-advance so the dropdown doesn't open under the overlay
+          if ((driverRef.current?.getActiveIndex() ?? -1) === 3) {
+            setTimeout(() => driverRef.current?.moveNext(), 250);
+          }
         };
         element.addEventListener('click', handler);
         cleanupRef.current = () =>
