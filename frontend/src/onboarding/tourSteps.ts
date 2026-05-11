@@ -46,19 +46,19 @@ export const TOUR_STEPS: DriveStep[] = [
     popover: {
       title: '📚 Ta bibliothèque',
       description:
-        "Retrouve ici tous tes jeux : en cours, terminés, en liste d'envie… Filtre et organise ta collection comme tu veux.",
+        'Retrouve ici tous tes jeux. Clique sur un jeu pour accéder à sa fiche.',
       side: 'top',
       align: 'start',
     },
   },
   {
-    element: '[data-tour="matchmaking"]',
+    element: '[data-tour="matchmaking-button"]',
     popover: {
       title: '🎮 Matchmaking',
       description:
-        'Lance une recherche de matchmaking depuis une fiche de jeu pour trouver des joueurs qui ont les mêmes jeux que toi.',
+        'Ce bouton lance une recherche de matchmaking pour trouver des joueurs qui ont ce jeu dans leur bibliothèque.',
       side: 'bottom',
-      align: 'end',
+      align: 'start',
     },
   },
 ];

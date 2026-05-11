@@ -2,9 +2,9 @@ import { driver } from 'driver.js';
 import { useCallback, useRef } from 'react';
 import { TOUR_STEPS } from './tourSteps';
 
-// 0 = search, 1 = genres, 4 = profile-library : informatifs uniquement, pas de clic requis
-// 5 = matchmaking : élément absent si aucune recherche active
-const OPTIONAL_STEPS = new Set([0, 1, 4, 5]);
+// 0 = search, 1 = genres : informatifs uniquement, pas de clic requis
+// 5 = matchmaking-button : optionnel si le jeu n'est pas encore chargé
+const OPTIONAL_STEPS = new Set([0, 1, 5]);
 
 export interface UseTourOptions {
   onDone: () => void;
@@ -34,10 +34,15 @@ export function useTour({ onDone, navigate }: UseTourOptions) {
         if (!element) return;
         const handler = () => {
           clickedRef.current = true;
-          // profile step: navigate to profile page then advance (avoids dropdown/overlay conflict)
-          if ((driverRef.current?.getActiveIndex() ?? -1) === 3) {
+          const activeIndex = driverRef.current?.getActiveIndex() ?? -1;
+          // profile button (3): navigate to profile page, avoid dropdown/overlay conflict
+          if (activeIndex === 3) {
             navigate('/profile');
             setTimeout(() => driverRef.current?.moveNext(), 500);
+          }
+          // profile library (4): user clicks a game → wait for game page to render
+          if (activeIndex === 4) {
+            setTimeout(() => driverRef.current?.moveNext(), 800);
           }
         };
         element.addEventListener('click', handler);
