@@ -440,7 +440,7 @@ function useProfilePageModel(
 
   const reloadUserGames = useCallback(async () => {
     try {
-      setUserGames((await fetchUserGames()) as UserGame[]);
+      setUserGames(await fetchUserGames());
     } catch {
       // ignore
     }
@@ -481,7 +481,7 @@ function useProfilePageModel(
             fetchUserGames(),
             apiGet('/api/me/'),
           ]);
-          setUserGames(games as UserGame[]);
+          setUserGames(games);
           setUser(meRes);
         } catch {
           /* ignore */
