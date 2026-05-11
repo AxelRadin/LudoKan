@@ -255,7 +255,7 @@ export const Header: React.FC = () => {
               <ListItemIcon>
                 <PersonSearchIcon fontSize="small" />
               </ListItemIcon>
-              <ListItemText>{t('nav.findFriends')}</ListItemText>
+              <ListItemText>{t('nav.friends')}</ListItemText>
             </MenuItem>
 
             <MenuItem
@@ -319,7 +319,7 @@ export const Header: React.FC = () => {
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
-            {t('nav.findFriends')}
+            {t('nav.friends')}
           </Button>
 
           <Button
