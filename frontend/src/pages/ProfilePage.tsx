@@ -8,8 +8,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Paper,
   Snackbar,
+  Stack,
   TextField,
   Typography,
   Menu,
@@ -26,10 +28,11 @@ import {
   type ChangeEvent,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import type { GameListItem } from '../components/GameList';
+import LibraryPrivacyModal from '../components/LibraryPrivacyModal';
 import {
   CreateCollectionModal,
   ManageCollectionsModal,
@@ -48,6 +51,15 @@ import {
   removeGameFromCollection,
   type UserCollection,
 } from '../api/collections';
+import {
+  acceptFriendRequest,
+  cancelFriendRequest,
+  declineFriendRequest,
+  fetchFriendRequests,
+  fetchFriends,
+  type FriendRequestRow,
+  type FriendRow,
+} from '../api/social';
 import { deleteUserGame, fetchUserGames } from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
@@ -136,6 +148,7 @@ type UserProfile = {
   games_finished_percentage?: number;
   games_played_percentage?: number;
   total_games_count?: number;
+  friends_count?: number;
 };
 
 type UserGame = {
@@ -333,7 +346,20 @@ type ProfilePageModel = {
   gamesFavoris: GameListItem[];
   avatarSrc: string;
   removeGame: (userGameId: number) => void;
-  snackbar: { open: boolean; message: string; isError: boolean };
+  snackbar: {
+    open: boolean;
+    message: string;
+    isError: boolean;
+    showUndo?: boolean;
+  };
+  setSnackbar: React.Dispatch<
+    React.SetStateAction<{
+      open: boolean;
+      message: string;
+      isError: boolean;
+      showUndo?: boolean;
+    }>
+  >;
   handleSnackbarClose: () => void;
   handleUndo: () => void;
   bannerBusy: boolean;
@@ -690,10 +716,12 @@ function useProfilePageModel(
     open: boolean;
     message: string;
     isError: boolean;
+    showUndo?: boolean;
   }>({
     open: false,
     message: '',
     isError: false,
+    showUndo: false,
   });
   const undoRef = useRef<{ game: UserGame; index: number } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -710,7 +738,7 @@ function useProfilePageModel(
     });
     undoRef.current = null;
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setSnackbar({ open: false, message: '', isError: false });
+    setSnackbar({ open: false, message: '', isError: false, showUndo: false });
   };
 
   const removeGame = (userGameId: number) => {
@@ -724,6 +752,7 @@ function useProfilePageModel(
       open: true,
       message: t('profilePage.gameRemoved'),
       isError: false,
+      showUndo: true,
     });
     undoTimerRef.current = setTimeout(async () => {
       undoRef.current = null;
@@ -739,6 +768,7 @@ function useProfilePageModel(
           open: true,
           message: t('profilePage.gameRemoveError'),
           isError: true,
+          showUndo: false,
         });
       }
     }, 5000);
@@ -832,6 +862,7 @@ function useProfilePageModel(
     handleSteamSync,
     reloadUserGames,
     gamesLoading,
+    setSnackbar,
   };
 }
 
@@ -1373,6 +1404,7 @@ export default function ProfilePage() {
     avatarSrc,
     removeGame,
     snackbar,
+    setSnackbar,
     handleSnackbarClose,
     handleUndo,
     bannerBusy,
@@ -1400,6 +1432,16 @@ export default function ProfilePage() {
     useState(false);
   const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
     useState(false);
+  const [libraryPrivacyModalOpen, setLibraryPrivacyModalOpen] = useState(false);
+  const [friendsList, setFriendsList] = useState<FriendRow[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequestRow[]>(
+    []
+  );
+  const [outgoingRequests, setOutgoingRequests] = useState<FriendRequestRow[]>(
+    []
+  );
+  const [socialLoading, setSocialLoading] = useState(true);
+  const [busyRequestId, setBusyRequestId] = useState<number | null>(null);
 
   const refreshCollections = useCallback(async () => {
     try {
@@ -1424,6 +1466,109 @@ export default function ProfilePage() {
   useEffect(() => {
     refreshCollections();
   }, [userGames.length, refreshCollections]);
+
+  const refreshSocialPanel = useCallback(async () => {
+    if (!user?.id) {
+      setFriendsList([]);
+      setIncomingRequests([]);
+      setOutgoingRequests([]);
+      setSocialLoading(false);
+      return;
+    }
+    setSocialLoading(true);
+    try {
+      const [f, inc, out] = await Promise.all([
+        fetchFriends(),
+        fetchFriendRequests('incoming'),
+        fetchFriendRequests('outgoing'),
+      ]);
+      setFriendsList(f);
+      setIncomingRequests(inc);
+      setOutgoingRequests(out);
+    } catch {
+      setFriendsList([]);
+      setIncomingRequests([]);
+      setOutgoingRequests([]);
+    } finally {
+      setSocialLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    refreshSocialPanel().catch(() => {});
+  }, [refreshSocialPanel]);
+
+  const handleAcceptIncoming = useCallback(
+    async (id: number) => {
+      setBusyRequestId(id);
+      try {
+        await acceptFriendRequest(id);
+        setSnackbar({
+          open: true,
+          message: t('profilePage.friendRequestAccepted'),
+          isError: false,
+        });
+        await refreshSocialPanel();
+      } catch {
+        setSnackbar({
+          open: true,
+          message: t('profilePage.friendRequestActionError'),
+          isError: true,
+        });
+      } finally {
+        setBusyRequestId(null);
+      }
+    },
+    [refreshSocialPanel, setSnackbar, t]
+  );
+
+  const handleDeclineIncoming = useCallback(
+    async (id: number) => {
+      setBusyRequestId(id);
+      try {
+        await declineFriendRequest(id);
+        setSnackbar({
+          open: true,
+          message: t('profilePage.friendRequestDeclined'),
+          isError: false,
+        });
+        await refreshSocialPanel();
+      } catch {
+        setSnackbar({
+          open: true,
+          message: t('profilePage.friendRequestActionError'),
+          isError: true,
+        });
+      } finally {
+        setBusyRequestId(null);
+      }
+    },
+    [refreshSocialPanel, setSnackbar, t]
+  );
+
+  const handleCancelOutgoing = useCallback(
+    async (id: number) => {
+      setBusyRequestId(id);
+      try {
+        await cancelFriendRequest(id);
+        setSnackbar({
+          open: true,
+          message: t('profilePage.friendRequestCancelled'),
+          isError: false,
+        });
+        await refreshSocialPanel();
+      } catch {
+        setSnackbar({
+          open: true,
+          message: t('profilePage.friendRequestActionError'),
+          isError: true,
+        });
+      } finally {
+        setBusyRequestId(null);
+      }
+    },
+    [refreshSocialPanel, setSnackbar, t]
+  );
 
   const libraryFilter = useMemo(
     () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
@@ -1459,6 +1604,18 @@ export default function ProfilePage() {
     },
     [setSearchParams]
   );
+
+  useEffect(() => {
+    if (collectionsLoading) return;
+    if (collectionFilterId === 'ALL') return;
+    const exists = collections.some(c => c.id === collectionFilterId);
+    if (!exists) setLibraryCollectionFilter('ALL');
+  }, [
+    collections,
+    collectionFilterId,
+    collectionsLoading,
+    setLibraryCollectionFilter,
+  ]);
 
   const libraryCounts = useMemo(
     () => ({
@@ -2113,6 +2270,17 @@ export default function ProfilePage() {
               />
             ))}
           </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
+            <Button
+              component={Link}
+              to="/friends"
+              variant="outlined"
+              size="small"
+              sx={{ fontFamily: FONT_BODY }}
+            >
+              {t('findFriendsPage.shortLink')}
+            </Button>
+          </Box>
         </Box>
 
         {/* ── STATS SECTION ── */}
@@ -2167,6 +2335,303 @@ export default function ProfilePage() {
           glassCard={glassCard}
         />
 
+        <Box id="profile-friend-requests-section" sx={{ mb: 2.5 }}>
+          <ProfileSectionHeader
+            label={t('profilePage.friendRequestsTitle')}
+            C={C}
+          />
+          <Paper
+            elevation={0}
+            sx={{
+              ...glassCard,
+              p: { xs: 2, md: 2.5 },
+              '&:hover': {
+                transform: 'none',
+                boxShadow:
+                  '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+              },
+            }}
+          >
+            {socialLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : (
+              <Stack spacing={2.5}>
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: 1.2,
+                      textTransform: 'uppercase',
+                      color: C.muted,
+                      mb: 1.5,
+                    }}
+                  >
+                    {t('profilePage.friendRequestsIncoming')}
+                  </Typography>
+                  {incomingRequests.length === 0 ? (
+                    <Typography
+                      sx={{
+                        fontFamily: FONT_BODY,
+                        fontSize: 14,
+                        color: C.muted,
+                      }}
+                    >
+                      {t('profilePage.friendRequestsIncomingEmpty')}
+                    </Typography>
+                  ) : (
+                    <Stack spacing={1.5}>
+                      {incomingRequests.map(req => (
+                        <Box
+                          key={req.id}
+                          sx={{
+                            display: 'flex',
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            alignItems: { xs: 'stretch', sm: 'center' },
+                            justifyContent: 'space-between',
+                            gap: 1.5,
+                            p: 1.5,
+                            borderRadius: 2,
+                            border: `1px solid ${C.border}`,
+                          }}
+                        >
+                          <Box
+                            component={Link}
+                            to={`/u/${encodeURIComponent(req.from_user.pseudo)}`}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              textDecoration: 'none',
+                              color: C.title,
+                            }}
+                          >
+                            <Avatar
+                              src={req.from_user.avatar_url || undefined}
+                              sx={{ width: 44, height: 44 }}
+                            >
+                              {req.from_user.pseudo[0]?.toUpperCase() || '?'}
+                            </Avatar>
+                            <Typography
+                              sx={{ fontFamily: FONT_BODY, fontWeight: 700 }}
+                            >
+                              {req.from_user.pseudo}
+                            </Typography>
+                          </Box>
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent={{ xs: 'stretch', sm: 'flex-end' }}
+                          >
+                            <Button
+                              variant="contained"
+                              size="small"
+                              disabled={busyRequestId === req.id}
+                              onClick={() => handleAcceptIncoming(req.id)}
+                              sx={{ fontFamily: FONT_BODY }}
+                            >
+                              {t('publicUserProfile.accept')}
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color="inherit"
+                              disabled={busyRequestId === req.id}
+                              onClick={() => handleDeclineIncoming(req.id)}
+                              sx={{ fontFamily: FONT_BODY }}
+                            >
+                              {t('publicUserProfile.decline')}
+                            </Button>
+                          </Stack>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                </Box>
+
+                <Divider sx={{ borderColor: C.border }} />
+
+                <Box>
+                  <Typography
+                    sx={{
+                      fontFamily: FONT_BODY,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: 1.2,
+                      textTransform: 'uppercase',
+                      color: C.muted,
+                      mb: 1.5,
+                    }}
+                  >
+                    {t('profilePage.friendRequestsOutgoing')}
+                  </Typography>
+                  {outgoingRequests.length === 0 ? (
+                    <Typography
+                      sx={{
+                        fontFamily: FONT_BODY,
+                        fontSize: 14,
+                        color: C.muted,
+                      }}
+                    >
+                      {t('profilePage.friendRequestsOutgoingEmpty')}
+                    </Typography>
+                  ) : (
+                    <Stack spacing={1.5}>
+                      {outgoingRequests.map(req => (
+                        <Box
+                          key={req.id}
+                          sx={{
+                            display: 'flex',
+                            flexDirection: { xs: 'column', sm: 'row' },
+                            alignItems: { xs: 'stretch', sm: 'center' },
+                            justifyContent: 'space-between',
+                            gap: 1.5,
+                            p: 1.5,
+                            borderRadius: 2,
+                            border: `1px solid ${C.border}`,
+                          }}
+                        >
+                          <Box
+                            component={Link}
+                            to={`/u/${encodeURIComponent(req.to_user.pseudo)}`}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1.5,
+                              textDecoration: 'none',
+                              color: C.title,
+                            }}
+                          >
+                            <Avatar
+                              src={req.to_user.avatar_url || undefined}
+                              sx={{ width: 44, height: 44 }}
+                            >
+                              {req.to_user.pseudo[0]?.toUpperCase() || '?'}
+                            </Avatar>
+                            <Typography
+                              sx={{ fontFamily: FONT_BODY, fontWeight: 700 }}
+                            >
+                              {req.to_user.pseudo}
+                            </Typography>
+                          </Box>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            color="inherit"
+                            disabled={busyRequestId === req.id}
+                            onClick={() => handleCancelOutgoing(req.id)}
+                            sx={{
+                              fontFamily: FONT_BODY,
+                              alignSelf: { xs: 'stretch', sm: 'center' },
+                            }}
+                          >
+                            {t('publicUserProfile.cancelRequest')}
+                          </Button>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                </Box>
+              </Stack>
+            )}
+          </Paper>
+        </Box>
+
+        <Box id="profile-friends-section" sx={{ mb: 2.5 }}>
+          <ProfileSectionHeader
+            label={t('profilePage.friendsSectionTitle')}
+            C={C}
+          />
+          <Paper
+            elevation={0}
+            sx={{
+              ...glassCard,
+              p: { xs: 2, md: 2.5 },
+              '&:hover': {
+                transform: 'none',
+                boxShadow:
+                  '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+              },
+            }}
+          >
+            {socialLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : friendsList.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 1.5 }}>
+                <Typography
+                  sx={{
+                    fontFamily: FONT_BODY,
+                    color: C.muted,
+                    mb: 1.5,
+                    fontSize: 14,
+                  }}
+                >
+                  {t('profilePage.friendsListEmpty')}
+                </Typography>
+                <Button
+                  component={Link}
+                  to="/friends"
+                  variant="outlined"
+                  size="small"
+                  sx={{ fontFamily: FONT_BODY }}
+                >
+                  {t('findFriendsPage.shortLink')}
+                </Button>
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1.5,
+                  justifyContent: { xs: 'center', sm: 'flex-start' },
+                }}
+              >
+                {friendsList.map(f => (
+                  <Box
+                    key={f.id}
+                    component={Link}
+                    to={`/u/${encodeURIComponent(f.pseudo)}`}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      textDecoration: 'none',
+                      color: C.title,
+                      py: 1,
+                      px: 1.5,
+                      borderRadius: 2,
+                      border: `1px solid ${C.border}`,
+                      fontFamily: FONT_BODY,
+                      '&:hover': {
+                        bgcolor: isDark
+                          ? 'rgba(255,255,255,0.06)'
+                          : 'rgba(211,47,47,0.06)',
+                        borderColor: C.accent,
+                      },
+                    }}
+                  >
+                    <Avatar
+                      src={f.avatar_url || undefined}
+                      sx={{ width: 40, height: 40, fontFamily: FONT_DISPLAY }}
+                    >
+                      {f.pseudo[0]?.toUpperCase() || '?'}
+                    </Avatar>
+                    <Typography sx={{ fontWeight: 600, fontSize: 15 }}>
+                      {f.pseudo}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Paper>
+        </Box>
+
         {/* ── LIBRARY ── */}
         <ProfilePageLibrarySection
           glassCard={glassCard}
@@ -2179,6 +2644,7 @@ export default function ProfilePage() {
           setLibrarySectionMenuAnchor={setLibrarySectionMenuAnchor}
           setCreateCollectionModalOpen={setCreateCollectionModalOpen}
           setManageCollectionsModalOpen={setManageCollectionsModalOpen}
+          onOpenLibraryPrivacy={() => setLibraryPrivacyModalOpen(true)}
           libraryFilter={libraryFilter}
           setLibraryFilter={setLibraryFilter}
           libraryCounts={libraryCounts}
@@ -2209,6 +2675,19 @@ export default function ProfilePage() {
         open={manageCollectionsModalOpen}
         onClose={handleCloseManageCollectionsModal}
       />
+      <LibraryPrivacyModal
+        open={libraryPrivacyModalOpen}
+        onClose={() => setLibraryPrivacyModalOpen(false)}
+        onSaved={async () => {
+          await refreshCollections();
+          setSnackbar({
+            open: true,
+            message: t('libraryPrivacy.saved'),
+            isError: false,
+            showUndo: false,
+          });
+        }}
+      />
 
       <Snackbar
         open={snackbar.open}
@@ -2220,11 +2699,11 @@ export default function ProfilePage() {
           severity={snackbar.isError ? 'error' : 'success'}
           onClose={handleSnackbarClose}
           action={
-            snackbar.isError ? undefined : (
+            snackbar.showUndo && !snackbar.isError ? (
               <Button color="inherit" size="small" onClick={handleUndo}>
                 {t('profilePage.undoLabel')}
               </Button>
-            )
+            ) : undefined
           }
           sx={{ width: '100%' }}
         >

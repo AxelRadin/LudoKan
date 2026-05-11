@@ -134,6 +134,7 @@ type CollectionFormFields = {
   name: string;
   color: string;
   is_visible_on_profile: boolean;
+  is_visible_to_friends: boolean;
 };
 
 const DEFAULT_COLOR = '#d32f2f';
@@ -149,6 +150,7 @@ function toFields(collection?: UserCollection): CollectionFormFields {
     name: collection?.name ?? '',
     color: normalizeHexColor(collection?.color ?? '') || DEFAULT_COLOR,
     is_visible_on_profile: Boolean(collection?.is_visible_on_profile),
+    is_visible_to_friends: Boolean(collection?.is_visible_to_friends),
   };
 }
 
@@ -191,6 +193,7 @@ function CollectionFormModal({
         name,
         color: normalizeHexColor(fields.color) || '',
         is_visible_on_profile: fields.is_visible_on_profile,
+        is_visible_to_friends: fields.is_visible_to_friends,
       };
       const saved =
         mode === 'create'
@@ -276,6 +279,21 @@ function CollectionFormModal({
             label={
               <Typography sx={{ fontFamily: FONT_BODY, fontSize: 14 }}>
                 {t('collections.form.visibleOnProfile')}
+              </Typography>
+            }
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={fields.is_visible_to_friends}
+                onChange={(_, checked) =>
+                  setFields(p => ({ ...p, is_visible_to_friends: checked }))
+                }
+              />
+            }
+            label={
+              <Typography sx={{ fontFamily: FONT_BODY, fontSize: 14 }}>
+                {t('collections.form.visibleToFriends')}
               </Typography>
             }
           />

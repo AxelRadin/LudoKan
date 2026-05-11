@@ -7,6 +7,7 @@ export type UserCollection = {
   sort_order: number;
   is_default: boolean;
   is_visible_on_profile: boolean;
+  is_visible_to_friends: boolean;
   system_key: 'MA_LUDOTHEQUE' | 'STEAM' | '';
   is_system: boolean;
   games_count: number;
@@ -33,6 +34,7 @@ export function createCollection(body: {
   color?: string;
   sort_order?: number;
   is_visible_on_profile?: boolean;
+  is_visible_to_friends?: boolean;
 }): Promise<UserCollection> {
   return apiPost('/api/me/collections/', body) as Promise<UserCollection>;
 }
@@ -42,7 +44,11 @@ export function updateCollection(
   body: Partial<
     Pick<
       UserCollection,
-      'name' | 'color' | 'sort_order' | 'is_visible_on_profile'
+      | 'name'
+      | 'color'
+      | 'sort_order'
+      | 'is_visible_on_profile'
+      | 'is_visible_to_friends'
     >
   >
 ): Promise<UserCollection> {
