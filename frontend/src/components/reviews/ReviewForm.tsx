@@ -193,7 +193,7 @@ export default function ReviewForm({
     );
 
     if (result && onSuccess) {
-      onSuccess(result as { id: number; title?: string; content: string });
+      onSuccess(result);
     }
   }
 
