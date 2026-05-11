@@ -193,12 +193,25 @@ export default function UserPublicProfilePage() {
   }, [pseudo]);
 
   useEffect(() => {
+    if (!pseudo) return;
+    if (isAuthenticated && authUser?.pseudo) {
+      const decoded = decodeURIComponent(pseudo);
+      if (decoded.toLowerCase() === authUser.pseudo.toLowerCase()) {
+        navigate('/profile', { replace: true });
+        return;
+      }
+    }
     load().catch(() => {});
-  }, [load]);
+  }, [load, pseudo, isAuthenticated, authUser?.pseudo, navigate]);
 
   useEffect(() => {
+    if (!pseudo) return;
+    if (isAuthenticated && authUser?.pseudo) {
+      const decoded = decodeURIComponent(pseudo);
+      if (decoded.toLowerCase() === authUser.pseudo.toLowerCase()) return;
+    }
     loadLibrary().catch(() => {});
-  }, [loadLibrary]);
+  }, [loadLibrary, pseudo, isAuthenticated, authUser?.pseudo]);
 
   const relation = profile?.relation_to_me ?? null;
 
