@@ -107,3 +107,72 @@ class TestPublicProfileAndLibraryVisibility:
         rows = r.data.get("results", r.data)
         names = [row["name"] for row in rows]
         assert "Amis seulement" in names
+
+
+@pytest.mark.django_db
+class TestFriendRequestListDirections:
+    def test_list_outgoing_pending_default(self, jwt_authenticated_client, user):
+        target = User.objects.create_user(email="out@ex.com", pseudo="outtgt", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=user, to_user=target, status=FriendRequest.Status.PENDING)
+        r = jwt_authenticated_client.get("/api/social/friend-requests/")
+        assert r.status_code == status.HTTP_200_OK
+        ids = [row["id"] for row in r.data.get("results", r.data)]
+        assert fr.pk in ids
+
+    def test_list_incoming_pending(self, jwt_authenticated_client, user):
+        sender = User.objects.create_user(email="inc@ex.com", pseudo="incsend", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=sender, to_user=user, status=FriendRequest.Status.PENDING)
+        r = jwt_authenticated_client.get("/api/social/friend-requests/?direction=incoming")
+        assert r.status_code == status.HTTP_200_OK
+        ids = [row["id"] for row in r.data.get("results", r.data)]
+        assert fr.pk in ids
+
+
+@pytest.mark.django_db
+class TestFriendRequestCreateErrors:
+    def test_create_unknown_user(self, jwt_authenticated_client, user):
+        r = jwt_authenticated_client.post("/api/social/friend-requests/", {"to_user_id": 999999999}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_create_self(self, jwt_authenticated_client, user):
+        r = jwt_authenticated_client.post("/api/social/friend-requests/", {"to_user_id": user.pk}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestFriendRequestActionsErrors:
+    def test_accept_as_wrong_user_returns_403(self, user):
+        other = User.objects.create_user(email="wa@ex.com", pseudo="wrongacc", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=other, to_user=user, status=FriendRequest.Status.PENDING)
+        client_other = APIClient()
+        from rest_framework_simplejwt.tokens import RefreshToken
+
+        client_other.credentials(HTTP_AUTHORIZATION=f"Bearer {RefreshToken.for_user(other).access_token}")
+        r = client_other.post(f"/api/social/friend-requests/{fr.pk}/accept/", {}, format="json")
+        assert r.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_decline_as_sender_returns_403(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="ds@ex.com", pseudo="declsnd", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=user, to_user=other, status=FriendRequest.Status.PENDING)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/decline/", {}, format="json")
+        assert r.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_cancel_as_recipient_returns_403(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="cr@ex.com", pseudo="canrecv", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=other, to_user=user, status=FriendRequest.Status.PENDING)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/cancel/", {}, format="json")
+        assert r.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_accept_non_pending_returns_400(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="np@ex.com", pseudo="nonpend", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=other, to_user=user, status=FriendRequest.Status.DECLINED)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/accept/", {}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestRemoveFriendErrors:
+    def test_remove_non_friend_returns_400(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="nf@ex.com", pseudo="notfri", password="x" * 8 + "1Aa")
+        r = jwt_authenticated_client.delete(f"/api/social/friends/{other.pk}/")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
