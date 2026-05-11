@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -17,6 +17,13 @@ from apps.library.serializers import LibraryPrivacySerializer, PublicUserLibrary
 from apps.library.services_collections import ensure_ma_ludotheque
 from apps.library.tasks import sync_steam_library_task
 from apps.library.visibility import collections_visible_to_viewer_queryset, viewer_can_see_collection, visible_user_games_queryset
+from apps.social.blocking import pair_has_block
+
+
+def _assert_public_owner_not_blocked(request, owner) -> None:
+    viewer = request.user if request.user.is_authenticated else None
+    if viewer and pair_has_block(viewer, owner):
+        raise NotFound()
 
 
 @extend_schema_view(
@@ -206,6 +213,7 @@ class PublicUserCollectionsView(ListAPIView):
     def get_queryset(self):
         pseudo = self.kwargs["pseudo"]
         owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(self.request, owner)
         viewer = self.request.user if self.request.user.is_authenticated else None
         return (
             collections_visible_to_viewer_queryset(owner, viewer)
@@ -224,6 +232,7 @@ class PublicUserGamesView(ListAPIView):
     def get_queryset(self):
         pseudo = self.kwargs["pseudo"]
         owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(self.request, owner)
         viewer = self.request.user if self.request.user.is_authenticated else None
         return (
             visible_user_games_queryset(owner, viewer)
@@ -248,6 +257,7 @@ class PublicUserCollectionGamesView(ListAPIView):
         pseudo = self.kwargs["pseudo"]
         pk = int(self.kwargs["pk"])
         owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(self.request, owner)
         viewer = self.request.user if self.request.user.is_authenticated else None
         library = get_object_or_404(UserLibrary, pk=pk, user=owner)
 
@@ -278,6 +288,7 @@ class GamesInCommonView(ListAPIView):
     def list(self, request, *args, **kwargs):
         pseudo = self.kwargs["pseudo"]
         owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(request, owner)
         from apps.social.utils import are_friends
 
         if not are_friends(request.user, owner):
