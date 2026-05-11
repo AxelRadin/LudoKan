@@ -10,7 +10,7 @@ from .views import (
     SteamSyncView,
     UserGameViewSet,
     UserLibraryViewSet,
-    XboxSyncView
+    XboxSyncView,
 )
 
 app_name = "library"
