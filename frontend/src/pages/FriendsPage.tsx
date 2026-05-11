@@ -1,6 +1,12 @@
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { Alert, Box, Button, Paper, Snackbar, Tab, Tabs } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -23,6 +29,12 @@ import { useAuth } from '../contexts/useAuth';
 const TAB_REQUESTS = 'requests';
 const TAB_BLOCKED = 'blocked';
 
+function friendsPageTabIndex(tabParam: string | null): number {
+  if (tabParam === TAB_BLOCKED) return 2;
+  if (tabParam === TAB_REQUESTS) return 1;
+  return 0;
+}
+
 export default function FriendsPage() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -38,8 +50,7 @@ export default function FriendsPage() {
   }>({ open: false, message: '', isError: false });
 
   const tabParam = searchParams.get('tab');
-  const tabIndex =
-    tabParam === TAB_BLOCKED ? 2 : tabParam === TAB_REQUESTS ? 1 : 0;
+  const tabIndex = friendsPageTabIndex(tabParam);
 
   const setTabIndex = useCallback(
     (index: number) => {
@@ -76,9 +87,8 @@ export default function FriendsPage() {
   }, []);
 
   useEffect(() => {
-    if (tabIndex === 2) {
-      void loadBlocked();
-    }
+    if (tabIndex !== 2) return;
+    loadBlocked().catch(() => {});
   }, [tabIndex, loadBlocked]);
 
   const handleUnblock = useCallback(
@@ -194,6 +204,56 @@ export default function FriendsPage() {
     [borderColor, isDark]
   );
 
+  let tabPanelContent: ReactNode;
+  if (tabIndex === 0) {
+    tabPanelContent = (
+      <FriendsListPanel
+        friends={friendsList}
+        loading={loading}
+        borderColor={borderColor}
+        titleColor={titleColor}
+        mutedColor={mutedColor}
+        accentColor={accentColor}
+        isDark={isDark}
+      />
+    );
+  } else if (tabIndex === 1) {
+    tabPanelContent = (
+      <FriendRequestsPanel
+        incoming={incomingRequests}
+        outgoing={outgoingRequests}
+        loading={loading}
+        busyRequestId={busyRequestId}
+        onAcceptIncoming={id => {
+          handleAcceptIncoming(id).catch(() => {});
+        }}
+        onDeclineIncoming={id => {
+          handleDeclineIncoming(id).catch(() => {});
+        }}
+        onCancelOutgoing={id => {
+          handleCancelOutgoing(id).catch(() => {});
+        }}
+        borderColor={borderColor}
+        titleColor={titleColor}
+        mutedColor={mutedColor}
+      />
+    );
+  } else {
+    tabPanelContent = (
+      <BlockedUsersPanel
+        users={blockedList}
+        loading={blockedLoading}
+        busyUserId={busyUnblockId}
+        onUnblock={id => {
+          handleUnblock(id).catch(() => {});
+        }}
+        borderColor={borderColor}
+        titleColor={titleColor}
+        mutedColor={mutedColor}
+      />
+    );
+  }
+
   if (!isAuthenticated) {
     return (
       <PageLayout title={t('friendsPage.title')} backTo="/">
@@ -251,40 +311,7 @@ export default function FriendsPage() {
       </Box>
 
       <Paper elevation={0} sx={paperSx}>
-        {tabIndex === 0 ? (
-          <FriendsListPanel
-            friends={friendsList}
-            loading={loading}
-            borderColor={borderColor}
-            titleColor={titleColor}
-            mutedColor={mutedColor}
-            accentColor={accentColor}
-            isDark={isDark}
-          />
-        ) : tabIndex === 1 ? (
-          <FriendRequestsPanel
-            incoming={incomingRequests}
-            outgoing={outgoingRequests}
-            loading={loading}
-            busyRequestId={busyRequestId}
-            onAcceptIncoming={id => void handleAcceptIncoming(id)}
-            onDeclineIncoming={id => void handleDeclineIncoming(id)}
-            onCancelOutgoing={id => void handleCancelOutgoing(id)}
-            borderColor={borderColor}
-            titleColor={titleColor}
-            mutedColor={mutedColor}
-          />
-        ) : (
-          <BlockedUsersPanel
-            users={blockedList}
-            loading={blockedLoading}
-            busyUserId={busyUnblockId}
-            onUnblock={id => void handleUnblock(id)}
-            borderColor={borderColor}
-            titleColor={titleColor}
-            mutedColor={mutedColor}
-          />
-        )}
+        {tabPanelContent}
       </Paper>
 
       <AddFriendSearchModal
@@ -296,7 +323,7 @@ export default function FriendsPage() {
             message: t('friendsPage.inviteSent'),
             isError: false,
           });
-          void refresh();
+          refresh().catch(() => {});
         }}
         onInviteError={() => {
           setSnackbar({
