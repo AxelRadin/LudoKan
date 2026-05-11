@@ -22,6 +22,16 @@ export const TOUR_STEPS: DriveStep[] = [
     },
   },
   {
+    element: '[data-tour="genres"]',
+    popover: {
+      title: '🎮 Explorer par genre',
+      description:
+        'Parcours les jeux par catégorie : action, RPG, stratégie… Clique sur un genre pour découvrir tous les titres associés.',
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="profile"]',
     popover: {
       title: '📚 Ta bibliothèque',

@@ -340,7 +340,7 @@ export const HomePage = () => {
           />
         </Section>
 
-        <Box className="lux-s4" sx={{ mt: 1 }}>
+        <Box data-tour="genres" className="lux-s4" sx={{ mt: 1 }}>
           <Box
             sx={{
               display: 'flex',
