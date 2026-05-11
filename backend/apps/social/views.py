@@ -54,7 +54,7 @@ class FriendRequestViewSet(ModelViewSet):
         return FriendRequest.objects.filter(from_user=user, status=FriendRequest.Status.PENDING).select_related("from_user", "to_user")
 
     def create(self, request, *args, **kwargs):
-        ser = FriendRequestCreateSerializer(data=request.data)
+        ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
         to_user = ser.resolve_to_user()
         if not to_user:
