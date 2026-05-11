@@ -505,6 +505,13 @@
     "errorFallback": "Steam login failed",
     "backToProfile": "Back to profile"
   },
+  "microsoftCallback": {
+    "loadingTitle": "Linking with Microsoft",
+    "loadingDesc": "Please wait while we finalize Xbox linking...",
+    "errorMicrosoft": "Microsoft returned an error: {{error}}",
+    "errorNoCode": "No Microsoft code received.",
+    "errorFallback": "Microsoft linking failed"
+  },
   "testSentry": {
     "title": "Sentry test page",
     "desc": "Click to generate an error captured by Sentry.",

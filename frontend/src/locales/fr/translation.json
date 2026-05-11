@@ -505,6 +505,13 @@
     "errorFallback": "Échec de la connexion Steam",
     "backToProfile": "Retour au profil"
   },
+  "microsoftCallback": {
+    "loadingTitle": "Liaison avec Microsoft en cours",
+    "loadingDesc": "Veuillez patienter pendant que nous finalisons la connexion Xbox...",
+    "errorMicrosoft": "Microsoft a renvoyé une erreur : {{error}}",
+    "errorNoCode": "Aucun code Microsoft reçu.",
+    "errorFallback": "Échec de la connexion Microsoft"
+  },
   "testSentry": {
     "title": "Page de test Sentry",
     "desc": "Cliquez pour générer une erreur capturée par Sentry.",
