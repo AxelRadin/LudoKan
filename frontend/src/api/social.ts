@@ -94,3 +94,25 @@ export async function searchUsersForFriends(
   )) as UserSearchHit[] | Paginated<UserSearchHit>;
   return Array.isArray(data) ? data : unwrapResults(data);
 }
+
+export type BlockedUserRow = {
+  id: number;
+  pseudo: string;
+  avatar_url?: string | null;
+};
+
+export async function fetchBlockedUsers(): Promise<BlockedUserRow[]> {
+  const data = (await apiGet('/api/social/blocks/')) as BlockedUserRow[];
+  return Array.isArray(data) ? data : [];
+}
+
+export function blockUser(body: {
+  user_id?: number;
+  pseudo?: string;
+}): Promise<BlockedUserRow> {
+  return apiPost('/api/social/blocks/', body) as Promise<BlockedUserRow>;
+}
+
+export function unblockUser(userId: number): Promise<void> {
+  return apiDelete(`/api/social/blocks/${userId}/`) as Promise<void>;
+}
