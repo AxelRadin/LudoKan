@@ -21,6 +21,7 @@ def ensure_ma_ludotheque(user: CustomUser) -> UserLibrary:
             "sort_order": 0,
             "is_default": True,
             "is_visible_on_profile": False,
+            "is_visible_to_friends": True,
         },
     )
     return lib

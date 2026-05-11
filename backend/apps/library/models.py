@@ -35,6 +35,10 @@ class UserLibrary(models.Model):
         default=False,
         help_text="Si vrai, la collection peut être listée sur le profil public.",
     )
+    is_visible_to_friends = models.BooleanField(
+        default=False,
+        help_text="Si vrai, la collection est visible pour les amis (même sans affichage public).",
+    )
     system_key = models.CharField(
         max_length=32,
         blank=True,

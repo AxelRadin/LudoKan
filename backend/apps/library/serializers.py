@@ -113,6 +113,7 @@ class UserLibrarySerializer(serializers.ModelSerializer):
             "sort_order",
             "is_default",
             "is_visible_on_profile",
+            "is_visible_to_friends",
             "system_key",
             "is_system",
             "games_count",
@@ -149,7 +150,7 @@ class UserLibrarySerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         instance = self.instance
         if instance and instance.system_key:
-            allowed = {"is_visible_on_profile", "color"}
+            allowed = {"is_visible_on_profile", "is_visible_to_friends", "color"}
             extra = set(attrs) - allowed
             if extra:
                 raise serializers.ValidationError("Cette collection système ne peut modifier que la visibilité sur le profil et la couleur.")
@@ -167,6 +168,14 @@ class UserLibrarySerializer(serializers.ModelSerializer):
             is_default=False,
             **validated_data,
         )
+
+
+class LibraryPrivacySerializer(serializers.ModelSerializer):
+    """Visibilité globale (collection système « Ma ludothèque » uniquement)."""
+
+    class Meta:
+        model = UserLibrary
+        fields = ["is_visible_on_profile", "is_visible_to_friends"]
 
 
 class PublicUserLibrarySerializer(serializers.ModelSerializer):
