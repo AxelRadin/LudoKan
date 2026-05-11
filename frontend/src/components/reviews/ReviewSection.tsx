@@ -77,8 +77,10 @@ function UserReviewEditor({
   const showExistingCard = Boolean(userReview && !editingReview);
 
   function handleEditSuccess(updated: Review) {
-    onUserReviewChange({ ...userReview, ...updated } as Review);
-    updateReview({ ...userReview, ...updated } as Review);
+    if (!userReview) return;
+    const merged: Review = { ...userReview, ...updated };
+    onUserReviewChange(merged);
+    updateReview(merged);
     onEditingChange(null);
   }
 
@@ -100,7 +102,7 @@ function UserReviewEditor({
       <ReviewCard
         review={userReview}
         isOwner={userReview.user?.id === currentUserId}
-        onEdit={review => onEditingChange(review as Review)}
+        onEdit={onEditingChange}
         onDelete={onDeleteRequest}
       />
     );
@@ -115,7 +117,7 @@ function UserReviewEditor({
           ? { ...editingReview, rating: editingReview.rating?.value }
           : undefined
       }
-      onSuccess={review => handleFormSuccess(review as Review)}
+      onSuccess={handleFormSuccess}
       onCancel={editingReview ? () => onEditingChange(null) : undefined}
     />
   );
@@ -286,7 +288,7 @@ export default function ReviewSection({
         hasNext={hasNext}
         onLoadMore={loadMorePage}
         currentUserId={currentUserId}
-        onEditReview={review => setEditingReview(review as Review)}
+        onEditReview={setEditingReview}
         onDeleteReview={setReviewToDelete}
         reviewStarFilter={reviewStarFilter}
         onClearReviewStarFilter={onClearReviewStarFilter}

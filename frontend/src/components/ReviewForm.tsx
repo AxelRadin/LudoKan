@@ -46,8 +46,7 @@ export default function ReviewForm({ gameId, onSuccess }: ReviewFormProps) {
 
   async function onSubmit(data: ReviewFormValues) {
     const result = await submitReview(gameId, data.content);
-    if (result && onSuccess)
-      onSuccess(result as { id: number; content: string });
+    if (result && onSuccess) onSuccess(result);
   }
 
   if (!isAuthenticated) {
