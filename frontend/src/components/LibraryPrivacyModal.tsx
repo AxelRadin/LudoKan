@@ -10,7 +10,7 @@ import {
   Switch,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   fetchLibraryPrivacy,
@@ -74,6 +74,75 @@ export default function LibraryPrivacyModal({
     }
   };
 
+  let dialogMainContent: ReactNode;
+  if (loading) {
+    dialogMainContent = (
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+        <CircularProgress size={32} />
+      </Box>
+    );
+  } else if (loadError && !draft) {
+    dialogMainContent = (
+      <Typography sx={{ fontFamily: FONT_BODY, color: 'error.main' }}>
+        {loadError}
+      </Typography>
+    );
+  } else if (draft) {
+    dialogMainContent = (
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0.5 }}>
+        {loadError ? (
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              color: 'error.main',
+              fontSize: 14,
+            }}
+          >
+            {loadError}
+          </Typography>
+        ) : null}
+        <FormControlLabel
+          control={
+            <Switch
+              checked={draft.is_visible_to_friends}
+              onChange={(_, v) =>
+                setDraft(prev =>
+                  prev ? { ...prev, is_visible_to_friends: v } : prev
+                )
+              }
+              disabled={saving}
+            />
+          }
+          label={
+            <Typography sx={{ fontFamily: FONT_BODY, fontSize: 15 }}>
+              {t('libraryPrivacy.shareWithFriends')}
+            </Typography>
+          }
+        />
+        <FormControlLabel
+          control={
+            <Switch
+              checked={draft.is_visible_on_profile}
+              onChange={(_, v) =>
+                setDraft(prev =>
+                  prev ? { ...prev, is_visible_on_profile: v } : prev
+                )
+              }
+              disabled={saving}
+            />
+          }
+          label={
+            <Typography sx={{ fontFamily: FONT_BODY, fontSize: 15 }}>
+              {t('libraryPrivacy.showOnPublicProfile')}
+            </Typography>
+          }
+        />
+      </Box>
+    );
+  } else {
+    dialogMainContent = null;
+  }
+
   return (
     <Dialog
       open={open}
@@ -87,69 +156,7 @@ export default function LibraryPrivacyModal({
       >
         {t('libraryPrivacy.title')}
       </DialogTitle>
-      <DialogContent>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-            <CircularProgress size={32} />
-          </Box>
-        ) : loadError && !draft ? (
-          <Typography sx={{ fontFamily: FONT_BODY, color: 'error.main' }}>
-            {loadError}
-          </Typography>
-        ) : draft ? (
-          <Box
-            sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 0.5 }}
-          >
-            {loadError ? (
-              <Typography
-                sx={{
-                  fontFamily: FONT_BODY,
-                  color: 'error.main',
-                  fontSize: 14,
-                }}
-              >
-                {loadError}
-              </Typography>
-            ) : null}
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={draft.is_visible_to_friends}
-                  onChange={(_, v) =>
-                    setDraft(prev =>
-                      prev ? { ...prev, is_visible_to_friends: v } : prev
-                    )
-                  }
-                  disabled={saving}
-                />
-              }
-              label={
-                <Typography sx={{ fontFamily: FONT_BODY, fontSize: 15 }}>
-                  {t('libraryPrivacy.shareWithFriends')}
-                </Typography>
-              }
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={draft.is_visible_on_profile}
-                  onChange={(_, v) =>
-                    setDraft(prev =>
-                      prev ? { ...prev, is_visible_on_profile: v } : prev
-                    )
-                  }
-                  disabled={saving}
-                />
-              }
-              label={
-                <Typography sx={{ fontFamily: FONT_BODY, fontSize: 15 }}>
-                  {t('libraryPrivacy.showOnPublicProfile')}
-                </Typography>
-              }
-            />
-          </Box>
-        ) : null}
-      </DialogContent>
+      <DialogContent>{dialogMainContent}</DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button
           onClick={onClose}
@@ -160,7 +167,9 @@ export default function LibraryPrivacyModal({
         </Button>
         <Button
           variant="contained"
-          onClick={() => void handleSave()}
+          onClick={() => {
+            handleSave().catch(() => {});
+          }}
           disabled={saving || loading || !draft}
           sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
         >
