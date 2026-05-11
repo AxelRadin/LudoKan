@@ -1237,7 +1237,7 @@ type ProfileIntegrationsProps = Readonly<{
   glassCard: any;
 }>;
 
-type IntegrationCardProps = {
+type IntegrationCardProps = Readonly<{
   label: string;
   desc: string;
   iconChar: string;
@@ -1258,7 +1258,7 @@ type IntegrationCardProps = {
   C: ReturnType<typeof useThemeColors>;
   glassCard: any;
   mt?: number;
-};
+}>;
 
 function IntegrationCard({
   label,
