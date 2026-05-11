@@ -200,3 +200,9 @@ class XboxSyncTest(TestCase):
 
         mock_igdb.side_effect = mock_igdb_backend
         _resolve_and_save_missing_games(["100"])  # should catch and return cleanly
+
+    def test_process_single_igdb_game_no_id(self):
+        # Cette fonction doit s'arrêter net si l'objet n'a pas d'ID
+        from apps.library.sync_utils import process_single_igdb_game
+
+        process_single_igdb_game({"name": "Fake"}, "xbox1", "xbox_id")
