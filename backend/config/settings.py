@@ -568,7 +568,8 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     },
     "microsoft": {
-        "TENANT": "common",  # "common", "organizations", or "consumers"
-        "SCOPE": ["user.read", "openid", "profile", "offline_access", "XboxLive.signin"],
+        "SCOPE": ["User.Read", "openid", "profile", "offline_access"],
+        "AUTH_PARAMS": {"access_type": "offline"},
+        "METHOD": "oauth2",
     },
 }
