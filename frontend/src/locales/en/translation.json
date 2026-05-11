@@ -406,6 +406,7 @@
     "xboxSyncTooltipDefault": "Re-sync your Xbox library",
     "xboxDisconnect": "Disconnect",
     "xboxConnect": "Link Xbox",
+    "xboxGamerscoreLabel": "Xbox Gamerscore",
     "selection": "Selection",
     "favorites": "Favorites",
     "favoritesCount": "{{count}} game",

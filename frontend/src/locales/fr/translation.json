@@ -371,6 +371,7 @@
     "xboxSyncTooltipDefault": "Re-synchroniser ta bibliothèque Xbox",
     "xboxDisconnect": "Déconnecter",
     "xboxConnect": "Lier Xbox",
+    "xboxGamerscoreLabel": "Gamerscore Xbox",
     "selection": "Sélection",
     "favorites": "Coups de cœur",
     "favoritesCount": "{{count}} jeu",

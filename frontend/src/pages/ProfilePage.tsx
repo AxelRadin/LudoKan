@@ -87,7 +87,8 @@ styleEl.textContent = `
   .stat-card-0  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.28s both; }
   .stat-card-1  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.36s both; }
   .stat-card-2  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.44s both; }
-  .lib-section  { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.5s both; }
+  .stat-card-3  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.52s both; }
+  .lib-section  { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.6s both; }
 `;
 document.head.appendChild(styleEl);
 
@@ -136,6 +137,12 @@ type UserProfile = {
   games_finished_percentage?: number;
   games_played_percentage?: number;
   total_games_count?: number;
+  xbox_profile?: {
+    gamertag?: string;
+    xuid?: string;
+    gamerscore?: number;
+    last_sync_at?: string;
+  } | null;
 };
 
 type UserGame = {
@@ -2307,6 +2314,15 @@ export default function ProfilePage() {
                 value: user?.total_games_count?.toString() || '0',
                 cls: 'stat-card-2',
               },
+              ...(user?.xbox_profile
+                ? [
+                    {
+                      label: t('profilePage.xboxGamerscoreLabel'),
+                      value: user.xbox_profile.gamerscore?.toString() || '0',
+                      cls: 'stat-card-3', // Une nouvelle classe ou réutilisation
+                    },
+                  ]
+                : []),
             ].map(props => (
               <ProfileStatCard
                 key={props.label}
