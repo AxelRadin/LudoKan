@@ -1506,6 +1506,651 @@ function ProfileIntegrations({
   );
 }
 
+function useProfileLibraryFilters(
+  searchParams: URLSearchParams,
+  setSearchParams: any,
+  userGames: UserGame[],
+  userGamesForLibrary: UserGame[],
+  gamesEnCours: GameListItem[],
+  gamesTermines: GameListItem[],
+  gamesEnvie: GameListItem[],
+  collectionFilterId: LibraryCollectionFilter,
+  reloadUserGames: () => Promise<void>,
+  refreshCollections: () => Promise<void>,
+  collections: UserCollection[],
+  t: any
+) {
+  const libraryFilter = useMemo(
+    () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
+    [searchParams]
+  );
+
+  const setLibraryFilter = useCallback(
+    (next: LibraryStatusFilter) => {
+      setSearchParams(
+        (prev: URLSearchParams) => {
+          const p = new URLSearchParams(prev);
+          if (next === 'ALL') p.delete(LIBRARY_STATUS_QUERY_KEY);
+          else p.set(LIBRARY_STATUS_QUERY_KEY, next);
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const setLibraryCollectionFilter = useCallback(
+    (next: LibraryCollectionFilter) => {
+      setSearchParams(
+        (prev: URLSearchParams) => {
+          const p = new URLSearchParams(prev);
+          if (next === 'ALL') p.delete(LIBRARY_COLLECTION_QUERY_KEY);
+          else p.set(LIBRARY_COLLECTION_QUERY_KEY, String(next));
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const libraryCounts = useMemo(
+    () => ({
+      all: userGamesForLibrary.length,
+      enCours: gamesEnCours.length,
+      termines: gamesTermines.length,
+      envie: gamesEnvie.length,
+    }),
+    [
+      userGamesForLibrary.length,
+      gamesEnCours.length,
+      gamesTermines.length,
+      gamesEnvie.length,
+    ]
+  );
+
+  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
+    if (libraryFilter === 'EN_COURS') return gamesEnCours;
+    if (libraryFilter === 'TERMINE') return gamesTermines;
+    if (libraryFilter === 'ENVIE_DE_JOUER') return gamesEnvie;
+    return [];
+  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
+
+  const singleFilterTitle = useMemo(() => {
+    if (libraryFilter === 'ALL') return '';
+    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
+      EN_COURS: t('profilePage.statusPlaying'),
+      TERMINE: t('profilePage.statusDone'),
+      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
+    };
+    return map[libraryFilter];
+  }, [libraryFilter, t]);
+
+  const activeCollectionMeta = useMemo(
+    () =>
+      typeof collectionFilterId === 'number'
+        ? collections.find(c => c.id === collectionFilterId)
+        : undefined,
+    [collections, collectionFilterId]
+  );
+
+  const gameListCollectionProps = useMemo(() => {
+    const canDetach =
+      typeof collectionFilterId === 'number' &&
+      activeCollectionMeta?.system_key !== 'MA_LUDOTHEQUE';
+    if (!canDetach) return {};
+    const colId = collectionFilterId;
+    return {
+      onDetachFromCollection: async (userGameId: number) => {
+        try {
+          await removeGameFromCollection(colId, userGameId);
+          await reloadUserGames();
+          await refreshCollections();
+        } catch (err) {
+          console.error(err);
+        }
+      },
+      detachFromCollectionTitle: t('collections.profileDetachTooltip', {
+        name:
+          activeCollectionMeta?.name ?? t('collections.defaultCollectionName'),
+      }),
+    };
+  }, [
+    collectionFilterId,
+    activeCollectionMeta?.system_key,
+    activeCollectionMeta?.name,
+    reloadUserGames,
+    refreshCollections,
+    t,
+  ]);
+
+  const libraryBadgeText = useMemo(() => {
+    const isAll = collectionFilterId === 'ALL';
+    const count = isAll ? userGames.length : userGamesForLibrary.length;
+    const isOne = count <= 1;
+    const key = isAll
+      ? isOne
+        ? 'profilePage.libraryTotal'
+        : 'profilePage.libraryTotalPlural'
+      : isOne
+        ? 'profilePage.libraryInViewOne'
+        : 'profilePage.libraryInViewMany';
+
+    return t(key, { count });
+  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
+
+  return {
+    libraryFilter,
+    setLibraryFilter,
+    setLibraryCollectionFilter,
+    libraryCounts,
+    gamesForLibraryFilter,
+    singleFilterTitle,
+    gameListCollectionProps,
+    libraryBadgeText,
+  };
+}
+
+type ProfileBannerProps = {
+  user: UserProfile | null;
+  loading: boolean;
+  bannerBusy: boolean;
+  handleBannerChange: (e: ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleBannerRemoveNow: () => Promise<void>;
+  C: ReturnType<typeof useThemeColors>;
+};
+
+function ProfileBanner({
+  user,
+  loading,
+  bannerBusy,
+  handleBannerChange,
+  handleBannerRemoveNow,
+  C,
+}: ProfileBannerProps) {
+  const { t } = useTranslation();
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [confirmDeleteBannerOpen, setConfirmDeleteBannerOpen] = useState(false);
+
+  return (
+    <Box sx={{ position: 'relative' }}>
+      {loading ? (
+        <Box
+          sx={{
+            width: '100%',
+            height: { xs: 220, sm: 280, md: 380 },
+            borderRadius: '28px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: C.cardBg,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+          }}
+        >
+          <CircularProgress sx={{ color: C.accent }} />
+        </Box>
+      ) : (
+        <Box
+          component="img"
+          src={user?.banner_url || zeldaBanner}
+          alt="Banner"
+          sx={{
+            width: '100%',
+            height: { xs: 220, sm: 280, md: 380 },
+            objectFit: 'cover',
+            borderRadius: '28px',
+            display: 'block',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+          }}
+        />
+      )}
+
+      {user && (
+        <>
+          <Box
+            component="button"
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+              setBannerMenuAnchor(e.currentTarget)
+            }
+            disabled={bannerBusy}
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '50%',
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: bannerBusy ? 'wait' : 'pointer',
+              zIndex: 2,
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
+            }}
+          >
+            {bannerBusy ? (
+              <CircularProgress size={20} sx={{ color: '#fff' }} />
+            ) : (
+              <MoreVertIcon fontSize="small" />
+            )}
+          </Box>
+
+          <Menu
+            anchorEl={bannerMenuAnchor}
+            open={Boolean(bannerMenuAnchor)}
+            onClose={() => setBannerMenuAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            PaperProps={{
+              sx: {
+                borderRadius: '12px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                minWidth: 180,
+              },
+            }}
+          >
+            <MenuItem
+              onClick={() => {
+                setBannerMenuAnchor(null);
+                bannerInputRef.current?.click();
+              }}
+              sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+            >
+              {t('profilePage.addBanner')}
+            </MenuItem>
+            {user?.banner_url && (
+              <MenuItem
+                sx={{
+                  color: 'error.main',
+                  fontFamily: FONT_BODY,
+                  fontSize: 14,
+                }}
+                onClick={() => {
+                  setBannerMenuAnchor(null);
+                  setConfirmDeleteBannerOpen(true);
+                }}
+              >
+                {t('profilePage.deleteBanner')}
+              </MenuItem>
+            )}
+          </Menu>
+
+          <Dialog
+            open={confirmDeleteBannerOpen}
+            onClose={() => setConfirmDeleteBannerOpen(false)}
+            PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+          >
+            <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
+              {t('profilePage.bannerConfirmTitle')}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText sx={{ fontFamily: FONT_BODY }}>
+                {t('profilePage.bannerConfirmText')}
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button
+                onClick={() => setConfirmDeleteBannerOpen(false)}
+                sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+              >
+                {t('profilePage.cancel')}
+              </Button>
+              <Button
+                color="error"
+                variant="contained"
+                disableElevation
+                sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
+                onClick={() => {
+                  setConfirmDeleteBannerOpen(false);
+                  handleBannerRemoveNow();
+                }}
+              >
+                {t('profilePage.deleteBannerConfirm')}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <input
+            type="file"
+            ref={bannerInputRef}
+            style={{ display: 'none' }}
+            accept="image/png, image/jpeg, image/webp"
+            onChange={handleBannerChange}
+          />
+        </>
+      )}
+
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '28px',
+          background:
+            'linear-gradient(160deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.55) 100%)',
+        }}
+      />
+    </Box>
+  );
+}
+
+function ProfileInfoCards({
+  loading,
+  user,
+  glassCard,
+  C,
+}: {
+  loading: boolean;
+  user: UserProfile | null;
+  glassCard: any;
+  C: ReturnType<typeof useThemeColors>;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr 1fr' },
+        gap: 2,
+        mb: 2.5,
+      }}
+    >
+      <Paper
+        elevation={0}
+        className="info-card-0"
+        sx={{ ...glassCard, p: '26px 28px' }}
+      >
+        <Typography
+          sx={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 2,
+            textTransform: 'uppercase',
+            color: C.accent,
+            mb: 1.5,
+            fontFamily: FONT_BODY,
+          }}
+        >
+          {t('profilePage.about')}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: FONT_DISPLAY,
+            fontWeight: 700,
+            fontSize: 20,
+            color: C.title,
+            mb: 1.25,
+            letterSpacing: -0.3,
+            lineHeight: 1.15,
+          }}
+        >
+          {t('profilePage.aboutTitle')}
+        </Typography>
+        <Typography
+          sx={{
+            color: C.muted,
+            lineHeight: 1.75,
+            fontSize: 14,
+            fontFamily: FONT_BODY,
+          }}
+        >
+          {loading
+            ? '...'
+            : user?.description_courte || t('profilePage.aboutEmpty')}
+        </Typography>
+      </Paper>
+
+      <Paper
+        elevation={0}
+        className="info-card-1"
+        sx={{ ...glassCard, p: '26px 28px' }}
+      >
+        <Typography
+          sx={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 2,
+            textTransform: 'uppercase',
+            color: C.accent,
+            mb: 1.5,
+            fontFamily: FONT_BODY,
+          }}
+        >
+          {t('profilePage.identityLabel')}
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: FONT_DISPLAY,
+            fontWeight: 700,
+            fontSize: 20,
+            color: C.title,
+            mb: 1.5,
+            letterSpacing: -0.3,
+            lineHeight: 1.15,
+          }}
+        >
+          {loading
+            ? '...'
+            : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() ||
+              'N/A'}
+        </Typography>
+        {[
+          { k: t('profilePage.pseudoLabel'), v: user?.pseudo },
+          { k: t('profilePage.emailLabel'), v: user?.email },
+        ].map(({ k, v }) => (
+          <Box
+            key={k}
+            sx={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 1.5,
+              mb: 0.9,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                color: C.light,
+                minWidth: 50,
+                flexShrink: 0,
+              }}
+            >
+              {k}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                fontSize: 13.5,
+                color: C.text,
+                wordBreak: 'break-all',
+              }}
+            >
+              {loading ? '...' : v || 'N/A'}
+            </Typography>
+          </Box>
+        ))}
+      </Paper>
+
+      <Paper
+        elevation={0}
+        className="info-card-2"
+        sx={{
+          ...glassCard,
+          p: '26px 28px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: 2,
+              textTransform: 'uppercase',
+              color: C.accent,
+              mb: 1.5,
+              fontFamily: FONT_BODY,
+            }}
+          >
+            {t('profilePage.accountLabel')}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_DISPLAY,
+              fontWeight: 700,
+              fontSize: 20,
+              color: C.title,
+              mb: 1.5,
+              letterSpacing: -0.3,
+              lineHeight: 1.15,
+            }}
+          >
+            {t('profilePage.memberSince')}
+          </Typography>
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: FONT_DISPLAY,
+            fontSize: 18,
+            fontWeight: 700,
+            color: C.title,
+            lineHeight: 1.3,
+          }}
+        >
+          {loading ? '...' : formatProfileDate(user?.created_at)}
+        </Typography>
+      </Paper>
+    </Box>
+  );
+}
+
+function ProfileStatsCards({
+  loading,
+  user,
+  navigate,
+  glassCard,
+  C,
+}: {
+  loading: boolean;
+  user: UserProfile | null;
+  navigate: any;
+  glassCard: any;
+  C: ReturnType<typeof useThemeColors>;
+}) {
+  const { t } = useTranslation();
+  const stats1 = [
+    {
+      label: t('profilePage.playtimeLabel'),
+      value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
+      cls: 'stat-card-0',
+    },
+    {
+      label: t('profilePage.reviewsLabel'),
+      value: user?.review_count?.toString() || '0',
+      cls: 'stat-card-1',
+      onClick: () => navigate('/profile/reviews'),
+      clickable: true,
+    },
+    {
+      label: t('profilePage.registeredLabel'),
+      value: user?.created_at
+        ? new Date(user.created_at).toLocaleDateString('fr-FR')
+        : null,
+      cls: 'stat-card-2',
+    },
+  ];
+
+  const stats2 = [
+    {
+      label: t('profilePage.finishedRatioLabel'),
+      value: user?.games_finished_percentage
+        ? `${user.games_finished_percentage}%`
+        : '0%',
+      cls: 'stat-card-0',
+    },
+    {
+      label: t('profilePage.playedRatioLabel'),
+      value: user?.games_played_percentage
+        ? `${user.games_played_percentage}%`
+        : '0%',
+      cls: 'stat-card-1',
+    },
+    {
+      label: t('profilePage.totalGamesLabel'),
+      value: user?.total_games_count?.toString() || '0',
+      cls: 'stat-card-2',
+    },
+    ...(user?.xbox_profile
+      ? [
+          {
+            label: t('profilePage.xboxGamerscoreLabel'),
+            value: user.xbox_profile.gamerscore?.toString() || '0',
+            cls: 'stat-card-3',
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <>
+      <Box sx={{ mb: 2.5 }}>
+        <ProfileSectionHeader label={t('profilePage.infoLabel')} C={C} />
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
+          {stats1.map(props => (
+            <ProfileStatCard
+              key={props.label}
+              {...props}
+              loading={loading}
+              smallValue={props.label === t('profilePage.registeredLabel')}
+              C={C}
+              glassCard={glassCard}
+            />
+          ))}
+        </Box>
+      </Box>
+
+      <Box sx={{ mb: 2.5 }}>
+        <ProfileSectionHeader label={t('profilePage.statsLabel')} C={C} />
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
+          {stats2.map(props => (
+            <ProfileStatCard
+              key={props.label}
+              {...props}
+              loading={loading}
+              C={C}
+              glassCard={glassCard}
+            />
+          ))}
+        </Box>
+      </Box>
+    </>
+  );
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1594,144 +2239,35 @@ export default function ProfilePage() {
     refreshCollections();
   }, [userGames.length, refreshCollections]);
 
-  const libraryFilter = useMemo(
-    () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
-    [searchParams]
-  );
-
-  const setLibraryFilter = useCallback(
-    (next: LibraryStatusFilter) => {
-      setSearchParams(
-        prev => {
-          const p = new URLSearchParams(prev);
-          if (next === 'ALL') p.delete(LIBRARY_STATUS_QUERY_KEY);
-          else p.set(LIBRARY_STATUS_QUERY_KEY, next);
-          return p;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
-
-  const setLibraryCollectionFilter = useCallback(
-    (next: LibraryCollectionFilter) => {
-      setSearchParams(
-        prev => {
-          const p = new URLSearchParams(prev);
-          if (next === 'ALL') p.delete(LIBRARY_COLLECTION_QUERY_KEY);
-          else p.set(LIBRARY_COLLECTION_QUERY_KEY, String(next));
-          return p;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
-
-  const libraryCounts = useMemo(
-    () => ({
-      all: userGamesForLibrary.length,
-      enCours: gamesEnCours.length,
-      termines: gamesTermines.length,
-      envie: gamesEnvie.length,
-    }),
-    [
-      userGamesForLibrary.length,
-      gamesEnCours.length,
-      gamesTermines.length,
-      gamesEnvie.length,
-    ]
-  );
-
-  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
-    switch (libraryFilter) {
-      case 'EN_COURS':
-        return gamesEnCours;
-      case 'TERMINE':
-        return gamesTermines;
-      case 'ENVIE_DE_JOUER':
-        return gamesEnvie;
-      default:
-        return [];
-    }
-  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
-
-  const singleFilterTitle = useMemo(() => {
-    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
-      EN_COURS: t('profilePage.statusPlaying'),
-      TERMINE: t('profilePage.statusDone'),
-      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
-    };
-    if (libraryFilter === 'ALL') return '';
-    return map[libraryFilter];
-  }, [libraryFilter, t]);
-
-  const activeCollectionMeta = useMemo(
-    () =>
-      typeof collectionFilterId === 'number'
-        ? collections.find(c => c.id === collectionFilterId)
-        : undefined,
-    [collections, collectionFilterId]
-  );
-
-  const gameListCollectionProps = useMemo(() => {
-    const canDetach =
-      typeof collectionFilterId === 'number' &&
-      activeCollectionMeta?.system_key !== 'MA_LUDOTHEQUE';
-    if (!canDetach) return {};
-    const colId = collectionFilterId;
-    return {
-      onDetachFromCollection: async (userGameId: number) => {
-        try {
-          await removeGameFromCollection(colId, userGameId);
-          await reloadUserGames();
-          await refreshCollections();
-        } catch (err) {
-          console.error(err);
-        }
-      },
-      detachFromCollectionTitle: t('collections.profileDetachTooltip', {
-        name:
-          activeCollectionMeta?.name ?? t('collections.defaultCollectionName'),
-      }),
-    };
-  }, [
+  const {
+    libraryFilter,
+    setLibraryFilter,
+    setLibraryCollectionFilter,
+    libraryCounts,
+    gamesForLibraryFilter,
+    singleFilterTitle,
+    gameListCollectionProps,
+    libraryBadgeText,
+  } = useProfileLibraryFilters(
+    searchParams,
+    setSearchParams,
+    userGames,
+    userGamesForLibrary,
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
     collectionFilterId,
-    activeCollectionMeta?.system_key,
-    activeCollectionMeta?.name,
     reloadUserGames,
     refreshCollections,
-    t,
-  ]);
-
-  const libraryBadgeText = useMemo(() => {
-    if (collectionFilterId === 'ALL') {
-      return userGames.length <= 1
-        ? t('profilePage.libraryTotal', { count: userGames.length })
-        : t('profilePage.libraryTotalPlural', { count: userGames.length });
-    }
-    return userGamesForLibrary.length <= 1
-      ? t('profilePage.libraryInViewOne', {
-          count: userGamesForLibrary.length,
-        })
-      : t('profilePage.libraryInViewMany', {
-          count: userGamesForLibrary.length,
-        });
-  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
+    collections,
+    t
+  );
 
   const handleCloseManageCollectionsModal = useCallback(() => {
     setManageCollectionsModalOpen(false);
     refreshCollections().catch(() => {});
     reloadUserGames().catch(() => {});
   }, [refreshCollections, reloadUserGames]);
-
-  const bannerInputRef = useRef<HTMLInputElement>(null);
-  const [bannerMenuAnchor, setBannerMenuAnchor] = useState<null | HTMLElement>(
-    null
-  );
-  const bannerMenuOpen = Boolean(bannerMenuAnchor);
-  const [confirmDeleteBannerOpen, setConfirmDeleteBannerOpen] = useState(false);
 
   const glassCard = useMemo(
     () => ({
@@ -1777,163 +2313,13 @@ export default function ProfilePage() {
       <Box sx={{ maxWidth: 1160, mx: 'auto' }}>
         {/* HERO */}
         <Box sx={{ position: 'relative', mb: { xs: 8, md: 7 } }}>
-          {loading ? (
-            <Box
-              sx={{
-                width: '100%',
-                height: { xs: 220, sm: 280, md: 380 },
-                borderRadius: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: C.cardBg,
-                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-              }}
-            >
-              <CircularProgress sx={{ color: C.accent }} />
-            </Box>
-          ) : (
-            <Box
-              component="img"
-              src={user?.banner_url || zeldaBanner}
-              alt="Banner"
-              sx={{
-                width: '100%',
-                height: { xs: 220, sm: 280, md: 380 },
-                objectFit: 'cover',
-                borderRadius: '28px',
-                display: 'block',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
-              }}
-            />
-          )}
-
-          {user && (
-            <>
-              <Box
-                component="button"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-                  setBannerMenuAnchor(e.currentTarget)
-                }
-                disabled={bannerBusy}
-                sx={{
-                  position: 'absolute',
-                  top: 16,
-                  right: 16,
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: 40,
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: bannerBusy ? 'wait' : 'pointer',
-                  zIndex: 2,
-                  '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
-                }}
-              >
-                {bannerBusy ? (
-                  <CircularProgress size={20} sx={{ color: '#fff' }} />
-                ) : (
-                  <MoreVertIcon fontSize="small" />
-                )}
-              </Box>
-
-              <Menu
-                anchorEl={bannerMenuAnchor}
-                open={bannerMenuOpen}
-                onClose={() => setBannerMenuAnchor(null)}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                PaperProps={{
-                  sx: {
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                    minWidth: 180,
-                  },
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    setBannerMenuAnchor(null);
-                    bannerInputRef.current?.click();
-                  }}
-                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
-                >
-                  {t('profilePage.addBanner')}
-                </MenuItem>
-                {user?.banner_url && (
-                  <MenuItem
-                    sx={{
-                      color: 'error.main',
-                      fontFamily: FONT_BODY,
-                      fontSize: 14,
-                    }}
-                    onClick={() => {
-                      setBannerMenuAnchor(null);
-                      setConfirmDeleteBannerOpen(true);
-                    }}
-                  >
-                    {t('profilePage.deleteBanner')}
-                  </MenuItem>
-                )}
-              </Menu>
-
-              <Dialog
-                open={confirmDeleteBannerOpen}
-                onClose={() => setConfirmDeleteBannerOpen(false)}
-                PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
-              >
-                <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
-                  {t('profilePage.bannerConfirmTitle')}
-                </DialogTitle>
-                <DialogContent>
-                  <DialogContentText sx={{ fontFamily: FONT_BODY }}>
-                    {t('profilePage.bannerConfirmText')}
-                  </DialogContentText>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                  <Button
-                    onClick={() => setConfirmDeleteBannerOpen(false)}
-                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
-                  >
-                    {t('profilePage.cancel')}
-                  </Button>
-                  <Button
-                    color="error"
-                    variant="contained"
-                    disableElevation
-                    sx={{ fontFamily: FONT_BODY, borderRadius: 2 }}
-                    onClick={() => {
-                      setConfirmDeleteBannerOpen(false);
-                      handleBannerRemoveNow();
-                    }}
-                  >
-                    {t('profilePage.deleteBannerConfirm')}
-                  </Button>
-                </DialogActions>
-              </Dialog>
-
-              <input
-                type="file"
-                ref={bannerInputRef}
-                style={{ display: 'none' }}
-                accept="image/png, image/jpeg, image/webp"
-                onChange={handleBannerChange}
-              />
-            </>
-          )}
-
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: '28px',
-              background:
-                'linear-gradient(160deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.55) 100%)',
-            }}
+          <ProfileBanner
+            user={user}
+            loading={loading}
+            bannerBusy={bannerBusy}
+            handleBannerChange={handleBannerChange}
+            handleBannerRemoveNow={handleBannerRemoveNow}
+            C={C}
           />
 
           <Box
@@ -2060,280 +2446,21 @@ export default function ProfilePage() {
         <Box sx={{ height: { xs: 56, md: 44 } }} />
 
         {/* INFO CARDS */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr 1fr' },
-            gap: 2,
-            mb: 2.5,
-          }}
-        >
-          <Paper
-            elevation={0}
-            className="info-card-0"
-            sx={{ ...glassCard, p: '26px 28px' }}
-          >
-            <Typography
-              sx={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 2,
-                textTransform: 'uppercase',
-                color: C.accent,
-                mb: 1.5,
-                fontFamily: FONT_BODY,
-              }}
-            >
-              {t('profilePage.about')}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 20,
-                color: C.title,
-                mb: 1.25,
-                letterSpacing: -0.3,
-                lineHeight: 1.15,
-              }}
-            >
-              {t('profilePage.aboutTitle')}
-            </Typography>
-            <Typography
-              sx={{
-                color: C.muted,
-                lineHeight: 1.75,
-                fontSize: 14,
-                fontFamily: FONT_BODY,
-              }}
-            >
-              {loading
-                ? '...'
-                : user?.description_courte || t('profilePage.aboutEmpty')}
-            </Typography>
-          </Paper>
+        <ProfileInfoCards
+          loading={loading}
+          user={user}
+          glassCard={glassCard}
+          C={C}
+        />
 
-          <Paper
-            elevation={0}
-            className="info-card-1"
-            sx={{ ...glassCard, p: '26px 28px' }}
-          >
-            <Typography
-              sx={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 2,
-                textTransform: 'uppercase',
-                color: C.accent,
-                mb: 1.5,
-                fontFamily: FONT_BODY,
-              }}
-            >
-              {t('profilePage.identityLabel')}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 700,
-                fontSize: 20,
-                color: C.title,
-                mb: 1.5,
-                letterSpacing: -0.3,
-                lineHeight: 1.15,
-              }}
-            >
-              {loading
-                ? '...'
-                : `${user?.first_name || ''} ${user?.last_name || ''}`.trim() ||
-                  'N/A'}
-            </Typography>
-            {[
-              { k: t('profilePage.pseudoLabel'), v: user?.pseudo },
-              { k: t('profilePage.emailLabel'), v: user?.email },
-            ].map(({ k, v }) => (
-              <Box
-                key={k}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'baseline',
-                  gap: 1.5,
-                  mb: 0.9,
-                }}
-              >
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    letterSpacing: 1,
-                    textTransform: 'uppercase',
-                    color: C.light,
-                    minWidth: 50,
-                    flexShrink: 0,
-                  }}
-                >
-                  {k}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: FONT_BODY,
-                    fontSize: 13.5,
-                    color: C.text,
-                    wordBreak: 'break-all',
-                  }}
-                >
-                  {loading ? '...' : v || 'N/A'}
-                </Typography>
-              </Box>
-            ))}
-          </Paper>
-
-          <Paper
-            elevation={0}
-            className="info-card-2"
-            sx={{
-              ...glassCard,
-              p: '26px 28px',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  letterSpacing: 2,
-                  textTransform: 'uppercase',
-                  color: C.accent,
-                  mb: 1.5,
-                  fontFamily: FONT_BODY,
-                }}
-              >
-                {t('profilePage.accountLabel')}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONT_DISPLAY,
-                  fontWeight: 700,
-                  fontSize: 20,
-                  color: C.title,
-                  mb: 1.5,
-                  letterSpacing: -0.3,
-                  lineHeight: 1.15,
-                }}
-              >
-                {t('profilePage.memberSince')}
-              </Typography>
-            </Box>
-            <Typography
-              sx={{
-                fontFamily: FONT_DISPLAY,
-                fontSize: 18,
-                fontWeight: 700,
-                color: C.title,
-                lineHeight: 1.3,
-              }}
-            >
-              {loading ? '...' : formatProfileDate(user?.created_at)}
-            </Typography>
-          </Paper>
-        </Box>
-
-        {/* STATS */}
-        <Box sx={{ mb: 2.5 }}>
-          <ProfileSectionHeader label={t('profilePage.infoLabel')} C={C} />
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-              gap: 2,
-            }}
-          >
-            {[
-              {
-                label: t('profilePage.playtimeLabel'),
-                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
-                cls: 'stat-card-0',
-              },
-              {
-                label: t('profilePage.reviewsLabel'),
-                value: user?.review_count?.toString() || '0',
-                cls: 'stat-card-1',
-                onClick: () => navigate('/profile/reviews'),
-                clickable: true,
-              },
-              {
-                label: t('profilePage.registeredLabel'),
-                value: user?.created_at
-                  ? new Date(user.created_at).toLocaleDateString('fr-FR')
-                  : null,
-                cls: 'stat-card-2',
-              },
-            ].map(props => (
-              <ProfileStatCard
-                key={props.label}
-                {...props}
-                loading={loading}
-                smallValue={props.label === t('profilePage.registeredLabel')}
-                C={C}
-                glassCard={glassCard}
-              />
-            ))}
-          </Box>
-        </Box>
-
-        {/* ── STATS SECTION ── */}
-        <Box sx={{ mb: 2.5 }}>
-          <ProfileSectionHeader label={t('profilePage.statsLabel')} C={C} />
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
-              gap: 2,
-            }}
-          >
-            {[
-              {
-                label: t('profilePage.finishedRatioLabel'),
-                value: user?.games_finished_percentage
-                  ? `${user.games_finished_percentage}%`
-                  : '0%',
-                cls: 'stat-card-0',
-              },
-              {
-                label: t('profilePage.playedRatioLabel'),
-                value: user?.games_played_percentage
-                  ? `${user.games_played_percentage}%`
-                  : '0%',
-                cls: 'stat-card-1',
-              },
-              {
-                label: t('profilePage.totalGamesLabel'),
-                value: user?.total_games_count?.toString() || '0',
-                cls: 'stat-card-2',
-              },
-              ...(user?.xbox_profile
-                ? [
-                    {
-                      label: t('profilePage.xboxGamerscoreLabel'),
-                      value: user.xbox_profile.gamerscore?.toString() || '0',
-                      cls: 'stat-card-3', // Une nouvelle classe ou réutilisation
-                    },
-                  ]
-                : []),
-            ].map(props => (
-              <ProfileStatCard
-                key={props.label}
-                {...props}
-                loading={loading}
-                C={C}
-                glassCard={glassCard}
-              />
-            ))}
-          </Box>
-        </Box>
+        {/* STATS SECTION */}
+        <ProfileStatsCards
+          loading={loading}
+          user={user}
+          navigate={navigate}
+          glassCard={glassCard}
+          C={C}
+        />
 
         <ProfileIntegrations
           steam_id={user?.steam_id}
