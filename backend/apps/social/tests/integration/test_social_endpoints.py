@@ -33,6 +33,21 @@ class TestSocialFriendRequests:
         assert Friendship.objects.count() == 1
         assert not FriendRequest.objects.filter(pk=fr.pk).exists()
 
+    def test_decline_friend_request_success(self, jwt_authenticated_client, user):
+        sender = User.objects.create_user(email="dec@example.com", pseudo="decliner", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=sender, to_user=user, status=FriendRequest.Status.PENDING)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/decline/", {}, format="json")
+        assert r.status_code == status.HTTP_200_OK
+        assert r.data.get("detail") == "Demande refusée."
+        assert not FriendRequest.objects.filter(pk=fr.pk).exists()
+
+    def test_cancel_friend_request_success(self, jwt_authenticated_client, user):
+        target = User.objects.create_user(email="can@example.com", pseudo="cancelto", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=user, to_user=target, status=FriendRequest.Status.PENDING)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/cancel/", {}, format="json")
+        assert r.status_code == status.HTTP_204_NO_CONTENT
+        assert not FriendRequest.objects.filter(pk=fr.pk).exists()
+
     def test_mutual_pending_auto_accept(self, jwt_authenticated_client, user):
         other = User.objects.create_user(email="o3@example.com", pseudo="bouncer", password="x" * 8 + "1Aa")
         FriendRequest.objects.create(from_user=other, to_user=user, status=FriendRequest.Status.PENDING)
