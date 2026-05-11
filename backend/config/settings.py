@@ -571,5 +571,12 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": ["User.Read", "openid", "profile", "offline_access"],
         "AUTH_PARAMS": {"access_type": "offline"},
         "METHOD": "oauth2",
+        "APPS": [
+            {
+                "client_id": MICROSOFT_CLIENT_ID,
+                "secret": MICROSOFT_CLIENT_SECRET,
+                "key": "",
+            }
+        ],
     },
 }
