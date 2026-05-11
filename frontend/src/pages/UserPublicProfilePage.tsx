@@ -16,7 +16,14 @@ import {
   Snackbar,
   Typography,
 } from '@mui/material';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Link,
@@ -31,7 +38,6 @@ import {
   LIBRARY_COLLECTION_QUERY_KEY,
   LIBRARY_STATUS_QUERY_KEY,
   type LibraryCollectionFilter,
-  type LibraryCounts,
   type LibraryStatusFilter,
   parseLibraryCollectionParam,
   parseLibraryStatusParam,
@@ -39,13 +45,15 @@ import {
 import ProfilePageLibrarySection from './ProfilePageLibrarySection';
 import type { UserGame } from '../api/userGames';
 import type { UserCollection } from '../api/collections';
-import type { PublicCollectionRow } from '../api/publicProfile';
+import type {
+  PublicCollectionRow,
+  PublicUserProfile,
+} from '../api/publicProfile';
 import {
   fetchGamesInCommon,
   fetchPublicCollections,
   fetchPublicProfile,
   fetchPublicUserGames,
-  type PublicUserProfile,
 } from '../api/publicProfile';
 import {
   acceptFriendRequest,
@@ -57,6 +65,10 @@ import {
 } from '../api/social';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
+import {
+  useProfileLibraryDerived,
+  userGameToGameListItem,
+} from '../hooks/useProfileLibraryDerived';
 
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -80,19 +92,194 @@ function mapCollectionsForFilters(
   }));
 }
 
-function gamesForStatus(games: UserGame[], status: string): GameListItem[] {
-  return games
-    .filter(g => g.status === status)
-    .map(g => ({
-      id: g.game.id,
-      name: g.game.name,
-      cover_url: g.game.cover_url,
-      image: g.game.image,
-      status: g.status,
-      userGameId: g.id,
-      steam_appid: g.game.steam_appid,
-      playtime_forever: g.playtime_forever,
-    }));
+function isFriendRequestAutoAccepted(res: unknown): boolean {
+  return (
+    typeof res === 'object' &&
+    res !== null &&
+    'auto_accepted' in res &&
+    Boolean((res as { auto_accepted?: boolean }).auto_accepted)
+  );
+}
+
+function useGamesInCommonLoader(
+  pseudo: string | undefined,
+  isAuthenticated: boolean,
+  relation: string | null | undefined,
+  setGamesInCommon: Dispatch<SetStateAction<GameListItem[]>>
+) {
+  useEffect(() => {
+    if (!pseudo || !isAuthenticated || relation !== 'friends') {
+      setGamesInCommon([]);
+      return;
+    }
+    let alive = true;
+    fetchGamesInCommon(pseudo)
+      .then(games => {
+        if (!alive) return;
+        setGamesInCommon(games.map(userGameToGameListItem));
+      })
+      .catch(() => {
+        if (alive) setGamesInCommon([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [pseudo, isAuthenticated, relation, setGamesInCommon]);
+}
+
+function PublicProfileRelationActions({
+  relation,
+  profile,
+  isAuthenticated,
+  authUser,
+  onFriendAction,
+  muted,
+}: Readonly<{
+  relation: string | null | undefined;
+  profile: PublicUserProfile;
+  isAuthenticated: boolean;
+  authUser: { id: number; pseudo?: string } | null | undefined;
+  onFriendAction: (fn: () => Promise<unknown>, okMessage: string) => void;
+  muted: string;
+}>) {
+  const { t } = useTranslation();
+  const outgoingId = profile.outgoing_friend_request_id;
+  const incomingId = profile.incoming_friend_request_id;
+
+  if (!relation || relation === 'self') return null;
+
+  return (
+    <Box
+      sx={{
+        mt: 2,
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 1,
+        justifyContent: { xs: 'center', sm: 'flex-start' },
+      }}
+    >
+      {relation === 'none' && isAuthenticated ? (
+        <Button
+          variant="contained"
+          onClick={() =>
+            onFriendAction(
+              () => sendFriendRequest({ to_pseudo: profile.pseudo }),
+              t('publicUserProfile.requestSent')
+            )
+          }
+        >
+          {t('publicUserProfile.addFriend')}
+        </Button>
+      ) : null}
+      {relation === 'none' && !isAuthenticated ? (
+        <Typography sx={{ fontFamily: FONT_BODY, fontSize: 14, color: muted }}>
+          {t('publicUserProfile.loginToAdd')}
+        </Typography>
+      ) : null}
+      {relation === 'pending_outgoing' && outgoingId != null ? (
+        <>
+          <Button disabled variant="outlined">
+            {t('publicUserProfile.requestSent')}
+          </Button>
+          <Button
+            variant="text"
+            onClick={() =>
+              onFriendAction(
+                () => cancelFriendRequest(outgoingId),
+                t('publicUserProfile.requestCancelled')
+              )
+            }
+          >
+            {t('publicUserProfile.cancelRequest')}
+          </Button>
+        </>
+      ) : null}
+      {relation === 'pending_incoming' && incomingId != null ? (
+        <>
+          <Button
+            variant="contained"
+            onClick={() =>
+              onFriendAction(
+                () => acceptFriendRequest(incomingId),
+                t('publicUserProfile.nowFriends')
+              )
+            }
+          >
+            {t('publicUserProfile.accept')}
+          </Button>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() =>
+              onFriendAction(
+                () => declineFriendRequest(incomingId),
+                t('publicUserProfile.requestDeclined')
+              )
+            }
+          >
+            {t('publicUserProfile.decline')}
+          </Button>
+        </>
+      ) : null}
+      {relation === 'friends' && authUser ? (
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() =>
+            onFriendAction(
+              () => removeFriend(profile.id),
+              t('publicUserProfile.removeFriend')
+            )
+          }
+        >
+          {t('publicUserProfile.removeFriend')}
+        </Button>
+      ) : null}
+    </Box>
+  );
+}
+
+function PublicProfileGamesInCommonSection({
+  relation,
+  gamesInCommon,
+  gamesLoading,
+  glassCard,
+  muted,
+}: Readonly<{
+  relation: string | null | undefined;
+  gamesInCommon: GameListItem[];
+  gamesLoading: boolean;
+  glassCard: Record<string, unknown>;
+  muted: string;
+}>) {
+  const { t } = useTranslation();
+  if (relation !== 'friends') return null;
+
+  return (
+    <>
+      {gamesInCommon.length > 0 ? (
+        <Paper elevation={0} sx={{ ...glassCard, p: 3, mt: 3 }}>
+          <GameList
+            games={gamesInCommon}
+            title={`${t('publicUserProfile.gamesInCommon')} (${gamesInCommon.length})`}
+            showStatus
+          />
+        </Paper>
+      ) : null}
+      {gamesInCommon.length === 0 && !gamesLoading ? (
+        <Typography
+          sx={{
+            fontFamily: FONT_BODY,
+            color: muted,
+            mt: 2,
+            textAlign: 'center',
+          }}
+        >
+          {t('publicUserProfile.gamesInCommonEmpty')}
+        </Typography>
+      ) : null}
+    </>
+  );
 }
 
 export default function UserPublicProfilePage() {
@@ -229,124 +416,18 @@ export default function UserPublicProfilePage() {
 
   const relation = profile?.relation_to_me ?? null;
 
-  useEffect(() => {
-    if (!pseudo || !isAuthenticated || relation !== 'friends') {
-      setGamesInCommon([]);
-      return;
-    }
-    let alive = true;
-    fetchGamesInCommon(pseudo)
-      .then(games => {
-        if (!alive) return;
-        setGamesInCommon(
-          games.map(g => ({
-            id: g.game.id,
-            name: g.game.name,
-            cover_url: g.game.cover_url,
-            image: g.game.image,
-            status: g.status,
-            userGameId: g.id,
-            steam_appid: g.game.steam_appid,
-            playtime_forever: g.playtime_forever,
-          }))
-        );
-      })
-      .catch(() => {
-        if (alive) setGamesInCommon([]);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [pseudo, isAuthenticated, relation]);
+  useGamesInCommonLoader(pseudo, isAuthenticated, relation, setGamesInCommon);
 
-  const userGamesForLibrary = useMemo(() => {
-    if (collectionFilterId === 'ALL') return userGames;
-    return userGames.filter(ug =>
-      Array.isArray(ug.collection_ids)
-        ? ug.collection_ids.includes(collectionFilterId)
-        : false
-    );
-  }, [userGames, collectionFilterId]);
-
-  const gamesEnCours = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'EN_COURS'),
-    [userGamesForLibrary]
-  );
-  const gamesTermines = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'TERMINE'),
-    [userGamesForLibrary]
-  );
-  const gamesEnvie = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'ENVIE_DE_JOUER'),
-    [userGamesForLibrary]
-  );
-  const gamesFavoris = useMemo(
-    () =>
-      userGamesForLibrary
-        .filter(g => g.is_favorite)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    [userGamesForLibrary]
-  );
-
-  const libraryCounts: LibraryCounts = useMemo(
-    () => ({
-      all: userGamesForLibrary.length,
-      enCours: gamesEnCours.length,
-      termines: gamesTermines.length,
-      envie: gamesEnvie.length,
-    }),
-    [
-      userGamesForLibrary.length,
-      gamesEnCours.length,
-      gamesTermines.length,
-      gamesEnvie.length,
-    ]
-  );
-
-  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
-    switch (libraryFilter) {
-      case 'EN_COURS':
-        return gamesEnCours;
-      case 'TERMINE':
-        return gamesTermines;
-      case 'ENVIE_DE_JOUER':
-        return gamesEnvie;
-      default:
-        return [];
-    }
-  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
-
-  const singleFilterTitle = useMemo(() => {
-    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
-      EN_COURS: t('profilePage.statusPlaying'),
-      TERMINE: t('profilePage.statusDone'),
-      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
-    };
-    if (libraryFilter === 'ALL') return '';
-    return map[libraryFilter];
-  }, [libraryFilter, t]);
-
-  const libraryBadgeText = useMemo(() => {
-    if (collectionFilterId === 'ALL') {
-      return userGames.length <= 1
-        ? t('profilePage.libraryTotal', { count: userGames.length })
-        : t('profilePage.libraryTotalPlural', { count: userGames.length });
-    }
-    return userGamesForLibrary.length <= 1
-      ? t('profilePage.libraryInViewOne', { count: userGamesForLibrary.length })
-      : t('profilePage.libraryInViewMany', {
-          count: userGamesForLibrary.length,
-        });
-  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
+  const {
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    libraryCounts,
+    gamesForLibraryFilter,
+    singleFilterTitle,
+    libraryBadgeText,
+  } = useProfileLibraryDerived(userGames, collectionFilterId, libraryFilter, t);
 
   const isDark = theme.palette.mode === 'dark';
   const pageBg = isDark ? '#1a1010' : '#ffd3d3';
@@ -379,12 +460,7 @@ export default function UserPublicProfilePage() {
   const handleFriendAction = async (fn: () => Promise<unknown>, ok: string) => {
     try {
       const res = await fn();
-      if (
-        res &&
-        typeof res === 'object' &&
-        'auto_accepted' in res &&
-        (res as { auto_accepted?: boolean }).auto_accepted
-      ) {
+      if (isFriendRequestAutoAccepted(res)) {
         setSnackbar({
           open: true,
           message: t('publicUserProfile.nowFriends'),
@@ -403,6 +479,29 @@ export default function UserPublicProfilePage() {
       });
     }
   };
+
+  const handleConfirmBlock = useCallback(async () => {
+    if (!profile) return;
+    setBlockBusy(true);
+    try {
+      await blockUser({ user_id: profile.id });
+      setBlockDialogOpen(false);
+      setSnackbar({
+        open: true,
+        message: t('publicUserProfile.blockSuccess'),
+        error: false,
+      });
+      navigate('/friends?tab=blocked');
+    } catch {
+      setSnackbar({
+        open: true,
+        message: t('publicUserProfile.blockError'),
+        error: true,
+      });
+    } finally {
+      setBlockBusy(false);
+    }
+  }, [profile, navigate, t]);
 
   if (!pseudo) {
     return null;
@@ -568,108 +667,16 @@ export default function UserPublicProfilePage() {
               </Alert>
             ) : null}
 
-            {relation && relation !== 'self' ? (
-              <Box
-                sx={{
-                  mt: 2,
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 1,
-                  justifyContent: { xs: 'center', sm: 'flex-start' },
-                }}
-              >
-                {relation === 'none' && isAuthenticated ? (
-                  <Button
-                    variant="contained"
-                    onClick={() =>
-                      handleFriendAction(
-                        () => sendFriendRequest({ to_pseudo: profile.pseudo }),
-                        t('publicUserProfile.requestSent')
-                      )
-                    }
-                  >
-                    {t('publicUserProfile.addFriend')}
-                  </Button>
-                ) : null}
-                {relation === 'none' && !isAuthenticated ? (
-                  <Typography
-                    sx={{ fontFamily: FONT_BODY, fontSize: 14, color: muted }}
-                  >
-                    {t('publicUserProfile.loginToAdd')}
-                  </Typography>
-                ) : null}
-                {relation === 'pending_outgoing' &&
-                profile.outgoing_friend_request_id != null ? (
-                  <>
-                    <Button disabled variant="outlined">
-                      {t('publicUserProfile.requestSent')}
-                    </Button>
-                    <Button
-                      variant="text"
-                      onClick={() =>
-                        handleFriendAction(
-                          () =>
-                            cancelFriendRequest(
-                              profile.outgoing_friend_request_id!
-                            ),
-                          t('publicUserProfile.requestCancelled')
-                        )
-                      }
-                    >
-                      {t('publicUserProfile.cancelRequest')}
-                    </Button>
-                  </>
-                ) : null}
-                {relation === 'pending_incoming' &&
-                profile.incoming_friend_request_id != null ? (
-                  <>
-                    <Button
-                      variant="contained"
-                      onClick={() =>
-                        handleFriendAction(
-                          () =>
-                            acceptFriendRequest(
-                              profile.incoming_friend_request_id!
-                            ),
-                          t('publicUserProfile.nowFriends')
-                        )
-                      }
-                    >
-                      {t('publicUserProfile.accept')}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="inherit"
-                      onClick={() =>
-                        handleFriendAction(
-                          () =>
-                            declineFriendRequest(
-                              profile.incoming_friend_request_id!
-                            ),
-                          t('publicUserProfile.requestDeclined')
-                        )
-                      }
-                    >
-                      {t('publicUserProfile.decline')}
-                    </Button>
-                  </>
-                ) : null}
-                {relation === 'friends' && authUser ? (
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    onClick={() =>
-                      handleFriendAction(
-                        () => removeFriend(profile.id),
-                        t('publicUserProfile.removeFriend')
-                      )
-                    }
-                  >
-                    {t('publicUserProfile.removeFriend')}
-                  </Button>
-                ) : null}
-              </Box>
-            ) : null}
+            <PublicProfileRelationActions
+              relation={relation}
+              profile={profile}
+              isAuthenticated={isAuthenticated}
+              authUser={authUser}
+              onFriendAction={(fn, okMessage) => {
+                handleFriendAction(fn, okMessage).catch(() => {});
+              }}
+              muted={muted}
+            />
 
             <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
               <Typography
@@ -706,30 +713,13 @@ export default function UserPublicProfilePage() {
           </Box>
         </Paper>
 
-        {relation === 'friends' && gamesInCommon.length > 0 ? (
-          <Paper elevation={0} sx={{ ...glassCard, p: 3, mt: 3 }}>
-            <GameList
-              games={gamesInCommon}
-              title={`${t('publicUserProfile.gamesInCommon')} (${gamesInCommon.length})`}
-              showStatus
-            />
-          </Paper>
-        ) : null}
-
-        {relation === 'friends' &&
-        gamesInCommon.length === 0 &&
-        !gamesLoading ? (
-          <Typography
-            sx={{
-              fontFamily: FONT_BODY,
-              color: muted,
-              mt: 2,
-              textAlign: 'center',
-            }}
-          >
-            {t('publicUserProfile.gamesInCommonEmpty')}
-          </Typography>
-        ) : null}
+        <PublicProfileGamesInCommonSection
+          relation={relation}
+          gamesInCommon={gamesInCommon}
+          gamesLoading={gamesLoading}
+          glassCard={glassCard}
+          muted={muted}
+        />
 
         <Box sx={{ mt: 3 }}>
           <ProfilePageLibrarySection
@@ -818,27 +808,7 @@ export default function UserPublicProfilePage() {
             variant="contained"
             disabled={blockBusy}
             onClick={() => {
-              setBlockBusy(true);
-              void (async () => {
-                try {
-                  await blockUser({ user_id: profile.id });
-                  setBlockDialogOpen(false);
-                  setSnackbar({
-                    open: true,
-                    message: t('publicUserProfile.blockSuccess'),
-                    error: false,
-                  });
-                  navigate('/friends?tab=blocked');
-                } catch {
-                  setSnackbar({
-                    open: true,
-                    message: t('publicUserProfile.blockError'),
-                    error: true,
-                  });
-                } finally {
-                  setBlockBusy(false);
-                }
-              })();
+              handleConfirmBlock().catch(() => {});
             }}
             sx={{ fontFamily: FONT_BODY }}
           >

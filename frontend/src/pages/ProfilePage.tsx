@@ -29,7 +29,6 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import type { GameListItem } from '../components/GameList';
 import LibraryPrivacyModal from '../components/LibraryPrivacyModal';
 import {
   CreateCollectionModal,
@@ -49,11 +48,16 @@ import {
   removeGameFromCollection,
   type UserCollection,
 } from '../api/collections';
-import { deleteUserGame, fetchUserGames } from '../api/userGames';
+import {
+  deleteUserGame,
+  fetchUserGames,
+  type UserGame as ApiUserGame,
+} from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 import ProfilePageLibrarySection from './ProfilePageLibrarySection';
+import { useProfileLibraryDerived } from '../hooks/useProfileLibraryDerived';
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -329,11 +333,6 @@ type ProfilePageModel = {
   avatarError: string;
   avatarBusy: boolean;
   userGames: UserGame[];
-  userGamesForLibrary: UserGame[];
-  gamesEnCours: GameListItem[];
-  gamesTermines: GameListItem[];
-  gamesEnvie: GameListItem[];
-  gamesFavoris: GameListItem[];
   avatarSrc: string;
   removeGame: (userGameId: number) => void;
   snackbar: {
@@ -369,9 +368,7 @@ type ProfilePageModel = {
   gamesLoading: boolean;
 };
 
-function useProfilePageModel(
-  collectionFilterId: LibraryCollectionFilter
-): ProfilePageModel {
+function useProfilePageModel(): ProfilePageModel {
   const { t } = useTranslation();
   const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -764,61 +761,6 @@ function useProfilePageModel(
     }, 5000);
   };
 
-  const userGamesForLibrary = useMemo(() => {
-    if (collectionFilterId === 'ALL') return userGames;
-    return userGames.filter(ug =>
-      Array.isArray(ug.collection_ids)
-        ? ug.collection_ids.includes(collectionFilterId)
-        : false
-    );
-  }, [userGames, collectionFilterId]);
-
-  const gamesForStatus = useCallback(
-    (games: UserGame[], status: string): GameListItem[] =>
-      games
-        .filter(g => g.status === status)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    []
-  );
-
-  const gamesEnCours = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'EN_COURS'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesTermines = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'TERMINE'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesEnvie = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'ENVIE_DE_JOUER'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesFavoris = useMemo(
-    () =>
-      userGamesForLibrary
-        .filter(g => g.is_favorite)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    [userGamesForLibrary]
-  );
-
   return {
     user,
     loading,
@@ -827,11 +769,6 @@ function useProfilePageModel(
     avatarError,
     avatarBusy,
     userGames,
-    userGamesForLibrary,
-    gamesEnCours,
-    gamesTermines,
-    gamesEnvie,
-    gamesFavoris,
     avatarSrc,
     removeGame,
     snackbar,
@@ -1362,6 +1299,25 @@ function ProfileIntegrations({
   );
 }
 
+function useResetInvalidLibraryCollectionFilter(
+  collections: UserCollection[],
+  collectionFilterId: LibraryCollectionFilter,
+  collectionsLoading: boolean,
+  setLibraryCollectionFilter: (next: LibraryCollectionFilter) => void
+) {
+  useEffect(() => {
+    if (collectionsLoading) return;
+    if (collectionFilterId === 'ALL') return;
+    const exists = collections.some(c => c.id === collectionFilterId);
+    if (!exists) setLibraryCollectionFilter('ALL');
+  }, [
+    collections,
+    collectionFilterId,
+    collectionsLoading,
+    setLibraryCollectionFilter,
+  ]);
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1386,11 +1342,6 @@ export default function ProfilePage() {
     avatarError,
     avatarBusy,
     userGames,
-    userGamesForLibrary,
-    gamesEnCours,
-    gamesTermines,
-    gamesEnvie,
-    gamesFavoris,
     avatarSrc,
     removeGame,
     snackbar,
@@ -1412,7 +1363,7 @@ export default function ProfilePage() {
     handleSteamSync,
     reloadUserGames,
     gamesLoading,
-  } = useProfilePageModel(collectionFilterId);
+  } = useProfilePageModel();
 
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
@@ -1483,55 +1434,28 @@ export default function ProfilePage() {
     [setSearchParams]
   );
 
-  useEffect(() => {
-    if (collectionsLoading) return;
-    if (collectionFilterId === 'ALL') return;
-    const exists = collections.some(c => c.id === collectionFilterId);
-    if (!exists) setLibraryCollectionFilter('ALL');
-  }, [
+  const {
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    libraryCounts,
+    gamesForLibraryFilter,
+    singleFilterTitle,
+    libraryBadgeText,
+  } = useProfileLibraryDerived(
+    userGames as ApiUserGame[],
+    collectionFilterId,
+    libraryFilter,
+    t
+  );
+
+  useResetInvalidLibraryCollectionFilter(
     collections,
     collectionFilterId,
     collectionsLoading,
-    setLibraryCollectionFilter,
-  ]);
-
-  const libraryCounts = useMemo(
-    () => ({
-      all: userGamesForLibrary.length,
-      enCours: gamesEnCours.length,
-      termines: gamesTermines.length,
-      envie: gamesEnvie.length,
-    }),
-    [
-      userGamesForLibrary.length,
-      gamesEnCours.length,
-      gamesTermines.length,
-      gamesEnvie.length,
-    ]
+    setLibraryCollectionFilter
   );
-
-  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
-    switch (libraryFilter) {
-      case 'EN_COURS':
-        return gamesEnCours;
-      case 'TERMINE':
-        return gamesTermines;
-      case 'ENVIE_DE_JOUER':
-        return gamesEnvie;
-      default:
-        return [];
-    }
-  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
-
-  const singleFilterTitle = useMemo(() => {
-    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
-      EN_COURS: t('profilePage.statusPlaying'),
-      TERMINE: t('profilePage.statusDone'),
-      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
-    };
-    if (libraryFilter === 'ALL') return '';
-    return map[libraryFilter];
-  }, [libraryFilter, t]);
 
   const activeCollectionMeta = useMemo(
     () =>
@@ -1570,21 +1494,6 @@ export default function ProfilePage() {
     refreshCollections,
     t,
   ]);
-
-  const libraryBadgeText = useMemo(() => {
-    if (collectionFilterId === 'ALL') {
-      return userGames.length <= 1
-        ? t('profilePage.libraryTotal', { count: userGames.length })
-        : t('profilePage.libraryTotalPlural', { count: userGames.length });
-    }
-    return userGamesForLibrary.length <= 1
-      ? t('profilePage.libraryInViewOne', {
-          count: userGamesForLibrary.length,
-        })
-      : t('profilePage.libraryInViewMany', {
-          count: userGamesForLibrary.length,
-        });
-  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
 
   const handleCloseManageCollectionsModal = useCallback(() => {
     setManageCollectionsModalOpen(false);
