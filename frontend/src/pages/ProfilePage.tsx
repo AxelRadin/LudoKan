@@ -49,6 +49,7 @@ import {
   type UserCollection,
 } from '../api/collections';
 import { deleteUserGame, fetchUserGames } from '../api/userGames';
+import { startMicrosoftConnect } from '../auth/microsoftAuth';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
@@ -478,11 +479,17 @@ function useProfilePageModel(
     }
   };
 
-  const handleXboxConnect = () => {
-    // Redirection vers le flux de connexion Microsoft avec process=connect
-    const apiBase =
-      import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-    globalThis.location.href = `${apiBase}/accounts/microsoft/login/?process=connect`;
+  const handleXboxConnect = async () => {
+    if (xboxBusy) return;
+    setXboxBusy(true);
+    try {
+      await startMicrosoftConnect();
+    } catch (err: any) {
+      alert(
+        'Erreur: ' + (err?.message || 'Impossible de se connecter à Microsoft')
+      );
+      setXboxBusy(false);
+    }
   };
 
   const handleXboxDisconnect = async () => {
