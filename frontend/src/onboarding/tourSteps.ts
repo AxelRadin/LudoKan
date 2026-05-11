@@ -47,8 +47,8 @@ export const TOUR_STEPS: DriveStep[] = [
       title: '🎮 Matchmaking',
       description:
         'Lance une recherche de matchmaking depuis une fiche de jeu pour trouver des joueurs qui ont les mêmes jeux que toi.',
-      side: 'left',
-      align: 'start',
+      side: 'bottom',
+      align: 'end',
     },
   },
 ];
