@@ -25,13 +25,15 @@ import {
   type SetStateAction,
 } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Link,
+  type NavigateFunction,
   useNavigate,
   useParams,
   useSearchParams,
 } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, type Theme } from '@mui/material/styles';
 import type { GameListItem } from '../components/GameList';
 import GameList from '../components/GameList';
 import {
@@ -282,14 +284,13 @@ function PublicProfileGamesInCommonSection({
   );
 }
 
-export default function UserPublicProfilePage() {
-  const { pseudo } = useParams<{ pseudo: string }>();
-  const { t } = useTranslation();
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const { user: authUser, isAuthenticated } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-
+function usePublicProfilePageData(
+  pseudo: string | undefined,
+  isAuthenticated: boolean,
+  authUser: { pseudo?: string } | null | undefined,
+  navigate: NavigateFunction,
+  t: TFunction
+) {
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -297,64 +298,6 @@ export default function UserPublicProfilePage() {
   const [gamesLoading, setGamesLoading] = useState(true);
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
-  const [gamesInCommon, setGamesInCommon] = useState<GameListItem[]>([]);
-  const [snackbar, setSnackbar] = useState<{
-    open: boolean;
-    message: string;
-    error: boolean;
-  }>({
-    open: false,
-    message: '',
-    error: false,
-  });
-  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(
-    null
-  );
-  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
-  const [blockBusy, setBlockBusy] = useState(false);
-
-  const collectionFilterId = useMemo(
-    () =>
-      parseLibraryCollectionParam(
-        searchParams.get(LIBRARY_COLLECTION_QUERY_KEY)
-      ),
-    [searchParams]
-  );
-
-  const setLibraryCollectionFilter = useCallback(
-    (next: LibraryCollectionFilter) => {
-      setSearchParams(
-        prev => {
-          const p = new URLSearchParams(prev);
-          if (next === 'ALL') p.delete(LIBRARY_COLLECTION_QUERY_KEY);
-          else p.set(LIBRARY_COLLECTION_QUERY_KEY, String(next));
-          return p;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
-
-  const libraryFilter = useMemo(
-    () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
-    [searchParams]
-  );
-
-  const setLibraryFilter = useCallback(
-    (next: LibraryStatusFilter) => {
-      setSearchParams(
-        prev => {
-          const p = new URLSearchParams(prev);
-          if (next === 'ALL') p.delete(LIBRARY_STATUS_QUERY_KEY);
-          else p.set(LIBRARY_STATUS_QUERY_KEY, next);
-          return p;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
 
   const load = useCallback(async () => {
     if (!pseudo) return;
@@ -414,6 +357,135 @@ export default function UserPublicProfilePage() {
     loadLibrary().catch(() => {});
   }, [loadLibrary, pseudo, isAuthenticated, authUser?.pseudo]);
 
+  return {
+    profile,
+    loading,
+    error,
+    userGames,
+    gamesLoading,
+    collections,
+    collectionsLoading,
+    load,
+    loadLibrary,
+  };
+}
+
+const PUBLIC_PROFILE_PAPER_SHADOW =
+  '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)';
+
+function usePublicProfilePageTheme(theme: Theme) {
+  return useMemo(() => {
+    const isDark = theme.palette.mode === 'dark';
+    const pageBg = isDark ? '#1a1010' : '#ffd3d3';
+    const shellBg = isDark ? '#2a2020' : '#fff7f7';
+    const cardBg = isDark ? 'rgba(42,32,32,0.72)' : 'rgba(255,255,255,0.72)';
+    const border = isDark ? '#4a3030' : '#f1c7c7';
+    const titleColor = isDark ? '#f5e6e6' : '#0f0f0f';
+    const textColor = isDark ? '#e0d0d0' : '#2b2b2b';
+    const muted = isDark ? '#9e7070' : '#6e6e73';
+    const accent = '#FF3D3D';
+    const glassCard = {
+      background: cardBg,
+      backdropFilter: 'blur(20px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+      border: `1px solid ${isDark ? 'rgba(74,48,48,0.9)' : 'rgba(255,255,255,0.9)'}`,
+      borderRadius: '20px',
+      boxShadow: PUBLIC_PROFILE_PAPER_SHADOW,
+    };
+    return {
+      pageBg,
+      shellBg,
+      cardBg,
+      border,
+      titleColor,
+      textColor,
+      muted,
+      accent,
+      glassCard,
+      paperRestingBoxShadow: PUBLIC_PROFILE_PAPER_SHADOW,
+    };
+  }, [theme]);
+}
+
+export default function UserPublicProfilePage() {
+  const { pseudo } = useParams<{ pseudo: string }>();
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const { user: authUser, isAuthenticated } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const {
+    profile,
+    loading,
+    error,
+    userGames,
+    gamesLoading,
+    collections,
+    collectionsLoading,
+    load,
+    loadLibrary,
+  } = usePublicProfilePageData(pseudo, isAuthenticated, authUser, navigate, t);
+
+  const [gamesInCommon, setGamesInCommon] = useState<GameListItem[]>([]);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    error: boolean;
+  }>({
+    open: false,
+    message: '',
+    error: false,
+  });
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
+
+  const collectionFilterId = useMemo(
+    () =>
+      parseLibraryCollectionParam(
+        searchParams.get(LIBRARY_COLLECTION_QUERY_KEY)
+      ),
+    [searchParams]
+  );
+
+  const setLibraryCollectionFilter = useCallback(
+    (next: LibraryCollectionFilter) => {
+      setSearchParams(
+        prev => {
+          const p = new URLSearchParams(prev);
+          if (next === 'ALL') p.delete(LIBRARY_COLLECTION_QUERY_KEY);
+          else p.set(LIBRARY_COLLECTION_QUERY_KEY, String(next));
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
+  const libraryFilter = useMemo(
+    () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
+    [searchParams]
+  );
+
+  const setLibraryFilter = useCallback(
+    (next: LibraryStatusFilter) => {
+      setSearchParams(
+        prev => {
+          const p = new URLSearchParams(prev);
+          if (next === 'ALL') p.delete(LIBRARY_STATUS_QUERY_KEY);
+          else p.set(LIBRARY_STATUS_QUERY_KEY, next);
+          return p;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
   const relation = profile?.relation_to_me ?? null;
 
   useGamesInCommonLoader(pseudo, isAuthenticated, relation, setGamesInCommon);
@@ -429,31 +501,17 @@ export default function UserPublicProfilePage() {
     libraryBadgeText,
   } = useProfileLibraryDerived(userGames, collectionFilterId, libraryFilter, t);
 
-  const isDark = theme.palette.mode === 'dark';
-  const pageBg = isDark ? '#1a1010' : '#ffd3d3';
-  const shellBg = isDark ? '#2a2020' : '#fff7f7';
-  const cardBg = isDark ? 'rgba(42,32,32,0.72)' : 'rgba(255,255,255,0.72)';
-  const border = isDark ? '#4a3030' : '#f1c7c7';
-  const titleColor = isDark ? '#f5e6e6' : '#0f0f0f';
-  const textColor = isDark ? '#e0d0d0' : '#2b2b2b';
-  const muted = isDark ? '#9e7070' : '#6e6e73';
-  const accent = '#FF3D3D';
-
-  const glassCard = useMemo(
-    () => ({
-      background: cardBg,
-      backdropFilter: 'blur(20px) saturate(160%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-      border: `1px solid ${isDark ? 'rgba(74,48,48,0.9)' : 'rgba(255,255,255,0.9)'}`,
-      borderRadius: '20px',
-      boxShadow:
-        '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-    }),
-    [cardBg, isDark]
-  );
-
-  const paperRestingBoxShadow =
-    '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)';
+  const {
+    pageBg,
+    shellBg,
+    border,
+    titleColor,
+    textColor,
+    muted,
+    accent,
+    glassCard,
+    paperRestingBoxShadow,
+  } = usePublicProfilePageTheme(theme);
 
   const noopMenu = useCallback(() => {}, []);
 
