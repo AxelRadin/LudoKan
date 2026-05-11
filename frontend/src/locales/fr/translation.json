@@ -324,6 +324,11 @@
     "title": "Amis",
     "tabFriends": "Amis",
     "tabRequests": "Demandes",
+    "tabBlocked": "Bloqués",
+    "blockedEmpty": "Tu n’as bloqué personne.",
+    "unblock": "Débloquer",
+    "unblocked": "Utilisateur débloqué.",
+    "unblockError": "Impossible de débloquer cet utilisateur.",
     "addFriend": "Ajouter un ami",
     "addFriendModalTitle": "Rechercher un joueur",
     "invite": "Inviter",
@@ -361,7 +366,14 @@
     "reviews": "Avis",
     "statsPlaytime": "Temps de jeu (visible)",
     "statsGames": "Jeux (visibles)",
-    "friendsLabel": "Amis"
+    "friendsLabel": "Amis",
+    "moreOptionsAria": "Plus d’options",
+    "blockUser": "Bloquer l’utilisateur",
+    "blockConfirmTitle": "Bloquer cet utilisateur ?",
+    "blockConfirmBody": "Tu ne verras plus {{pseudo}} dans la recherche, il ou elle ne pourra plus voir ton profil ni t’envoyer de demande d’ami, et toute amitié ou demande en attente sera supprimée.",
+    "blockConfirm": "Bloquer",
+    "blockSuccess": "Utilisateur bloqué.",
+    "blockError": "Impossible de bloquer cet utilisateur."
   },
   "profilePage": {
     "editProfile": "Modifier le profil",

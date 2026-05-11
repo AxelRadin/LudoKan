@@ -359,6 +359,11 @@
     "title": "Friends",
     "tabFriends": "Friends",
     "tabRequests": "Requests",
+    "tabBlocked": "Blocked",
+    "blockedEmpty": "You have not blocked anyone.",
+    "unblock": "Unblock",
+    "unblocked": "User unblocked.",
+    "unblockError": "Could not unblock this user.",
     "addFriend": "Add a friend",
     "addFriendModalTitle": "Find a player",
     "invite": "Invite",
@@ -396,7 +401,14 @@
     "reviews": "Reviews",
     "statsPlaytime": "Total playtime (visible)",
     "statsGames": "Games (visible)",
-    "friendsLabel": "Friends"
+    "friendsLabel": "Friends",
+    "moreOptionsAria": "More options",
+    "blockUser": "Block user",
+    "blockConfirmTitle": "Block this user?",
+    "blockConfirmBody": "You will no longer see {{pseudo}} in search, they will not be able to view your profile or send friend requests, and any friendship or pending requests will be removed.",
+    "blockConfirm": "Block",
+    "blockSuccess": "User blocked.",
+    "blockError": "Could not block this user."
   },
   "profilePage": {
     "editProfile": "Edit profile",
