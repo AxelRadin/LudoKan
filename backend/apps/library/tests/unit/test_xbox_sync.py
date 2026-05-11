@@ -45,7 +45,7 @@ class XboxSyncTest(TestCase):
 
         sync_xbox_library(self.user)  # Should exit cleanly
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     @patch("apps.library.xbox_sync.XboxLiveClient")
     @patch("apps.library.xbox_sync.AuthenticationManager")
     def test_sync_xbox_library_success(self, mock_auth_mgr_class, mock_client_class, mock_igdb):
@@ -83,7 +83,7 @@ class XboxSyncTest(TestCase):
         xbox_lib = UserLibrary.objects.filter(user=self.user, system_key=UserLibrary.SystemKey.XBOX).first()
         self.assertTrue(UserLibraryEntry.objects.filter(library=xbox_lib, user_game=ug).exists())
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     @patch("apps.library.xbox_sync.XboxLiveClient")
     @patch("apps.library.xbox_sync.AuthenticationManager")
     def test_sync_xbox_library_update_playtime(self, mock_auth_mgr_class, mock_client_class, mock_igdb):
@@ -147,12 +147,12 @@ class XboxSyncTest(TestCase):
     def test_resolve_missing_games_empty(self):
         _resolve_and_save_missing_games([])  # Should return cleanly
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_igdb_exception(self, mock_igdb):
         mock_igdb.side_effect = Exception("IGDB Error")
         _resolve_and_save_missing_games(["1111"])  # Should catch and return cleanly
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_invalid_data(self, mock_igdb):
         def mock_igdb_backend(endpoint, query):
             if endpoint == "external_games":
@@ -175,13 +175,13 @@ class XboxSyncTest(TestCase):
         self.assertIsNotNone(game)
         self.assertEqual(game.cover_url, "http://cover")
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_not_list(self, mock_igdb):
         # mock non list return for external_games
         mock_igdb.return_value = {"error": "not a list"}
         _resolve_and_save_missing_games(["100"])  # should default to [] and not crash
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_games_not_list(self, mock_igdb):
         def mock_igdb_backend(endpoint, query):
             if endpoint == "external_games":
@@ -191,7 +191,7 @@ class XboxSyncTest(TestCase):
         mock_igdb.side_effect = mock_igdb_backend
         _resolve_and_save_missing_games(["100"])  # should default to [] and not crash
 
-    @patch("apps.library.xbox_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_games_exception(self, mock_igdb):
         def mock_igdb_backend(endpoint, query):
             if endpoint == "external_games":
