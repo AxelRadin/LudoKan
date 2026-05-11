@@ -36,7 +36,10 @@ class TestSendFriendRequest:
 
     def test_raises_when_blocked(self, _mock_notify, user, user_b):
         UserBlock.objects.create(blocker=user_b, blocked=user)
-        with pytest.raises(ValueError, match="blocage"):
+        with pytest.raises(
+            ValueError,
+            match=r"Impossible d.envoyer une demande d.ami à cet utilisateur\.",
+        ):
             send_friend_request(user, user_b)
 
     def test_raises_already_friends(self, _mock_notify, user, user_b):
@@ -98,6 +101,24 @@ class TestAcceptDeclineCancel:
         fr = FriendRequest.objects.create(from_user=user, to_user=user_b, status=FriendRequest.Status.DECLINED)
         with pytest.raises(ValueError, match="plus en attente"):
             cancel_friend_request(fr, user)
+
+    def test_decline_success_deletes_request(self, _mock_notify, user, user_b):
+        fr = FriendRequest.objects.create(
+            from_user=user_b,
+            to_user=user,
+            status=FriendRequest.Status.PENDING,
+        )
+        decline_friend_request(fr, user)
+        assert not FriendRequest.objects.filter(pk=fr.pk).exists()
+
+    def test_cancel_success_deletes_request(self, _mock_notify, user, user_b):
+        fr = FriendRequest.objects.create(
+            from_user=user,
+            to_user=user_b,
+            status=FriendRequest.Status.PENDING,
+        )
+        cancel_friend_request(fr, user)
+        assert not FriendRequest.objects.filter(pk=fr.pk).exists()
 
 
 @pytest.mark.django_db
