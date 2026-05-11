@@ -52,6 +52,16 @@ class TestPublicUserGamesAndCollections:
         rows = r.data.get("results", r.data)
         assert rows == []
 
+    def test_collection_games_returns_games_when_visible(self, api_client, user, game):
+        pub = UserLibrary.objects.create(user=user, name="PubGames", is_visible_on_profile=True)
+        ug = UserGame.objects.create(user=user, game=game, status=UserGame.GameStatus.EN_COURS)
+        UserLibraryEntry.objects.create(library=pub, user_game=ug)
+        r = api_client.get(f"/api/users/{user.pseudo}/collections/{pub.pk}/games/")
+        assert r.status_code == status.HTTP_200_OK
+        rows = r.data.get("results", r.data)
+        assert len(rows) >= 1
+        assert any(row.get("game", {}).get("id") == game.id for row in rows)
+
 
 @pytest.mark.django_db
 class TestGamesInCommon:
