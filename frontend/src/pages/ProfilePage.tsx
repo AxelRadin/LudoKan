@@ -349,6 +349,10 @@ type ProfilePageModel = {
   handleSteamConnect: () => Promise<void>;
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
+  xboxBusy: boolean;
+  handleXboxConnect: () => void;
+  handleXboxDisconnect: () => Promise<void>;
+  handleXboxSync: () => Promise<void>;
   reloadUserGames: () => Promise<void>;
   gamesLoading: boolean;
 };
@@ -375,11 +379,9 @@ function useProfilePageModel(
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
+  const [xboxBusy, setXboxBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
-
-  // ... (tout le code du hook reste identique)
-  // Je ne recopie pas tout pour gagner de la place, mais gardez tout le code existant du hook
 
   useEffect(() => {
     if (globalUser && user && globalUser.id === user.id) {
@@ -466,6 +468,54 @@ function useProfilePageModel(
       }, 3000);
     } catch {
       setSteamBusy(false);
+    }
+  };
+
+  const handleXboxConnect = () => {
+    // Redirection vers le flux de connexion Microsoft avec process=connect
+    const apiBase =
+      import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+    globalThis.location.href = `${apiBase}/accounts/microsoft/login/?process=connect`;
+  };
+
+  const handleXboxDisconnect = async () => {
+    if (xboxBusy) return;
+    setXboxBusy(true);
+    try {
+      await apiDelete('/api/auth/microsoft/disconnect/');
+      setUser(prev => (prev ? { ...prev, xbox_profile: null } : null));
+    } catch (err: any) {
+      alert(
+        'Erreur: ' +
+          (err?.message || 'Impossible de déconnecter le compte Xbox')
+      );
+    } finally {
+      setXboxBusy(false);
+    }
+  };
+
+  const handleXboxSync = async () => {
+    if (xboxBusy) return;
+    setXboxBusy(true);
+    try {
+      await apiPost('/api/sync/xbox/', {});
+      let polls = 0;
+      const pollInterval = setInterval(async () => {
+        polls++;
+        try {
+          await reloadUserGames();
+          const meRes = await apiGet('/api/me/');
+          setUser(meRes);
+        } catch {
+          /* ignore */
+        }
+        if (polls >= 10) {
+          clearInterval(pollInterval);
+          setXboxBusy(false);
+        }
+      }, 3000);
+    } catch {
+      setXboxBusy(false);
     }
   };
 
@@ -830,12 +880,14 @@ function useProfilePageModel(
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
+    xboxBusy,
+    handleXboxConnect,
+    handleXboxDisconnect,
+    handleXboxSync,
     reloadUserGames,
     gamesLoading,
   };
 }
-
-// Continuez dans le prochain message pour les composants dialog...
 
 type ProfileEditDialogProps = Readonly<{
   open: boolean;
@@ -1176,6 +1228,11 @@ type ProfileIntegrationsProps = Readonly<{
   onSteamConnect: () => void;
   onSteamDisconnect: () => void;
   onSteamSync: () => void;
+  xbox_profile?: { gamertag?: string; xuid?: string } | null;
+  xboxBusy: boolean;
+  onXboxConnect: () => void;
+  onXboxDisconnect: () => void;
+  onXboxSync: () => void;
   C: ReturnType<typeof useThemeColors>;
   glassCard: any;
 }>;
@@ -1186,6 +1243,11 @@ function ProfileIntegrations({
   onSteamConnect,
   onSteamDisconnect,
   onSteamSync,
+  xbox_profile,
+  xboxBusy,
+  onXboxConnect,
+  onXboxDisconnect,
+  onXboxSync,
   C,
   glassCard,
 }: ProfileIntegrationsProps) {
@@ -1337,6 +1399,158 @@ function ProfileIntegrations({
           )}
         </Box>
       </Paper>
+
+      {/* Bloc Xbox */}
+      <Paper
+        elevation={0}
+        sx={{
+          ...glassCard,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+          p: '22px 28px',
+          mt: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar
+            sx={{
+              bgcolor: '#107C10',
+              color: '#fff',
+              width: 48,
+              height: 48,
+              fontWeight: 700,
+              fontFamily: FONT_DISPLAY,
+            }}
+          >
+            X
+          </Avatar>
+          <Box>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                fontWeight: 700,
+                fontSize: 16,
+                color: C.title,
+              }}
+            >
+              {t('profilePage.xboxLabel')}
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                color: C.muted,
+                fontSize: 13,
+                lineHeight: 1.4,
+              }}
+            >
+              {t('profilePage.xboxDesc')}
+            </Typography>
+          </Box>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            gap: 1.5,
+          }}
+        >
+          {xbox_profile ? (
+            <>
+              <Typography
+                sx={{
+                  fontFamily: FONT_BODY,
+                  color: '#107C10',
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                {xbox_profile.gamertag || t('profilePage.xboxConnected')}
+              </Typography>
+              <Tooltip
+                title={
+                  xboxBusy
+                    ? t('profilePage.xboxSyncTooltip')
+                    : t('profilePage.xboxSyncTooltipDefault')
+                }
+                arrow
+              >
+                <span>
+                  <Button
+                    onClick={onXboxSync}
+                    disabled={xboxBusy}
+                    variant="outlined"
+                    color="success"
+                    sx={{
+                      borderRadius: 999,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontFamily: FONT_BODY,
+                      minWidth: 130,
+                      borderColor: '#107C10',
+                      color: '#107C10',
+                      '&:hover': {
+                        borderColor: '#0d620d',
+                        bgcolor: 'rgba(16, 124, 16, 0.04)',
+                      },
+                    }}
+                  >
+                    {xboxBusy ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      t('profilePage.xboxSync')
+                    )}
+                  </Button>
+                </span>
+              </Tooltip>
+              <Button
+                onClick={onXboxDisconnect}
+                disabled={xboxBusy}
+                variant="outlined"
+                color="error"
+                sx={{
+                  borderRadius: 999,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontFamily: FONT_BODY,
+                  minWidth: 130,
+                }}
+              >
+                {xboxBusy ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  t('profilePage.xboxDisconnect')
+                )}
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={onXboxConnect}
+              disabled={xboxBusy}
+              variant="contained"
+              sx={{
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontFamily: FONT_BODY,
+                bgcolor: '#107C10',
+                color: '#fff',
+                '&:hover': { bgcolor: '#0d620d' },
+                minWidth: 130,
+              }}
+            >
+              {xboxBusy ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                t('profilePage.xboxConnect')
+              )}
+            </Button>
+          )}
+        </Box>
+      </Paper>
     </Box>
   );
 }
@@ -1388,6 +1602,10 @@ export default function ProfilePage() {
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
+    xboxBusy,
+    handleXboxConnect,
+    handleXboxDisconnect,
+    handleXboxSync,
     reloadUserGames,
     gamesLoading,
   } = useProfilePageModel(collectionFilterId);
@@ -2163,6 +2381,11 @@ export default function ProfilePage() {
           onSteamConnect={handleSteamConnect}
           onSteamDisconnect={handleSteamDisconnect}
           onSteamSync={handleSteamSync}
+          xbox_profile={(user as any)?.xbox_profile}
+          xboxBusy={xboxBusy}
+          onXboxConnect={handleXboxConnect}
+          onXboxDisconnect={handleXboxDisconnect}
+          onXboxSync={handleXboxSync}
           C={C}
           glassCard={glassCard}
         />

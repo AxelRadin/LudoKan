@@ -5,6 +5,7 @@ from apps.users.login_views import RecaptchaLoginView
 from apps.users.views import SuspensionAwareUserDetailsView
 from apps.users.views_social import GoogleLoginView
 from apps.users.views_steam import SteamDisconnectView, SteamLoginCallbackView, SteamLoginInitiateView
+from apps.users.views_xbox import XboxDisconnectView
 
 urlpatterns = [
     re_path(
@@ -21,6 +22,7 @@ urlpatterns = [
     path("steam/login/", SteamLoginInitiateView.as_view(), name="steam_login_init"),
     path("steam/callback/", SteamLoginCallbackView.as_view(), name="steam_callback"),
     path("steam/disconnect/", SteamDisconnectView.as_view(), name="steam_disconnect"),
+    path("microsoft/disconnect/", XboxDisconnectView.as_view(), name="xbox_disconnect"),
     path("", include("dj_rest_auth.urls")),
     path("registration/", include("dj_rest_auth.registration.urls")),
     # Google Login
