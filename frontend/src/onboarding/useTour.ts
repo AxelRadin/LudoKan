@@ -22,6 +22,7 @@ export function useTour({ onDone }: UseTourOptions) {
       nextBtnText: 'Suivant →',
       prevBtnText: '← Précédent',
       doneBtnText: 'Commencer !',
+      smoothScroll: true,
       steps: TOUR_STEPS,
 
       onHighlightStarted: element => {

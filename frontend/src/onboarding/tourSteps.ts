@@ -20,6 +20,7 @@ export const TOUR_STEPS: DriveStep[] = [
       side: 'top',
       align: 'start',
     },
+    scrollIntoViewOptions: { behavior: 'smooth', block: 'center' },
   },
   {
     element: '[data-tour="suggestions"]',
