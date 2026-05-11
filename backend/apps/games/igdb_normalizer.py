@@ -1,8 +1,10 @@
 from datetime import datetime
 from typing import Any
 
+from django.db.models import Prefetch
+
 from apps.games.models import Game, Rating
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
 
 
 def _extract_release_date(first_release_date: Any) -> str | None:
@@ -69,6 +71,35 @@ def _extract_publisher(involved_companies: Any) -> dict | None:
     return None
 
 
+_MULTIPLAYER_GAME_MODES = {"Multiplayer", "Co-operative", "Battle Royale", "Split screen", "MMO"}
+
+
+def _extract_player_counts(g: dict[str, Any]) -> tuple[int | None, int | None]:
+    mode_names = {m.get("name") for m in g.get("game_modes") or [] if isinstance(m, dict)}
+
+    multiplayer_modes = g.get("multiplayer_modes") or []
+    candidates = []
+    for m in multiplayer_modes:
+        if not isinstance(m, dict):
+            continue
+        for key in ("onlinemax", "offlinemax", "onlinecoopmax", "offlinecoopmax"):
+            val = m.get(key)
+            if isinstance(val, int) and val > 1:
+                candidates.append(val)
+
+    max_players = max(candidates) if candidates else None
+    if max_players is not None:
+        return 1, max_players
+
+    # No explicit multiplayer count — use game_modes to infer
+    has_multiplayer_mode = bool(mode_names & _MULTIPLAYER_GAME_MODES)
+    if mode_names and not has_multiplayer_mode:
+        # game_modes present but none are multiplayer → solo
+        return 1, 1
+
+    return None, None
+
+
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     """
     Transforme une réponse IGDB brute vers le contrat NormalizedGame.
@@ -80,7 +111,9 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
     name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
 
-    return {
+    min_players, max_players = _extract_player_counts(g)
+
+    out = {
         "igdb_id": igdb_id,
         "django_id": None,
         "name": name,
@@ -96,7 +129,16 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "user_rating": None,
         "screenshots": _extract_screenshots(g.get("screenshots")),
         "videos": g.get("videos") or [],
+        "min_players": min_players,
+        "max_players": max_players,
     }
+    if "_ludokan_min_age" in g:
+        out["min_age"] = g.get("_ludokan_min_age")
+    if "_ludokan_min_players" in g:
+        out["min_players"] = g.get("_ludokan_min_players")
+    if "_ludokan_max_players" in g:
+        out["max_players"] = g.get("_ludokan_max_players")
+    return out
 
 
 def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -> list[dict[str, Any]]:
@@ -120,7 +162,16 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
     user_games_map = {}
     ratings_map = {}
     if user and user.is_authenticated:
-        user_games = UserGame.objects.filter(user=user, game__igdb_id__in=igdb_ids)
+        user_games = UserGame.objects.filter(user=user, game__igdb_id__in=igdb_ids).prefetch_related(
+            Prefetch(
+                "library_entries",
+                queryset=UserLibraryEntry.objects.select_related("library").only(
+                    "library_id",
+                    "user_game_id",
+                    "library__system_key",
+                ),
+            )
+        )
         user_games_map = {ug.game.igdb_id: ug for ug in user_games}
 
         user_ratings = Rating.objects.filter(user=user, game__igdb_id__in=igdb_ids)
@@ -133,13 +184,19 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
 
         django_game = game_map[igdb_id]
         g["django_id"] = django_game.id
+        g["min_players"] = django_game.min_players
+        g["max_players"] = django_game.max_players
 
         # Injection des données utilisateur
         if igdb_id in user_games_map:
             ug = user_games_map[igdb_id]
             g["user_library"] = {
+                "id": ug.id,
                 "status": ug.status,
                 "is_favorite": ug.is_favorite,
+                "collection_ids": [
+                    e.library_id for e in ug.library_entries.all() if getattr(e.library, "system_key", None) != UserLibrary.SystemKey.MA_LUDOTHEQUE
+                ],
             }
 
         if igdb_id in ratings_map:

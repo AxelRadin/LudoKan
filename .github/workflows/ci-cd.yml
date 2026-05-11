@@ -13,6 +13,7 @@ on:
       - ".github/workflows/ci-cd.yml"
       - ".github/workflows/security-scan.yml"
       - ".github/workflows/cloudflare-storage.yml"
+      - "package.json"
   push:
     branches: ["main", "staging"]
     paths:
@@ -22,7 +23,7 @@ on:
       - ".github/workflows/ci-cd.yml"
       - ".github/workflows/security-scan.yml"
       - ".github/workflows/cloudflare-storage.yml"
-
+      - "package.json"
   
 
 jobs:

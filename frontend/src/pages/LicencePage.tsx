@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCollectionGames } from '../hooks/useCollectionGames';
 import { type IgdbGame } from '../api/igdb';
 
@@ -35,10 +36,9 @@ function SkeletonCard() {
 }
 
 function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
+  const { t } = useTranslation();
   const cover = g.cover_url;
   const release = g.release_date;
-
-  const displayName = g.name;
 
   return (
     <div className="group rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition hover:-translate-y-[1px] hover:shadow-md">
@@ -53,23 +53,22 @@ function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-xs text-zinc-400">
-              No cover
+              {t('licensePage.noCover')}
             </div>
           )}
         </div>
-
         <div className="min-w-0 flex-1">
           <div
             className="line-clamp-2 text-sm font-semibold text-zinc-900"
             title={g.name}
           >
-            {displayName}
+            {g.name}
           </div>
-
           <div className="mt-1 text-xs text-zinc-500">
-            {release ? `Sortie : ${release}` : 'Date inconnue'}
+            {release
+              ? t('licensePage.release', { date: release })
+              : t('licensePage.unknownDate')}
           </div>
-
           {g.platforms?.length ? (
             <div className="mt-2 line-clamp-1 text-xs text-zinc-600">
               {g.platforms
@@ -80,17 +79,16 @@ function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
             </div>
           ) : (
             <div className="mt-2 text-xs text-zinc-400">
-              Plateformes inconnues
+              {t('licensePage.unknownPlatforms')}
             </div>
           )}
-
           {g.summary ? (
             <div className="mt-2 line-clamp-2 text-xs text-zinc-600">
               {g.summary}
             </div>
           ) : (
             <div className="mt-2 line-clamp-2 text-xs text-zinc-400">
-              Pas de description.
+              {t('licensePage.noDescription')}
             </div>
           )}
         </div>
@@ -100,9 +98,9 @@ function GameCard({ g }: Readonly<{ g: IgdbGame }>) {
 }
 
 export default function LicensePage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const licenseId = Number(id);
-
   const [page, setPage] = useState(1);
   const pageSize = 48;
 
@@ -122,7 +120,6 @@ export default function LicensePage() {
 
   return (
     <div className="min-h-screen bg-zinc-50">
-      {/* Header sticky */}
       <div className="sticky top-0 z-10 border-b border-zinc-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4">
           <div className="min-w-0">
@@ -131,73 +128,70 @@ export default function LicensePage() {
                 to="/"
                 className="rounded-xl border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50"
               >
-                ← Retour
+                {t('licensePage.back')}
               </Link>
-
               <div className="min-w-0">
                 <h1 className="truncate text-lg font-bold text-zinc-900">
                   {title}
                 </h1>
                 <div className="text-xs text-zinc-500">
-                  Licence • Page {page}
+                  {t('licensePage.page', { page })}
                 </div>
               </div>
             </div>
           </div>
-
           <div className="flex items-center gap-2">
             <button
               disabled={!canPrev}
               onClick={() => setPage(p => Math.max(1, p - 1))}
               className="rounded-xl border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              ← Précédent
+              {t('licensePage.prev')}
             </button>
-
             <button
               disabled={!canNext}
               onClick={() => setPage(p => p + 1)}
               className="rounded-xl bg-zinc-900 px-3 py-1.5 text-sm text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Suivant →
+              {t('licensePage.next')}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Hero */}
       <div className="mx-auto max-w-6xl px-4 pt-6">
         <div className="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <div className="text-xs font-medium text-zinc-500">Licence</div>
+              <div className="text-xs font-medium text-zinc-500">
+                {t('licensePage.license')}
+              </div>
               <div className="truncate text-xl font-bold text-zinc-900">
                 {title}
               </div>
               <div className="mt-1 text-sm text-zinc-600">
-                Parcours les jeux de la licence, triés par popularité (IGDB).
+                {t('licensePage.subtitle')}
               </div>
             </div>
-
             <div className="flex items-center gap-2">
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-700">
-                {loading ? '…' : `${games.length} résultats`}
+                {loading
+                  ? '…'
+                  : t('licensePage.results', { count: games.length })}
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm text-zinc-700">
-                Page {page}
+                {t('licensePage.page', { page })}
               </div>
             </div>
           </div>
-
-          {error ? (
+          {error && (
             <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              Erreur : {error}
+              {t('licensePage.error', { message: error })}
             </div>
-          ) : null}
+          )}
         </div>
       </div>
 
-      {/* Grid */}
       <div className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {loading
@@ -205,32 +199,29 @@ export default function LicensePage() {
             : games.map(g => <GameCard key={g.igdb_id} g={g} />)}
         </div>
 
-        {!loading && !error && games.length === 0 ? (
+        {!loading && !error && games.length === 0 && (
           <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4 text-sm text-zinc-700">
-            Aucun jeu trouvé pour cette licence.
+            {t('licensePage.empty')}
           </div>
-        ) : null}
+        )}
 
-        {/* Bottom pagination */}
         <div className="mt-8 flex items-center justify-center gap-2">
           <button
             disabled={!canPrev}
             onClick={() => setPage(p => Math.max(1, p - 1))}
             className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            ← Précédent
+            {t('licensePage.prev')}
           </button>
-
           <div className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700">
-            Page {page}
+            {t('licensePage.page', { page })}
           </div>
-
           <button
             disabled={!canNext}
             onClick={() => setPage(p => p + 1)}
             className="rounded-xl bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Suivant →
+            {t('licensePage.next')}
           </button>
         </div>
       </div>

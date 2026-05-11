@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
+import { useTranslation } from 'react-i18next';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 
 const pulseRadar = keyframes`
@@ -48,6 +49,7 @@ export default function MatchmakingModal({
   game,
   onContactPlayer,
 }: MatchmakingModalProps) {
+  const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
 
   return (
@@ -57,11 +59,7 @@ export default function MatchmakingModal({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: {
-          borderRadius: 4,
-          overflow: 'hidden',
-          maxWidth: 750,
-        },
+        sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 750 },
       }}
     >
       <Box
@@ -102,9 +100,8 @@ export default function MatchmakingModal({
               textShadow: '0 2px 8px rgba(0,0,0,0.8)',
             }}
           >
-            {game?.name || 'Recherche de joueurs'}
+            {game?.name || t('matchmakingModal.searchTitle')}
           </Typography>
-
           {startedAt && (
             <Box
               sx={{
@@ -132,14 +129,13 @@ export default function MatchmakingModal({
           <List sx={{ pt: 0 }}>
             {matches.map(match => {
               const user = match.user;
-              let userName = `Joueur #${user}`;
-
               const targetUserId =
                 typeof user === 'object' && user !== null ? user.id : user;
-
-              if (typeof user === 'object' && user !== null) {
-                userName = user.username || `Joueur #${user.id}`;
-              }
+              const userName =
+                typeof user === 'object' && user !== null
+                  ? user.username ||
+                    t('matchmakingModal.player', { id: user.id })
+                  : t('matchmakingModal.player', { id: user });
 
               return (
                 <Paper
@@ -157,7 +153,9 @@ export default function MatchmakingModal({
                     </ListItemAvatar>
                     <ListItemText
                       primary={userName}
-                      secondary={`À environ ${match.distance_km} km`}
+                      secondary={t('matchmakingModal.distance', {
+                        km: match.distance_km,
+                      })}
                       primaryTypographyProps={{
                         fontWeight: 700,
                         variant: 'subtitle1',
@@ -176,7 +174,7 @@ export default function MatchmakingModal({
                       sx={{ borderRadius: 8, textTransform: 'none', px: 2 }}
                       onClick={() => onContactPlayer?.(targetUserId)}
                     >
-                      Contacter
+                      {t('matchmakingModal.contact')}
                     </Button>
                   </ListItem>
                 </Paper>
@@ -227,22 +225,20 @@ export default function MatchmakingModal({
                 <RadarIcon sx={{ fontSize: 48 }} />
               </Avatar>
             </Box>
-
             <Typography
               variant="h5"
               fontWeight={700}
               gutterBottom
               sx={{ mb: 2 }}
             >
-              Analyse de la zone...
+              {t('matchmakingModal.analyzing')}
             </Typography>
             <Typography
               variant="body1"
               color="text.secondary"
               sx={{ maxWidth: 450, lineHeight: 1.6 }}
             >
-              Nous élargissons le périmètre de recherche. Vous pouvez fermer
-              cette fenêtre, nous vous avertirons dès qu'un joueur sera trouvé !
+              {t('matchmakingModal.searchDescription')}
             </Typography>
           </Box>
         )}
@@ -258,7 +254,7 @@ export default function MatchmakingModal({
         }}
       >
         <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-          Réduire en arrière-plan
+          {t('matchmakingModal.minimize')}
         </Button>
         {startedAt && (
           <Button
@@ -267,7 +263,7 @@ export default function MatchmakingModal({
             variant="outlined"
             sx={{ fontWeight: 600 }}
           >
-            Annuler la recherche
+            {t('matchmakingModal.cancel')}
           </Button>
         )}
       </Box>

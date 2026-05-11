@@ -4,6 +4,8 @@ Elles surchargent les fixtures globales pour être compatibles
 avec le modèle CustomUser et les modèles Game/Publisher/Genre/Platform.
 """
 
+import os
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
@@ -11,6 +13,18 @@ from rest_framework.test import APIClient
 from apps.games.models import Game, Genre, Platform, Publisher
 
 User = get_user_model()
+
+
+@pytest.fixture(autouse=True)
+def patch_igdb_env_config(monkeypatch):
+    import apps.games.igdb_client as igdb_mod
+    import apps.games.management.commands.check_igdb as check_igdb_mod
+
+    def _os_env(key, default="", **kwargs):
+        return os.environ.get(key, default)
+
+    monkeypatch.setattr(igdb_mod, "env_config", _os_env)
+    monkeypatch.setattr(check_igdb_mod, "env_config", _os_env)
 
 
 @pytest.fixture

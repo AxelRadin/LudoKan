@@ -1,25 +1,25 @@
-# Dockerfile DEV pour Django
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 
 
 WORKDIR /app
 
-# Déps système (psycopg, build)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl gcc libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends gcc libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Installer deps avant de copier tout le code -> meilleur cache
 COPY requirements.txt .
 COPY requirements-dev.txt .
-RUN python -m pip install --upgrade pip \
-    && pip install -r requirements.txt \
-    && pip install -r requirements-dev.txt
 
-# Copier le code
+RUN python -m pip install --upgrade "pip==26.1.1" \
+    && pip install --root-user-action=ignore \
+        --only-binary=:all: \
+        --no-binary=dj-rest-auth,ms-cv \
+        -r requirements.txt \
+    && pip install --root-user-action=ignore --only-binary=:all: -r requirements-dev.txt
 
 COPY manage.py ./manage.py
 COPY config/ ./config/
@@ -29,18 +29,16 @@ COPY docker/ ./docker/
 COPY tests/ ./tests/
 COPY pyproject.toml ./pyproject.toml
 COPY runtime.txt ./runtime.txt
-COPY .flake8 ./flake8
-COPY .coveragerc ./coveragerc
+COPY .flake8 ./.flake8
+COPY .coveragerc ./.coveragerc
 COPY pytest.ini ./pytest.ini
 COPY conftest.py ./conftest.py
 COPY run_tests.py ./run_tests.py
-COPY test_celery.py ./test_celery.py 
+COPY test_celery.py ./test_celery.py
 
-# Créer user non-root
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 
-# Entrypoint pour faire migrations etc.
 COPY docker/entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r//' /entrypoint.sh && chmod +x /entrypoint.sh
 

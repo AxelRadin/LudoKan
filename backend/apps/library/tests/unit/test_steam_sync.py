@@ -3,7 +3,7 @@ from unittest.mock import patch
 from django.test import TestCase
 
 from apps.games.models import Game, Publisher
-from apps.library.models import UserGame
+from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
 from apps.library.steam_sync import _resolve_and_save_missing_games, sync_steam_library
 from apps.users.models import CustomUser, SteamProfile
 
@@ -14,21 +14,26 @@ class SteamSyncTest(TestCase):
         self.steam_profile = SteamProfile.objects.create(user=self.user, steam_id="76561198031200000")
         self.publisher = Publisher.objects.create(name="Valve")
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_steam_id_400_to_portal_game(self, mock_igdb):
         """
         Acceptance criteria: 'Une fonction de test peut transformer l'ID Steam 400 en l'objet Jeu Portal dans ta base.'
         We test the resolution function directly for appid 400.
         """
+
         # Mock IGDB response for Portal
-        mock_igdb.return_value = [
-            {
-                "id": 72,
-                "name": "Portal",
-                "summary": "A puzzle game.",
-                "external_games": [{"category": 1, "uid": "400"}, {"category": 5, "uid": "portal"}],
-            }
-        ]
+        def mock_igdb_backend(endpoint, query):
+            if endpoint == "external_games":
+                return [{"uid": "400", "game": {"id": 72}}]
+            return [
+                {
+                    "id": 72,
+                    "name": "Portal",
+                    "summary": "A puzzle game.",
+                }
+            ]
+
+        mock_igdb.side_effect = mock_igdb_backend
 
         # Portal is appid 400
         _resolve_and_save_missing_games([400])
@@ -59,6 +64,13 @@ class SteamSyncTest(TestCase):
 
         # 180 minutes = 3.0 hours
         self.assertEqual(user_game.playtime_forever, 3.0, "Le temps de jeu devrait être de 3.0 heures.")
+
+        steam_lib = UserLibrary.objects.filter(user=self.user, system_key=UserLibrary.SystemKey.STEAM).first()
+        self.assertIsNotNone(steam_lib, "La collection Jeux Steam devrait exister.")
+        self.assertTrue(
+            UserLibraryEntry.objects.filter(library=steam_lib, user_game=user_game).exists(),
+            "Le jeu synchronisé doit être dans la collection Jeux Steam.",
+        )
 
     def test_sync_steam_library_no_steam_profile(self):
         user_no_profile = CustomUser.objects.create_user(email="no@ludo.com", pseudo="noprofile", password="pwd")
@@ -100,44 +112,73 @@ class SteamSyncTest(TestCase):
     def test_resolve_missing_games_empty(self):
         _resolve_and_save_missing_games([])  # Should return cleanly
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_igdb_exception(self, mock_igdb):
         mock_igdb.side_effect = Exception("IGDB Error")
         _resolve_and_save_missing_games([400])  # Should catch and return cleanly
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_invalid_data(self, mock_igdb):
-        # mock missing id, missing steam appid, and full cover object
-        mock_igdb.return_value = [
-            {"name": "No ID"},  # missing ID
-            {"id": 999, "external_games": [{"category": 2, "uid": "100"}]},  # missing steam appid
-            {
-                "id": 888,
-                "name": "Cover Test",
-                "cover": {"url": "http://cover"},
-                "external_games": [{"category": 1, "uid": "888"}],
-            },  # valid with cover
-        ]
+        def mock_igdb_backend(endpoint, query):
+            if endpoint == "external_games":
+                return [{"uid": "888", "game": {"id": 888}}, {"uid": "100"}]
+            return [
+                {"name": "No ID"},  # missing ID
+                {"id": 9999, "name": "Unmapped ID"},  # Unmapped ID
+                {
+                    "id": 888,
+                    "name": "Cover Test",
+                    "cover": {"url": "http://cover"},
+                    "first_release_date": 1609459200,
+                },
+            ]
+
+        mock_igdb.side_effect = mock_igdb_backend
 
         _resolve_and_save_missing_games([888])
         game = Game.objects.filter(steam_appid=888).first()
         self.assertIsNotNone(game)
         self.assertEqual(game.cover_url, "http://cover")
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_not_list(self, mock_igdb):
-        # mock non list return
+        # mock non list return for external_games
         mock_igdb.return_value = {"error": "not a list"}
         _resolve_and_save_missing_games([100])  # should default to [] and not crash
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
+    def test_resolve_missing_games_games_not_list(self, mock_igdb):
+        def mock_igdb_backend(endpoint, query):
+            if endpoint == "external_games":
+                return [{"uid": "100", "game": {"id": 100}}]
+            return {"error": "not a list"}
+
+        mock_igdb.side_effect = mock_igdb_backend
+        _resolve_and_save_missing_games([100])  # should default to [] and not crash
+
+    @patch("apps.library.sync_utils.igdb_request")
+    def test_resolve_missing_games_games_exception(self, mock_igdb):
+        def mock_igdb_backend(endpoint, query):
+            if endpoint == "external_games":
+                return [{"uid": "100", "game": {"id": 100}}]
+            raise Exception("Games IGDB Error")
+
+        mock_igdb.side_effect = mock_igdb_backend
+        _resolve_and_save_missing_games([100])  # should catch and return cleanly
+
+    @patch("apps.library.sync_utils.igdb_request")
     @patch("apps.library.steam_sync.requests.get")
     def test_sync_steam_library_with_missing_game(self, mock_get, mock_igdb):
         mock_response = mock_get.return_value
         mock_response.json.return_value = {"response": {"game_count": 1, "games": [{"appid": 500, "playtime_forever": 60}]}}
         mock_response.raise_for_status.return_value = None
 
-        mock_igdb.return_value = [{"id": 99, "name": "Missing Game", "external_games": [{"category": 1, "uid": "500"}]}]
+        def mock_igdb_backend(endpoint, query):
+            if endpoint == "external_games":
+                return [{"uid": "500", "game": {"id": 99}}]
+            return [{"id": 99, "name": "Missing Game"}]
+
+        mock_igdb.side_effect = mock_igdb_backend
 
         with patch("apps.library.steam_sync.settings.STEAM_API_KEY", "fake_key"):
             sync_steam_library(self.user)

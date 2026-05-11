@@ -16,6 +16,8 @@ export type UserGameStatus =
 
 export type UserGame = {
   id: number;
+  /** IDs des collections (`/api/me/collections/`) contenant ce jeu. */
+  collection_ids?: number[];
   game: {
     id: number;
     name: string;
@@ -42,11 +44,40 @@ type PaginatedResponse<T> = {
   results: T[];
 };
 
+/** Extrait ``/path?query`` depuis l’URL absolue renvoyée par DRF dans ``next``. */
+function pathFromDrfNext(next: string | null): string | null {
+  if (!next) return null;
+  try {
+    const u = new URL(next);
+    return u.pathname + u.search;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Liste complète des jeux utilisateur (agrège toutes les pages DRF).
+ * Sans cela, seuls les ``PAGE_SIZE`` premiers jeux sont visibles sur le profil.
+ */
 export async function fetchUserGames(): Promise<UserGame[]> {
-  const data = (await apiGet('/api/me/games/')) as
-    | PaginatedResponse<UserGame>
-    | UserGame[];
-  return Array.isArray(data) ? data : data.results;
+  const aggregated: UserGame[] = [];
+  let path: string | null = '/api/me/games/';
+
+  while (path) {
+    const data = (await apiGet(path)) as
+      | PaginatedResponse<UserGame>
+      | UserGame[];
+
+    if (Array.isArray(data)) {
+      aggregated.push(...data);
+      break;
+    }
+
+    aggregated.push(...data.results);
+    path = pathFromDrfNext(data.next);
+  }
+
+  return aggregated;
 }
 
 /** gameId = Django Game id (pour l’URL, le backend utilise lookup_field=game_id). */

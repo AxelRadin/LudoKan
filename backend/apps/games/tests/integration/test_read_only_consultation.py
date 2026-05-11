@@ -131,6 +131,8 @@ class TestGameDetailReadOnly:
         assert lib is not None
         assert lib["status"] == "TERMINE"
         assert lib["is_favorite"] is True
+        assert "id" in lib
+        assert isinstance(lib.get("collection_ids"), list)
 
     # -- 404 -----------------------------------------------------------------
 

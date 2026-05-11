@@ -4,19 +4,19 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
 
 const GoogleCallbackPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { setAuthenticated } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
 
   useEffect(() => {
-    if (exchangeStarted.current) {
-      return;
-    }
+    if (exchangeStarted.current) return;
     exchangeStarted.current = true;
 
     const run = async () => {
@@ -25,12 +25,11 @@ const GoogleCallbackPage: React.FC = () => {
       const googleError = url.searchParams.get('error');
 
       if (googleError) {
-        setError(`Google a renvoyé une erreur : ${googleError}`);
+        setError(t('googleCallback.errorGoogle', { error: googleError }));
         return;
       }
-
       if (!code) {
-        setError('Aucun code Google reçu.');
+        setError(t('googleCallback.errorNoCode'));
         return;
       }
 
@@ -40,13 +39,15 @@ const GoogleCallbackPage: React.FC = () => {
         navigate('/', { replace: true });
       } catch (err: unknown) {
         const message =
-          err instanceof Error ? err.message : 'Échec du login Google';
+          err instanceof Error
+            ? err.message
+            : t('googleCallback.errorFallback');
         setError(message);
       }
     };
 
     void run();
-  }, [navigate, setAuthenticated]);
+  }, [navigate, setAuthenticated, t]);
 
   if (error) {
     return (
@@ -69,7 +70,7 @@ const GoogleCallbackPage: React.FC = () => {
       }}
     >
       <CircularProgress />
-      <Typography variant="body1">Connexion en cours…</Typography>
+      <Typography variant="body1">{t('googleCallback.loading')}</Typography>
     </Box>
   );
 };

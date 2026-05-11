@@ -1,19 +1,29 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from django.db.models import Sum
 from rest_framework import serializers
 
 from apps.core.tasks import send_welcome_email
+from apps.library.models import UserGame
 
 from .errors import UserErrors
 from .models import AdminAction
 from .models import CustomUser as User
-from .models import UserSuspension
+from .models import UserRole, UserSuspension
 
 
 class CustomRegisterSerializer(RegisterSerializer):
+    username = serializers.CharField(required=False, allow_blank=True, write_only=True)
     pseudo = serializers.CharField(required=False, max_length=150)
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     description_courte = serializers.CharField(required=False, allow_blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "username" in self.fields:
+            self.fields["username"].required = False
+            self.fields["username"].allow_blank = True
+            self.fields["username"].allow_null = True
 
     def validate_email(self, value):
         """
@@ -67,6 +77,15 @@ class UserSerializer(serializers.ModelSerializer):
     banner_url = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     steam_id = serializers.SerializerMethodField()
+    xbox_profile = serializers.SerializerMethodField()
+    roles = serializers.SerializerMethodField()
+    is_superuser = serializers.BooleanField(read_only=True)
+
+    # Statistiques
+    total_playtime = serializers.SerializerMethodField()
+    games_finished_percentage = serializers.SerializerMethodField()
+    games_played_percentage = serializers.SerializerMethodField()
+    total_games_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -84,16 +103,84 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "review_count",
             "steam_id",
+            "xbox_profile",
+            "roles",
+            "is_superuser",
+            "total_playtime",
+            "games_finished_percentage",
+            "games_played_percentage",
+            "total_games_count",
         ]
-        read_only_fields = ["id", "created_at", "email", "steam_id"]
+        read_only_fields = [
+            "id",
+            "created_at",
+            "steam_id",
+            "xbox_profile",
+            "roles",
+            "is_superuser",
+            "total_playtime",
+            "games_finished_percentage",
+            "games_played_percentage",
+            "total_games_count",
+        ]
+
+    def validate_email(self, value):
+        request = self.context.get("request")
+        user = getattr(request, "user", None) if request is not None else None
+
+        qs = User.objects.filter(email=value)
+        if user is not None:
+            qs = qs.exclude(pk=user.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError(UserErrors.EMAIL_ALREADY_EXISTS)
+
+        return value
+
+    def get_roles(self, obj) -> list[str]:
+        return list(UserRole.objects.filter(user=obj).values_list("role", flat=True))
 
     def get_steam_id(self, obj):
         if hasattr(obj, "steam_profile"):
             return obj.steam_profile.steam_id
         return None
 
+    def get_xbox_profile(self, obj):
+        if hasattr(obj, "xbox_profile"):
+            return {
+                "xuid": obj.xbox_profile.xbox_xuid,
+                "gamertag": obj.xbox_profile.gamertag,
+                "gamerscore": obj.xbox_profile.gamerscore,
+                "last_sync_at": obj.xbox_profile.last_sync_at,
+            }
+        return None
+
     def get_review_count(self, obj):
         return obj.reviews.count()
+
+    def get_total_playtime(self, obj) -> float:
+
+        return obj.library_entries.aggregate(Sum("playtime_forever"))["playtime_forever__sum"] or 0.0
+
+    def get_total_games_count(self, obj) -> int:
+        return obj.library_entries.count()
+
+    def get_games_finished_percentage(self, obj) -> float:
+
+        total = self.get_total_games_count(obj)
+        if total == 0:
+            return 0.0
+        finished = obj.library_entries.filter(status=UserGame.GameStatus.TERMINE).count()
+        return round((finished / total) * 100, 1)
+
+    def get_games_played_percentage(self, obj) -> float:
+
+        total = self.get_total_games_count(obj)
+        if total == 0:
+            return 0.0
+        # On considère "joué" tout ce qui n'est pas "ENVIE_DE_JOUER"
+        played = obj.library_entries.exclude(status=UserGame.GameStatus.ENVIE_DE_JOUER).count()
+        return round((played / total) * 100, 1)
 
     def get_avatar_url(self, obj):
         """Retourne l'URL absolue de l'avatar si présent"""

@@ -14,9 +14,13 @@ FIELDS_GAME_DETAIL = (
     "fields name,cover.url,first_release_date,summary,platforms.name,genres.name,total_rating,total_rating_count,"
     + "collections.id,collections.name,franchises.id,franchises.name,"
     + "involved_companies.company.name,involved_companies.publisher,"
-    + "screenshots.url,videos.video_id,videos.name;"
+    + "screenshots.url,videos.video_id,videos.name,"
+    + "game_modes.name,multiplayer_modes.onlinemax,multiplayer_modes.offlinemax,"
+    + "multiplayer_modes.onlinecoopmax,multiplayer_modes.offlinecoopmax;"
 )
 FIELDS_SEARCH_PAGE = "fields name,cover.url,first_release_date,platforms.name,total_rating,total_rating_count;"
+
+FIELDS_IGDB_DEMOGRAPHICS_SUFFIX = ",age_ratings,multiplayer_modes"
 
 NOW = int(time.time())
 TRENDING_SORTS = {

@@ -1,13 +1,11 @@
-import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
+import { StyledEngineProvider } from '@mui/material/styles';
 import * as Sentry from '@sentry/react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import App from './App.tsx';
+import './i18n';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
-import { AuthProvider } from './contexts/AuthContext.tsx';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
 import GamePage from './pages/GamePage.tsx';
@@ -19,36 +17,17 @@ import SearchResultsPage from './pages/SearchResultsPage.tsx';
 import TrendingCategoryPage from './pages/TrendingCategoryPage.tsx';
 import GoogleCallbackPage from './pages/GoogleCallbackPage.tsx';
 import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
-import { MatchmakingProvider } from './contexts/MatchmakingContext.tsx';
-import { muiTheme } from './muiTheme';
+import UserReviewsPage from './pages/UserReviewsPage.tsx';
+import SettingsPage from './pages/SettingsPage';
+import PolitiquesPage from './pages/PolitiquesPage.tsx';
+import CookiesPage from './pages/CookiesPage.tsx';
+import CookieBanner from './pages/CookieBanner.tsx';
 import AboutPage from './pages/AboutPage.tsx';
-
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: (
-      <MatchmakingProvider>
-        <App />
-      </MatchmakingProvider>
-    ),
-    children: [
-      { path: '', element: <HomePage /> },
-      { path: 'home', element: <HomePage /> },
-      { path: 'profile', element: <ProfilePage /> },
-      { path: 'game/:id', element: <GamePage /> },
-      { path: 'game/igdb/:igdbId', element: <GamePage /> },
-      { path: 'test', element: <TestSentry /> },
-      { path: 'connector', element: <BackendConnector /> },
-      { path: 'license', element: <LicensePage /> },
-      { path: 'search', element: <SearchResultsPage /> },
-      { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
-      { path: 'trending/:sort', element: <TrendingCategoryPage /> },
-      { path: 'about', element: <AboutPage /> },
-      { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
-      { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
-    ],
-  },
-]);
+import AdminDashboard from './pages/admin/AdminDashboard.tsx';
+import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
+import { Root } from './Root.tsx';
+import { ThemeModeProvider } from './contexts/ThemeContext';
+import { AdminRoot } from './AdminRoot.tsx';
 
 initSentry();
 
@@ -57,17 +36,56 @@ const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
   resetError,
 }) => <ErrorFallback error={error} resetError={resetError} />;
 
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Root />,
+    children: [
+      { path: '', element: <HomePage /> },
+      { path: 'home', element: <HomePage /> },
+      { path: 'profile', element: <ProfilePage /> },
+      { path: 'profile/reviews', element: <UserReviewsPage /> },
+      { path: 'game/:id', element: <GamePage /> },
+      { path: 'game/igdb/:igdbId', element: <GamePage /> },
+      { path: 'test', element: <TestSentry /> },
+      { path: 'connector', element: <BackendConnector /> },
+      { path: 'license', element: <LicensePage /> },
+      { path: 'search', element: <SearchResultsPage /> },
+      { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
+      { path: 'trending/:sort', element: <TrendingCategoryPage /> },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: 'politiques', element: <PolitiquesPage /> },
+      { path: 'cookies', element: <CookiesPage /> },
+      { path: 'cookie-banner', element: <CookieBanner /> },
+      { path: 'about', element: <AboutPage /> },
+      { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
+      { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
+    ],
+  },
+  {
+    path: '/admin',
+    element: <AdminRoot />,
+    children: [
+      {
+        path: 'dashboard',
+        element: (
+          <ProtectedAdminRoute>
+            <AdminDashboard />
+          </ProtectedAdminRoute>
+        ),
+      },
+    ],
+  },
+]);
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={muiTheme}>
-        <CssBaseline />
-        <AuthProvider>
-          <Sentry.ErrorBoundary fallback={errorFallback}>
-            <RouterProvider router={router} />
-          </Sentry.ErrorBoundary>
-        </AuthProvider>
-      </ThemeProvider>
+      <ThemeModeProvider>
+        <Sentry.ErrorBoundary fallback={errorFallback}>
+          <RouterProvider router={router} />
+        </Sentry.ErrorBoundary>
+      </ThemeModeProvider>
     </StyledEngineProvider>
   </StrictMode>
 );

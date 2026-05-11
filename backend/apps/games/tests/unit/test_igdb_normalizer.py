@@ -28,6 +28,21 @@ def test_normalize_igdb_game_alternative_names_french_comment_but_no_name():
     assert normalize_igdb_game(raw_game)["name"] == "Fallback"
 
 
+def test_normalize_igdb_game_includes_ludokan_demographics():
+    """Champs _ludokan_* (proxy IGDB filtré) → min_age / min_players / max_players sur le contrat."""
+    raw = {
+        "id": 7,
+        "name": "G",
+        "_ludokan_min_age": 12,
+        "_ludokan_min_players": 1,
+        "_ludokan_max_players": 4,
+    }
+    out = normalize_igdb_game(raw)
+    assert out["min_age"] == 12
+    assert out["min_players"] == 1
+    assert out["max_players"] == 4
+
+
 def test_normalize_igdb_game_basic():
     """Vérifie la normalisation avec tous les champs présents idéaux (mock d'une réponse de vue détails)."""
     raw_game = {
@@ -143,6 +158,35 @@ def test_normalize_igdb_game_publisher_none_when_company_invalid():
     assert normalize_igdb_game(raw_game)["publisher"] is None
 
 
+def test_normalize_igdb_game_player_counts_from_multiplayer_modes():
+    """Couvre l'extraction explicite des joueurs depuis multiplayer_modes."""
+    raw_game = {
+        "id": 77,
+        "name": "MP Game",
+        "multiplayer_modes": [
+            "skip-non-dict",
+            {"onlinemax": 3, "offlinemax": 2},
+            {"offlinecoopmax": 6},
+        ],
+    }
+    out = normalize_igdb_game(raw_game)
+    assert out["min_players"] == 1
+    assert out["max_players"] == 6
+
+
+def test_normalize_igdb_game_player_counts_solo_inference_from_modes():
+    """Si game_modes existent mais sans mode multi connu, on infère solo (1,1)."""
+    raw_game = {
+        "id": 78,
+        "name": "Solo Game",
+        "game_modes": [{"name": "Single player"}],
+        "multiplayer_modes": [],
+    }
+    out = normalize_igdb_game(raw_game)
+    assert out["min_players"] == 1
+    assert out["max_players"] == 1
+
+
 @pytest.mark.django_db
 def test_enrich_normalized_games_anonymous(game):
     """Vérifie que pour un utilisateur anonyme, seul le django_id est injecté."""
@@ -174,7 +218,12 @@ def test_enrich_normalized_games_authenticated(user, game):
     enrich_normalized_games(normalized_list, user=user)
 
     assert normalized_list[0]["django_id"] == game.id
-    assert normalized_list[0]["user_library"] == {"status": "playing", "is_favorite": True}
+    ul = normalized_list[0]["user_library"]
+    assert ul["status"] == "playing"
+    assert ul["is_favorite"] is True
+    assert "id" in ul
+    assert "collection_ids" in ul
+    assert isinstance(ul["collection_ids"], list)
     assert normalized_list[0]["user_rating"] == {"value": 90.0, "rating_type": "sur_100"}
 
 
