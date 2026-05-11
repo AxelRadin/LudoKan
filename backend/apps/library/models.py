@@ -13,6 +13,7 @@ class UserLibrary(models.Model):
     class SystemKey(models.TextChoices):
         MA_LUDOTHEQUE = "MA_LUDOTHEQUE", "Ma ludothèque"
         STEAM = "STEAM", "Jeux Steam"
+        XBOX = "XBOX", "Jeux Xbox"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -56,6 +57,7 @@ class UserLibrary(models.Model):
                     system_key__in=[
                         "MA_LUDOTHEQUE",
                         "STEAM",
+                        "XBOX",
                     ]
                 ),
                 name="library_user_system_key_uniq",
