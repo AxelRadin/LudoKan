@@ -35,3 +35,30 @@ class SyncSteamLibraryTaskTest(TestCase):
         # Ne doit pas lever d'exception
         sync_steam_library_task(self.user.id)
         mock_sync.assert_called_once()
+
+
+class SyncXboxLibraryTaskTest(TestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(email="xbox_task_tester@ludokan.com", pseudo="xbox_task_tester", password="pwd")
+
+    @patch("apps.library.tasks.sync_xbox_library")
+    def test_sync_xbox_library_task_success(self, mock_sync):
+        from apps.library.tasks import sync_xbox_library_task
+
+        sync_xbox_library_task(self.user.id)
+        mock_sync.assert_called_once_with(self.user)
+
+    @patch("apps.library.tasks.sync_xbox_library")
+    def test_sync_xbox_library_task_user_not_found(self, mock_sync):
+        from apps.library.tasks import sync_xbox_library_task
+
+        sync_xbox_library_task(999999)
+        mock_sync.assert_not_called()
+
+    @patch("apps.library.tasks.sync_xbox_library")
+    def test_sync_xbox_library_task_exception(self, mock_sync):
+        from apps.library.tasks import sync_xbox_library_task
+
+        mock_sync.side_effect = Exception("Crash")
+        sync_xbox_library_task(self.user.id)
+        mock_sync.assert_called_once()

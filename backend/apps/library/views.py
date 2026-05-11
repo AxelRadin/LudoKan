@@ -15,7 +15,7 @@ from apps.games.models import Game
 from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
 from apps.library.serializers import LibraryPrivacySerializer, PublicUserLibrarySerializer, UserGameSerializer, UserLibrarySerializer
 from apps.library.services_collections import ensure_ma_ludotheque
-from apps.library.tasks import sync_steam_library_task
+from apps.library.tasks import sync_steam_library_task, sync_xbox_library_task
 from apps.library.visibility import collections_visible_to_viewer_queryset, viewer_can_see_collection, visible_user_games_queryset
 from apps.social.blocking import pair_has_block
 
@@ -130,6 +130,33 @@ class SteamSyncView(APIView):
     def post(self, request, *args, **kwargs):
         # We start the Celery task safely
         sync_steam_library_task.delay(request.user.id)
+
+        return Response({"detail": "La synchronisation a été ajoutée à la file d'attente."}, status=status.HTTP_202_ACCEPTED)
+
+
+class XboxSyncThrottle(UserRateThrottle):
+    rate = "1/min"
+
+
+class XboxSyncView(APIView):
+    """
+    Déclenche la synchronisation de la bibliothèque Xbox en asynchrone via Celery.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [XboxSyncThrottle]
+
+    @extend_schema(
+        summary="Synchroniser la bibliothèque Xbox",
+        description="Lance une tâche asynchrone pour mettre à jour les jeux depuis Xbox Live.\nLimité à 1 appel par minute par utilisateur.",
+        responses={
+            202: {"description": "Synchronisation lancée en arrière-plan."},
+            429: {"description": "Trop de requêtes. Veuillez patienter."},
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        # We start the Celery task safely
+        sync_xbox_library_task.delay(request.user.id)
 
         return Response({"detail": "La synchronisation a été ajoutée à la file d'attente."}, status=status.HTTP_202_ACCEPTED)
 

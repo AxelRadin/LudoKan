@@ -10,6 +10,7 @@ from .views import (
     SteamSyncView,
     UserGameViewSet,
     UserLibraryViewSet,
+    XboxSyncView
 )
 
 app_name = "library"
@@ -21,6 +22,7 @@ router.register("me/collections", UserLibraryViewSet, basename="my-collections")
 urlpatterns = [
     path("me/library-privacy/", LibraryPrivacyView.as_view(), name="library-privacy"),
     path("sync/steam/", SteamSyncView.as_view(), name="sync-steam"),
+    path("sync/xbox/", XboxSyncView.as_view(), name="sync-xbox"),
     path("users/<str:pseudo>/collections/", PublicUserCollectionsView.as_view(), name="public-user-collections"),
     path(
         "users/<str:pseudo>/collections/<int:pk>/games/",

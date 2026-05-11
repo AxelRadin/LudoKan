@@ -130,6 +130,8 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
 SITE_ID = 1
 
+SOCIALACCOUNT_STORE_TOKENS = True
+
 SOCIALACCOUNT_ADAPTER = "apps.users.adapters.SocialAccountAdapter"
 
 REST_FRAMEWORK = {
@@ -567,6 +569,6 @@ SOCIALACCOUNT_PROVIDERS = {
     },
     "microsoft": {
         "TENANT": "common",  # "common", "organizations", or "consumers"
-        "SCOPE": ["user.read", "openid", "profile", "offline_access"],
+        "SCOPE": ["user.read", "openid", "profile", "offline_access", "XboxLive.signin"],
     },
 }
