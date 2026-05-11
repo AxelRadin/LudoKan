@@ -59,6 +59,8 @@ class Game(models.Model):
     igdb_id = models.PositiveBigIntegerField(unique=True, null=True, blank=True)
     # Steam App ID (external_games.uid for category 1)
     steam_appid = models.PositiveIntegerField(unique=True, null=True, blank=True)
+    # Xbox Title ID
+    xbox_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
 
     name = models.CharField(max_length=255)
     name_fr = models.CharField(max_length=255, blank=True, default="")

@@ -9,6 +9,7 @@ from apps.users.models import CustomUser
 
 MA_LUDOTHEQUE_NAME = "Ma ludothèque"
 STEAM_COLLECTION_NAME = "Jeux Steam"
+XBOX_COLLECTION_NAME = "Jeux Xbox"
 
 
 def ensure_ma_ludotheque(user: CustomUser) -> UserLibrary:
@@ -67,3 +68,40 @@ def sync_steam_entries_for_matched_games(user: CustomUser, games_qs) -> None:
         return
     ugs = list(UserGame.objects.filter(user=user, game_id__in=game_ids))
     attach_user_games_to_steam_collection(user, ugs)
+
+
+def ensure_xbox_collection(user: CustomUser) -> UserLibrary | None:
+    if not hasattr(user, "xbox_profile"):
+        return None
+    lib, _ = UserLibrary.objects.get_or_create(
+        user=user,
+        system_key=UserLibrary.SystemKey.XBOX,
+        defaults={
+            "name": XBOX_COLLECTION_NAME,
+            "color": "",
+            "sort_order": 2,
+            "is_default": False,
+            "is_visible_on_profile": False,
+        },
+    )
+    return lib
+
+
+def attach_user_games_to_xbox_collection(user: CustomUser, user_games: list[UserGame]) -> None:
+    """Ajoute les entrées « Jeux Xbox » sans modifier statut / favori / autres collections."""
+    xbox_lib = ensure_xbox_collection(user)
+    if not xbox_lib or not user_games:
+        return
+    for ug in user_games:
+        if ug.user_id != user.id:
+            continue
+        UserLibraryEntry.objects.get_or_create(library=xbox_lib, user_game=ug)
+
+
+def sync_xbox_entries_for_matched_games(user: CustomUser, games_qs) -> None:
+    """Après sync Xbox : rattache les UserGame concernés à la collection Jeux Xbox."""
+    game_ids = list(games_qs.values_list("pk", flat=True))
+    if not game_ids:
+        return
+    ugs = list(UserGame.objects.filter(user=user, game_id__in=game_ids))
+    attach_user_games_to_xbox_collection(user, ugs)

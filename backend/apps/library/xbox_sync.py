@@ -1,0 +1,178 @@
+import datetime
+import logging
+from typing import List
+
+from allauth.socialaccount.models import SocialToken
+from asgiref.sync import async_to_sync, sync_to_async
+from django.conf import settings
+from django.db import transaction
+from django.utils import timezone
+from xbox.webapi.api.client import XboxLiveClient
+from xbox.webapi.authentication.manager import AuthenticationManager
+from xbox.webapi.authentication.models import OAuth2TokenResponse
+from xbox.webapi.common.signed_session import SignedSession
+
+from apps.games.models import Game
+from apps.library.models import UserGame
+from apps.library.services_collections import sync_xbox_entries_for_matched_games
+from apps.library.sync_utils import fetch_external_games, fetch_igdb_games_by_ids, process_single_igdb_game
+from apps.users.models import CustomUser
+
+logger = logging.getLogger("system_logs")
+
+
+def sync_xbox_library(user: CustomUser) -> None:
+    if not hasattr(user, "xbox_profile"):
+        logger.warning(f"User {user.pseudo} has no linked Xbox profile.")
+        return
+
+    try:
+        token = SocialToken.objects.get(account__user=user, account__provider="microsoft")
+    except SocialToken.DoesNotExist:
+        logger.error(f"User {user.pseudo} has no Microsoft OAuth token.")
+        return
+
+    async_to_sync(_async_sync_xbox_library)(user, token)
+
+
+async def _async_sync_xbox_library(user: CustomUser, token: SocialToken) -> None:
+    client_id = getattr(settings, "MICROSOFT_CLIENT_ID", "")
+    client_secret = getattr(settings, "MICROSOFT_CLIENT_SECRET", "")
+
+    # Reconstruire le token OAuth2 à partir du SocialToken allauth
+    oauth_token = OAuth2TokenResponse(
+        token_type="bearer",
+        expires_in=3600,
+        scope="XboxLive.signin offline_access",
+        access_token=token.token,
+        refresh_token=token.token_secret or "",
+        user_id="",
+        issued=timezone.now() - datetime.timedelta(minutes=5),
+    )
+
+    async with SignedSession() as session:
+        auth_mgr = AuthenticationManager(session, client_id=client_id, client_secret=client_secret, redirect_uri="")
+        auth_mgr.oauth = oauth_token
+
+        try:
+            await auth_mgr.request_user_token()
+            await auth_mgr.request_xsts_token()
+        except Exception:
+            logger.info(f"Token may be expired, attempting to refresh for user {user.pseudo}")
+            try:
+                await auth_mgr.refresh_tokens()
+                if auth_mgr.oauth:
+                    await sync_to_async(_update_social_token)(token, auth_mgr.oauth)
+            except Exception as refresh_err:
+                logger.exception(f"Failed to refresh and authenticate with Xbox Live for user {user.pseudo}: {refresh_err}")
+                return
+
+        xuid = await sync_to_async(getattr)(user.xbox_profile, "xbox_xuid")
+        client = XboxLiveClient(auth_mgr.user_token, auth_mgr.xsts_token)
+
+        gamerscore = await sync_to_async(getattr)(user.xbox_profile, "gamerscore")
+        try:
+            profiles = await client.profile.get_profiles([xuid])
+            if profiles and len(profiles) > 0:
+                gamerscore = profiles[0].gamerscore
+        except Exception as e:
+            logger.exception(f"Failed to fetch Xbox profile for user {user.pseudo}: {e}")
+
+        try:
+            title_history = await client.titlehub.get_title_history(xuid)
+        except Exception as e:
+            logger.exception(f"Failed to fetch Xbox title history for user {user.pseudo}: {e}")
+            return
+
+    if not title_history or not title_history.titles:
+        logger.warning(f"No Xbox titles found for user {user.pseudo}.")
+        return
+
+    titles_data = title_history.titles
+    logger.info(f"Xbox API returned {len(titles_data)} games for user {user.pseudo}")
+
+    titleid_to_playtime = {}
+    for title in titles_data:
+        tid = getattr(title, "title_id", None)
+        if not tid:
+            continue
+        # Les jeux Xbox peuvent avoir du playtime, mais dans get_title_history ce n'est pas toujours direct.
+        # Par défaut, nous utilisons 0 en attendant une meilleure intégration.
+        titleid_to_playtime[str(tid)] = 0
+
+    xbox_ids = list(titleid_to_playtime.keys())
+
+    await sync_to_async(_process_xbox_db_operations)(user, xbox_ids, titleid_to_playtime, gamerscore)
+    logger.info(f"Xbox synchronization complete for user {user.pseudo}")
+
+
+def _process_xbox_db_operations(user: CustomUser, xbox_ids: List[str], titleid_to_playtime: dict, gamerscore: int) -> None:
+    existing_games = list(Game.objects.filter(xbox_id__in=xbox_ids))
+    existing_ids = {game.xbox_id for game in existing_games}
+    logger.info(f"Found {len(existing_games)} games already in local DB out of {len(xbox_ids)}")
+
+    missing_ids = [tid for tid in xbox_ids if tid not in existing_ids]
+    logger.info(f"Missing {len(missing_ids)} games to fetch from IGDB")
+
+    chunk_size = 50
+    for i in range(0, len(missing_ids), chunk_size):
+        chunk = missing_ids[i : i + chunk_size]
+        _resolve_and_save_missing_games(chunk)
+
+    all_matched_games = Game.objects.filter(xbox_id__in=xbox_ids)
+    logger.info(f"Total matched games in DB ready to map: {all_matched_games.count()} out of {len(xbox_ids)}")
+
+    with transaction.atomic():
+        for game in all_matched_games:
+            playtime_hours = titleid_to_playtime.get(game.xbox_id, 0)
+            user_game, created = UserGame.objects.get_or_create(user=user, game=game)
+            if not created and playtime_hours > user_game.playtime_forever:
+                user_game.playtime_forever = playtime_hours
+                user_game.save(update_fields=["playtime_forever", "date_modified"])
+
+        sync_xbox_entries_for_matched_games(user, all_matched_games)
+
+    user.xbox_profile.gamerscore = gamerscore
+    user.xbox_profile.last_sync_at = timezone.now()
+    user.xbox_profile.save(update_fields=["last_sync_at", "gamerscore"])
+
+
+def _map_xbox_to_igdb(ext_games: list[dict]) -> dict:
+    xbox_to_igdb_id = {}
+    for ext in ext_games:
+        game_id = ext.get("game")
+        if isinstance(game_id, dict):
+            game_id = game_id.get("id")
+        uid = ext.get("uid")
+        if game_id and uid and uid not in xbox_to_igdb_id:
+            xbox_to_igdb_id[uid] = game_id
+    return xbox_to_igdb_id
+
+
+def _resolve_and_save_missing_games(xbox_ids: List[str]) -> None:
+    if not xbox_ids:
+        return
+
+    ext_games = fetch_external_games(xbox_ids, category=6)
+    xbox_to_igdb_id = _map_xbox_to_igdb(ext_games)
+
+    if not xbox_to_igdb_id:
+        logger.warning(f"Could not map any of the {len(xbox_ids)} Xbox Title IDs to IGDB.")
+        return
+
+    igdb_id_to_xbox = {v: k for k, v in xbox_to_igdb_id.items()}
+    igdb_games = fetch_igdb_games_by_ids(list(igdb_id_to_xbox.keys()))
+
+    if igdb_games:
+        logger.info(f"IGDB request for {len(xbox_ids)} missing xbox_ids returned {len(igdb_games)} mapped games")
+
+    for igdb_game in igdb_games:
+        external_id = igdb_id_to_xbox.get(igdb_game.get("id"))
+        if external_id:
+            process_single_igdb_game(igdb_game, external_id, "xbox_id")
+
+
+def _update_social_token(social_token: SocialToken, oauth: OAuth2TokenResponse) -> None:
+    social_token.token = oauth.access_token
+    social_token.token_secret = oauth.refresh_token
+    social_token.save(update_fields=["token", "token_secret"])

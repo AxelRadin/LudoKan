@@ -71,6 +71,8 @@ ignore:
     reason: "Won't fix by Debian - libgnutls30t64 system package"
   - vulnerability: CVE-2026-33846
     reason: "Debian trixie libgnutls30t64: no fixed package available yet; monitor and rebuild when fixed version is released"
+  - vulnerability: GHSA-wj6h-64fc-37mp
+    reason: "Debian trixie python3.11: no fixed package available yet; monitor and rebuild when fixed version is released"
 
 # Sources de données de vulnérabilités
 db:
