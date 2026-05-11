@@ -1237,6 +1237,193 @@ type ProfileIntegrationsProps = Readonly<{
   glassCard: any;
 }>;
 
+type IntegrationCardProps = {
+  label: string;
+  desc: string;
+  iconChar: string;
+  iconBg: string;
+  isConnected: boolean;
+  statusLabel: string;
+  isBusy: boolean;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  onSync: () => void;
+  syncTooltip: string;
+  syncTooltipDefault: string;
+  syncLabel: string;
+  disconnectLabel: string;
+  connectLabel: string;
+  connectStyles?: any;
+  syncStyles?: any;
+  C: ReturnType<typeof useThemeColors>;
+  glassCard: any;
+  mt?: number;
+};
+
+function IntegrationCard({
+  label,
+  desc,
+  iconChar,
+  iconBg,
+  isConnected,
+  statusLabel,
+  isBusy,
+  onConnect,
+  onDisconnect,
+  onSync,
+  syncTooltip,
+  syncTooltipDefault,
+  syncLabel,
+  disconnectLabel,
+  connectLabel,
+  connectStyles,
+  syncStyles,
+  C,
+  glassCard,
+  mt = 0,
+}: IntegrationCardProps) {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        ...glassCard,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'stretch', sm: 'center' },
+        justifyContent: 'space-between',
+        gap: 2,
+        p: '22px 28px',
+        mt,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Avatar
+          sx={{
+            bgcolor: iconBg,
+            color: '#fff',
+            width: 48,
+            height: 48,
+            fontWeight: 700,
+            fontFamily: FONT_DISPLAY,
+          }}
+        >
+          {iconChar}
+        </Avatar>
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              fontWeight: 700,
+              fontSize: 16,
+              color: C.title,
+            }}
+          >
+            {label}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              color: C.muted,
+              fontSize: 13,
+              lineHeight: 1.4,
+            }}
+          >
+            {desc}
+          </Typography>
+        </Box>
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          gap: 1.5,
+        }}
+      >
+        {isConnected ? (
+          <>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                color: iconBg === '#171a21' ? '#43a047' : iconBg,
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              {statusLabel}
+            </Typography>
+            <Tooltip title={isBusy ? syncTooltip : syncTooltipDefault} arrow>
+              <span>
+                <Button
+                  onClick={onSync}
+                  disabled={isBusy}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 999,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontFamily: FONT_BODY,
+                    minWidth: 130,
+                    ...syncStyles,
+                  }}
+                >
+                  {isBusy ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    syncLabel
+                  )}
+                </Button>
+              </span>
+            </Tooltip>
+            <Button
+              onClick={onDisconnect}
+              disabled={isBusy}
+              variant="outlined"
+              color="error"
+              sx={{
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontFamily: FONT_BODY,
+                minWidth: 130,
+              }}
+            >
+              {isBusy ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                disconnectLabel
+              )}
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={onConnect}
+            disabled={isBusy}
+            variant="contained"
+            sx={{
+              borderRadius: 999,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontFamily: FONT_BODY,
+              minWidth: 130,
+              bgcolor: iconBg,
+              color: '#fff',
+              '&:hover': { bgcolor: iconBg }, // Default hover same as bg
+              ...connectStyles,
+            }}
+          >
+            {isBusy ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              connectLabel
+            )}
+          </Button>
+        )}
+      </Box>
+    </Paper>
+  );
+}
+
 function ProfileIntegrations({
   steam_id,
   steamBusy,
@@ -1256,301 +1443,58 @@ function ProfileIntegrations({
   return (
     <Box sx={{ mb: 2.5 }}>
       <ProfileSectionHeader label={t('profilePage.integrationsLabel')} C={C} />
-      <Paper
-        elevation={0}
-        sx={{
-          ...glassCard,
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 2,
-          p: '22px 28px',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar
-            sx={{
-              bgcolor: '#171a21',
-              color: '#fff',
-              width: 48,
-              height: 48,
-              fontWeight: 700,
-              fontFamily: FONT_DISPLAY,
-            }}
-          >
-            S
-          </Avatar>
-          <Box>
-            <Typography
-              sx={{
-                fontFamily: FONT_BODY,
-                fontWeight: 700,
-                fontSize: 16,
-                color: C.title,
-              }}
-            >
-              {t('profilePage.steamLabel')}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONT_BODY,
-                color: C.muted,
-                fontSize: 13,
-                lineHeight: 1.4,
-              }}
-            >
-              {t('profilePage.steamDesc')}
-            </Typography>
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-            gap: 1.5,
-          }}
-        >
-          {steam_id ? (
-            <>
-              <Typography
-                sx={{
-                  fontFamily: FONT_BODY,
-                  color: '#43a047',
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                {t('profilePage.steamConnected')}
-              </Typography>
-              <Tooltip
-                title={
-                  steamBusy
-                    ? t('profilePage.steamSyncTooltip')
-                    : t('profilePage.steamSyncTooltipDefault')
-                }
-                arrow
-              >
-                <span>
-                  <Button
-                    onClick={onSteamSync}
-                    disabled={steamBusy}
-                    variant="outlined"
-                    color="info"
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontFamily: FONT_BODY,
-                      minWidth: 130,
-                    }}
-                  >
-                    {steamBusy ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      t('profilePage.steamSync')
-                    )}
-                  </Button>
-                </span>
-              </Tooltip>
-              <Button
-                onClick={onSteamDisconnect}
-                disabled={steamBusy}
-                variant="outlined"
-                color="error"
-                sx={{
-                  borderRadius: 999,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontFamily: FONT_BODY,
-                  minWidth: 130,
-                }}
-              >
-                {steamBusy ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  t('profilePage.steamDisconnect')
-                )}
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={onSteamConnect}
-              disabled={steamBusy}
-              variant="contained"
-              sx={{
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontFamily: FONT_BODY,
-                bgcolor: '#171a21',
-                color: '#fff',
-                '&:hover': { bgcolor: '#2a475e' },
-                minWidth: 130,
-              }}
-            >
-              {steamBusy ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                t('profilePage.steamConnect')
-              )}
-            </Button>
-          )}
-        </Box>
-      </Paper>
 
-      {/* Bloc Xbox */}
-      <Paper
-        elevation={0}
-        sx={{
-          ...glassCard,
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 2,
-          p: '22px 28px',
-          mt: 2,
+      <IntegrationCard
+        label={t('profilePage.steamLabel')}
+        desc={t('profilePage.steamDesc')}
+        iconChar="S"
+        iconBg="#171a21"
+        isConnected={!!steam_id}
+        statusLabel={t('profilePage.steamConnected')}
+        isBusy={steamBusy}
+        onConnect={onSteamConnect}
+        onDisconnect={onSteamDisconnect}
+        onSync={onSteamSync}
+        syncTooltip={t('profilePage.steamSyncTooltip')}
+        syncTooltipDefault={t('profilePage.steamSyncTooltipDefault')}
+        syncLabel={t('profilePage.steamSync')}
+        disconnectLabel={t('profilePage.steamDisconnect')}
+        connectLabel={t('profilePage.steamConnect')}
+        connectStyles={{ '&:hover': { bgcolor: '#2a475e' } }}
+        syncStyles={{ borderColor: '#0288d1', color: '#0288d1' }}
+        C={C}
+        glassCard={glassCard}
+      />
+
+      <IntegrationCard
+        label={t('profilePage.xboxLabel')}
+        desc={t('profilePage.xboxDesc')}
+        iconChar="X"
+        iconBg="#107C10"
+        isConnected={!!xbox_profile}
+        statusLabel={xbox_profile?.gamertag || t('profilePage.xboxConnected')}
+        isBusy={xboxBusy}
+        onConnect={onXboxConnect}
+        onDisconnect={onXboxDisconnect}
+        onSync={onXboxSync}
+        syncTooltip={t('profilePage.xboxSyncTooltip')}
+        syncTooltipDefault={t('profilePage.xboxSyncTooltipDefault')}
+        syncLabel={t('profilePage.xboxSync')}
+        disconnectLabel={t('profilePage.xboxDisconnect')}
+        connectLabel={t('profilePage.xboxConnect')}
+        connectStyles={{ '&:hover': { bgcolor: '#0d620d' } }}
+        syncStyles={{
+          borderColor: '#107C10',
+          color: '#107C10',
+          '&:hover': {
+            borderColor: '#0d620d',
+            bgcolor: 'rgba(16, 124, 16, 0.04)',
+          },
         }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar
-            sx={{
-              bgcolor: '#107C10',
-              color: '#fff',
-              width: 48,
-              height: 48,
-              fontWeight: 700,
-              fontFamily: FONT_DISPLAY,
-            }}
-          >
-            X
-          </Avatar>
-          <Box>
-            <Typography
-              sx={{
-                fontFamily: FONT_BODY,
-                fontWeight: 700,
-                fontSize: 16,
-                color: C.title,
-              }}
-            >
-              {t('profilePage.xboxLabel')}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONT_BODY,
-                color: C.muted,
-                fontSize: 13,
-                lineHeight: 1.4,
-              }}
-            >
-              {t('profilePage.xboxDesc')}
-            </Typography>
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-            gap: 1.5,
-          }}
-        >
-          {xbox_profile ? (
-            <>
-              <Typography
-                sx={{
-                  fontFamily: FONT_BODY,
-                  color: '#107C10',
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                {xbox_profile.gamertag || t('profilePage.xboxConnected')}
-              </Typography>
-              <Tooltip
-                title={
-                  xboxBusy
-                    ? t('profilePage.xboxSyncTooltip')
-                    : t('profilePage.xboxSyncTooltipDefault')
-                }
-                arrow
-              >
-                <span>
-                  <Button
-                    onClick={onXboxSync}
-                    disabled={xboxBusy}
-                    variant="outlined"
-                    color="success"
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontFamily: FONT_BODY,
-                      minWidth: 130,
-                      borderColor: '#107C10',
-                      color: '#107C10',
-                      '&:hover': {
-                        borderColor: '#0d620d',
-                        bgcolor: 'rgba(16, 124, 16, 0.04)',
-                      },
-                    }}
-                  >
-                    {xboxBusy ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      t('profilePage.xboxSync')
-                    )}
-                  </Button>
-                </span>
-              </Tooltip>
-              <Button
-                onClick={onXboxDisconnect}
-                disabled={xboxBusy}
-                variant="outlined"
-                color="error"
-                sx={{
-                  borderRadius: 999,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontFamily: FONT_BODY,
-                  minWidth: 130,
-                }}
-              >
-                {xboxBusy ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  t('profilePage.xboxDisconnect')
-                )}
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={onXboxConnect}
-              disabled={xboxBusy}
-              variant="contained"
-              sx={{
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontFamily: FONT_BODY,
-                bgcolor: '#107C10',
-                color: '#fff',
-                '&:hover': { bgcolor: '#0d620d' },
-                minWidth: 130,
-              }}
-            >
-              {xboxBusy ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                t('profilePage.xboxConnect')
-              )}
-            </Button>
-          )}
-        </Box>
-      </Paper>
+        C={C}
+        glassCard={glassCard}
+        mt={2}
+      />
     </Box>
   );
 }
