@@ -169,6 +169,18 @@ class TestFriendRequestActionsErrors:
         r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/accept/", {}, format="json")
         assert r.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_decline_non_pending_returns_400(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="dn@ex.com", pseudo="declnp", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=other, to_user=user, status=FriendRequest.Status.DECLINED)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/decline/", {}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_cancel_non_pending_returns_400(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="cn@ex.com", pseudo="cancnp", password="x" * 8 + "1Aa")
+        fr = FriendRequest.objects.create(from_user=user, to_user=other, status=FriendRequest.Status.DECLINED)
+        r = jwt_authenticated_client.post(f"/api/social/friend-requests/{fr.pk}/cancel/", {}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+
 
 @pytest.mark.django_db
 class TestRemoveFriendErrors:
