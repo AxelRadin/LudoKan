@@ -2,9 +2,9 @@ import { driver } from 'driver.js';
 import { useCallback, useRef } from 'react';
 import { TOUR_STEPS } from './tourSteps';
 
-// 0 = search, 1 = genres : informatifs uniquement, pas de clic requis
-// 4 = matchmaking : élément absent si aucune recherche active
-const OPTIONAL_STEPS = new Set([0, 1, 4]);
+// 0 = search, 1 = genres, 4 = profile-library : informatifs uniquement, pas de clic requis
+// 5 = matchmaking : élément absent si aucune recherche active
+const OPTIONAL_STEPS = new Set([0, 1, 4, 5]);
 
 export interface UseTourOptions {
   onDone: () => void;

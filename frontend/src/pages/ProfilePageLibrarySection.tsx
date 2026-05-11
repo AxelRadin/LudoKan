@@ -118,6 +118,7 @@ export default function ProfilePageLibrarySection({
 
   return (
     <Paper
+      data-tour="profile-library"
       elevation={0}
       className="lib-section"
       sx={{

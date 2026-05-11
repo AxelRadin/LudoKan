@@ -43,6 +43,16 @@ export const TOUR_STEPS: DriveStep[] = [
     },
   },
   {
+    element: '[data-tour="profile-library"]',
+    popover: {
+      title: '📚 Ta bibliothèque',
+      description:
+        "Retrouve ici tous tes jeux : en cours, terminés, en liste d'envie… Filtre et organise ta collection comme tu veux.",
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="matchmaking"]',
     popover: {
       title: '🎮 Matchmaking',
