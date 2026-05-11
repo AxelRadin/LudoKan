@@ -1,8 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 
+from apps.social.blocking import pair_has_block
 from apps.users.serializers import PublicUserProfileSerializer
 
 User = get_user_model()
@@ -21,4 +23,8 @@ class UserPublicProfileView(RetrieveAPIView):
 
     def get_object(self):
         pseudo = self.kwargs["pseudo"]
-        return get_object_or_404(self.get_queryset(), pseudo=pseudo)
+        owner = get_object_or_404(self.get_queryset(), pseudo=pseudo)
+        user = self.request.user
+        if user.is_authenticated and pair_has_block(user, owner):
+            raise NotFound()
+        return owner
