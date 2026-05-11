@@ -8,9 +8,10 @@ const OPTIONAL_STEPS = new Set([0, 1, 4, 5]);
 
 export interface UseTourOptions {
   onDone: () => void;
+  navigate: (path: string) => void;
 }
 
-export function useTour({ onDone }: UseTourOptions) {
+export function useTour({ onDone, navigate }: UseTourOptions) {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const clickedRef = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -33,9 +34,10 @@ export function useTour({ onDone }: UseTourOptions) {
         if (!element) return;
         const handler = () => {
           clickedRef.current = true;
-          // profile step: auto-advance so the dropdown doesn't open under the overlay
+          // profile step: navigate to profile page then advance (avoids dropdown/overlay conflict)
           if ((driverRef.current?.getActiveIndex() ?? -1) === 3) {
-            setTimeout(() => driverRef.current?.moveNext(), 250);
+            navigate('/profile');
+            setTimeout(() => driverRef.current?.moveNext(), 500);
           }
         };
         element.addEventListener('click', handler);
@@ -72,7 +74,7 @@ export function useTour({ onDone }: UseTourOptions) {
     });
 
     driverRef.current.drive();
-  }, [onDone]);
+  }, [onDone, navigate]);
 
   return { startTour };
 }

@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import CookieBanner from './pages/CookieBanner';
 import Footer from './components/Footer';
@@ -15,9 +15,10 @@ const App = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { shouldShow, markAsDone } = useOnboarding();
-  const { startTour } = useTour({ onDone: markAsDone });
+  const { startTour } = useTour({ onDone: markAsDone, navigate });
 
   // Premier lancement automatique
   useEffect(() => {
