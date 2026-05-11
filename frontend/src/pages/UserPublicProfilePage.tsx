@@ -1,9 +1,17 @@
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import {
   Alert,
   Avatar,
   Box,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Menu,
+  MenuItem,
   Paper,
   Snackbar,
   Typography,
@@ -41,6 +49,7 @@ import {
 } from '../api/publicProfile';
 import {
   acceptFriendRequest,
+  blockUser,
   cancelFriendRequest,
   declineFriendRequest,
   removeFriend,
@@ -111,6 +120,11 @@ export default function UserPublicProfilePage() {
     message: '',
     error: false,
   });
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
 
   const collectionFilterId = useMemo(
     () =>
@@ -456,6 +470,7 @@ export default function UserPublicProfilePage() {
           elevation={0}
           sx={{
             ...glassCard,
+            position: 'relative',
             p: { xs: 2.5, md: 3.5 },
             display: 'flex',
             flexDirection: { xs: 'column', sm: 'row' },
@@ -475,17 +490,49 @@ export default function UserPublicProfilePage() {
           >
             {profile.pseudo?.[0]?.toUpperCase() || '?'}
           </Avatar>
-          <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-            <Typography
+          <Box
+            sx={{
+              flex: 1,
+              textAlign: { xs: 'center', sm: 'left' },
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
+            <Box
               sx={{
-                fontFamily: FONT_DISPLAY,
-                fontWeight: 800,
-                fontSize: { xs: 28, md: 34 },
-                color: titleColor,
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 1,
+                width: '100%',
               }}
             >
-              {profile.pseudo}
-            </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONT_DISPLAY,
+                  fontWeight: 800,
+                  fontSize: { xs: 28, md: 34 },
+                  color: titleColor,
+                  flex: '1 1 auto',
+                  minWidth: 0,
+                }}
+              >
+                {profile.pseudo}
+              </Typography>
+              {isAuthenticated &&
+              authUser?.pseudo &&
+              profile.pseudo?.toLowerCase() !==
+                authUser.pseudo.toLowerCase() ? (
+                <IconButton
+                  aria-label={t('publicUserProfile.moreOptionsAria')}
+                  size="small"
+                  onClick={e => setMoreMenuAnchor(e.currentTarget)}
+                  sx={{ flexShrink: 0, color: muted }}
+                >
+                  <MoreVertIcon />
+                </IconButton>
+              ) : null}
+            </Box>
             <Typography
               sx={{
                 fontFamily: FONT_BODY,
@@ -727,6 +774,82 @@ export default function UserPublicProfilePage() {
           </Button>
         </Box>
       </Box>
+
+      <Menu
+        anchorEl={moreMenuAnchor}
+        open={Boolean(moreMenuAnchor)}
+        onClose={() => setMoreMenuAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem
+          onClick={() => {
+            setMoreMenuAnchor(null);
+            setBlockDialogOpen(true);
+          }}
+          sx={{ fontFamily: FONT_BODY }}
+        >
+          {t('publicUserProfile.blockUser')}
+        </MenuItem>
+      </Menu>
+
+      <Dialog
+        open={blockDialogOpen}
+        onClose={() => !blockBusy && setBlockDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ fontFamily: FONT_DISPLAY, fontWeight: 700 }}>
+          {t('publicUserProfile.blockConfirmTitle')}
+        </DialogTitle>
+        <DialogContent sx={{ fontFamily: FONT_BODY }}>
+          {t('publicUserProfile.blockConfirmBody', { pseudo: profile.pseudo })}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setBlockDialogOpen(false)}
+            disabled={blockBusy}
+            sx={{ fontFamily: FONT_BODY }}
+          >
+            {t('profilePage.cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={blockBusy}
+            onClick={() => {
+              setBlockBusy(true);
+              void (async () => {
+                try {
+                  await blockUser({ user_id: profile.id });
+                  setBlockDialogOpen(false);
+                  setSnackbar({
+                    open: true,
+                    message: t('publicUserProfile.blockSuccess'),
+                    error: false,
+                  });
+                  navigate('/friends?tab=blocked');
+                } catch {
+                  setSnackbar({
+                    open: true,
+                    message: t('publicUserProfile.blockError'),
+                    error: true,
+                  });
+                } finally {
+                  setBlockBusy(false);
+                }
+              })();
+            }}
+            sx={{ fontFamily: FONT_BODY }}
+          >
+            {blockBusy ? (
+              <CircularProgress size={22} color="inherit" />
+            ) : (
+              t('publicUserProfile.blockConfirm')
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
