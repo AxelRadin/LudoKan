@@ -58,7 +58,7 @@ async def _async_sync_xbox_library(user: CustomUser, token: SocialToken) -> None
             await auth_mgr.request_user_token()
             await auth_mgr.request_xsts_token()
         except Exception as e:
-            logger.error(f"Failed to authenticate with Xbox Live for user {user.pseudo}: {e}")
+            logger.exception(f"Failed to authenticate with Xbox Live for user {user.pseudo}: {e}")
             return
 
         xuid = await sync_to_async(getattr)(user.xbox_profile, "xbox_xuid")
@@ -70,12 +70,12 @@ async def _async_sync_xbox_library(user: CustomUser, token: SocialToken) -> None
             if profiles and len(profiles) > 0:
                 gamerscore = profiles[0].gamerscore
         except Exception as e:
-            logger.error(f"Failed to fetch Xbox profile for user {user.pseudo}: {e}")
+            logger.exception(f"Failed to fetch Xbox profile for user {user.pseudo}: {e}")
 
         try:
             title_history = await client.titlehub.get_title_history(xuid)
         except Exception as e:
-            logger.error(f"Failed to fetch Xbox title history for user {user.pseudo}: {e}")
+            logger.exception(f"Failed to fetch Xbox title history for user {user.pseudo}: {e}")
             return
 
     if not title_history or not title_history.titles:

@@ -20,4 +20,4 @@ def sync_steam_library_task(user_id: int):
     except User.DoesNotExist:
         logger.error(f"Celery task failed: user_id={user_id} does not exist.")
     except Exception as e:
-        logger.error(f"Celery task failed for user_id={user_id}: {e}")
+        logger.exception(f"Celery task failed for user_id={user_id}: {e}")

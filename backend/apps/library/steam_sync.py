@@ -42,7 +42,7 @@ def sync_steam_library(user: CustomUser) -> None:
         response.raise_for_status()
         data = response.json()
     except Exception as e:
-        logger.error(f"Failed to fetch Steam library for user {user.pseudo}: {e}")
+        logger.exception(f"Failed to fetch Steam library for user {user.pseudo}: {e}")
         return
 
     games_data = data.get("response", {}).get("games", [])

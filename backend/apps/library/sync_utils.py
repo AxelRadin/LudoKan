@@ -19,7 +19,7 @@ def fetch_external_games(platform_ids: List[str], category: int) -> list[dict]:
             return []
         return ext_games
     except Exception as e:
-        logger.error(f"IGDB external_games resolution error (category {category}): {e}")
+        logger.exception(f"IGDB external_games resolution error (category {category}): {e}")
         return []
 
 
@@ -33,7 +33,7 @@ def fetch_igdb_games_by_ids(igdb_ids: list[int]) -> list[dict]:
             return []
         return igdb_games
     except Exception as e:
-        logger.error(f"IGDB games resolution error: {e}")
+        logger.exception(f"IGDB games resolution error: {e}")
         return []
 
 
