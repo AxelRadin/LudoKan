@@ -10,6 +10,8 @@ from apps.social.blocking import pair_has_block
 from apps.social.models import FriendRequest, Friendship, UserBlock
 from apps.social.utils import are_friends, create_friendship, delete_friendship, pending_request_between
 
+FRIEND_REQUEST_NOT_PENDING_MSG = "Cette demande n’est plus en attente."
+
 
 def _notify_friend_request_received(from_user, to_user) -> None:
     notify.send(
@@ -87,7 +89,7 @@ def accept_friend_request(request: FriendRequest, accepter) -> Friendship:
     if request.to_user_id != accepter.pk:
         raise PermissionError("Seul le destinataire peut accepter.")
     if request.status != FriendRequest.Status.PENDING:
-        raise ValueError("Cette demande n’est plus en attente.")
+        raise ValueError(FRIEND_REQUEST_NOT_PENDING_MSG)
 
     friendship = create_friendship(request.from_user, request.to_user)
     requester = request.from_user
@@ -101,7 +103,7 @@ def decline_friend_request(request: FriendRequest, user) -> None:
     if request.to_user_id != user.pk:
         raise PermissionError("Seul le destinataire peut refuser.")
     if request.status != FriendRequest.Status.PENDING:
-        raise ValueError("Cette demande n’est plus en attente.")
+        raise ValueError(FRIEND_REQUEST_NOT_PENDING_MSG)
     request.delete()
 
 
@@ -110,7 +112,7 @@ def cancel_friend_request(request: FriendRequest, user) -> None:
     if request.from_user_id != user.pk:
         raise PermissionError("Seul l’expéditeur peut annuler.")
     if request.status != FriendRequest.Status.PENDING:
-        raise ValueError("Cette demande n’est plus en attente.")
+        raise ValueError(FRIEND_REQUEST_NOT_PENDING_MSG)
     request.delete()
 
 
