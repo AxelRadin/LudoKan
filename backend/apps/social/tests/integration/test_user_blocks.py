@@ -1,5 +1,7 @@
 """Tests blocage utilisateur (API, recherche, profil public, demandes d’ami)."""
 
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -87,3 +89,9 @@ class TestUserBlocks:
     def test_unblock_unknown_returns_404(self, jwt_authenticated_client, user):
         r = jwt_authenticated_client.delete("/api/social/blocks/999999999/")
         assert r.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_block_valueerror_from_service_returns_400(self, jwt_authenticated_client, user):
+        other = User.objects.create_user(email="ve@ex.com", pseudo="veval", password="x" * 8 + "1Aa")
+        with patch("apps.social.views.block_user", side_effect=ValueError("Message métier.")):
+            r = jwt_authenticated_client.post("/api/social/blocks/", {"user_id": other.pk}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
