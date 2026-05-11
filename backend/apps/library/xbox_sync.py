@@ -98,38 +98,39 @@ async def _async_sync_xbox_library(user: CustomUser, token: SocialToken) -> None
 
     xbox_ids = list(titleid_to_playtime.keys())
 
-    def db_operations():
-        existing_games = list(Game.objects.filter(xbox_id__in=xbox_ids))
-        existing_ids = {game.xbox_id for game in existing_games}
-        logger.info(f"Found {len(existing_games)} games already in local DB out of {len(xbox_ids)}")
-
-        missing_ids = [tid for tid in xbox_ids if tid not in existing_ids]
-        logger.info(f"Missing {len(missing_ids)} games to fetch from IGDB")
-
-        chunk_size = 50
-        for i in range(0, len(missing_ids), chunk_size):
-            chunk = missing_ids[i : i + chunk_size]
-            _resolve_and_save_missing_games(chunk)
-
-        all_matched_games = Game.objects.filter(xbox_id__in=xbox_ids)
-        logger.info(f"Total matched games in DB ready to map: {all_matched_games.count()} out of {len(xbox_ids)}")
-
-        with transaction.atomic():
-            for game in all_matched_games:
-                playtime_hours = titleid_to_playtime.get(game.xbox_id, 0)
-                user_game, created = UserGame.objects.get_or_create(user=user, game=game)
-                if not created and playtime_hours > user_game.playtime_forever:
-                    user_game.playtime_forever = playtime_hours
-                    user_game.save(update_fields=["playtime_forever", "date_modified"])
-
-            sync_xbox_entries_for_matched_games(user, all_matched_games)
-
-        user.xbox_profile.gamerscore = gamerscore
-        user.xbox_profile.last_sync_at = timezone.now()
-        user.xbox_profile.save(update_fields=["last_sync_at", "gamerscore"])
-
-    await sync_to_async(db_operations)()
+    await sync_to_async(_process_xbox_db_operations)(user, xbox_ids, titleid_to_playtime, gamerscore)
     logger.info(f"Xbox synchronization complete for user {user.pseudo}")
+
+
+def _process_xbox_db_operations(user: CustomUser, xbox_ids: List[str], titleid_to_playtime: dict, gamerscore: int) -> None:
+    existing_games = list(Game.objects.filter(xbox_id__in=xbox_ids))
+    existing_ids = {game.xbox_id for game in existing_games}
+    logger.info(f"Found {len(existing_games)} games already in local DB out of {len(xbox_ids)}")
+
+    missing_ids = [tid for tid in xbox_ids if tid not in existing_ids]
+    logger.info(f"Missing {len(missing_ids)} games to fetch from IGDB")
+
+    chunk_size = 50
+    for i in range(0, len(missing_ids), chunk_size):
+        chunk = missing_ids[i : i + chunk_size]
+        _resolve_and_save_missing_games(chunk)
+
+    all_matched_games = Game.objects.filter(xbox_id__in=xbox_ids)
+    logger.info(f"Total matched games in DB ready to map: {all_matched_games.count()} out of {len(xbox_ids)}")
+
+    with transaction.atomic():
+        for game in all_matched_games:
+            playtime_hours = titleid_to_playtime.get(game.xbox_id, 0)
+            user_game, created = UserGame.objects.get_or_create(user=user, game=game)
+            if not created and playtime_hours > user_game.playtime_forever:
+                user_game.playtime_forever = playtime_hours
+                user_game.save(update_fields=["playtime_forever", "date_modified"])
+
+        sync_xbox_entries_for_matched_games(user, all_matched_games)
+
+    user.xbox_profile.gamerscore = gamerscore
+    user.xbox_profile.last_sync_at = timezone.now()
+    user.xbox_profile.save(update_fields=["last_sync_at", "gamerscore"])
 
 
 def _process_single_igdb_game(igdb_game: dict, igdb_id_to_xbox: dict) -> None:
@@ -188,9 +189,8 @@ def _map_xbox_to_igdb(ext_games: list[dict]) -> dict:
         if isinstance(game_id, dict):
             game_id = game_id.get("id")
         uid = ext.get("uid")
-        if game_id and uid:
-            if uid not in xbox_to_igdb_id:
-                xbox_to_igdb_id[uid] = game_id
+        if game_id and uid and uid not in xbox_to_igdb_id:
+            xbox_to_igdb_id[uid] = game_id
     return xbox_to_igdb_id
 
 
