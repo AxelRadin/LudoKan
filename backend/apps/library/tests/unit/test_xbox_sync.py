@@ -206,3 +206,41 @@ class XboxSyncTest(TestCase):
         from apps.library.sync_utils import process_single_igdb_game
 
         process_single_igdb_game({"name": "Fake"}, "xbox1", "xbox_id")
+
+    @patch("apps.library.xbox_sync.XboxLiveClient")
+    @patch("apps.library.xbox_sync.AuthenticationManager")
+    def test_sync_xbox_library_token_refresh_success(self, mock_auth_mgr_class, mock_client_class):
+        """
+        Vérifie que si la première tentative d'auth échoue, on tente un refresh
+        et on met à jour le SocialToken.
+        """
+        mock_auth_mgr = mock_auth_mgr_class.return_value
+        # Premier appel échoue, le refresh réussit, puis les appels suivants passent
+        mock_auth_mgr.request_user_token.side_effect = [Exception("Expired"), None]
+        mock_auth_mgr.request_xsts_token.return_value = None
+
+        # Simuler un nouvel objet oauth après refresh
+        new_oauth = MagicMock()
+        new_oauth.access_token = "new_access_token"
+        new_oauth.refresh_token = "new_refresh_token"
+
+        async def do_refresh():
+            mock_auth_mgr.oauth = new_oauth
+
+        mock_auth_mgr.refresh_tokens = AsyncMock(side_effect=do_refresh)
+
+        mock_client = mock_client_class.return_value
+        mock_client.profile.get_profiles = AsyncMock(return_value=[MagicMock(gamerscore=1500)])
+        mock_history = MagicMock()
+        mock_history.titles = []
+        mock_client.titlehub.get_title_history = AsyncMock(return_value=mock_history)
+
+        sync_xbox_library(self.user)
+
+        # Vérifier que refresh_tokens a été appelé
+        mock_auth_mgr.refresh_tokens.assert_called_once()
+
+        # Vérifier que le SocialToken a été mis à jour en base
+        self.token.refresh_from_db()
+        self.assertEqual(self.token.token, "new_access_token")
+        self.assertEqual(self.token.token_secret, "new_refresh_token")

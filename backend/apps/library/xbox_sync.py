@@ -57,9 +57,15 @@ async def _async_sync_xbox_library(user: CustomUser, token: SocialToken) -> None
         try:
             await auth_mgr.request_user_token()
             await auth_mgr.request_xsts_token()
-        except Exception as e:
-            logger.exception(f"Failed to authenticate with Xbox Live for user {user.pseudo}: {e}")
-            return
+        except Exception:
+            logger.info(f"Token may be expired, attempting to refresh for user {user.pseudo}")
+            try:
+                await auth_mgr.refresh_tokens()
+                if auth_mgr.oauth:
+                    await sync_to_async(_update_social_token)(token, auth_mgr.oauth)
+            except Exception as refresh_err:
+                logger.exception(f"Failed to refresh and authenticate with Xbox Live for user {user.pseudo}: {refresh_err}")
+                return
 
         xuid = await sync_to_async(getattr)(user.xbox_profile, "xbox_xuid")
         client = XboxLiveClient(auth_mgr.user_token, auth_mgr.xsts_token)
@@ -164,3 +170,9 @@ def _resolve_and_save_missing_games(xbox_ids: List[str]) -> None:
         external_id = igdb_id_to_xbox.get(igdb_game.get("id"))
         if external_id:
             process_single_igdb_game(igdb_game, external_id, "xbox_id")
+
+
+def _update_social_token(social_token: SocialToken, oauth: OAuth2TokenResponse) -> None:
+    social_token.token = oauth.access_token
+    social_token.token_secret = oauth.refresh_token
+    social_token.save(update_fields=["token", "token_secret"])
