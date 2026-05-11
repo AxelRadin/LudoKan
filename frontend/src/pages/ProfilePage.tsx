@@ -1318,6 +1318,40 @@ function useResetInvalidLibraryCollectionFilter(
   ]);
 }
 
+function useProfilePageCollections(
+  userPseudo: string | undefined,
+  userGamesLength: number
+) {
+  const [collections, setCollections] = useState<UserCollection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+
+  const refreshCollections = useCallback(async () => {
+    try {
+      const list = await fetchMyCollections();
+      setCollections(list);
+    } catch {
+      setCollections([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setCollectionsLoading(true);
+    refreshCollections().finally(() => {
+      if (alive) setCollectionsLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [refreshCollections, userPseudo]);
+
+  useEffect(() => {
+    refreshCollections();
+  }, [userGamesLength, refreshCollections]);
+
+  return { collections, collectionsLoading, refreshCollections };
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1365,8 +1399,9 @@ export default function ProfilePage() {
     gamesLoading,
   } = useProfilePageModel();
 
-  const [collections, setCollections] = useState<UserCollection[]>([]);
-  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const { collections, collectionsLoading, refreshCollections } =
+    useProfilePageCollections(user?.pseudo, userGames.length);
+
   const [librarySectionMenuAnchor, setLibrarySectionMenuAnchor] =
     useState<null | HTMLElement>(null);
   const [createCollectionModalOpen, setCreateCollectionModalOpen] =
@@ -1374,30 +1409,6 @@ export default function ProfilePage() {
   const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
     useState(false);
   const [libraryPrivacyModalOpen, setLibraryPrivacyModalOpen] = useState(false);
-
-  const refreshCollections = useCallback(async () => {
-    try {
-      const list = await fetchMyCollections();
-      setCollections(list);
-    } catch {
-      setCollections([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    setCollectionsLoading(true);
-    refreshCollections().finally(() => {
-      if (alive) setCollectionsLoading(false);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [refreshCollections, user?.pseudo]);
-
-  useEffect(() => {
-    refreshCollections();
-  }, [userGames.length, refreshCollections]);
 
   const libraryFilter = useMemo(
     () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
