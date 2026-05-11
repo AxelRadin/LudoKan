@@ -73,3 +73,30 @@ class FriendRequest(models.Model):
 
     def __str__(self) -> str:
         return f"{self.from_user_id} → {self.to_user_id} ({self.status})"
+
+
+class UserBlock(models.Model):
+    """``blocker`` ne souhaite plus interagir avec ``blocked`` (symétrique côté API publique / recherche)."""
+
+    blocker = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="blocks_created",
+    )
+    blocked = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="blocks_received",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Blocage utilisateur"
+        verbose_name_plural = "Blocages utilisateurs"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["blocker", "blocked"], name="social_userblock_blocker_blocked_uniq"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.blocker_id} ⊘ {self.blocked_id}"

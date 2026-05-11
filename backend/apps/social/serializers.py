@@ -72,3 +72,24 @@ class FriendshipFriendSerializer(serializers.ModelSerializer):
 
     def get_friends_count(self, obj) -> int:
         return friends_count(obj)
+
+
+class BlockUserCreateSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(required=False)
+    pseudo = serializers.CharField(required=False, max_length=150, allow_blank=False)
+
+    def validate(self, attrs):
+        uid = attrs.get("user_id")
+        pseudo = (attrs.get("pseudo") or "").strip()
+        if uid is None and not pseudo:
+            raise serializers.ValidationError("Indique user_id ou pseudo.")
+        if uid is not None and pseudo:
+            raise serializers.ValidationError("Utilise soit user_id soit pseudo.")
+        return attrs
+
+    def resolve_blocked_user(self):
+        uid = self.validated_data.get("user_id")
+        pseudo = (self.validated_data.get("pseudo") or "").strip()
+        if uid is not None:
+            return User.objects.filter(pk=uid).first()
+        return User.objects.filter(pseudo__iexact=pseudo).first()

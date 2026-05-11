@@ -7,12 +7,16 @@ from apps.social.views import (
     FriendRequestViewSet,
     FriendsListView,
     RemoveFriendView,
+    UserBlockDeleteView,
+    UserBlockListCreateView,
     UserSearchView,
 )
 
 app_name = "social"
 
 urlpatterns = [
+    path("blocks/", UserBlockListCreateView.as_view(), name="user-blocks"),
+    path("blocks/<int:user_id>/", UserBlockDeleteView.as_view(), name="user-block-delete"),
     path("users/search/", UserSearchView.as_view(), name="social-user-search"),
     path("friend-requests/", FriendRequestViewSet.as_view({"get": "list", "post": "create"}), name="friend-requests"),
     path("friend-requests/<int:pk>/accept/", FriendRequestAcceptView.as_view(), name="friend-request-accept"),

@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.db import transaction
+from django.db.models import Q
 from notifications.signals import notify
 
-from apps.social.models import FriendRequest, Friendship
+from apps.social.blocking import pair_has_block
+from apps.social.models import FriendRequest, Friendship, UserBlock
 from apps.social.utils import are_friends, create_friendship, delete_friendship, pending_request_between
 
 
@@ -33,10 +35,20 @@ class SendFriendRequestResult:
     auto_accepted: bool = False
 
 
+def clear_pending_friend_requests_between(user_a, user_b) -> None:
+    FriendRequest.objects.filter(
+        status=FriendRequest.Status.PENDING,
+    ).filter(
+        (Q(from_user=user_a) & Q(to_user=user_b)) | (Q(from_user=user_b) & Q(to_user=user_a)),
+    ).delete()
+
+
 @transaction.atomic
 def send_friend_request(from_user, to_user) -> SendFriendRequestResult:
     if from_user.pk == to_user.pk:
         raise ValueError("Impossible de s’ajouter soi-même.")
+    if pair_has_block(from_user, to_user):
+        raise ValueError("Impossible d’envoyer une demande d’ami à cet utilisateur.")
     if are_friends(from_user, to_user):
         raise ValueError("Vous êtes déjà amis.")
 
@@ -107,6 +119,25 @@ def remove_friendship(user, other) -> None:
     if not are_friends(user, other):
         raise ValueError("Aucune amitié avec cet utilisateur.")
     delete_friendship(user, other)
+
+
+@transaction.atomic
+def block_user(blocker, blocked) -> UserBlock:
+    """Crée le blocage, supprime l’amitié et les demandes PENDING entre les deux."""
+    if blocker.pk == blocked.pk:
+        raise ValueError("Impossible de se bloquer soi-même.")
+    if are_friends(blocker, blocked):
+        delete_friendship(blocker, blocked)
+    clear_pending_friend_requests_between(blocker, blocked)
+    ub, _ = UserBlock.objects.get_or_create(blocker=blocker, blocked=blocked)
+    return ub
+
+
+@transaction.atomic
+def unblock_user(blocker, blocked_user_id: int) -> bool:
+    """Retourne True si une ligne a été supprimée."""
+    deleted, _ = UserBlock.objects.filter(blocker=blocker, blocked_id=blocked_user_id).delete()
+    return deleted > 0
 
 
 def relation_state(viewer, owner) -> str:

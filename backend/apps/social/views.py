@@ -9,9 +9,24 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from apps.social.models import FriendRequest
-from apps.social.serializers import FriendMiniSerializer, FriendRequestCreateSerializer, FriendRequestSerializer, FriendshipFriendSerializer
-from apps.social.services import accept_friend_request, cancel_friend_request, decline_friend_request, remove_friendship, send_friend_request
+from apps.social.blocking import blocked_user_ids_for
+from apps.social.models import FriendRequest, UserBlock
+from apps.social.serializers import (
+    BlockUserCreateSerializer,
+    FriendMiniSerializer,
+    FriendRequestCreateSerializer,
+    FriendRequestSerializer,
+    FriendshipFriendSerializer,
+)
+from apps.social.services import (
+    accept_friend_request,
+    block_user,
+    cancel_friend_request,
+    decline_friend_request,
+    remove_friendship,
+    send_friend_request,
+    unblock_user,
+)
 from apps.social.utils import friends_queryset_for
 
 User = get_user_model()
@@ -123,12 +138,15 @@ class UserSearchView(ListAPIView):
         q = (self.request.query_params.get("q") or "").strip()
         if len(q) < 2:
             return User.objects.none()
-        return (
+        exclude_ids = blocked_user_ids_for(self.request.user)
+        qs = (
             User.objects.filter(is_active=True)
             .exclude(pk=self.request.user.pk)
             .filter(Q(pseudo__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q))
-            .order_by("pseudo")[:25]
         )
+        if exclude_ids:
+            qs = qs.exclude(pk__in=exclude_ids)
+        return qs.order_by("pseudo")[:25]
 
 
 class RemoveFriendView(APIView):
@@ -140,4 +158,45 @@ class RemoveFriendView(APIView):
             remove_friendship(request.user, other)
         except ValueError as e:
             raise ValidationError(str(e)) from e
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class UserBlockListCreateView(APIView):
+    """
+    GET liste des utilisateurs bloqués par moi : [{ id, pseudo, avatar_url }, ...]
+    POST bloquer : body { user_id } ou { pseudo }
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        rows = UserBlock.objects.filter(blocker=request.user).select_related("blocked")
+        blocked_users = [r.blocked for r in rows]
+        ser = FriendMiniSerializer(blocked_users, many=True, context={"request": request})
+        return Response(ser.data)
+
+    def post(self, request):
+        ser = BlockUserCreateSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        blocked = ser.resolve_blocked_user()
+        if not blocked:
+            raise ValidationError({"blocked": "Utilisateur introuvable."})
+        if blocked.pk == request.user.pk:
+            raise ValidationError({"blocked": "Impossible de se bloquer soi-même."})
+        try:
+            block_user(request.user, blocked)
+        except ValueError as e:
+            raise ValidationError(str(e)) from e
+        out = FriendMiniSerializer(blocked, context={"request": request})
+        return Response(out.data, status=status.HTTP_201_CREATED)
+
+
+class UserBlockDeleteView(APIView):
+    """DELETE : débloquer ``user_id`` (identifiant de l’utilisateur bloqué)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, user_id):
+        if not unblock_user(request.user, user_id):
+            return Response(status=status.HTTP_404_NOT_FOUND)
         return Response(status=status.HTTP_204_NO_CONTENT)
