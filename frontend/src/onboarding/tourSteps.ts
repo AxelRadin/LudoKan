@@ -32,13 +32,10 @@ export const TOUR_STEPS: DriveStep[] = [
     },
   },
   {
-    element: '[data-tour="profile"]',
     popover: {
       title: '📚 Ta bibliothèque',
       description:
-        'Accède à ton profil pour gérer ta collection : jeux en cours, terminés, favoris et bien plus.',
-      side: 'bottom',
-      align: 'end',
+        "Clique sur le bouton 'Mon profil' en haut à droite, puis sur 'Mon profil' dans le menu déroulant.",
     },
   },
   {

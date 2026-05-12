@@ -20,7 +20,7 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useOnboarding } from '../hooks/useOnboarding';
+import { TOUR_KEYS } from '../hooks/useOnboarding';
 
 const settingsSectionHeadingSx = {
   color: 'text.secondary',
@@ -44,10 +44,8 @@ const settingsListRowButtonSx = {
 const SettingsPage: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
-  const { reset } = useOnboarding();
-
   const handleRestartTour = () => {
-    reset();
+    Object.values(TOUR_KEYS).forEach(key => localStorage.removeItem(key));
     navigate('/', { state: { startTour: true } });
   };
 

@@ -7,7 +7,7 @@ import CookieBanner from './pages/CookieBanner';
 import Footer from './components/Footer';
 import ForcedEmailModal from './components/ForcedEmailModal';
 import { useAuth } from './contexts/useAuth';
-import { useOnboarding } from './hooks/useOnboarding';
+import { useOnboarding, TOUR_KEYS } from './hooks/useOnboarding';
 import { useTour } from './onboarding/useTour';
 import './App.css';
 
@@ -17,8 +17,8 @@ const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const { shouldShow, markAsDone } = useOnboarding();
-  const { startTour } = useTour({ onDone: markAsDone });
+  const { shouldShow, markAsDone } = useOnboarding(TOUR_KEYS.home);
+  const { startTour, advanceIfOnProfileStep } = useTour({ onDone: markAsDone });
 
   // Premier lancement automatique — toujours depuis la homepage
   useEffect(() => {
@@ -30,6 +30,11 @@ const App = () => {
     // relancer le tour à chaque changement de route pendant le tour
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, shouldShow, startTour, navigate]);
+
+  // Avance le tour quand l'user navigue vers /profile via le dropdown
+  useEffect(() => {
+    if (location.pathname === '/profile') advanceIfOnProfileStep();
+  }, [location.pathname, advanceIfOnProfileStep]);
 
   // Relance depuis les paramètres via navigate('/', { state: { startTour: true } })
   useEffect(() => {

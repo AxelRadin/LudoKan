@@ -2,8 +2,8 @@ import { driver } from 'driver.js';
 import { useCallback, useRef } from 'react';
 import { TOUR_STEPS } from './tourSteps';
 
-// 0 = search, 1 = genres, 4 = profile-library : informatifs uniquement, pas de clic requis
-const OPTIONAL_STEPS = new Set([0, 1, 4]);
+// 0 = search, 1 = genres, 3 = profile (pas d'élément ciblé), 4 = profile-library : pas de clic requis
+const OPTIONAL_STEPS = new Set([0, 1, 3, 4]);
 
 export interface UseTourOptions {
   onDone: () => void;
@@ -69,5 +69,11 @@ export function useTour({ onDone }: UseTourOptions) {
     driverRef.current.drive();
   }, [onDone]);
 
-  return { startTour };
+  const advanceIfOnProfileStep = useCallback(() => {
+    if ((driverRef.current?.getActiveIndex() ?? -1) === 3) {
+      driverRef.current?.moveNext();
+    }
+  }, []);
+
+  return { startTour, advanceIfOnProfileStep };
 }
