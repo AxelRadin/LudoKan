@@ -36,6 +36,7 @@ import {
 } from '../components/UserCollectionModals';
 import SecondaryButton from '../components/SecondaryButton';
 import { fetchMyCollections, type UserCollection } from '../api/collections';
+import { formatPlaytime } from '../utils/timeUtils';
 import {
   deleteUserGame,
   fetchUserGames,
@@ -2162,7 +2163,7 @@ export default function ProfilePage() {
               },
               {
                 label: t('profilePage.playtimeLabel'),
-                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
+                value: formatPlaytime(user?.total_playtime),
                 cls: 'stat-card-1',
               },
               {
