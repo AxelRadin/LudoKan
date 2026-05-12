@@ -78,7 +78,7 @@ describe('FloatingMatchmakingWidget', () => {
       status: 'open',
       max_players: 4,
       members: [{ left_at: null }, { left_at: null }],
-    };
+    } as any;
 
     render(
       <FloatingMatchmakingWidget
@@ -92,7 +92,7 @@ describe('FloatingMatchmakingWidget', () => {
   });
 
   it("affiche l'état Chat correctement", () => {
-    const mockParty = { status: 'chat_active' };
+    const mockParty = { status: 'chat_active' } as any;
 
     render(
       <FloatingMatchmakingWidget
