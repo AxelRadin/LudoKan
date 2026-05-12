@@ -96,7 +96,9 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   useEffect(() => {
     if (isAuthenticated) {
       apiGet('/api/matchmaking/requests/')
-        .then(async reqs => {
+        .then(async res => {
+          const reqs = Array.isArray(res) ? res : res?.results;
+
           if (reqs?.length > 0) {
             const active = reqs[0];
             setActiveRequestId(active.id);
@@ -159,10 +161,10 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
           reqId = res.id;
           startedDate = new Date(res.created_at);
         } catch {
-          const activeReqs = await apiGet(
-            `/api/matchmaking/requests/?game=${gameId}`
-          );
-          if (activeReqs?.length > 0) {
+          const res = await apiGet(`/api/matchmaking/requests/?game=${gameId}`);
+          const activeReqs = Array.isArray(res) ? res : res?.results;
+
+          if (activeReqs && activeReqs.length > 0) {
             reqId = activeReqs[0].id;
             radius = activeReqs[0].radius_km;
             startedDate = new Date(activeReqs[0].created_at);

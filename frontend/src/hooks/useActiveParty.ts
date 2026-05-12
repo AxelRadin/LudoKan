@@ -36,23 +36,21 @@ export function useActiveParty() {
     refresh();
 
     const interval = setInterval(() => {
-      if (document.hasFocus()) {
-        setParty(currentParty => {
-          if (
-            currentParty &&
-            [
-              'open',
-              'waiting_ready',
-              'waiting_ready_for_chat',
-              'countdown',
-            ].includes(currentParty.status)
-          ) {
-            refresh();
-          }
-          return currentParty;
-        });
-      }
-    }, 3000);
+      setParty(currentParty => {
+        if (
+          currentParty &&
+          [
+            'open',
+            'waiting_ready',
+            'waiting_ready_for_chat',
+            'countdown',
+          ].includes(currentParty.status)
+        ) {
+          refresh();
+        }
+        return currentParty;
+      });
+    }, 1500);
 
     return () => clearInterval(interval);
   }, [refresh]);

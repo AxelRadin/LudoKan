@@ -3,6 +3,13 @@ import { ChatMessage, getChatMessages } from '../services/chat';
 
 const WS_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'ws://localhost:8000';
 
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  if (match) return decodeURIComponent(match[2]);
+  return null;
+}
+
 export function usePartyChat(roomId: number | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -14,7 +21,7 @@ export function usePartyChat(roomId: number | null) {
     setIsLoadingHistory(true);
     try {
       const data = await getChatMessages(roomId, 1);
-      setMessages(data.results);
+      setMessages(data.results.reverse());
     } catch (err) {
       console.error('Erreur historique chat :', err);
     } finally {
@@ -27,7 +34,9 @@ export function usePartyChat(roomId: number | null) {
 
     loadHistory();
 
-    const wsUrl = `${WS_BASE_URL}/ws/chat/${roomId}/`;
+    const token = getCookie('access_token');
+    const wsUrl = `${WS_BASE_URL}/ws/chat/${roomId}/${token ? `?token=${token}` : ''}`;
+
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -37,8 +46,7 @@ export function usePartyChat(roomId: number | null) {
     ws.onmessage = event => {
       try {
         const data = JSON.parse(event.data);
-
-        const newMsg = data.type === 'chat_message' ? data.data : data;
+        const newMsg = data.type === 'chat_message' ? data.message : data;
 
         if (newMsg && newMsg.content) {
           setMessages(prev => [...prev, newMsg]);
@@ -49,7 +57,12 @@ export function usePartyChat(roomId: number | null) {
     };
 
     return () => {
-      ws.close();
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
+        ws.close();
+      }
       wsRef.current = null;
     };
   }, [roomId, loadHistory]);

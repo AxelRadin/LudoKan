@@ -1,11 +1,13 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import RadarIcon from '@mui/icons-material/Radar';
 import PersonIcon from '@mui/icons-material/Person';
+import RadarIcon from '@mui/icons-material/Radar';
 import SendIcon from '@mui/icons-material/Send';
 import {
+  Alert,
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogContent,
   List,
@@ -13,14 +15,13 @@ import {
   ListItemAvatar,
   ListItemText,
   Paper,
-  Typography,
   TextField,
-  Alert,
-  CircularProgress,
+  Typography,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../contexts/useAuth';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 import { usePartyChat } from '../hooks/usePartyChat';
 
@@ -181,8 +182,15 @@ export default function MatchmakingModal({
 }: MatchmakingModalProps) {
   const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
+  const { user } = useAuth();
 
-  // Détermine la phase actuelle pour adapter l'affichage
+  const activeMembers = party?.members?.filter((m: any) => !m.left_at) || [];
+
+  const currentUserMember = activeMembers.find(
+    (m: any) => m.user_id === user?.id
+  );
+  const hasVotedEarly = currentUserMember?.wants_to_start_early;
+
   const isRadarPhase = !party;
   const isLobbyPhase =
     party &&
@@ -332,43 +340,50 @@ export default function MatchmakingModal({
                 : 'Préparation de la partie'}
             </Typography>
 
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              textAlign="center"
+              sx={{ mb: 2, fontWeight: 'bold' }}
+            >
+              Joueurs : {activeMembers.length} / {party.max_players}
+            </Typography>
+
             <List>
-              {party.members
-                .filter((m: any) => !m.left_at)
-                .map((member: any) => (
-                  <Paper
-                    key={member.user_id}
-                    elevation={1}
-                    sx={{ mb: 1, borderRadius: 2 }}
-                  >
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: 'primary.main' }}>
-                          <PersonIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={member.pseudo || `Joueur #${member.user_id}`}
-                        secondary={
-                          member.wants_to_start_early && party.status === 'open'
-                            ? 'Prêt à lancer'
-                            : party.status === 'waiting_ready'
-                              ? `Statut : ${member.ready_state}`
-                              : party.status === 'waiting_ready_for_chat'
-                                ? `Chat : ${member.ready_for_chat_state}`
-                                : ''
-                        }
-                        secondaryTypographyProps={{
-                          color:
-                            member.wants_to_start_early ||
-                            member.ready_state === 'accepted'
-                              ? 'success.main'
-                              : 'text.secondary',
-                        }}
-                      />
-                    </ListItem>
-                  </Paper>
-                ))}
+              {activeMembers.map((member: any) => (
+                <Paper
+                  key={member.user_id}
+                  elevation={1}
+                  sx={{ mb: 1, borderRadius: 2 }}
+                >
+                  <ListItem>
+                    <ListItemAvatar>
+                      <Avatar sx={{ bgcolor: 'primary.main' }}>
+                        <PersonIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={member.pseudo || `Joueur #${member.user_id}`}
+                      secondary={
+                        member.wants_to_start_early && party.status === 'open'
+                          ? 'Prêt à lancer'
+                          : party.status === 'waiting_ready'
+                            ? `Statut : ${member.ready_state}`
+                            : party.status === 'waiting_ready_for_chat'
+                              ? `Chat : ${member.ready_for_chat_state}`
+                              : ''
+                      }
+                      secondaryTypographyProps={{
+                        color:
+                          member.wants_to_start_early ||
+                          member.ready_state === 'accepted'
+                            ? 'success.main'
+                            : 'text.secondary',
+                      }}
+                    />
+                  </ListItem>
+                </Paper>
+              ))}
             </List>
 
             {/* Actions dynamiques selon le statut de la party */}
@@ -376,10 +391,13 @@ export default function MatchmakingModal({
               {party.status === 'open' && (
                 <Button
                   variant="contained"
-                  color="primary"
+                  color={hasVotedEarly ? 'inherit' : 'primary'}
+                  disabled={hasVotedEarly}
                   onClick={() => partyActions.markStartEarly(true)}
                 >
-                  Lancer tout de suite
+                  {hasVotedEarly
+                    ? 'En attente des autres...'
+                    : 'Lancer tout de suite'}
                 </Button>
               )}
               {party.status === 'waiting_ready' && (

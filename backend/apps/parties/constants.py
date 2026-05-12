@@ -40,6 +40,6 @@ def _party_timedelta(setting_name: str, default: timedelta) -> timedelta:
 OPEN_TIMEOUT = _party_timedelta("PARTIES_OPEN_TIMEOUT", timedelta(minutes=5))
 READY_TIMEOUT = _party_timedelta("PARTIES_READY_TIMEOUT", timedelta(minutes=2))
 READY_FOR_CHAT_TIMEOUT = _party_timedelta("PARTIES_READY_FOR_CHAT_TIMEOUT", timedelta(minutes=2))
-CHAT_COUNTDOWN = _party_timedelta("PARTIES_CHAT_COUNTDOWN", timedelta(seconds=30))
+CHAT_COUNTDOWN = _party_timedelta("PARTIES_CHAT_COUNTDOWN", timedelta(seconds=10))
 
 TIMED_OUT_LABEL = "Timed out"
