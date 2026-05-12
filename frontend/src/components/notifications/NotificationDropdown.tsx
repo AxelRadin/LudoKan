@@ -1,133 +1,24 @@
-import CircleIcon from '@mui/icons-material/Circle';
-import {
-  Box,
-  Button,
-  CircularProgress,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Typography,
-} from '@mui/material';
-import { useMemo } from 'react';
+import { Box, Button, CircularProgress, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationsContext';
-import type { NotificationItem } from '../../types/notification';
-
-function relativeDate(value: string, lang: string): string {
-  const date = new Date(value);
-  const now = Date.now();
-  const deltaSeconds = Math.round((date.getTime() - now) / 1000);
-  const abs = Math.abs(deltaSeconds);
-  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
-
-  if (abs < 60) return rtf.format(deltaSeconds, 'second');
-  if (abs < 3600) return rtf.format(Math.round(deltaSeconds / 60), 'minute');
-  if (abs < 86400) return rtf.format(Math.round(deltaSeconds / 3600), 'hour');
-  return rtf.format(Math.round(deltaSeconds / 86400), 'day');
-}
-
-function notificationTitle(t: (key: string) => string, verb: string): string {
-  const key = `notifications.verb.${verb}`;
-  const translated = t(key);
-  return translated === key ? verb.replaceAll('_', ' ') : translated;
-}
-
-function notificationDescription(notification: NotificationItem): string {
-  const extraMessage =
-    notification.extra &&
-    typeof notification.extra === 'object' &&
-    'message' in notification.extra &&
-    typeof notification.extra.message === 'string'
-      ? notification.extra.message
-      : null;
-  return (
-    extraMessage ??
-    notification.target?.repr ??
-    notification.actor?.repr ??
-    notification.verb
-  );
-}
+import NotificationList from './NotificationList';
 
 export default function NotificationDropdown({
   onClose,
 }: {
   onClose?: () => void;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
-    notifications,
     loading,
     hasMore,
     loadingMore,
     unreadCount,
-    markAsRead,
     markAllAsRead,
     loadMoreNotifications,
   } = useNotifications();
-
-  const handleNotificationClick = async (notification: NotificationItem) => {
-    onClose?.();
-    if (notification.unread) {
-      await markAsRead(notification.id).catch(() => {});
-    }
-
-    const { verb, target, actor } = notification;
-
-    switch (verb) {
-      case 'friend_request_received':
-        navigate('/friends?tab=requests');
-        break;
-      case 'friend_request_accepted':
-        if (actor?.repr) {
-          navigate(`/u/${actor.repr}`);
-        } else {
-          navigate('/friends');
-        }
-        break;
-      case 'message':
-        if (target?.id) {
-          navigate(`/chat/${target.id}`);
-        }
-        break;
-      case 'review':
-        if (target?.id) {
-          navigate(`/game/${target.id}`);
-        }
-        break;
-      case 'match':
-        navigate('/friends'); // Or a specific match page if it exists
-        break;
-      case 'ticket_reviewing':
-      case 'ticket_approved':
-      case 'ticket_rejected':
-      case 'ticket_published':
-      case 'ticket_created':
-        navigate('/admin/dashboard');
-        break;
-      default:
-        // For other types, try to go to the target if it's a game or user
-        if (target?.type === 'game' && target.id) {
-          navigate(`/game/${target.id}`);
-        } else if (target?.type === 'user' && target.repr) {
-          navigate(`/u/${target.repr}`);
-        } else {
-          navigate('/profile');
-        }
-        break;
-    }
-  };
-
-  const sortedNotifications = useMemo(
-    () =>
-      [...notifications].sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      ),
-    [notifications]
-  );
 
   if (loading) {
     return (
@@ -170,104 +61,41 @@ export default function NotificationDropdown({
         </Button>
       </Box>
 
-      {sortedNotifications.length === 0 ? (
-        <Box sx={{ px: 2, py: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            {t('notifications.empty')}
-          </Typography>
-        </Box>
-      ) : (
-        <List sx={{ py: 0, maxHeight: 380, overflowY: 'auto' }}>
-          {sortedNotifications.map(notification => (
-            <ListItem
-              key={notification.id}
-              disablePadding
-              sx={{
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                backgroundColor: notification.unread
-                  ? 'action.hover'
-                  : 'transparent',
-              }}
-              secondaryAction={
-                notification.unread ? (
-                  <Button
-                    size="small"
-                    onClick={e => {
-                      e.stopPropagation();
-                      markAsRead(notification.id).catch(() => {});
-                    }}
-                  >
-                    {t('notifications.markRead')}
-                  </Button>
-                ) : null
-              }
-            >
-              <ListItemButton
-                onClick={() => handleNotificationClick(notification)}
-                sx={{
-                  alignItems: 'flex-start',
-                  px: 2,
-                  py: 1.5,
-                }}
-              >
-                <ListItemText
-                  primary={
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        pr: 4,
-                      }}
-                    >
-                      {notification.unread && (
-                        <CircleIcon color="error" sx={{ fontSize: 10 }} />
-                      )}
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: notification.unread ? 700 : 500,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {notificationTitle(t, notification.verb)}
-                      </Typography>
-                    </Box>
-                  }
-                  secondary={
-                    <>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 0.4 }}
-                      >
-                        {notificationDescription(notification)}
-                      </Typography>
-                      <Typography variant="caption" color="text.disabled">
-                        {relativeDate(notification.timestamp, i18n.language)}
-                      </Typography>
-                    </>
-                  }
-                />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      )}
+      <NotificationList maxHeight={380} onItemClick={onClose} />
 
-      {hasMore && (
-        <Box sx={{ p: 1.5, display: 'flex', justifyContent: 'center' }}>
+      <Box
+        sx={{
+          p: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          borderTop: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {hasMore && (
           <Button
+            size="small"
             onClick={() => loadMoreNotifications().catch(() => {})}
             disabled={loadingMore}
+            fullWidth
           >
             {loadingMore
               ? t('notifications.loadingMore')
               : t('notifications.loadMore')}
           </Button>
-        </Box>
-      )}
+        )}
+        <Button
+          size="small"
+          onClick={() => {
+            onClose?.();
+            navigate('/notifications');
+          }}
+          fullWidth
+        >
+          {t('notifications.viewAll') || 'Voir tout'}
+        </Button>
+      </Box>
     </Box>
   );
 }
