@@ -52,6 +52,11 @@ import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 import ProfilePageLibrarySection from './ProfilePageLibrarySection';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { PROFILE_TOUR_STEPS } from '../onboarding/tourSteps';
+
+const PROFILE_OPTIONAL_STEPS = new Set([0]); // profile-library : informatif
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -1368,6 +1373,21 @@ export default function ProfilePage() {
     reloadUserGames,
     gamesLoading,
   } = useProfilePageModel(collectionFilterId);
+
+  const { isAuthenticated } = useAuth();
+  const { shouldShow: shouldShowTour, markAsDone: markTourDone } =
+    useOnboarding(TOUR_KEYS.profile);
+  const { startTour } = useTour({
+    steps: PROFILE_TOUR_STEPS,
+    optionalSteps: PROFILE_OPTIONAL_STEPS,
+    onDone: markTourDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShowTour) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShowTour, startTour]);
 
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
