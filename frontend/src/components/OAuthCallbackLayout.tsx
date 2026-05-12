@@ -44,12 +44,12 @@ export default function OAuthCallbackLayout({
   }
 
   const progressProps =
-    progressSize !== undefined
-      ? {
+    progressSize === undefined
+      ? {}
+      : {
           size: progressSize,
           thickness: progressSize >= 40 ? progressThickness : undefined,
-        }
-      : {};
+        };
 
   return (
     <Box
