@@ -34,6 +34,7 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
+import NotificationIcon from './notifications/NotificationIcon';
 
 const rippleSx = {
   color: 'inherit',
@@ -198,6 +199,7 @@ export const Header: React.FC = () => {
       {langDropdown}
       {isAuthenticated ? (
         <>
+          <NotificationIcon />
           <Button
             color="inherit"
             onClick={handleProfileMenuOpen}
@@ -298,6 +300,7 @@ export const Header: React.FC = () => {
     <Box display="flex" flexDirection="column" gap={2} mt={3}>
       {isAuthenticated ? (
         <>
+          <NotificationIcon mobile />
           <Button
             variant="outlined"
             fullWidth
