@@ -47,29 +47,18 @@ const NotificationsContext = createContext<
   NotificationsContextType | undefined
 >(undefined);
 
-function getCookie(name: string): string | null {
-  if (typeof document === 'undefined') return null;
-  const cookies = document.cookie ? document.cookie.split(';') : [];
-  for (const cookie of cookies) {
-    const [rawName, ...rest] = cookie.trim().split('=');
-    if (rawName === name) return decodeURIComponent(rest.join('='));
-  }
-  return null;
-}
-
 function wsBaseUrl() {
-  const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+  // Avec le proxy Vite, on peut utiliser l'origine du frontend.
+  // Le navigateur enverra automatiquement les cookies (même HttpOnly) car c'est le même domaine.
+  const apiBase = window.location.origin;
   try {
     const url = new URL(apiBase);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    url.pathname = '/ws/notifications/';
-    url.search = '';
-    const token = getCookie('access_token');
-    if (token) {
-      url.searchParams.set('token', token);
-    }
+    url.pathname = '/ws-notifications/';
+    console.log('[WS] Connecting to proxy URL:', url.toString());
     return url.toString();
-  } catch {
+  } catch (err) {
+    console.error('[WS] Error building WS URL:', err);
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     return `${protocol}://${window.location.host}/ws/notifications/`;
   }
@@ -241,34 +230,42 @@ export function NotificationsProvider({
     socketRef.current = socket;
 
     socket.onopen = () => {
+      console.log('[WS] Connection established');
       reconnectAttemptsRef.current = 0;
       setConnectionState('connected');
     };
 
     socket.onmessage = event => {
+      console.log('[WS] Message received:', event.data);
       try {
         const payload = JSON.parse(event.data) as {
           type?: string;
           notification?: NotificationItem;
         };
+
         if (payload.type === 'notification' && payload.notification) {
+          const incoming = payload.notification;
+          console.log('[WS] Valid notification payload:', incoming);
+
+          // 1. Update the list of notifications
           setNotifications(prev => {
-            const exists = prev.find(
-              item => item.id === payload.notification?.id
-            );
-            if (payload.notification?.unread && !exists) {
-              setUnreadCount(prevCount => prevCount + 1);
-              setLastNotification(payload.notification as NotificationItem);
+            const exists = prev.some(item => item.id === incoming.id);
+
+            // 2. If it's a new unread notification, trigger toast and increment count
+            if (!exists && incoming.unread) {
+              console.log('[WS] Triggering toast for new notification');
+              setUnreadCount(c => c + 1);
+              setLastNotification(incoming);
               setToastOpen(true);
             }
-            return mergeIncomingNotification(
-              prev,
-              payload.notification as NotificationItem
-            );
+
+            return mergeIncomingNotification(prev, incoming);
           });
+        } else {
+          console.log('[WS] Ignored payload type:', payload.type);
         }
-      } catch {
-        // Ignore malformed socket payloads.
+      } catch (err) {
+        console.error('[WS] Error processing message:', err);
       }
     };
 
