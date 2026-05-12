@@ -2,6 +2,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { Box, Button, Tooltip } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -148,6 +149,13 @@ export default function GameActions({
           active={logic.userGame?.status === 'ENVIE_DE_JOUER'}
           color="#fb8c00"
           onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
+        />
+        <StatusChip
+          icon={<DeleteOutlineIcon />}
+          label={t('gamePageBody.statusAbandoned')}
+          active={logic.userGame?.status === 'ABANDONNE'}
+          color="#757575"
+          onClick={() => logic.handleSetStatus('ABANDONNE')}
         />
       </Box>
     </Box>
