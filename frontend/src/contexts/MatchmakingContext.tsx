@@ -309,16 +309,19 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     <MatchmakingContext.Provider value={contextValue}>
       {children}
 
-      {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
-        <FloatingMatchmakingWidget
-          startedAt={activeRequestStartedAt}
-          hasNewMatch={hasNewMatch}
-          onClick={() => {
-            setIsMatchmakingModalOpen(true);
-            setHasNewMatch(false);
-          }}
-        />
-      )}
+      {(activeRequestStartedAt || party) &&
+        !isMatchmakingModalOpen &&
+        isAuthenticated && (
+          <FloatingMatchmakingWidget
+            startedAt={activeRequestStartedAt}
+            hasNewMatch={hasNewMatch}
+            party={party}
+            onClick={() => {
+              setIsMatchmakingModalOpen(true);
+              setHasNewMatch(false);
+            }}
+          />
+        )}
 
       <MatchmakingModal
         open={isMatchmakingModalOpen}

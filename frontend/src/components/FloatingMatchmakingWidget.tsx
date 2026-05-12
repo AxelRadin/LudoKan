@@ -1,80 +1,124 @@
-import GroupAddIcon from '@mui/icons-material/GroupAdd';
-import { Box, Paper, Typography } from '@mui/material';
-import CircularProgress from '@mui/material/CircularProgress';
-import { useTranslation } from 'react-i18next';
+import ChatIcon from '@mui/icons-material/Chat';
+import GroupIcon from '@mui/icons-material/Group';
+import RadarIcon from '@mui/icons-material/Radar';
+import {
+  Badge,
+  Box,
+  CircularProgress,
+  Fab,
+  Typography,
+  keyframes,
+} from '@mui/material';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
+
+const pulseRadar = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(255, 64, 129, 0.7); }
+  70% { box-shadow: 0 0 0 15px rgba(255, 64, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 64, 129, 0); }
+`;
 
 interface FloatingMatchmakingWidgetProps {
   readonly startedAt: Date | null;
-  readonly hasNewMatch: boolean;
+  readonly hasNewMatch?: boolean;
+  readonly party?: any | null;
   readonly onClick: () => void;
 }
 
 export default function FloatingMatchmakingWidget({
   startedAt,
   hasNewMatch,
+  party,
   onClick,
 }: FloatingMatchmakingWidgetProps) {
-  const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
 
-  if (!startedAt) return null;
+  const isChatPhase = party && party.status === 'chat_active';
+  const isLobbyPhase = party && !isChatPhase;
+  const isRadarPhase = !party && startedAt;
+
+  let icon = <RadarIcon />;
+  let text = elapsedTime;
+  let color: 'primary' | 'secondary' | 'success' | 'warning' = 'primary';
+  let isPulsing = false;
+
+  if (isChatPhase) {
+    icon = <ChatIcon />;
+    text = 'Chat actif';
+    color = 'success';
+  } else if (isLobbyPhase) {
+    icon = <GroupIcon />;
+    const activeMembersCount =
+      party.members?.filter((m: any) => !m.left_at).length || 0;
+
+    if (party.status === 'open') {
+      text = `Lobby (${activeMembersCount}/${party.max_players})`;
+    } else if (party.status === 'waiting_ready') {
+      text = 'Prêt ?';
+      color = 'warning';
+      isPulsing = true;
+    } else if (party.status === 'waiting_ready_for_chat') {
+      text = 'Valider chat';
+      color = 'warning';
+      isPulsing = true;
+    } else if (party.status === 'countdown') {
+      text = 'Ouverture...';
+      icon = <CircularProgress size={24} color="inherit" />;
+    } else {
+      text = 'Lobby';
+    }
+  } else if (isRadarPhase) {
+    icon = <RadarIcon />;
+    text = elapsedTime;
+    color = 'primary';
+    isPulsing = true;
+  }
+
+  if (!isRadarPhase && !isLobbyPhase && !isChatPhase) return null;
 
   return (
-    <Paper
-      elevation={6}
+    <Box
       onClick={onClick}
       sx={{
         position: 'fixed',
-        top: { xs: 80, md: 75 },
-        right: 10,
+        bottom: 24,
+        right: 24,
         zIndex: 9999,
-        px: 2,
-        py: 1.5,
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
-        cursor: 'pointer',
+        gap: 1.5,
+        bgcolor: 'background.paper',
+        pl: 2,
+        pr: 1,
+        py: 0.5,
         borderRadius: 8,
-        backgroundColor: hasNewMatch ? '#4caf50' : '#fff',
-        color: hasNewMatch ? '#fff' : 'text.primary',
-        border: hasNewMatch ? 'none' : '1px solid #e0e0e0',
-        animation: hasNewMatch ? 'pulse 1.5s infinite' : 'none',
-        '@keyframes pulse': {
-          '0%': {
-            transform: 'scale(1)',
-            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)',
-          },
-          '70%': {
-            transform: 'scale(1.05)',
-            boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)',
-          },
-          '100%': {
-            transform: 'scale(1)',
-            boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)',
-          },
+        boxShadow: 3,
+        cursor: 'pointer',
+        transition: 'transform 0.2s',
+        '&:hover': {
+          transform: 'scale(1.05)',
         },
-        transition: 'all 0.3s ease',
+        ...(isPulsing && !hasNewMatch
+          ? { animation: `${pulseRadar} 2s infinite` }
+          : {}),
       }}
     >
-      {hasNewMatch ? (
-        <GroupAddIcon />
-      ) : (
-        <CircularProgress size={20} color="inherit" thickness={5} />
-      )}
-      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-        <Typography
-          variant="body2"
-          sx={{ fontWeight: 'bold', lineHeight: 1.2 }}
+      <Typography variant="body2" fontWeight="bold" color="text.primary">
+        {text}
+      </Typography>
+
+      <Badge color="error" variant="dot" invisible={!hasNewMatch}>
+        <Fab
+          color={color}
+          size="medium"
+          disableRipple
+          sx={{
+            pointerEvents: 'none',
+            boxShadow: 'none',
+          }}
         >
-          {hasNewMatch
-            ? t('matchmakingWidget.found')
-            : t('matchmakingWidget.searching')}
-        </Typography>
-        <Typography variant="caption" sx={{ opacity: 0.8, fontWeight: 600 }}>
-          {elapsedTime}
-        </Typography>
-      </Box>
-    </Paper>
+          {icon}
+        </Fab>
+      </Badge>
+    </Box>
   );
 }
