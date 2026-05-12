@@ -66,7 +66,7 @@ export default function NotificationIcon({
         }}
         {...menuProps}
       >
-        <NotificationDropdown />
+        <NotificationDropdown onClose={closeMenu} />
       </Menu>
     </>
   );
