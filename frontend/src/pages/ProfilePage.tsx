@@ -56,7 +56,7 @@ import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
 import { useTour } from '../onboarding/useTour';
 import { PROFILE_TOUR_STEPS } from '../onboarding/tourSteps';
 
-const PROFILE_OPTIONAL_STEPS = new Set([0]); // profile-library : informatif
+const PROFILE_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]); // tous les steps sont optionnels
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -1851,7 +1851,10 @@ export default function ProfilePage() {
                   alignSelf: { xs: 'flex-start', md: 'center' },
                 }}
               >
-                <SecondaryButton onClick={handleEditOpen}>
+                <SecondaryButton
+                  data-tour="profile-edit"
+                  onClick={handleEditOpen}
+                >
                   {t('profilePage.editProfile')}
                 </SecondaryButton>
               </Box>
@@ -2085,7 +2088,7 @@ export default function ProfilePage() {
         </Box>
 
         {/* ── STATS SECTION ── */}
-        <Box sx={{ mb: 2.5 }}>
+        <Box data-tour="profile-stats" sx={{ mb: 2.5 }}>
           <ProfileSectionHeader label={t('profilePage.statsLabel')} />
           <Box
             sx={{

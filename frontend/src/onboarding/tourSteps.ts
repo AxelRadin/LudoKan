@@ -35,6 +35,26 @@ export const HOME_TOUR_STEPS: DriveStep[] = [
 
 export const PROFILE_TOUR_STEPS: DriveStep[] = [
   {
+    element: '[data-tour="profile-edit"]',
+    popover: {
+      title: '✏️ Modifier ton profil',
+      description:
+        'Change ton avatar, ta bannière et ta description depuis ce bouton.',
+      side: 'bottom',
+      align: 'end',
+    },
+  },
+  {
+    element: '[data-tour="profile-stats"]',
+    popover: {
+      title: '📊 Tes statistiques',
+      description:
+        'Suis ta progression : pourcentage de jeux terminés, joués, et le total de ta collection.',
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
     element: '[data-tour="profile-library"]',
     popover: {
       title: '📚 Ta bibliothèque',
@@ -42,6 +62,26 @@ export const PROFILE_TOUR_STEPS: DriveStep[] = [
         "Retrouve ici tous tes jeux : en cours, terminés, en liste d'envie… Filtre et organise ta collection comme tu veux.",
       side: 'top',
       align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="profile-filters"]',
+    popover: {
+      title: '🔎 Filtrer ta bibliothèque',
+      description:
+        "Trie tes jeux par statut : en cours, terminés, favoris, liste d'envie.",
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="profile-collections"]',
+    popover: {
+      title: '🗂️ Collections',
+      description:
+        'Crée des listes personnalisées pour organiser tes jeux comme tu veux.',
+      side: 'bottom',
+      align: 'end',
     },
   },
 ];
