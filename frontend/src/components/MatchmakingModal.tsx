@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 import { usePartyChat } from '../hooks/usePartyChat';
+import { type Party } from '../services/party';
 
 const pulseRadar = keyframes`
   0% { transform: scale(0.8); opacity: 0.6; }
@@ -40,7 +41,7 @@ interface MatchmakingModalProps {
     readonly name: string;
     readonly image: string;
   } | null;
-  readonly party: any | null;
+  readonly party?: Party | null;
   readonly partyActions: any;
 }
 
@@ -208,9 +209,9 @@ export default function MatchmakingModal({
   const isLobbyPhase =
     party &&
     ['open', 'waiting_ready', 'waiting_ready_for_chat', 'countdown'].includes(
-      party.status
+      party?.status ?? ''
     );
-  const isChatPhase = party && party.status === 'chat_active';
+  const isChatPhase = party?.status === 'chat_active';
 
   return (
     <Dialog
