@@ -28,7 +28,8 @@ export default function SearchResultsPage() {
   const [games, setGames] = useState<IgdbGame[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const maxDiscoveredPage = useRef(1);
+  const [totalPages, setTotalPages] = useState(1);
   const prevQuery = useRef('');
 
   useEffect(() => {
@@ -38,11 +39,20 @@ export default function SearchResultsPage() {
       setSelected(null);
       setFranchises([]);
       setPage(1);
+      setTotalPages(1);
+      maxDiscoveredPage.current = 1;
       searchFranchisesAndCollections(query)
         .then(results => setFranchises(results))
         .catch(() => {});
     }
   }, [query]);
+
+  // reset quand on change de filtre
+  useEffect(() => {
+    setPage(1);
+    setTotalPages(1);
+    maxDiscoveredPage.current = 1;
+  }, [selected]);
 
   useEffect(() => {
     if (!query) return;
@@ -50,24 +60,40 @@ export default function SearchResultsPage() {
     setLoading(true);
     setGames([]);
 
-    let fetcher: Promise<IgdbGame[]>;
-    if (!selected) {
-      fetcher = searchGamesPage(query, PAGE_SIZE, offset);
-    } else if (selected.type === 'franchise') {
-      fetcher = fetchFranchiseGames(selected.id, PAGE_SIZE, offset);
-    } else {
-      fetcher = fetchCollectionGames(selected.id, PAGE_SIZE, offset);
-    }
+    const getFetcher = (off: number): Promise<IgdbGame[]> => {
+      if (!selected) return searchGamesPage(query, PAGE_SIZE, off);
+      if (selected.type === 'franchise')
+        return fetchFranchiseGames(selected.id, PAGE_SIZE, off);
+      return fetchCollectionGames(selected.id, PAGE_SIZE, off);
+    };
 
-    fetcher
-      .then(data => {
-        if (data.length === 0 && selected)
-          return searchGamesPage(query, PAGE_SIZE, offset);
-        return data;
-      })
-      .then(data => {
-        setGames(data);
-        setHasMore(data.length === PAGE_SIZE);
+    const fetchCurrent = getFetcher(offset);
+    const fetchNext = getFetcher(offset + PAGE_SIZE);
+
+    Promise.all([fetchCurrent, fetchNext])
+      .then(([current, next]) => {
+        const data =
+          current.length === 0 && selected
+            ? searchGamesPage(query, PAGE_SIZE, offset).then(d => d)
+            : Promise.resolve(current);
+
+        return data.then(finalData => {
+          setGames(finalData);
+
+          if (next.length > 0) {
+            maxDiscoveredPage.current = Math.max(
+              maxDiscoveredPage.current,
+              page + 1
+            );
+          } else {
+            maxDiscoveredPage.current = Math.max(
+              maxDiscoveredPage.current,
+              page
+            );
+          }
+
+          setTotalPages(maxDiscoveredPage.current);
+        });
       })
       .catch(() => setGames([]))
       .finally(() => setLoading(false));
@@ -77,7 +103,6 @@ export default function SearchResultsPage() {
     setSelected(prev =>
       prev?.id === f.id && prev?.type === f.type ? null : f
     );
-    setPage(1);
   };
 
   return (
@@ -108,10 +133,7 @@ export default function SearchResultsPage() {
           {selected && (
             <Chip
               label={t('searchResults.showAll')}
-              onClick={() => {
-                setSelected(null);
-                setPage(1);
-              }}
+              onClick={() => setSelected(null)}
               size="small"
               variant="outlined"
             />
@@ -134,12 +156,15 @@ export default function SearchResultsPage() {
         emptyMessage={t('searchResults.empty', { query })}
       />
 
-      {!loading && (page > 1 || hasMore) && (
+      {!loading && totalPages > 1 && (
         <Box mt={5} display="flex" justifyContent="center">
           <Pagination
-            count={hasMore ? page + 1 : page}
+            count={totalPages}
             page={page}
-            onChange={(_, value) => setPage(value)}
+            onChange={(_, value) => {
+              setPage(value);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             color="primary"
             siblingCount={1}
           />

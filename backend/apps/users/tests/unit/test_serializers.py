@@ -253,6 +253,18 @@ class TestUserSerializer:
         serializer = UserSerializer(instance=user)
         assert serializer.data.get("steam_id") is None
 
+    def test_get_xbox_profile_with_profile(self, user):
+        from apps.users.models import XboxProfile
+
+        XboxProfile.objects.create(user=user, xbox_xuid="xuid123", gamertag="GamerTag")
+        serializer = UserSerializer(instance=user)
+        assert serializer.data["xbox_profile"]["xuid"] == "xuid123"
+        assert serializer.data["xbox_profile"]["gamertag"] == "GamerTag"
+
+    def test_get_xbox_profile_without_profile(self, user):
+        serializer = UserSerializer(instance=user)
+        assert serializer.data.get("xbox_profile") is None
+
     def test_validate_email_conflict_raises_error(self, user, another_user, rf):
         """Un email déjà utilisé par un autre user doit lever une erreur."""
         request = rf.get("/api/auth/user/")

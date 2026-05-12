@@ -13,6 +13,7 @@ class UserLibrary(models.Model):
     class SystemKey(models.TextChoices):
         MA_LUDOTHEQUE = "MA_LUDOTHEQUE", "Ma ludothèque"
         STEAM = "STEAM", "Jeux Steam"
+        XBOX = "XBOX", "Jeux Xbox"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -35,6 +36,10 @@ class UserLibrary(models.Model):
         default=False,
         help_text="Si vrai, la collection peut être listée sur le profil public.",
     )
+    is_visible_to_friends = models.BooleanField(
+        default=False,
+        help_text="Si vrai, la collection est visible pour les amis (même sans affichage public).",
+    )
     system_key = models.CharField(
         max_length=32,
         blank=True,
@@ -56,6 +61,7 @@ class UserLibrary(models.Model):
                     system_key__in=[
                         "MA_LUDOTHEQUE",
                         "STEAM",
+                        "XBOX",
                     ]
                 ),
                 name="library_user_system_key_uniq",

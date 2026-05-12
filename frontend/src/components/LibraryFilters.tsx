@@ -71,6 +71,11 @@ export default function LibraryFilters({
   const { t } = useTranslation();
   const selectValue = collectionValue === 'ALL' ? '' : String(collectionValue);
 
+  const selectableCollections = useMemo(
+    () => collections.filter(c => c.system_key !== 'MA_LUDOTHEQUE'),
+    [collections]
+  );
+
   const filterLabels = useMemo(
     (): Record<LibraryStatusFilter, string> => ({
       ALL: t('libraryFilters.statusAll'),
@@ -115,7 +120,7 @@ export default function LibraryFilters({
             <MenuItem value="">
               <em>{t('libraryFilters.allCollections')}</em>
             </MenuItem>
-            {collections.map(c => (
+            {selectableCollections.map(c => (
               <MenuItem key={c.id} value={String(c.id)}>
                 {c.name} ({c.games_count})
               </MenuItem>

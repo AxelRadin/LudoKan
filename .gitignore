@@ -1,5 +1,8 @@
 documentation_perso/
 
+# Avoid a literal `~` folder (mistaken path for home ~/.cursor)
+/~/
+
 .env
 .idea/
 node_modules/

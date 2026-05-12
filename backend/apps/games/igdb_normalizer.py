@@ -71,6 +71,35 @@ def _extract_publisher(involved_companies: Any) -> dict | None:
     return None
 
 
+_MULTIPLAYER_GAME_MODES = {"Multiplayer", "Co-operative", "Battle Royale", "Split screen", "MMO"}
+
+
+def _extract_player_counts(g: dict[str, Any]) -> tuple[int | None, int | None]:
+    mode_names = {m.get("name") for m in g.get("game_modes") or [] if isinstance(m, dict)}
+
+    multiplayer_modes = g.get("multiplayer_modes") or []
+    candidates = []
+    for m in multiplayer_modes:
+        if not isinstance(m, dict):
+            continue
+        for key in ("onlinemax", "offlinemax", "onlinecoopmax", "offlinecoopmax"):
+            val = m.get(key)
+            if isinstance(val, int) and val > 1:
+                candidates.append(val)
+
+    max_players = max(candidates) if candidates else None
+    if max_players is not None:
+        return 1, max_players
+
+    # No explicit multiplayer count — use game_modes to infer
+    has_multiplayer_mode = bool(mode_names & _MULTIPLAYER_GAME_MODES)
+    if mode_names and not has_multiplayer_mode:
+        # game_modes present but none are multiplayer → solo
+        return 1, 1
+
+    return None, None
+
+
 def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
     """
     Transforme une réponse IGDB brute vers le contrat NormalizedGame.
@@ -81,6 +110,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
 
     # Normalisation du nom (display_name provient éventuellement de l'enrichissement Wikidata)
     name = g.get("name_fr") or _extract_french_name(g.get("alternative_names")) or g.get("display_name") or g.get("name") or "Unknown"
+
+    min_players, max_players = _extract_player_counts(g)
 
     out = {
         "igdb_id": igdb_id,
@@ -98,6 +129,8 @@ def normalize_igdb_game(g: dict[str, Any]) -> dict[str, Any]:
         "user_rating": None,
         "screenshots": _extract_screenshots(g.get("screenshots")),
         "videos": g.get("videos") or [],
+        "min_players": min_players,
+        "max_players": max_players,
     }
     if "_ludokan_min_age" in g:
         out["min_age"] = g.get("_ludokan_min_age")
@@ -151,6 +184,8 @@ def enrich_normalized_games(normalized_games: list[dict[str, Any]], user=None) -
 
         django_game = game_map[igdb_id]
         g["django_id"] = django_game.id
+        g["min_players"] = django_game.min_players
+        g["max_players"] = django_game.max_players
 
         # Injection des données utilisateur
         if igdb_id in user_games_map:

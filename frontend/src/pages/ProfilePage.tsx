@@ -27,27 +27,21 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import type { GameListItem } from '../components/GameList';
+import LibraryPrivacyModal from '../components/LibraryPrivacyModal';
 import {
   CreateCollectionModal,
   ManageCollectionsModal,
 } from '../components/UserCollectionModals';
-import {
-  LIBRARY_COLLECTION_QUERY_KEY,
-  LIBRARY_STATUS_QUERY_KEY,
-  type LibraryCollectionFilter,
-  type LibraryStatusFilter,
-  parseLibraryCollectionParam,
-  parseLibraryStatusParam,
-} from '../constants/libraryFilter';
 import SecondaryButton from '../components/SecondaryButton';
+import { fetchMyCollections, type UserCollection } from '../api/collections';
 import {
-  fetchMyCollections,
-  removeGameFromCollection,
-  type UserCollection,
-} from '../api/collections';
-import { deleteUserGame, fetchUserGames } from '../api/userGames';
+  deleteUserGame,
+  fetchUserGames,
+  type UserGame as ApiUserGame,
+} from '../api/userGames';
+import { startMicrosoftConnect } from '../auth/microsoftAuth';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
@@ -55,8 +49,9 @@ import ProfilePageLibrarySection from './ProfilePageLibrarySection';
 import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
 import { useTour } from '../onboarding/useTour';
 import { PROFILE_TOUR_STEPS } from '../onboarding/tourSteps';
+import { useProfileLibraryFilters } from '../hooks/useProfileLibraryFilters';
 
-const PROFILE_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]); // tous les steps sont optionnels
+const PROFILE_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]);
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -66,24 +61,6 @@ fontLink.href =
 document.head.appendChild(fontLink);
 
 const defaultAvatar = '';
-
-const C = {
-  pageBg: '#ffd3d3',
-  shellBg: '#fff7f7',
-  cardBg: 'rgba(255,255,255,0.72)',
-  border: '#f1c7c7',
-  softBorder: 'rgba(241,199,199,0.5)',
-  title: '#0f0f0f',
-  text: '#2b2b2b',
-  muted: '#6e6e73',
-  light: '#a0a0a8',
-  accent: '#d32f2f',
-  accentDark: '#b71c1c',
-  accentGlow: 'rgba(211,47,47,0.15)',
-  glass: 'rgba(255,250,250,0.78)',
-  glassBorder: 'rgba(255,255,255,0.9)',
-  dialogBg: 'rgba(255,249,249,0.96)',
-};
 
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -109,9 +86,39 @@ styleEl.textContent = `
   .stat-card-0  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.28s both; }
   .stat-card-1  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.36s both; }
   .stat-card-2  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.44s both; }
+  .stat-card-3  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.52s both; }
   .lib-section  { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.5s both; }
 `;
 document.head.appendChild(styleEl);
+
+// Hook pour obtenir les couleurs dynamiques basées sur le thème
+function useThemeColors() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  return useMemo(
+    () => ({
+      pageBg: isDark ? '#1a1010' : '#ffd3d3',
+      shellBg: isDark ? '#2a2020' : '#fff7f7',
+      cardBg: isDark ? 'rgba(42,32,32,0.72)' : 'rgba(255,255,255,0.72)',
+      border: isDark ? '#4a3030' : '#f1c7c7',
+      softBorder: isDark ? 'rgba(74,48,48,0.5)' : 'rgba(241,199,199,0.5)',
+      title: isDark ? '#f5e6e6' : '#0f0f0f',
+      text: isDark ? '#e0d0d0' : '#2b2b2b',
+      muted: isDark ? '#9e7070' : '#6e6e73',
+      light: isDark ? '#b49393' : '#a0a0a8',
+      accent: '#FF3D3D',
+      accentDark: '#b71c1c',
+      accentGlow: isDark ? 'rgba(255,61,61,0.25)' : 'rgba(211,47,47,0.15)',
+      glass: isDark ? 'rgba(42,32,32,0.78)' : 'rgba(255,250,250,0.78)',
+      glassBorder: isDark ? 'rgba(74,48,48,0.9)' : 'rgba(255,255,255,0.9)',
+      dialogBg: isDark ? 'rgba(42,32,32,0.96)' : 'rgba(255,249,249,0.96)',
+    }),
+    [isDark]
+  );
+}
+
+// ... (le reste du code reste identique jusqu'aux types et fonctions utilitaires)
 
 type UserProfile = {
   id: number;
@@ -129,6 +136,13 @@ type UserProfile = {
   games_finished_percentage?: number;
   games_played_percentage?: number;
   total_games_count?: number;
+  xbox_profile?: {
+    gamertag?: string;
+    xuid?: string;
+    gamerscore?: number;
+    last_sync_at?: string;
+  } | null;
+  friends_count?: number;
 };
 
 type UserGame = {
@@ -165,36 +179,6 @@ const fileInputOverlaySx: React.CSSProperties = {
   fontSize: 0,
 };
 
-const glassCard = {
-  background: C.cardBg,
-  backdropFilter: 'blur(20px) saturate(160%)',
-  WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-  border: `1px solid ${C.glassBorder}`,
-  borderRadius: '20px',
-  boxShadow: '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
-  transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-  '&:hover': {
-    transform: 'translateY(-3px)',
-    boxShadow:
-      '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
-  },
-};
-
-const fieldSx = {
-  fontFamily: FONT_BODY,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '14px',
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    fontFamily: FONT_BODY,
-    fontSize: 14.5,
-    '& fieldset': { borderColor: C.softBorder },
-    '&:hover fieldset': { borderColor: C.border },
-    '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
-  },
-  '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
-  '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
-};
-
 function formatProfileDate(iso?: string) {
   return iso
     ? new Date(iso).toLocaleDateString('fr-FR', {
@@ -225,9 +209,10 @@ function validateAvatarFile(file: File): string {
 
 type ProfileSectionHeaderProps = {
   label: string;
+  C: ReturnType<typeof useThemeColors>;
 };
 
-const ProfileSectionHeader = ({ label }: ProfileSectionHeaderProps) => {
+const ProfileSectionHeader = ({ label, C }: ProfileSectionHeaderProps) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
       <Typography
@@ -260,6 +245,8 @@ type ProfileStatCardProps = {
   onClick?: () => void;
   clickable?: boolean;
   smallValue?: boolean;
+  C: ReturnType<typeof useThemeColors>;
+  glassCard: any;
 };
 
 const ProfileStatCard = ({
@@ -270,6 +257,8 @@ const ProfileStatCard = ({
   onClick,
   clickable,
   smallValue,
+  C,
+  glassCard,
 }: ProfileStatCardProps) => {
   return (
     <Paper
@@ -291,7 +280,7 @@ const ProfileStatCard = ({
         '&:hover': clickable
           ? {
               transform: 'translateY(-5px)',
-              backgroundColor: 'rgba(255,255,255,0.9)',
+              backgroundColor: C.cardBg,
               boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
             }
           : glassCard['&:hover'],
@@ -334,6 +323,8 @@ const ProfileStatCard = ({
   );
 };
 
+// ... (continuez avec les types et le hook useProfilePageModel - même code)
+
 type ProfilePageModel = {
   user: UserProfile | null;
   loading: boolean;
@@ -342,14 +333,22 @@ type ProfilePageModel = {
   avatarError: string;
   avatarBusy: boolean;
   userGames: UserGame[];
-  userGamesForLibrary: UserGame[];
-  gamesEnCours: GameListItem[];
-  gamesTermines: GameListItem[];
-  gamesEnvie: GameListItem[];
-  gamesFavoris: GameListItem[];
   avatarSrc: string;
   removeGame: (userGameId: number) => void;
-  snackbar: { open: boolean; message: string; isError: boolean };
+  snackbar: {
+    open: boolean;
+    message: string;
+    isError: boolean;
+    showUndo?: boolean;
+  };
+  setSnackbar: React.Dispatch<
+    React.SetStateAction<{
+      open: boolean;
+      message: string;
+      isError: boolean;
+      showUndo?: boolean;
+    }>
+  >;
   handleSnackbarClose: () => void;
   handleUndo: () => void;
   bannerBusy: boolean;
@@ -365,13 +364,15 @@ type ProfilePageModel = {
   handleSteamConnect: () => Promise<void>;
   handleSteamDisconnect: () => Promise<void>;
   handleSteamSync: () => Promise<void>;
+  xboxBusy: boolean;
+  handleXboxConnect: () => Promise<void>;
+  handleXboxDisconnect: () => Promise<void>;
+  handleXboxSync: () => Promise<void>;
   reloadUserGames: () => Promise<void>;
   gamesLoading: boolean;
 };
 
-function useProfilePageModel(
-  collectionFilterId: LibraryCollectionFilter
-): ProfilePageModel {
+function useProfilePageModel(): ProfilePageModel {
   const { t } = useTranslation();
   const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -391,10 +392,13 @@ function useProfilePageModel(
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [bannerBusy, setBannerBusy] = useState(false);
   const [steamBusy, setSteamBusy] = useState(false);
+  const [xboxBusy, setXboxBusy] = useState(false);
   const [userGames, setUserGames] = useState<UserGame[]>([]);
   const [gamesLoading, setGamesLoading] = useState(true);
 
-  // Sync with global user if it updates (e.g. email from ForcedEmailModal)
+  // ... (tout le code du hook reste identique)
+  // Je ne recopie pas tout pour gagner de la place, mais gardez tout le code existant du hook
+
   useEffect(() => {
     if (globalUser && user && globalUser.id === user.id) {
       if (
@@ -454,7 +458,7 @@ function useProfilePageModel(
 
   const reloadUserGames = useCallback(async () => {
     try {
-      setUserGames((await fetchUserGames()) as UserGame[]);
+      setUserGames(await fetchUserGames());
     } catch {
       // ignore
     }
@@ -483,6 +487,60 @@ function useProfilePageModel(
     }
   };
 
+  const handleXboxConnect = async () => {
+    if (xboxBusy) return;
+    setXboxBusy(true);
+    try {
+      await startMicrosoftConnect();
+    } catch (err: any) {
+      alert(
+        'Erreur: ' + (err?.message || 'Impossible de se connecter à Microsoft')
+      );
+      setXboxBusy(false);
+    }
+  };
+
+  const handleXboxDisconnect = async () => {
+    if (xboxBusy) return;
+    setXboxBusy(true);
+    try {
+      await apiDelete('/api/auth/microsoft/disconnect/');
+      setUser(prev => (prev ? { ...prev, xbox_profile: null } : null));
+    } catch (err: any) {
+      alert(
+        'Erreur: ' +
+          (err?.message || 'Impossible de déconnecter le compte Xbox')
+      );
+    } finally {
+      setXboxBusy(false);
+    }
+  };
+
+  const handleXboxSync = async () => {
+    if (xboxBusy) return;
+    setXboxBusy(true);
+    try {
+      await apiPost('/api/sync/xbox/', {});
+      let polls = 0;
+      const pollInterval = setInterval(async () => {
+        polls++;
+        try {
+          await reloadUserGames();
+          const meRes = await apiGet('/api/me/');
+          setUser(meRes);
+        } catch {
+          /* ignore */
+        }
+        if (polls >= 10) {
+          clearInterval(pollInterval);
+          setXboxBusy(false);
+        }
+      }, 3000);
+    } catch {
+      setXboxBusy(false);
+    }
+  };
+
   useEffect(() => {
     const searchParams = new URLSearchParams(globalThis.location.search);
     if (searchParams.get('syncing') === 'true') {
@@ -495,7 +553,7 @@ function useProfilePageModel(
             fetchUserGames(),
             apiGet('/api/me/'),
           ]);
-          setUserGames(games as UserGame[]);
+          setUserGames(games);
           setUser(meRes);
         } catch {
           /* ignore */
@@ -704,10 +762,12 @@ function useProfilePageModel(
     open: boolean;
     message: string;
     isError: boolean;
+    showUndo?: boolean;
   }>({
     open: false,
     message: '',
     isError: false,
+    showUndo: false,
   });
   const undoRef = useRef<{ game: UserGame; index: number } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -724,7 +784,7 @@ function useProfilePageModel(
     });
     undoRef.current = null;
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setSnackbar({ open: false, message: '', isError: false });
+    setSnackbar({ open: false, message: '', isError: false, showUndo: false });
   };
 
   const removeGame = (userGameId: number) => {
@@ -738,6 +798,7 @@ function useProfilePageModel(
       open: true,
       message: t('profilePage.gameRemoved'),
       isError: false,
+      showUndo: true,
     });
     undoTimerRef.current = setTimeout(async () => {
       undoRef.current = null;
@@ -753,65 +814,11 @@ function useProfilePageModel(
           open: true,
           message: t('profilePage.gameRemoveError'),
           isError: true,
+          showUndo: false,
         });
       }
     }, 5000);
   };
-
-  const userGamesForLibrary = useMemo(() => {
-    if (collectionFilterId === 'ALL') return userGames;
-    return userGames.filter(ug =>
-      Array.isArray(ug.collection_ids)
-        ? ug.collection_ids.includes(collectionFilterId)
-        : false
-    );
-  }, [userGames, collectionFilterId]);
-
-  const gamesForStatus = useCallback(
-    (games: UserGame[], status: string): GameListItem[] =>
-      games
-        .filter(g => g.status === status)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    []
-  );
-
-  const gamesEnCours = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'EN_COURS'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesTermines = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'TERMINE'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesEnvie = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'ENVIE_DE_JOUER'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesFavoris = useMemo(
-    () =>
-      userGamesForLibrary
-        .filter(g => g.is_favorite)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    [userGamesForLibrary]
-  );
 
   return {
     user,
@@ -821,11 +828,6 @@ function useProfilePageModel(
     avatarError,
     avatarBusy,
     userGames,
-    userGamesForLibrary,
-    gamesEnCours,
-    gamesTermines,
-    gamesEnvie,
-    gamesFavoris,
     avatarSrc,
     removeGame,
     snackbar,
@@ -844,10 +846,17 @@ function useProfilePageModel(
     handleSteamConnect,
     handleSteamDisconnect,
     handleSteamSync,
+    xboxBusy,
+    handleXboxConnect,
+    handleXboxDisconnect,
+    handleXboxSync,
     reloadUserGames,
     gamesLoading,
+    setSnackbar,
   };
 }
+
+// Continuez dans le prochain message pour les composants dialog...
 
 type ProfileEditDialogProps = Readonly<{
   open: boolean;
@@ -861,6 +870,7 @@ type ProfileEditDialogProps = Readonly<{
   onAvatarRemove: () => void | Promise<void>;
   onFieldChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSave: () => void | Promise<void>;
+  C: ReturnType<typeof useThemeColors>;
 }>;
 
 function ProfileEditDialog({
@@ -875,8 +885,24 @@ function ProfileEditDialog({
   onAvatarRemove,
   onFieldChange,
   onSave,
+  C,
 }: ProfileEditDialogProps) {
   const { t } = useTranslation();
+
+  const fieldSx = {
+    fontFamily: FONT_BODY,
+    '& .MuiOutlinedInput-root': {
+      borderRadius: '14px',
+      backgroundColor: C.glass,
+      fontFamily: FONT_BODY,
+      fontSize: 14.5,
+      '& fieldset': { borderColor: C.softBorder },
+      '&:hover fieldset': { borderColor: C.border },
+      '&.Mui-focused fieldset': { borderColor: `${C.accent}88` },
+    },
+    '& .MuiInputLabel-root': { fontFamily: FONT_BODY },
+    '& .MuiInputLabel-root.Mui-focused': { color: C.accent },
+  };
 
   return (
     <Dialog
@@ -897,7 +923,7 @@ function ProfileEditDialog({
       BackdropProps={{
         sx: {
           backdropFilter: 'blur(6px)',
-          backgroundColor: 'rgba(255,200,200,0.25)',
+          backgroundColor: C.accentGlow,
         },
       }}
     >
@@ -942,7 +968,7 @@ function ProfileEditDialog({
                     width: 22,
                     height: 22,
                     borderRadius: '50%',
-                    bgcolor: '#d32f2f',
+                    bgcolor: C.accentDark,
                     border: '2px solid white',
                     display: 'flex',
                     alignItems: 'center',
@@ -953,7 +979,7 @@ function ProfileEditDialog({
                     transition: 'transform 0.15s ease, background 0.15s ease',
                     p: 0,
                     '&:hover': {
-                      bgcolor: avatarBusy ? '#d32f2f' : '#b71c1c',
+                      bgcolor: avatarBusy ? C.accentDark : C.accent,
                       transform: avatarBusy ? 'none' : 'scale(1.15)',
                     },
                   }}
@@ -1152,7 +1178,7 @@ function ProfileEditDialog({
             boxShadow: `0 4px 18px ${C.accentGlow}`,
             '&:hover': {
               background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-              boxShadow: `0 6px 24px rgba(211,47,47,0.28)`,
+              boxShadow: `0 6px 24px ${C.accentGlow}`,
               transform: 'translateY(-1px)',
             },
             transition: 'all 0.18s ease',
@@ -1171,7 +1197,201 @@ type ProfileIntegrationsProps = Readonly<{
   onSteamConnect: () => void;
   onSteamDisconnect: () => void;
   onSteamSync: () => void;
+  xbox_profile?: { gamertag?: string; xuid?: string } | null;
+  xboxBusy: boolean;
+  onXboxConnect: () => void;
+  onXboxDisconnect: () => void;
+  onXboxSync: () => void;
+  C: ReturnType<typeof useThemeColors>;
+  glassCard: any;
 }>;
+
+type IntegrationCardProps = Readonly<{
+  label: string;
+  desc: string;
+  iconChar: string;
+  iconBg: string;
+  isConnected: boolean;
+  statusLabel: string;
+  isBusy: boolean;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  onSync: () => void;
+  syncTooltip: string;
+  syncTooltipDefault: string;
+  syncLabel: string;
+  disconnectLabel: string;
+  connectLabel: string;
+  connectStyles?: any;
+  syncStyles?: any;
+  C: ReturnType<typeof useThemeColors>;
+  glassCard: any;
+  mt?: number;
+}>;
+
+function IntegrationCard({
+  label,
+  desc,
+  iconChar,
+  iconBg,
+  isConnected,
+  statusLabel,
+  isBusy,
+  onConnect,
+  onDisconnect,
+  onSync,
+  syncTooltip,
+  syncTooltipDefault,
+  syncLabel,
+  disconnectLabel,
+  connectLabel,
+  connectStyles,
+  syncStyles,
+  C,
+  glassCard,
+  mt = 0,
+}: IntegrationCardProps) {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        ...glassCard,
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'stretch', sm: 'center' },
+        justifyContent: 'space-between',
+        gap: 2,
+        p: '22px 28px',
+        mt,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Avatar
+          sx={{
+            bgcolor: iconBg,
+            color: '#fff',
+            width: 48,
+            height: 48,
+            fontWeight: 700,
+            fontFamily: FONT_DISPLAY,
+          }}
+        >
+          {iconChar}
+        </Avatar>
+        <Box>
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              fontWeight: 700,
+              fontSize: 16,
+              color: C.title,
+            }}
+          >
+            {label}
+          </Typography>
+          <Typography
+            sx={{
+              fontFamily: FONT_BODY,
+              color: C.muted,
+              fontSize: 13,
+              lineHeight: 1.4,
+            }}
+          >
+            {desc}
+          </Typography>
+        </Box>
+      </Box>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+          gap: 1.5,
+        }}
+      >
+        {isConnected ? (
+          <>
+            <Typography
+              sx={{
+                fontFamily: FONT_BODY,
+                color: iconBg === '#171a21' ? '#43a047' : iconBg,
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              {statusLabel}
+            </Typography>
+            <Tooltip title={isBusy ? syncTooltip : syncTooltipDefault} arrow>
+              <span>
+                <Button
+                  onClick={onSync}
+                  disabled={isBusy}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 999,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontFamily: FONT_BODY,
+                    minWidth: 130,
+                    ...syncStyles,
+                  }}
+                >
+                  {isBusy ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    syncLabel
+                  )}
+                </Button>
+              </span>
+            </Tooltip>
+            <Button
+              onClick={onDisconnect}
+              disabled={isBusy}
+              variant="outlined"
+              color="error"
+              sx={{
+                borderRadius: 999,
+                textTransform: 'none',
+                fontWeight: 600,
+                fontFamily: FONT_BODY,
+                minWidth: 130,
+              }}
+            >
+              {isBusy ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                disconnectLabel
+              )}
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={onConnect}
+            disabled={isBusy}
+            variant="contained"
+            sx={{
+              borderRadius: 999,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontFamily: FONT_BODY,
+              minWidth: 130,
+              bgcolor: iconBg,
+              color: '#fff',
+              '&:hover': { bgcolor: iconBg },
+              ...connectStyles,
+            }}
+          >
+            {isBusy ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              connectLabel
+            )}
+          </Button>
+        )}
+      </Box>
+    </Paper>
+  );
+}
 
 function ProfileIntegrations({
   steam_id,
@@ -1179,224 +1399,81 @@ function ProfileIntegrations({
   onSteamConnect,
   onSteamDisconnect,
   onSteamSync,
+  xbox_profile,
+  xboxBusy,
+  onXboxConnect,
+  onXboxDisconnect,
+  onXboxSync,
+  C,
+  glassCard,
 }: ProfileIntegrationsProps) {
   const { t } = useTranslation();
 
   return (
     <Box sx={{ mb: 2.5 }}>
-      <ProfileSectionHeader label={t('profilePage.integrationsLabel')} />
-      <Paper
-        elevation={0}
-        sx={{
-          ...glassCard,
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'stretch', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 2,
-          p: '22px 28px',
+      <ProfileSectionHeader label={t('profilePage.integrationsLabel')} C={C} />
+
+      <IntegrationCard
+        label={t('profilePage.steamLabel')}
+        desc={t('profilePage.steamDesc')}
+        iconChar="S"
+        iconBg="#171a21"
+        isConnected={!!steam_id}
+        statusLabel={t('profilePage.steamConnected')}
+        isBusy={steamBusy}
+        onConnect={onSteamConnect}
+        onDisconnect={onSteamDisconnect}
+        onSync={onSteamSync}
+        syncTooltip={t('profilePage.steamSyncTooltip')}
+        syncTooltipDefault={t('profilePage.steamSyncTooltipDefault')}
+        syncLabel={t('profilePage.steamSync')}
+        disconnectLabel={t('profilePage.steamDisconnect')}
+        connectLabel={t('profilePage.steamConnect')}
+        connectStyles={{ '&:hover': { bgcolor: '#2a475e' } }}
+        syncStyles={{ borderColor: '#0288d1', color: '#0288d1' }}
+        C={C}
+        glassCard={glassCard}
+      />
+
+      <IntegrationCard
+        label={t('profilePage.xboxLabel')}
+        desc={t('profilePage.xboxDesc')}
+        iconChar="X"
+        iconBg="#107C10"
+        isConnected={!!xbox_profile}
+        statusLabel={xbox_profile?.gamertag || t('profilePage.xboxConnected')}
+        isBusy={xboxBusy}
+        onConnect={onXboxConnect}
+        onDisconnect={onXboxDisconnect}
+        onSync={onXboxSync}
+        syncTooltip={t('profilePage.xboxSyncTooltip')}
+        syncTooltipDefault={t('profilePage.xboxSyncTooltipDefault')}
+        syncLabel={t('profilePage.xboxSync')}
+        disconnectLabel={t('profilePage.xboxDisconnect')}
+        connectLabel={t('profilePage.xboxConnect')}
+        connectStyles={{ '&:hover': { bgcolor: '#0d620d' } }}
+        syncStyles={{
+          borderColor: '#107C10',
+          color: '#107C10',
+          '&:hover': {
+            borderColor: '#0d620d',
+            bgcolor: 'rgba(16, 124, 16, 0.04)',
+          },
         }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar
-            sx={{
-              bgcolor: '#171a21',
-              color: '#fff',
-              width: 48,
-              height: 48,
-              fontWeight: 700,
-              fontFamily: FONT_DISPLAY,
-            }}
-          >
-            S
-          </Avatar>
-          <Box>
-            <Typography
-              sx={{ fontFamily: FONT_BODY, fontWeight: 700, fontSize: 16 }}
-            >
-              {t('profilePage.steamLabel')}
-            </Typography>
-            <Typography
-              sx={{
-                fontFamily: FONT_BODY,
-                color: C.muted,
-                fontSize: 13,
-                lineHeight: 1.4,
-              }}
-            >
-              {t('profilePage.steamDesc')}
-            </Typography>
-          </Box>
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-            gap: 1.5,
-          }}
-        >
-          {steam_id ? (
-            <>
-              <Typography
-                sx={{
-                  fontFamily: FONT_BODY,
-                  color: '#43a047',
-                  fontWeight: 700,
-                  fontSize: 13,
-                }}
-              >
-                {t('profilePage.steamConnected')}
-              </Typography>
-              <Tooltip
-                title={
-                  steamBusy
-                    ? t('profilePage.steamSyncTooltip')
-                    : t('profilePage.steamSyncTooltipDefault')
-                }
-                arrow
-              >
-                <span>
-                  <Button
-                    onClick={onSteamSync}
-                    disabled={steamBusy}
-                    variant="outlined"
-                    color="info"
-                    sx={{
-                      borderRadius: 999,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontFamily: FONT_BODY,
-                      minWidth: 130,
-                    }}
-                  >
-                    {steamBusy ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      t('profilePage.steamSync')
-                    )}
-                  </Button>
-                </span>
-              </Tooltip>
-              <Button
-                onClick={onSteamDisconnect}
-                disabled={steamBusy}
-                variant="outlined"
-                color="error"
-                sx={{
-                  borderRadius: 999,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontFamily: FONT_BODY,
-                  minWidth: 130,
-                }}
-              >
-                {steamBusy ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  t('profilePage.steamDisconnect')
-                )}
-              </Button>
-            </>
-          ) : (
-            <Button
-              onClick={onSteamConnect}
-              disabled={steamBusy}
-              variant="contained"
-              sx={{
-                borderRadius: 999,
-                textTransform: 'none',
-                fontWeight: 600,
-                fontFamily: FONT_BODY,
-                bgcolor: '#171a21',
-                color: '#fff',
-                '&:hover': { bgcolor: '#2a475e' },
-                minWidth: 130,
-              }}
-            >
-              {steamBusy ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                t('profilePage.steamConnect')
-              )}
-            </Button>
-          )}
-        </Box>
-      </Paper>
+        C={C}
+        glassCard={glassCard}
+        mt={2}
+      />
     </Box>
   );
 }
 
-export default function ProfilePage() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const collectionFilterId = useMemo(
-    () =>
-      parseLibraryCollectionParam(
-        searchParams.get(LIBRARY_COLLECTION_QUERY_KEY)
-      ),
-    [searchParams]
-  );
-
-  const {
-    user,
-    loading,
-    editOpen,
-    form,
-    avatarError,
-    avatarBusy,
-    userGames,
-    userGamesForLibrary,
-    gamesEnCours,
-    gamesTermines,
-    gamesEnvie,
-    gamesFavoris,
-    avatarSrc,
-    removeGame,
-    snackbar,
-    handleSnackbarClose,
-    handleUndo,
-    bannerBusy,
-    handleEditOpen,
-    handleEditClose,
-    handleChange,
-    handleModalAvatarChange,
-    handleAvatarRemoveNow,
-    handleSave,
-    handleBannerChange,
-    handleBannerRemoveNow,
-    steamBusy,
-    handleSteamConnect,
-    handleSteamDisconnect,
-    handleSteamSync,
-    reloadUserGames,
-    gamesLoading,
-  } = useProfilePageModel(collectionFilterId);
-
-  const { isAuthenticated } = useAuth();
-  const { shouldShow: shouldShowTour, markAsDone: markTourDone } =
-    useOnboarding(TOUR_KEYS.profile);
-  const { startTour } = useTour({
-    steps: PROFILE_TOUR_STEPS,
-    optionalSteps: PROFILE_OPTIONAL_STEPS,
-    onDone: markTourDone,
-  });
-
-  useEffect(() => {
-    if (!isAuthenticated || !shouldShowTour) return;
-    const timer = setTimeout(() => startTour(), 800);
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, shouldShowTour, startTour]);
-
+function useProfilePageCollections(
+  userPseudo: string | undefined,
+  userGamesLength: number
+) {
   const [collections, setCollections] = useState<UserCollection[]>([]);
   const [collectionsLoading, setCollectionsLoading] = useState(true);
-  const [librarySectionMenuAnchor, setLibrarySectionMenuAnchor] =
-    useState<null | HTMLElement>(null);
-  const [createCollectionModalOpen, setCreateCollectionModalOpen] =
-    useState(false);
-  const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
-    useState(false);
 
   const refreshCollections = useCallback(async () => {
     try {
@@ -1416,138 +1493,108 @@ export default function ProfilePage() {
     return () => {
       alive = false;
     };
-  }, [refreshCollections, user?.pseudo]);
+  }, [refreshCollections, userPseudo]);
 
   useEffect(() => {
     refreshCollections();
-  }, [userGames.length, refreshCollections]);
+  }, [userGamesLength, refreshCollections]);
 
-  const libraryFilter = useMemo(
-    () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
-    [searchParams]
-  );
+  return { collections, collectionsLoading, refreshCollections };
+}
 
-  const setLibraryFilter = useCallback(
-    (next: LibraryStatusFilter) => {
-      setSearchParams(
-        prev => {
-          const p = new URLSearchParams(prev);
-          if (next === 'ALL') p.delete(LIBRARY_STATUS_QUERY_KEY);
-          else p.set(LIBRARY_STATUS_QUERY_KEY, next);
-          return p;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
+export default function ProfilePage() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const C = useThemeColors();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
-  const setLibraryCollectionFilter = useCallback(
-    (next: LibraryCollectionFilter) => {
-      setSearchParams(
-        prev => {
-          const p = new URLSearchParams(prev);
-          if (next === 'ALL') p.delete(LIBRARY_COLLECTION_QUERY_KEY);
-          else p.set(LIBRARY_COLLECTION_QUERY_KEY, String(next));
-          return p;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
-  );
+  const {
+    user,
+    loading,
+    editOpen,
+    form,
+    avatarError,
+    avatarBusy,
+    userGames,
+    avatarSrc,
+    removeGame,
+    snackbar,
+    setSnackbar,
+    handleSnackbarClose,
+    handleUndo,
+    bannerBusy,
+    handleEditOpen,
+    handleEditClose,
+    handleChange,
+    handleModalAvatarChange,
+    handleAvatarRemoveNow,
+    handleSave,
+    handleBannerChange,
+    handleBannerRemoveNow,
+    steamBusy,
+    handleSteamConnect,
+    handleSteamDisconnect,
+    handleSteamSync,
+    xboxBusy,
+    handleXboxConnect,
+    handleXboxDisconnect,
+    handleXboxSync,
+    reloadUserGames,
+    gamesLoading,
+  } = useProfilePageModel();
 
-  const libraryCounts = useMemo(
-    () => ({
-      all: userGamesForLibrary.length,
-      enCours: gamesEnCours.length,
-      termines: gamesTermines.length,
-      envie: gamesEnvie.length,
-    }),
-    [
-      userGamesForLibrary.length,
-      gamesEnCours.length,
-      gamesTermines.length,
-      gamesEnvie.length,
-    ]
-  );
+  const { collections, collectionsLoading, refreshCollections } =
+    useProfilePageCollections(user?.pseudo, userGames.length);
 
-  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
-    switch (libraryFilter) {
-      case 'EN_COURS':
-        return gamesEnCours;
-      case 'TERMINE':
-        return gamesTermines;
-      case 'ENVIE_DE_JOUER':
-        return gamesEnvie;
-      default:
-        return [];
-    }
-  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
-
-  const singleFilterTitle = useMemo(() => {
-    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
-      EN_COURS: t('profilePage.statusPlaying'),
-      TERMINE: t('profilePage.statusDone'),
-      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
-    };
-    if (libraryFilter === 'ALL') return '';
-    return map[libraryFilter];
-  }, [libraryFilter, t]);
-
-  const activeCollectionMeta = useMemo(
-    () =>
-      typeof collectionFilterId === 'number'
-        ? collections.find(c => c.id === collectionFilterId)
-        : undefined,
-    [collections, collectionFilterId]
-  );
-
-  const gameListCollectionProps = useMemo(() => {
-    const canDetach =
-      typeof collectionFilterId === 'number' &&
-      activeCollectionMeta?.system_key !== 'MA_LUDOTHEQUE';
-    if (!canDetach) return {};
-    const colId = collectionFilterId;
-    return {
-      onDetachFromCollection: async (userGameId: number) => {
-        try {
-          await removeGameFromCollection(colId, userGameId);
-          await reloadUserGames();
-          await refreshCollections();
-        } catch (err) {
-          console.error(err);
-        }
-      },
-      detachFromCollectionTitle: t('collections.profileDetachTooltip', {
-        name:
-          activeCollectionMeta?.name ?? t('collections.defaultCollectionName'),
-      }),
-    };
-  }, [
+  const {
     collectionFilterId,
-    activeCollectionMeta?.system_key,
-    activeCollectionMeta?.name,
+    libraryFilter,
+    setLibraryFilter,
+    setLibraryCollectionFilter,
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    libraryCounts,
+    gamesForLibraryFilter,
+    singleFilterTitle,
+    libraryBadgeText,
+    gameListCollectionProps,
+  } = useProfileLibraryFilters({
+    searchParams,
+    setSearchParams,
+    userGames: userGames as ApiUserGame[],
+    collections,
+    collectionsLoading,
     reloadUserGames,
     refreshCollections,
     t,
-  ]);
+  });
 
-  const libraryBadgeText = useMemo(() => {
-    if (collectionFilterId === 'ALL') {
-      return userGames.length <= 1
-        ? t('profilePage.libraryTotal', { count: userGames.length })
-        : t('profilePage.libraryTotalPlural', { count: userGames.length });
-    }
-    return userGamesForLibrary.length <= 1
-      ? t('profilePage.libraryInViewOne', {
-          count: userGamesForLibrary.length,
-        })
-      : t('profilePage.libraryInViewMany', {
-          count: userGamesForLibrary.length,
-        });
-  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
+  const { isAuthenticated } = useAuth();
+  const { shouldShow: shouldShowTour, markAsDone: markTourDone } =
+    useOnboarding(TOUR_KEYS.profile);
+  const { startTour } = useTour({
+    steps: PROFILE_TOUR_STEPS,
+    optionalSteps: PROFILE_OPTIONAL_STEPS,
+    onDone: markTourDone,
+  });
 
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShowTour) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShowTour, startTour]);
+
+  const [librarySectionMenuAnchor, setLibrarySectionMenuAnchor] =
+    useState<null | HTMLElement>(null);
+  const [createCollectionModalOpen, setCreateCollectionModalOpen] =
+    useState(false);
+  const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
+    useState(false);
+  const [libraryPrivacyModalOpen, setLibraryPrivacyModalOpen] = useState(false);
   const handleCloseManageCollectionsModal = useCallback(() => {
     setManageCollectionsModalOpen(false);
     refreshCollections().catch(() => {});
@@ -1561,17 +1608,43 @@ export default function ProfilePage() {
   const bannerMenuOpen = Boolean(bannerMenuAnchor);
   const [confirmDeleteBannerOpen, setConfirmDeleteBannerOpen] = useState(false);
 
+  const glassCard = useMemo(
+    () => ({
+      background: C.cardBg,
+      backdropFilter: 'blur(20px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+      border: `1px solid ${C.glassBorder}`,
+      borderRadius: '20px',
+      boxShadow:
+        '0 2px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8)',
+      transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+      '&:hover': {
+        transform: 'translateY(-3px)',
+        boxShadow:
+          '0 8px 32px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
+      },
+    }),
+    [C]
+  );
+
   return (
     <Box
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
-        background: `
-        url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"),
-        radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-        radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
-        ${C.pageBg}
-      `,
+        background: isDark
+          ? `
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(74,48,48,0.6) 0%, transparent 55%),
+            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(255,61,61,0.12) 0%, transparent 50%),
+            ${C.pageBg}
+          `
+          : `
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+            ${C.pageBg}
+          `,
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
@@ -1588,7 +1661,7 @@ export default function ProfilePage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                backgroundColor: C.cardBg,
                 boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
               }}
             >
@@ -2048,7 +2121,7 @@ export default function ProfilePage() {
 
         {/* STATS */}
         <Box sx={{ mb: 2.5 }}>
-          <ProfileSectionHeader label={t('profilePage.infoLabel')} />
+          <ProfileSectionHeader label={t('profilePage.infoLabel')} C={C} />
           <Box
             sx={{
               display: 'grid',
@@ -2058,14 +2131,16 @@ export default function ProfilePage() {
           >
             {[
               {
-                label: t('profilePage.playtimeLabel'),
-                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
-                cls: 'stat-card-0',
+                label: t('profilePage.friendsLabelStat'),
+                value: user?.friends_count?.toString() ?? '0',
+                cls: 'stat-card-1',
+                onClick: () => navigate('/friends'),
+                clickable: true,
               },
               {
                 label: t('profilePage.reviewsLabel'),
                 value: user?.review_count?.toString() || '0',
-                cls: 'stat-card-1',
+                cls: 'stat-card-0',
                 onClick: () => navigate('/profile/reviews'),
                 clickable: true,
               },
@@ -2082,6 +2157,8 @@ export default function ProfilePage() {
                 {...props}
                 loading={loading}
                 smallValue={props.label === t('profilePage.registeredLabel')}
+                C={C}
+                glassCard={glassCard}
               />
             ))}
           </Box>
@@ -2089,36 +2166,59 @@ export default function ProfilePage() {
 
         {/* ── STATS SECTION ── */}
         <Box data-tour="profile-stats" sx={{ mb: 2.5 }}>
-          <ProfileSectionHeader label={t('profilePage.statsLabel')} />
+          <ProfileSectionHeader label={t('profilePage.statsLabel')} C={C} />
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              gridTemplateColumns: {
+                xs: 'repeat(2, 1fr)',
+                md: 'repeat(4, 1fr)',
+              },
               gap: 2,
             }}
           >
             {[
               {
-                label: t('profilePage.finishedRatioLabel'),
-                value: user?.games_finished_percentage
-                  ? `${user.games_finished_percentage}%`
-                  : '0%',
+                label: t('profilePage.totalGamesLabel'),
+                value: user?.total_games_count?.toString() || '0',
                 cls: 'stat-card-0',
+              },
+              {
+                label: t('profilePage.playtimeLabel'),
+                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
+                cls: 'stat-card-1',
               },
               {
                 label: t('profilePage.playedRatioLabel'),
                 value: user?.games_played_percentage
                   ? `${user.games_played_percentage}%`
                   : '0%',
-                cls: 'stat-card-1',
-              },
-              {
-                label: t('profilePage.totalGamesLabel'),
-                value: user?.total_games_count?.toString() || '0',
                 cls: 'stat-card-2',
               },
+              {
+                label: t('profilePage.finishedRatioLabel'),
+                value: user?.games_finished_percentage
+                  ? `${user.games_finished_percentage}%`
+                  : '0%',
+                cls: 'stat-card-3',
+              },
+              ...(user?.xbox_profile
+                ? [
+                    {
+                      label: t('profilePage.xboxGamerscoreLabel'),
+                      value: user.xbox_profile.gamerscore?.toString() || '0',
+                      cls: 'stat-card-3',
+                    },
+                  ]
+                : []),
             ].map(props => (
-              <ProfileStatCard key={props.label} {...props} loading={loading} />
+              <ProfileStatCard
+                key={props.label}
+                {...props}
+                loading={loading}
+                C={C}
+                glassCard={glassCard}
+              />
             ))}
           </Box>
         </Box>
@@ -2129,6 +2229,13 @@ export default function ProfilePage() {
           onSteamConnect={handleSteamConnect}
           onSteamDisconnect={handleSteamDisconnect}
           onSteamSync={handleSteamSync}
+          xbox_profile={user?.xbox_profile}
+          xboxBusy={xboxBusy}
+          onXboxConnect={handleXboxConnect}
+          onXboxDisconnect={handleXboxDisconnect}
+          onXboxSync={handleXboxSync}
+          C={C}
+          glassCard={glassCard}
         />
 
         {/* ── LIBRARY ── */}
@@ -2143,6 +2250,7 @@ export default function ProfilePage() {
           setLibrarySectionMenuAnchor={setLibrarySectionMenuAnchor}
           setCreateCollectionModalOpen={setCreateCollectionModalOpen}
           setManageCollectionsModalOpen={setManageCollectionsModalOpen}
+          onOpenLibraryPrivacy={() => setLibraryPrivacyModalOpen(true)}
           libraryFilter={libraryFilter}
           setLibraryFilter={setLibraryFilter}
           libraryCounts={libraryCounts}
@@ -2173,6 +2281,19 @@ export default function ProfilePage() {
         open={manageCollectionsModalOpen}
         onClose={handleCloseManageCollectionsModal}
       />
+      <LibraryPrivacyModal
+        open={libraryPrivacyModalOpen}
+        onClose={() => setLibraryPrivacyModalOpen(false)}
+        onSaved={async () => {
+          await refreshCollections();
+          setSnackbar({
+            open: true,
+            message: t('libraryPrivacy.saved'),
+            isError: false,
+            showUndo: false,
+          });
+        }}
+      />
 
       <Snackbar
         open={snackbar.open}
@@ -2184,11 +2305,11 @@ export default function ProfilePage() {
           severity={snackbar.isError ? 'error' : 'success'}
           onClose={handleSnackbarClose}
           action={
-            snackbar.isError ? undefined : (
+            snackbar.showUndo && !snackbar.isError ? (
               <Button color="inherit" size="small" onClick={handleUndo}>
                 {t('profilePage.undoLabel')}
               </Button>
-            )
+            ) : undefined
           }
           sx={{ width: '100%' }}
         >
@@ -2208,6 +2329,7 @@ export default function ProfilePage() {
         onAvatarRemove={handleAvatarRemoveNow}
         onFieldChange={handleChange}
         onSave={handleSave}
+        C={C}
       />
     </Box>
   );

@@ -48,3 +48,41 @@ class SteamSyncViewTest(APITestCase):
         # Deuxième appel immédiat (doit être throttlé car limité à 1/minute)
         response_2 = self.client.post(self.url)
         self.assertEqual(response_2.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class XboxSyncViewTest(APITestCase):
+    def setUp(self):
+        self.user = CustomUser.objects.create_user(email="test_sync_xbox@example.com", pseudo="sync_xbox_tester", password="pwd")
+        self.url = reverse("library:sync-xbox")
+
+    @patch("apps.library.views.sync_xbox_library_task.delay")
+    def test_sync_xbox_triggers_celery_task(self, mock_delay):
+        """
+        Vérifie que le point d'accès déclenche bien la tâche Celery asynchrone pour Xbox
+        """
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+        mock_delay.assert_called_once_with(self.user.id)
+        self.assertIn("file d'attente", response.data.get("detail", ""))
+
+    def test_sync_xbox_requires_authentication(self):
+        """
+        Vérifie que seuls les utilisateurs authentifiés peuvent lancer la synchro.
+        """
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch("apps.library.views.sync_xbox_library_task.delay")
+    def test_sync_xbox_throttling(self, mock_delay):
+        """
+        Vérifie que la limitation de taux (1/min) est bien appliquée sur cette vue Xbox.
+        """
+        self.client.force_authenticate(user=self.user)
+
+        response_1 = self.client.post(self.url)
+        self.assertEqual(response_1.status_code, status.HTTP_202_ACCEPTED)
+
+        response_2 = self.client.post(self.url)
+        self.assertEqual(response_2.status_code, status.HTTP_429_TOO_MANY_REQUESTS)

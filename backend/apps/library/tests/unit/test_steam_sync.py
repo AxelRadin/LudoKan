@@ -14,7 +14,7 @@ class SteamSyncTest(TestCase):
         self.steam_profile = SteamProfile.objects.create(user=self.user, steam_id="76561198031200000")
         self.publisher = Publisher.objects.create(name="Valve")
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_steam_id_400_to_portal_game(self, mock_igdb):
         """
         Acceptance criteria: 'Une fonction de test peut transformer l'ID Steam 400 en l'objet Jeu Portal dans ta base.'
@@ -112,12 +112,12 @@ class SteamSyncTest(TestCase):
     def test_resolve_missing_games_empty(self):
         _resolve_and_save_missing_games([])  # Should return cleanly
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_igdb_exception(self, mock_igdb):
         mock_igdb.side_effect = Exception("IGDB Error")
         _resolve_and_save_missing_games([400])  # Should catch and return cleanly
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_invalid_data(self, mock_igdb):
         def mock_igdb_backend(endpoint, query):
             if endpoint == "external_games":
@@ -140,13 +140,13 @@ class SteamSyncTest(TestCase):
         self.assertIsNotNone(game)
         self.assertEqual(game.cover_url, "http://cover")
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_not_list(self, mock_igdb):
         # mock non list return for external_games
         mock_igdb.return_value = {"error": "not a list"}
         _resolve_and_save_missing_games([100])  # should default to [] and not crash
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_games_not_list(self, mock_igdb):
         def mock_igdb_backend(endpoint, query):
             if endpoint == "external_games":
@@ -156,7 +156,7 @@ class SteamSyncTest(TestCase):
         mock_igdb.side_effect = mock_igdb_backend
         _resolve_and_save_missing_games([100])  # should default to [] and not crash
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     def test_resolve_missing_games_games_exception(self, mock_igdb):
         def mock_igdb_backend(endpoint, query):
             if endpoint == "external_games":
@@ -166,7 +166,7 @@ class SteamSyncTest(TestCase):
         mock_igdb.side_effect = mock_igdb_backend
         _resolve_and_save_missing_games([100])  # should catch and return cleanly
 
-    @patch("apps.library.steam_sync.igdb_request")
+    @patch("apps.library.sync_utils.igdb_request")
     @patch("apps.library.steam_sync.requests.get")
     def test_sync_steam_library_with_missing_game(self, mock_get, mock_igdb):
         mock_response = mock_get.return_value
