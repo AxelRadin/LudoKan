@@ -1,15 +1,14 @@
 import { driver } from 'driver.js';
 import { useCallback, useRef } from 'react';
-import { TOUR_STEPS } from './tourSteps';
-
-// 0 = search, 1 = genres, 3 = profile (pas d'élément ciblé), 4 = profile-library : pas de clic requis
-const OPTIONAL_STEPS = new Set([0, 1, 3, 4]);
+import type { DriveStep } from 'driver.js';
 
 export interface UseTourOptions {
+  steps: DriveStep[];
+  optionalSteps: Set<number>;
   onDone: () => void;
 }
 
-export function useTour({ onDone }: UseTourOptions) {
+export function useTour({ steps, optionalSteps, onDone }: UseTourOptions) {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const clickedRef = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -22,7 +21,7 @@ export function useTour({ onDone }: UseTourOptions) {
       prevBtnText: '← Précédent',
       doneBtnText: 'Commencer !',
       smoothScroll: true,
-      steps: TOUR_STEPS,
+      steps,
 
       onHighlightStarted: element => {
         clickedRef.current = false;
@@ -46,11 +45,11 @@ export function useTour({ onDone }: UseTourOptions) {
       onNextClick: () => {
         const activeIndex = driverRef.current?.getActiveIndex() ?? 0;
 
-        if (!OPTIONAL_STEPS.has(activeIndex) && !clickedRef.current) {
+        if (!optionalSteps.has(activeIndex) && !clickedRef.current) {
           const el = driverRef.current?.getActiveElement();
           if (el) {
             el.classList.remove('tour-must-click');
-            void (el as HTMLElement).offsetWidth; // force reflow pour relancer l'animation
+            void (el as HTMLElement).offsetWidth;
             el.classList.add('tour-must-click');
             setTimeout(() => el.classList.remove('tour-must-click'), 600);
           }
@@ -67,13 +66,7 @@ export function useTour({ onDone }: UseTourOptions) {
     });
 
     driverRef.current.drive();
-  }, [onDone]);
+  }, [steps, optionalSteps, onDone]);
 
-  const advanceIfOnProfileStep = useCallback(() => {
-    if ((driverRef.current?.getActiveIndex() ?? -1) === 3) {
-      driverRef.current?.moveNext();
-    }
-  }, []);
-
-  return { startTour, advanceIfOnProfileStep };
+  return { startTour };
 }
