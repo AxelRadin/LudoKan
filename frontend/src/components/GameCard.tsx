@@ -12,7 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { addGameToLibrary, resolveGameIdIfNeeded } from '../api/igdb';
 import { useAuth } from '../contexts/useAuth';
-import { NormalizedGame } from '../types/game';
+import type { NormalizedGame } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
 import { formatPlaytime } from '../utils/timeUtils';
 
