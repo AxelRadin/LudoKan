@@ -1,12 +1,10 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiGet, apiPost } from '../services/api';
+import OAuthCallbackLayout from '../components/OAuthCallbackLayout';
+import { readOAuthReturnFromUrl } from '../utils/oauthCallbackUrl';
 
 const MicrosoftCallbackPage: React.FC = () => {
   const { t } = useTranslation();
@@ -20,10 +18,9 @@ const MicrosoftCallbackPage: React.FC = () => {
     exchangeStarted.current = true;
 
     const run = async () => {
-      const url = new URL(globalThis.location.href);
-      const code = url.searchParams.get('code');
-      const state = url.searchParams.get('state');
-      const providerError = url.searchParams.get('error');
+      const { code, state, providerError } = readOAuthReturnFromUrl(
+        globalThis.location.href
+      );
 
       if (providerError) {
         setError(
@@ -54,39 +51,14 @@ const MicrosoftCallbackPage: React.FC = () => {
     void run();
   }, [navigate, setAuthenticated, setUser, t]);
 
-  if (error) {
-    return (
-      <Box sx={{ p: 4, maxWidth: 480, mx: 'auto', mt: 8 }}>
-        <Alert severity="error" variant="filled">
-          {error}
-        </Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box
-      sx={{
-        p: 4,
-        maxWidth: 480,
-        mx: 'auto',
-        mt: 8,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-      }}
-    >
-      <CircularProgress size={60} thickness={4} />
-      <Box sx={{ textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>
-          {t('microsoftCallback.loadingTitle')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('microsoftCallback.loadingDesc')}
-        </Typography>
-      </Box>
-    </Box>
+    <OAuthCallbackLayout
+      error={error}
+      loadingTitle={t('microsoftCallback.loadingTitle')}
+      loadingSubtitle={t('microsoftCallback.loadingDesc')}
+      progressSize={60}
+      progressThickness={4}
+    />
   );
 };
 
