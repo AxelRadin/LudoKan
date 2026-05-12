@@ -180,7 +180,7 @@ describe('GameCard', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('42h')).toBeInTheDocument();
+    expect(screen.getByText('42h00')).toBeInTheDocument();
   });
 
   it("n'affiche pas le badge Steam si playtime_forever est 0 ou null", () => {

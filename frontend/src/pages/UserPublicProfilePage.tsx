@@ -44,6 +44,7 @@ import {
   parseLibraryCollectionParam,
   parseLibraryStatusParam,
 } from '../constants/libraryFilter';
+import { formatPlaytime } from '../utils/timeUtils';
 import ProfilePageLibrarySection from './ProfilePageLibrarySection';
 import type { UserGame } from '../api/userGames';
 import type { UserCollection } from '../api/collections';
@@ -750,7 +751,7 @@ export default function UserPublicProfilePage() {
               >
                 {t('publicUserProfile.statsPlaytime')}:{' '}
                 <strong style={{ color: titleColor }}>
-                  {(profile.total_playtime ?? 0).toFixed(1)} h
+                  {formatPlaytime(profile.total_playtime)}
                 </strong>
               </Typography>
               <Typography
