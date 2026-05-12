@@ -211,7 +211,8 @@
     "submit": "Publier l'avis",
     "submitting": "Envoi...",
     "success": "Avis publié avec succès !",
-    "counter": "{{count}} / 500"
+    "counter": "{{count}} / 500",
+    "ratingRequired": "Veuillez donner une note pour publier votre avis"
   },
   "searchBar": {
     "placeholder": "Recherchez des jeux…",
