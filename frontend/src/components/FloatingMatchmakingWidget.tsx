@@ -1,7 +1,14 @@
 import ChatIcon from '@mui/icons-material/Chat';
 import GroupIcon from '@mui/icons-material/Group';
 import RadarIcon from '@mui/icons-material/Radar';
-import { Badge, Box, CircularProgress, Fab, Typography, keyframes } from '@mui/material';
+import {
+  Badge,
+  Box,
+  CircularProgress,
+  Fab,
+  Typography,
+  keyframes,
+} from '@mui/material';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 import { type Party } from '../services/party';
 
@@ -18,29 +25,68 @@ interface FloatingMatchmakingWidgetProps {
   readonly onClick: () => void;
 }
 
-function getWidgetUIState(party: Party | null | undefined, elapsedTime: string) {
+function getWidgetUIState(
+  party: Party | null | undefined,
+  elapsedTime: string
+) {
   if (party?.status === 'chat_active') {
-    return { icon: <ChatIcon />, text: "Chat actif", color: 'success' as const, isPulsing: false };
+    return {
+      icon: <ChatIcon />,
+      text: 'Chat actif',
+      color: 'success' as const,
+      isPulsing: false,
+    };
   }
 
   if (party) {
-    const activeMembersCount = party.members?.filter((m: any) => !m.left_at).length || 0;
+    const activeMembersCount =
+      party.members?.filter((m: any) => !m.left_at).length || 0;
 
     switch (party.status) {
       case 'open':
-        return { icon: <GroupIcon />, text: `Lobby (${activeMembersCount}/${party.max_players})`, color: 'primary' as const, isPulsing: false };
+        return {
+          icon: <GroupIcon />,
+          text: `Lobby (${activeMembersCount}/${party.max_players})`,
+          color: 'primary' as const,
+          isPulsing: false,
+        };
       case 'waiting_ready':
-        return { icon: <GroupIcon />, text: "Prêt ?", color: 'warning' as const, isPulsing: true };
+        return {
+          icon: <GroupIcon />,
+          text: 'Prêt ?',
+          color: 'warning' as const,
+          isPulsing: true,
+        };
       case 'waiting_ready_for_chat':
-        return { icon: <GroupIcon />, text: "Valider chat", color: 'warning' as const, isPulsing: true };
+        return {
+          icon: <GroupIcon />,
+          text: 'Valider chat',
+          color: 'warning' as const,
+          isPulsing: true,
+        };
       case 'countdown':
-        return { icon: <CircularProgress size={24} color="inherit" />, text: "Ouverture...", color: 'primary' as const, isPulsing: false };
+        return {
+          icon: <CircularProgress size={24} color="inherit" />,
+          text: 'Ouverture...',
+          color: 'primary' as const,
+          isPulsing: false,
+        };
       default:
-        return { icon: <GroupIcon />, text: "Lobby", color: 'primary' as const, isPulsing: false };
+        return {
+          icon: <GroupIcon />,
+          text: 'Lobby',
+          color: 'primary' as const,
+          isPulsing: false,
+        };
     }
   }
 
-  return { icon: <RadarIcon />, text: elapsedTime, color: 'primary' as const, isPulsing: true };
+  return {
+    icon: <RadarIcon />,
+    text: elapsedTime,
+    color: 'primary' as const,
+    isPulsing: true,
+  };
 }
 
 export default function FloatingMatchmakingWidget({
@@ -79,7 +125,9 @@ export default function FloatingMatchmakingWidget({
         cursor: 'pointer',
         transition: 'transform 0.2s',
         '&:hover': { transform: 'scale(1.05)' },
-        ...(isPulsing && !hasNewMatch ? { animation: `${pulseRadar} 2s infinite` } : {}),
+        ...(isPulsing && !hasNewMatch
+          ? { animation: `${pulseRadar} 2s infinite` }
+          : {}),
       }}
     >
       <Typography variant="body2" fontWeight="bold" color="text.primary">
@@ -87,7 +135,12 @@ export default function FloatingMatchmakingWidget({
       </Typography>
 
       <Badge color="error" variant="dot" invisible={!hasNewMatch}>
-        <Fab color={color} size="medium" disableRipple sx={{ pointerEvents: 'none', boxShadow: 'none' }}>
+        <Fab
+          color={color}
+          size="medium"
+          disableRipple
+          sx={{ pointerEvents: 'none', boxShadow: 'none' }}
+        >
           {icon}
         </Fab>
       </Badge>

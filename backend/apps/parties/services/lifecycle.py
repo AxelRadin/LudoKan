@@ -12,6 +12,7 @@ from apps.parties.services.recruitment import transition_open_to_waiting_ready
 
 ERROR_USER_NOT_ACTIVE = "User is not an active participant in this party."
 
+
 def _timeout_pending_ready_states(*, party_id: int) -> int:
     return (
         active_members_qs(party_id=party_id)

@@ -173,12 +173,14 @@ function PartyChatView({
 function getMemberStatusText(member: any, status: string) {
   if (member.wants_to_start_early && status === 'open') return 'Prêt à lancer';
   if (status === 'waiting_ready') return `Statut : ${member.ready_state}`;
-  if (status === 'waiting_ready_for_chat') return `Chat : ${member.ready_for_chat_state}`;
+  if (status === 'waiting_ready_for_chat')
+    return `Chat : ${member.ready_for_chat_state}`;
   return '';
 }
 
 function getMemberStatusColor(member: any) {
-  if (member.wants_to_start_early || member.ready_state === 'accepted') return 'success.main';
+  if (member.wants_to_start_early || member.ready_state === 'accepted')
+    return 'success.main';
   return 'text.secondary';
 }
 
@@ -376,7 +378,9 @@ export default function MatchmakingModal({
                     <ListItemText
                       primary={member.pseudo || `Joueur #${member.user_id}`}
                       secondary={getMemberStatusText(member, party.status)}
-                      secondaryTypographyProps={{ color: getMemberStatusColor(member) }}
+                      secondaryTypographyProps={{
+                        color: getMemberStatusColor(member),
+                      }}
                     />
                   </ListItem>
                 </Paper>
