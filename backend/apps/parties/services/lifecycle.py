@@ -255,3 +255,27 @@ def start_countdown(party_id: int) -> GameParty | None:
     _start_countdown_on_party(party)
     party.refresh_from_db()
     return party
+
+
+@transaction.atomic
+def mark_start_early(*, party_id: int, user: AbstractBaseUser, accepted: bool) -> GamePartyMember:
+    party = GameParty.objects.select_for_update().get(pk=party_id)
+    member = GamePartyMember.objects.select_for_update().get(party_id=party_id, user=user)
+
+    if party.status != GameParty.Status.OPEN:
+        return member
+
+    if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
+        raise ValueError("User is not an active participant in this party.")
+
+    member.wants_to_start_early = accepted
+    member.save(update_fields=["wants_to_start_early", "updated_at"])
+
+    n_flow = active_member_count(party_id=party.id)
+    if n_flow >= MIN_PLAYERS_TO_CONTINUE:
+        n_ready = active_members_qs(party_id=party.id).filter(wants_to_start_early=True).count()
+        if n_ready == n_flow:
+            transition_open_to_waiting_ready(party)
+
+    member.refresh_from_db()
+    return member

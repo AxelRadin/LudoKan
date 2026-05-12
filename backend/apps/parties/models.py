@@ -136,6 +136,10 @@ class GamePartyMember(models.Model):
         db_index=True,
     )
 
+    wants_to_start_early = models.BooleanField(
+        default=False, help_text="True si le joueur a cliqué sur 'Lancer tout de suite' pendant la phase OPEN."
+    )
+
     joined_at = models.DateTimeField(auto_now_add=True)
     left_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
