@@ -1,12 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import ReviewCard from '../../../components/reviews/ReviewCard';
+
+function renderWithRouter(ui: ReactElement) {
+  return render(<MemoryRouter>{ui}</MemoryRouter>);
+}
 
 describe('ReviewCard', () => {
   const mockReview = { id: 1, content: 'Top', user: { id: 99 } };
 
   it("n'affiche pas le menu d'actions si non propriétaire", () => {
-    render(
+    renderWithRouter(
       <ReviewCard
         review={mockReview}
         isOwner={false}
@@ -19,7 +25,7 @@ describe('ReviewCard', () => {
 
   it('affiche le menu et appelle onEdit', () => {
     const mockOnEdit = vi.fn();
-    render(
+    renderWithRouter(
       <ReviewCard
         review={mockReview}
         isOwner={true}
@@ -36,7 +42,7 @@ describe('ReviewCard', () => {
 
   it('affiche le menu et appelle onDelete', () => {
     const mockOnDelete = vi.fn();
-    render(
+    renderWithRouter(
       <ReviewCard
         review={mockReview}
         isOwner={true}
@@ -52,7 +58,7 @@ describe('ReviewCard', () => {
   });
 
   it('gère le survol de la souris (hover)', () => {
-    const { container } = render(
+    const { container } = renderWithRouter(
       <ReviewCard
         review={mockReview}
         isOwner={false}
@@ -82,7 +88,7 @@ describe('ReviewCard', () => {
       user: { id: 1, pseudo: 'GamerDu13', review_count: 5 },
     };
 
-    render(
+    renderWithRouter(
       <ReviewCard
         review={fullReview}
         isOwner={false}
@@ -108,7 +114,7 @@ describe('ReviewCard', () => {
       user: { id: 2, username: 'UserLogin', review_count: 1 },
     };
 
-    const { unmount } = render(
+    const { unmount } = renderWithRouter(
       <ReviewCard
         review={fallbackReview1}
         isOwner={false}
@@ -128,7 +134,7 @@ describe('ReviewCard', () => {
       content: 'Test Anonyme',
     };
 
-    render(
+    renderWithRouter(
       <ReviewCard
         review={fallbackReview2}
         isOwner={false}

@@ -10,8 +10,10 @@ from apps.users.views import (
     AdminUserSuspensionListView,
     MyReportsView,
 )
+from apps.users.views_profile import UserPublicProfileView
 
 urlpatterns = [
+    path("users/<str:pseudo>/profile/", UserPublicProfileView.as_view(), name="user-public-profile"),
     path("me/", UserDetailsView.as_view(), name="current-user"),
     path("me/reports/", MyReportsView.as_view(), name="my-reports"),
     # Admin

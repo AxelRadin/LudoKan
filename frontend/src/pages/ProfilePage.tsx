@@ -29,7 +29,7 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import type { GameListItem } from '../components/GameList';
+import LibraryPrivacyModal from '../components/LibraryPrivacyModal';
 import {
   CreateCollectionModal,
   ManageCollectionsModal,
@@ -48,11 +48,16 @@ import {
   removeGameFromCollection,
   type UserCollection,
 } from '../api/collections';
-import { deleteUserGame, fetchUserGames } from '../api/userGames';
+import {
+  deleteUserGame,
+  fetchUserGames,
+  type UserGame as ApiUserGame,
+} from '../api/userGames';
 import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 import ProfilePageLibrarySection from './ProfilePageLibrarySection';
+import { useProfileLibraryDerived } from '../hooks/useProfileLibraryDerived';
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -87,6 +92,7 @@ styleEl.textContent = `
   .stat-card-0  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.28s both; }
   .stat-card-1  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.36s both; }
   .stat-card-2  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.44s both; }
+  .stat-card-3  { animation: scaleIn 0.45s cubic-bezier(0.22,1,0.36,1) 0.52s both; }
   .lib-section  { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.5s both; }
 `;
 document.head.appendChild(styleEl);
@@ -136,6 +142,7 @@ type UserProfile = {
   games_finished_percentage?: number;
   games_played_percentage?: number;
   total_games_count?: number;
+  friends_count?: number;
 };
 
 type UserGame = {
@@ -326,14 +333,22 @@ type ProfilePageModel = {
   avatarError: string;
   avatarBusy: boolean;
   userGames: UserGame[];
-  userGamesForLibrary: UserGame[];
-  gamesEnCours: GameListItem[];
-  gamesTermines: GameListItem[];
-  gamesEnvie: GameListItem[];
-  gamesFavoris: GameListItem[];
   avatarSrc: string;
   removeGame: (userGameId: number) => void;
-  snackbar: { open: boolean; message: string; isError: boolean };
+  snackbar: {
+    open: boolean;
+    message: string;
+    isError: boolean;
+    showUndo?: boolean;
+  };
+  setSnackbar: React.Dispatch<
+    React.SetStateAction<{
+      open: boolean;
+      message: string;
+      isError: boolean;
+      showUndo?: boolean;
+    }>
+  >;
   handleSnackbarClose: () => void;
   handleUndo: () => void;
   bannerBusy: boolean;
@@ -353,9 +368,7 @@ type ProfilePageModel = {
   gamesLoading: boolean;
 };
 
-function useProfilePageModel(
-  collectionFilterId: LibraryCollectionFilter
-): ProfilePageModel {
+function useProfilePageModel(): ProfilePageModel {
   const { t } = useTranslation();
   const { user: globalUser } = useAuth();
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -690,10 +703,12 @@ function useProfilePageModel(
     open: boolean;
     message: string;
     isError: boolean;
+    showUndo?: boolean;
   }>({
     open: false,
     message: '',
     isError: false,
+    showUndo: false,
   });
   const undoRef = useRef<{ game: UserGame; index: number } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -710,7 +725,7 @@ function useProfilePageModel(
     });
     undoRef.current = null;
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setSnackbar({ open: false, message: '', isError: false });
+    setSnackbar({ open: false, message: '', isError: false, showUndo: false });
   };
 
   const removeGame = (userGameId: number) => {
@@ -724,6 +739,7 @@ function useProfilePageModel(
       open: true,
       message: t('profilePage.gameRemoved'),
       isError: false,
+      showUndo: true,
     });
     undoTimerRef.current = setTimeout(async () => {
       undoRef.current = null;
@@ -739,65 +755,11 @@ function useProfilePageModel(
           open: true,
           message: t('profilePage.gameRemoveError'),
           isError: true,
+          showUndo: false,
         });
       }
     }, 5000);
   };
-
-  const userGamesForLibrary = useMemo(() => {
-    if (collectionFilterId === 'ALL') return userGames;
-    return userGames.filter(ug =>
-      Array.isArray(ug.collection_ids)
-        ? ug.collection_ids.includes(collectionFilterId)
-        : false
-    );
-  }, [userGames, collectionFilterId]);
-
-  const gamesForStatus = useCallback(
-    (games: UserGame[], status: string): GameListItem[] =>
-      games
-        .filter(g => g.status === status)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    []
-  );
-
-  const gamesEnCours = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'EN_COURS'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesTermines = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'TERMINE'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesEnvie = useMemo(
-    () => gamesForStatus(userGamesForLibrary, 'ENVIE_DE_JOUER'),
-    [userGamesForLibrary, gamesForStatus]
-  );
-  const gamesFavoris = useMemo(
-    () =>
-      userGamesForLibrary
-        .filter(g => g.is_favorite)
-        .map(g => ({
-          id: g.game.id,
-          name: g.game.name,
-          cover_url: g.game.cover_url,
-          image: g.game.image,
-          status: g.status,
-          userGameId: g.id,
-          steam_appid: g.game.steam_appid,
-          playtime_forever: g.playtime_forever,
-        })),
-    [userGamesForLibrary]
-  );
 
   return {
     user,
@@ -807,11 +769,6 @@ function useProfilePageModel(
     avatarError,
     avatarBusy,
     userGames,
-    userGamesForLibrary,
-    gamesEnCours,
-    gamesTermines,
-    gamesEnvie,
-    gamesFavoris,
     avatarSrc,
     removeGame,
     snackbar,
@@ -832,6 +789,7 @@ function useProfilePageModel(
     handleSteamSync,
     reloadUserGames,
     gamesLoading,
+    setSnackbar,
   };
 }
 
@@ -1341,6 +1299,59 @@ function ProfileIntegrations({
   );
 }
 
+function useResetInvalidLibraryCollectionFilter(
+  collections: UserCollection[],
+  collectionFilterId: LibraryCollectionFilter,
+  collectionsLoading: boolean,
+  setLibraryCollectionFilter: (next: LibraryCollectionFilter) => void
+) {
+  useEffect(() => {
+    if (collectionsLoading) return;
+    if (collectionFilterId === 'ALL') return;
+    const exists = collections.some(c => c.id === collectionFilterId);
+    if (!exists) setLibraryCollectionFilter('ALL');
+  }, [
+    collections,
+    collectionFilterId,
+    collectionsLoading,
+    setLibraryCollectionFilter,
+  ]);
+}
+
+function useProfilePageCollections(
+  userPseudo: string | undefined,
+  userGamesLength: number
+) {
+  const [collections, setCollections] = useState<UserCollection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(true);
+
+  const refreshCollections = useCallback(async () => {
+    try {
+      const list = await fetchMyCollections();
+      setCollections(list);
+    } catch {
+      setCollections([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    setCollectionsLoading(true);
+    refreshCollections().finally(() => {
+      if (alive) setCollectionsLoading(false);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [refreshCollections, userPseudo]);
+
+  useEffect(() => {
+    refreshCollections();
+  }, [userGamesLength, refreshCollections]);
+
+  return { collections, collectionsLoading, refreshCollections };
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1365,14 +1376,10 @@ export default function ProfilePage() {
     avatarError,
     avatarBusy,
     userGames,
-    userGamesForLibrary,
-    gamesEnCours,
-    gamesTermines,
-    gamesEnvie,
-    gamesFavoris,
     avatarSrc,
     removeGame,
     snackbar,
+    setSnackbar,
     handleSnackbarClose,
     handleUndo,
     bannerBusy,
@@ -1390,40 +1397,18 @@ export default function ProfilePage() {
     handleSteamSync,
     reloadUserGames,
     gamesLoading,
-  } = useProfilePageModel(collectionFilterId);
+  } = useProfilePageModel();
 
-  const [collections, setCollections] = useState<UserCollection[]>([]);
-  const [collectionsLoading, setCollectionsLoading] = useState(true);
+  const { collections, collectionsLoading, refreshCollections } =
+    useProfilePageCollections(user?.pseudo, userGames.length);
+
   const [librarySectionMenuAnchor, setLibrarySectionMenuAnchor] =
     useState<null | HTMLElement>(null);
   const [createCollectionModalOpen, setCreateCollectionModalOpen] =
     useState(false);
   const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
     useState(false);
-
-  const refreshCollections = useCallback(async () => {
-    try {
-      const list = await fetchMyCollections();
-      setCollections(list);
-    } catch {
-      setCollections([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    let alive = true;
-    setCollectionsLoading(true);
-    refreshCollections().finally(() => {
-      if (alive) setCollectionsLoading(false);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [refreshCollections, user?.pseudo]);
-
-  useEffect(() => {
-    refreshCollections();
-  }, [userGames.length, refreshCollections]);
+  const [libraryPrivacyModalOpen, setLibraryPrivacyModalOpen] = useState(false);
 
   const libraryFilter = useMemo(
     () => parseLibraryStatusParam(searchParams.get(LIBRARY_STATUS_QUERY_KEY)),
@@ -1460,43 +1445,28 @@ export default function ProfilePage() {
     [setSearchParams]
   );
 
-  const libraryCounts = useMemo(
-    () => ({
-      all: userGamesForLibrary.length,
-      enCours: gamesEnCours.length,
-      termines: gamesTermines.length,
-      envie: gamesEnvie.length,
-    }),
-    [
-      userGamesForLibrary.length,
-      gamesEnCours.length,
-      gamesTermines.length,
-      gamesEnvie.length,
-    ]
+  const {
+    gamesEnCours,
+    gamesTermines,
+    gamesEnvie,
+    gamesFavoris,
+    libraryCounts,
+    gamesForLibraryFilter,
+    singleFilterTitle,
+    libraryBadgeText,
+  } = useProfileLibraryDerived(
+    userGames as ApiUserGame[],
+    collectionFilterId,
+    libraryFilter,
+    t
   );
 
-  const gamesForLibraryFilter = useMemo((): GameListItem[] => {
-    switch (libraryFilter) {
-      case 'EN_COURS':
-        return gamesEnCours;
-      case 'TERMINE':
-        return gamesTermines;
-      case 'ENVIE_DE_JOUER':
-        return gamesEnvie;
-      default:
-        return [];
-    }
-  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
-
-  const singleFilterTitle = useMemo(() => {
-    const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
-      EN_COURS: t('profilePage.statusPlaying'),
-      TERMINE: t('profilePage.statusDone'),
-      ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
-    };
-    if (libraryFilter === 'ALL') return '';
-    return map[libraryFilter];
-  }, [libraryFilter, t]);
+  useResetInvalidLibraryCollectionFilter(
+    collections,
+    collectionFilterId,
+    collectionsLoading,
+    setLibraryCollectionFilter
+  );
 
   const activeCollectionMeta = useMemo(
     () =>
@@ -1535,21 +1505,6 @@ export default function ProfilePage() {
     refreshCollections,
     t,
   ]);
-
-  const libraryBadgeText = useMemo(() => {
-    if (collectionFilterId === 'ALL') {
-      return userGames.length <= 1
-        ? t('profilePage.libraryTotal', { count: userGames.length })
-        : t('profilePage.libraryTotalPlural', { count: userGames.length });
-    }
-    return userGamesForLibrary.length <= 1
-      ? t('profilePage.libraryInViewOne', {
-          count: userGamesForLibrary.length,
-        })
-      : t('profilePage.libraryInViewMany', {
-          count: userGamesForLibrary.length,
-        });
-  }, [collectionFilterId, userGames.length, userGamesForLibrary.length, t]);
 
   const handleCloseManageCollectionsModal = useCallback(() => {
     setManageCollectionsModalOpen(false);
@@ -2084,14 +2039,16 @@ export default function ProfilePage() {
           >
             {[
               {
-                label: t('profilePage.playtimeLabel'),
-                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
-                cls: 'stat-card-0',
+                label: t('profilePage.friendsLabelStat'),
+                value: user?.friends_count?.toString() ?? '0',
+                cls: 'stat-card-1',
+                onClick: () => navigate('/friends'),
+                clickable: true,
               },
               {
                 label: t('profilePage.reviewsLabel'),
                 value: user?.review_count?.toString() || '0',
-                cls: 'stat-card-1',
+                cls: 'stat-card-0',
                 onClick: () => navigate('/profile/reviews'),
                 clickable: true,
               },
@@ -2121,29 +2078,37 @@ export default function ProfilePage() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              gridTemplateColumns: {
+                xs: 'repeat(2, 1fr)',
+                md: 'repeat(4, 1fr)',
+              },
               gap: 2,
             }}
           >
             {[
               {
-                label: t('profilePage.finishedRatioLabel'),
-                value: user?.games_finished_percentage
-                  ? `${user.games_finished_percentage}%`
-                  : '0%',
+                label: t('profilePage.totalGamesLabel'),
+                value: user?.total_games_count?.toString() || '0',
                 cls: 'stat-card-0',
+              },
+              {
+                label: t('profilePage.playtimeLabel'),
+                value: user?.total_playtime ? `${user.total_playtime}h` : '0h',
+                cls: 'stat-card-1',
               },
               {
                 label: t('profilePage.playedRatioLabel'),
                 value: user?.games_played_percentage
                   ? `${user.games_played_percentage}%`
                   : '0%',
-                cls: 'stat-card-1',
+                cls: 'stat-card-2',
               },
               {
-                label: t('profilePage.totalGamesLabel'),
-                value: user?.total_games_count?.toString() || '0',
-                cls: 'stat-card-2',
+                label: t('profilePage.finishedRatioLabel'),
+                value: user?.games_finished_percentage
+                  ? `${user.games_finished_percentage}%`
+                  : '0%',
+                cls: 'stat-card-3',
               },
             ].map(props => (
               <ProfileStatCard
@@ -2179,6 +2144,7 @@ export default function ProfilePage() {
           setLibrarySectionMenuAnchor={setLibrarySectionMenuAnchor}
           setCreateCollectionModalOpen={setCreateCollectionModalOpen}
           setManageCollectionsModalOpen={setManageCollectionsModalOpen}
+          onOpenLibraryPrivacy={() => setLibraryPrivacyModalOpen(true)}
           libraryFilter={libraryFilter}
           setLibraryFilter={setLibraryFilter}
           libraryCounts={libraryCounts}
@@ -2209,6 +2175,19 @@ export default function ProfilePage() {
         open={manageCollectionsModalOpen}
         onClose={handleCloseManageCollectionsModal}
       />
+      <LibraryPrivacyModal
+        open={libraryPrivacyModalOpen}
+        onClose={() => setLibraryPrivacyModalOpen(false)}
+        onSaved={async () => {
+          await refreshCollections();
+          setSnackbar({
+            open: true,
+            message: t('libraryPrivacy.saved'),
+            isError: false,
+            showUndo: false,
+          });
+        }}
+      />
 
       <Snackbar
         open={snackbar.open}
@@ -2220,11 +2199,11 @@ export default function ProfilePage() {
           severity={snackbar.isError ? 'error' : 'success'}
           onClose={handleSnackbarClose}
           action={
-            snackbar.isError ? undefined : (
+            snackbar.showUndo && !snackbar.isError ? (
               <Button color="inherit" size="small" onClick={handleUndo}>
                 {t('profilePage.undoLabel')}
               </Button>
-            )
+            ) : undefined
           }
           sx={{ width: '100%' }}
         >
