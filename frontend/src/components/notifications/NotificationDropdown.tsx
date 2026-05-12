@@ -5,11 +5,13 @@ import {
   CircularProgress,
   List,
   ListItem,
+  ListItemButton,
   ListItemText,
   Typography,
 } from '@mui/material';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../../contexts/NotificationsContext';
 import type { NotificationItem } from '../../types/notification';
 
@@ -48,8 +50,13 @@ function notificationDescription(notification: NotificationItem): string {
   );
 }
 
-export default function NotificationDropdown() {
+export default function NotificationDropdown({
+  onClose,
+}: {
+  onClose?: () => void;
+}) {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const {
     notifications,
     loading,
@@ -60,6 +67,58 @@ export default function NotificationDropdown() {
     markAllAsRead,
     loadMoreNotifications,
   } = useNotifications();
+
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    onClose?.();
+    if (notification.unread) {
+      await markAsRead(notification.id).catch(() => {});
+    }
+
+    const { verb, target, actor } = notification;
+
+    switch (verb) {
+      case 'friend_request_received':
+        navigate('/friends?tab=requests');
+        break;
+      case 'friend_request_accepted':
+        if (actor?.repr) {
+          navigate(`/u/${actor.repr}`);
+        } else {
+          navigate('/friends');
+        }
+        break;
+      case 'message':
+        if (target?.id) {
+          navigate(`/chat/${target.id}`);
+        }
+        break;
+      case 'review':
+        if (target?.id) {
+          navigate(`/game/${target.id}`);
+        }
+        break;
+      case 'match':
+        navigate('/friends'); // Or a specific match page if it exists
+        break;
+      case 'ticket_reviewing':
+      case 'ticket_approved':
+      case 'ticket_rejected':
+      case 'ticket_published':
+      case 'ticket_created':
+        navigate('/admin/dashboard');
+        break;
+      default:
+        // For other types, try to go to the target if it's a game or user
+        if (target?.type === 'game' && target.id) {
+          navigate(`/game/${target.id}`);
+        } else if (target?.type === 'user' && target.repr) {
+          navigate(`/u/${target.repr}`);
+        } else {
+          navigate('/profile');
+        }
+        break;
+    }
+  };
 
   const sortedNotifications = useMemo(
     () =>
@@ -122,7 +181,7 @@ export default function NotificationDropdown() {
           {sortedNotifications.map(notification => (
             <ListItem
               key={notification.id}
-              alignItems="flex-start"
+              disablePadding
               sx={{
                 borderBottom: '1px solid',
                 borderColor: 'divider',
@@ -134,52 +193,64 @@ export default function NotificationDropdown() {
                 notification.unread ? (
                   <Button
                     size="small"
-                    onClick={() => markAsRead(notification.id).catch(() => {})}
+                    onClick={e => {
+                      e.stopPropagation();
+                      markAsRead(notification.id).catch(() => {});
+                    }}
                   >
                     {t('notifications.markRead')}
                   </Button>
                 ) : null
               }
             >
-              <ListItemText
-                primary={
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      pr: 4,
-                    }}
-                  >
-                    {notification.unread && (
-                      <CircleIcon color="error" sx={{ fontSize: 10 }} />
-                    )}
-                    <Typography
-                      variant="body2"
+              <ListItemButton
+                onClick={() => handleNotificationClick(notification)}
+                sx={{
+                  alignItems: 'flex-start',
+                  px: 2,
+                  py: 1.5,
+                }}
+              >
+                <ListItemText
+                  primary={
+                    <Box
                       sx={{
-                        fontWeight: notification.unread ? 700 : 500,
-                        textTransform: 'capitalize',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        pr: 4,
                       }}
                     >
-                      {notificationTitle(t, notification.verb)}
-                    </Typography>
-                  </Box>
-                }
-                secondary={
-                  <>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 0.4 }}
-                    >
-                      {notificationDescription(notification)}
-                    </Typography>
-                    <Typography variant="caption" color="text.disabled">
-                      {relativeDate(notification.timestamp, i18n.language)}
-                    </Typography>
-                  </>
-                }
-              />
+                      {notification.unread && (
+                        <CircleIcon color="error" sx={{ fontSize: 10 }} />
+                      )}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: notification.unread ? 700 : 500,
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {notificationTitle(t, notification.verb)}
+                      </Typography>
+                    </Box>
+                  }
+                  secondary={
+                    <>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 0.4 }}
+                      >
+                        {notificationDescription(notification)}
+                      </Typography>
+                      <Typography variant="caption" color="text.disabled">
+                        {relativeDate(notification.timestamp, i18n.language)}
+                      </Typography>
+                    </>
+                  }
+                />
+              </ListItemButton>
             </ListItem>
           ))}
         </List>
