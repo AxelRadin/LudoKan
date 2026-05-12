@@ -2,16 +2,14 @@ import { driver } from 'driver.js';
 import { useCallback, useRef } from 'react';
 import { TOUR_STEPS } from './tourSteps';
 
-// 0 = search, 1 = genres : informatifs uniquement, pas de clic requis
-// 5 = matchmaking-button : optionnel si le jeu n'est pas encore chargé
-const OPTIONAL_STEPS = new Set([0, 1, 5]);
+// 0 = search, 1 = genres, 4 = profile-library : informatifs uniquement, pas de clic requis
+const OPTIONAL_STEPS = new Set([0, 1, 4]);
 
 export interface UseTourOptions {
   onDone: () => void;
-  navigate: (path: string) => void;
 }
 
-export function useTour({ onDone, navigate }: UseTourOptions) {
+export function useTour({ onDone }: UseTourOptions) {
   const driverRef = useRef<ReturnType<typeof driver> | null>(null);
   const clickedRef = useRef(false);
   const cleanupRef = useRef<(() => void) | null>(null);
@@ -34,16 +32,6 @@ export function useTour({ onDone, navigate }: UseTourOptions) {
         if (!element) return;
         const handler = () => {
           clickedRef.current = true;
-          const activeIndex = driverRef.current?.getActiveIndex() ?? -1;
-          // profile button (3): navigate to profile page, avoid dropdown/overlay conflict
-          if (activeIndex === 3) {
-            navigate('/profile');
-            setTimeout(() => driverRef.current?.moveNext(), 500);
-          }
-          // profile library (4): user clicks a game → wait for game page to render
-          if (activeIndex === 4) {
-            setTimeout(() => driverRef.current?.moveNext(), 800);
-          }
         };
         element.addEventListener('click', handler);
         cleanupRef.current = () =>
@@ -79,7 +67,7 @@ export function useTour({ onDone, navigate }: UseTourOptions) {
     });
 
     driverRef.current.drive();
-  }, [onDone, navigate]);
+  }, [onDone]);
 
   return { startTour };
 }

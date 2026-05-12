@@ -51,14 +51,4 @@ export const TOUR_STEPS: DriveStep[] = [
       align: 'start',
     },
   },
-  {
-    element: '[data-tour="matchmaking-button"]',
-    popover: {
-      title: '🎮 Matchmaking',
-      description:
-        'Ce bouton lance une recherche de matchmaking pour trouver des joueurs qui ont ce jeu dans leur bibliothèque.',
-      side: 'bottom',
-      align: 'start',
-    },
-  },
 ];

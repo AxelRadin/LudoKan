@@ -18,14 +18,18 @@ const App = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { shouldShow, markAsDone } = useOnboarding();
-  const { startTour } = useTour({ onDone: markAsDone, navigate });
+  const { startTour } = useTour({ onDone: markAsDone });
 
-  // Premier lancement automatique
+  // Premier lancement automatique — toujours depuis la homepage
   useEffect(() => {
     if (!isAuthenticated || !shouldShow) return;
+    if (location.pathname !== '/') navigate('/');
     const timer = setTimeout(() => startTour(), 800);
     return () => clearTimeout(timer);
-  }, [isAuthenticated, shouldShow, startTour]);
+    // location.pathname est intentionnellement absent des deps : on ne veut pas
+    // relancer le tour à chaque changement de route pendant le tour
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, shouldShow, startTour, navigate]);
 
   // Relance depuis les paramètres via navigate('/', { state: { startTour: true } })
   useEffect(() => {
