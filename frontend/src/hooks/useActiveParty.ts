@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Party,
+  type Party,
   getMyActiveParty,
   leaveParty,
   markPartyReady,
