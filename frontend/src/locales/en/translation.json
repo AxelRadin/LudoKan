@@ -114,6 +114,27 @@
     "langFr": "Français 🇫🇷",
     "langEn": "English 🇬🇧"
   },
+  "notifications": {
+    "open": "Open notifications",
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "loadMore": "Load more",
+    "loadingMore": "Loading...",
+    "verb": {
+      "friend_request_received": "Friend request",
+      "friend_request_accepted": "Friend request accepted",
+      "message": "New message",
+      "match": "Match found",
+      "review": "New review",
+      "ticket_reviewing": "Ticket in review",
+      "ticket_approved": "Ticket approved",
+      "ticket_rejected": "Ticket rejected",
+      "ticket_published": "Ticket published",
+      "ticket_created": "New ticket"
+    }
+  },
   "loginForm": {
     "title": "Log in",
     "switchLabel": "Sign up",
