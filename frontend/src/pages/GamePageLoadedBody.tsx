@@ -1,30 +1,49 @@
-import BookmarkIcon from '@mui/icons-material/Bookmark';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import DescriptionIcon from '@mui/icons-material/Description';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import PeopleIcon from '@mui/icons-material/People';
-import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import { Box, Button, Chip, Modal, Tooltip, Typography } from '@mui/material';
-import { useState, useEffect } from 'react';
+import {
+  Box,
+  Button,
+  Chip,
+  Tooltip,
+  Typography,
+  Skeleton,
+} from '@mui/material';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
-import GameRatingsSummary from '../components/GameRatingsSummary';
 import PlatformLogos from '../components/PlatformLogos';
-import ReviewSection from '../components/reviews/ReviewSection';
 import { SectionAccentTitle } from '../components/SectionAccentTitle';
-import SecondaryButton from '../components/SecondaryButton';
-import { AddToCollectionModal } from '../components/UserCollectionModals';
-import { useAuth } from '../contexts/useAuth';
+import GameActions from '../components/GameActions';
 import type { GamePageLogic } from '../hooks/useGamePageLogic';
 import type { NormalizedGame } from '../types/game';
 import type { GamePageAppearance } from './gamePageAppearance';
 import { GAME_PAGE_FONT } from './gamePageAppearance';
+import { useAuth } from '../contexts/useAuth';
 import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
 import { useTour } from '../onboarding/useTour';
 import { GAME_TOUR_STEPS } from '../onboarding/tourSteps';
 import { GENRE_ICON_MAP } from './gamePageGenreIcons';
-import { Sep, StatusChip } from './GamePageFragments';
+import { FavoriteGlyph } from './GamePageFragments';
 import { buildPlayerLabel, fdate, hi } from './gamePageUtils';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PeopleIcon from '@mui/icons-material/People';
+
+const GameRatingsSummary = lazy(
+  () => import('../components/GameRatingsSummary')
+);
+const ReviewSection = lazy(() => import('../components/reviews/ReviewSection'));
+const GameGallerySection = lazy(
+  () => import('../components/GameGallerySection')
+);
+
+const SectionSkeleton = () => (
+  <Box sx={{ p: 3, mb: 2 }}>
+    <Skeleton variant="text" width="40%" height={32} sx={{ mb: 2 }} />
+    <Skeleton
+      variant="rectangular"
+      width="100%"
+      height={200}
+      sx={{ borderRadius: '16px' }}
+    />
+  </Box>
+);
 
 const GAME_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]);
 
@@ -44,12 +63,6 @@ type DescriptionCardProps = Readonly<{
   logic: GamePageLogic;
   appearance: GamePageAppearance;
   description: DescriptionState;
-}>;
-type FavoriteGlyphProps = Readonly<{
-  isFavorite: boolean;
-  accent: string;
-  size: number;
-  color?: string;
 }>;
 
 function buildDescriptionState(
@@ -72,21 +85,6 @@ function buildDescriptionState(
 function getReviewGameId(djangoId: number | null | undefined): string {
   if (djangoId == null) return '';
   return String(djangoId);
-}
-
-function FavoriteGlyph({
-  isFavorite,
-  accent,
-  size,
-  color,
-}: FavoriteGlyphProps) {
-  if (isFavorite)
-    return <FavoriteIcon sx={{ fontSize: size, color: color ?? accent }} />;
-  return (
-    <FavoriteBorderIcon
-      sx={{ fontSize: size, color: color ?? 'rgba(255,255,255,0.9)' }}
-    />
-  );
 }
 
 function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
@@ -311,148 +309,6 @@ function GameHeroCard({ game, logic, appearance }: PageSectionProps) {
   );
 }
 
-function GameActionsCard({ game, logic, appearance }: PageSectionProps) {
-  const { t } = useTranslation();
-  const { card, redBtnSx, accent, muted } = appearance;
-  const isFavorite = Boolean(logic.userGame?.is_favorite);
-  const isSolo = game.max_players === 1;
-  const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
-  const [collectionModalOpen, setCollectionModalOpen] = useState(false);
-
-  const openCollectionModal = () => setCollectionModalOpen(true);
-
-  const requireAuthForCollection = () => {
-    setPendingAction(() => () => setCollectionModalOpen(true));
-    setAuthModalOpen(true);
-  };
-
-  const onAddToCollectionClick = () => {
-    if (!isAuthenticated) {
-      requireAuthForCollection();
-      return;
-    }
-    openCollectionModal();
-  };
-
-  return (
-    <Box className="gp-c0" sx={{ ...card(), px: 2.5, py: 2.5 }}>
-      <SectionAccentTitle label={t('gamePageBody.actionsLabel')} />
-      <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2.5 }}>
-        <Tooltip
-          title={isSolo ? 'Ce jeu est solo' : ''}
-          arrow
-          disableHoverListener={!isSolo}
-        >
-          <span data-tour="matchmaking-button">
-            <SecondaryButton
-              onClick={() => logic.handleSetMatchmaking()}
-              disabled={logic.isMatching || isSolo}
-            >
-              {logic.isMatching
-                ? t('gamePageBody.searching')
-                : t('gamePageBody.matchmaking')}
-            </SecondaryButton>
-          </span>
-        </Tooltip>
-        <Button
-          data-tour="add-to-library"
-          variant="contained"
-          onClick={onAddToCollectionClick}
-          sx={redBtnSx}
-        >
-          {t('gamePageBody.addToCollection')}
-        </Button>
-      </Box>
-
-      <AddToCollectionModal
-        open={collectionModalOpen}
-        onClose={() => setCollectionModalOpen(false)}
-        djangoGameId={logic.djangoId}
-        ensureDjangoId={logic.ensureDjangoId}
-        isAuthenticated={isAuthenticated}
-        onRequireAuth={requireAuthForCollection}
-        userGameHint={logic.userGame}
-        onApplied={logic.refreshUserLibrary}
-      />
-
-      <Sep />
-
-      <SectionAccentTitle label={t('gamePageBody.statusLabel')} />
-      <Box
-        data-tour="game-status"
-        sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}
-      >
-        <StatusChip
-          icon={<CheckCircleIcon />}
-          label={t('gamePageBody.statusDone')}
-          active={logic.userGame?.status === 'TERMINE'}
-          color="#43a047"
-          onClick={() => logic.handleSetStatus('TERMINE')}
-        />
-        <StatusChip
-          icon={<PlayCircleIcon />}
-          label={t('gamePageBody.statusPlaying')}
-          active={logic.userGame?.status === 'EN_COURS'}
-          color={accent}
-          onClick={() => logic.handleSetStatus('EN_COURS')}
-        />
-        <StatusChip
-          icon={<BookmarkIcon />}
-          label={t('gamePageBody.statusWishlist')}
-          active={logic.userGame?.status === 'ENVIE_DE_JOUER'}
-          color="#fb8c00"
-          onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
-        />
-
-        <Tooltip title={t('gamePageBody.favoriteTooltip')} arrow>
-          <Box
-            onClick={() => logic.handleToggleFavorite()}
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.6,
-              px: 1.5,
-              py: 0.7,
-              borderRadius: '12px',
-              cursor: 'pointer',
-              background: isFavorite
-                ? 'rgba(255,61,61,0.12)'
-                : 'rgba(0,0,0,0.03)',
-              border: isFavorite
-                ? '1px solid rgba(255,61,61,0.35)'
-                : '1px solid rgba(0,0,0,0.06)',
-              color: isFavorite ? accent : muted,
-              transition: 'all 0.18s ease',
-              '&:hover': {
-                background: 'rgba(255,61,61,0.10)',
-                color: accent,
-                transform: 'translateY(-1px)',
-              },
-            }}
-          >
-            <FavoriteGlyph
-              isFavorite={isFavorite}
-              accent={accent}
-              size={14}
-              color="inherit"
-            />
-            <Typography
-              sx={{
-                fontFamily: GAME_PAGE_FONT,
-                fontSize: 12.5,
-                fontWeight: isFavorite ? 700 : 500,
-                color: 'inherit',
-              }}
-            >
-              {t('gamePageBody.favorite')}
-            </Typography>
-          </Box>
-        </Tooltip>
-      </Box>
-    </Box>
-  );
-}
-
 function GameGenresCard({ game, appearance }: PageSectionProps) {
   const { t } = useTranslation();
   const { card, accent, muted, accentSoft, accentGlow } = appearance;
@@ -552,142 +408,6 @@ function GameDescriptionCard({
   );
 }
 
-function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
-  const { t } = useTranslation();
-  const { card, noHov, accentGlow, ink } = appearance;
-  const videos = game.videos ?? [];
-  const screenshots = game.screenshots ?? [];
-
-  if (videos.length === 0 && screenshots.length === 0) return null;
-
-  return (
-    <Box
-      data-tour="game-gallery"
-      className="gp-c5"
-      sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2 }}
-    >
-      <SectionAccentTitle label={t('gamePageBody.galleryLabel')} />
-      <Typography
-        sx={{
-          fontFamily: GAME_PAGE_FONT,
-          fontWeight: 700,
-          fontSize: 18,
-          color: ink,
-          letterSpacing: -0.3,
-          mb: 0.5,
-        }}
-      >
-        {t('gamePageBody.mediaLabel')}
-      </Typography>
-      <Sep />
-
-      {videos.length > 0 && (
-        <Box sx={{ mb: 2.5 }}>
-          <Box
-            sx={{
-              position: 'relative',
-              width: '100%',
-              maxWidth: '100%',
-              aspectRatio: '16/9',
-              borderRadius: '16px',
-              overflow: 'hidden',
-              boxShadow: `0 8px 28px rgba(0,0,0,0.14), 0 0 0 1px ${accentGlow}`,
-            }}
-          >
-            <iframe
-              src={`https://www.youtube.com/embed/${videos[0].video_id}`}
-              title={videos[0].name || 'Trailer'}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                border: 'none',
-              }}
-            />
-          </Box>
-        </Box>
-      )}
-
-      {screenshots.length > 0 && (
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1.5,
-            overflowX: 'auto',
-            pb: 1,
-            '&::-webkit-scrollbar': { height: 4 },
-            '&::-webkit-scrollbar-thumb': {
-              borderRadius: 99,
-              bgcolor: accentGlow,
-            },
-          }}
-        >
-          {screenshots.map(s => (
-            <Box
-              key={s.url}
-              component="img"
-              src={s.url}
-              alt={
-                game.name
-                  ? t('gamePageBody.screenshotAlt', { name: game.name })
-                  : t('gamePageBody.screenshotAltFallback')
-              }
-              onClick={() => logic.setSelectedShot(s.url)}
-              sx={{
-                height: { xs: 130, sm: 185 },
-                minWidth: { xs: 200, sm: 295 },
-                objectFit: 'cover',
-                borderRadius: '12px',
-                boxShadow: `0 3px 10px rgba(0,0,0,0.08), 0 0 0 1px ${accentGlow}`,
-                flexShrink: 0,
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                '&:hover': {
-                  transform: 'scale(1.03)',
-                  boxShadow: '0 8px 24px rgba(198,40,40,0.15)',
-                },
-              }}
-            />
-          ))}
-        </Box>
-      )}
-
-      {logic.selectedShot && (
-        <Modal open onClose={() => logic.setSelectedShot(null)}>
-          <Box
-            onClick={() => logic.setSelectedShot(null)}
-            sx={{
-              position: 'fixed',
-              inset: 0,
-              bgcolor: 'rgba(0,0,0,0.92)',
-              backdropFilter: 'blur(14px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'zoom-out',
-            }}
-          >
-            <Box
-              component="img"
-              src={logic.selectedShot}
-              alt={t('gamePageBody.screenshotEnlarged')}
-              sx={{
-                maxWidth: '90vw',
-                maxHeight: '90vh',
-                borderRadius: '16px',
-                boxShadow: '0 28px 80px rgba(0,0,0,0.6)',
-              }}
-            />
-          </Box>
-        </Modal>
-      )}
-    </Box>
-  );
-}
-
 export function GamePageLoadedBody({
   logic,
   appearance,
@@ -732,7 +452,7 @@ export function GamePageLoadedBody({
       >
         <GameHeroCard game={game} logic={logic} appearance={appearance} />
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <GameActionsCard game={game} logic={logic} appearance={appearance} />
+          <GameActions game={game} logic={logic} appearance={appearance} />
           <Box className="gp-c1" sx={{ ...card(), px: 2.5, py: 2.5 }}>
             <SectionAccentTitle label={t('gamePageBody.platformsLabel')} />
             <PlatformLogos platforms={game.platforms ?? []} />
@@ -776,32 +496,41 @@ export function GamePageLoadedBody({
           </Box>
         </Box>
       </Box>
-      <GameRatingsSummary
-        game={game}
-        gameApiId={logic.djangoId}
-        appearance={appearance}
-        reviewStarFilter={reviewStarFilter}
-        onReviewStarFilterChange={setReviewStarFilter}
-      />
+      <Box id="ratings-section">
+        <Suspense fallback={<SectionSkeleton />}>
+          <GameRatingsSummary
+            game={game}
+            gameApiId={logic.djangoId}
+            appearance={appearance}
+            reviewStarFilter={reviewStarFilter}
+            onReviewStarFilterChange={setReviewStarFilter}
+          />
+        </Suspense>
+      </Box>
 
-      <GameGallerySection game={game} logic={logic} appearance={appearance} />
+      <Suspense fallback={<SectionSkeleton />}>
+        <GameGallerySection game={game} logic={logic} appearance={appearance} />
+      </Suspense>
 
       <Box
         data-tour="game-reviews"
+        id="reviews-section"
         sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}
       >
-        <ReviewSection
-          gameId={reviewGameId}
-          resolveGameId={logic.ensureDjangoId}
-          userReview={logic.userReview}
-          currentUserId={logic.currentUserId}
-          onReviewChange={review => {
-            logic.setUserReview(review);
-            void logic.refreshGame();
-          }}
-          reviewStarFilter={reviewStarFilter}
-          onClearReviewStarFilter={() => setReviewStarFilter(null)}
-        />
+        <Suspense fallback={<SectionSkeleton />}>
+          <ReviewSection
+            gameId={reviewGameId}
+            resolveGameId={logic.ensureDjangoId}
+            userReview={logic.userReview}
+            currentUserId={logic.currentUserId}
+            onReviewChange={review => {
+              logic.setUserReview(review);
+              void logic.refreshGame();
+            }}
+            reviewStarFilter={reviewStarFilter}
+            onClearReviewStarFilter={() => setReviewStarFilter(null)}
+          />
+        </Suspense>
       </Box>
     </>
   );
