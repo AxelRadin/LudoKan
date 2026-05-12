@@ -11,6 +11,8 @@ import { initSentry } from './monitoring/sentry';
 import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
+import UserPublicProfilePage from './pages/UserPublicProfilePage.tsx';
+import FriendsPage from './pages/FriendsPage.tsx';
 import TestSentry from './pages/TestSentry.tsx';
 import LicensePage from './pages/LicencePage.tsx';
 import SearchResultsPage from './pages/SearchResultsPage.tsx';
@@ -45,6 +47,8 @@ const router = createBrowserRouter([
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
       { path: 'profile', element: <ProfilePage /> },
+      { path: 'friends', element: <FriendsPage /> },
+      { path: 'u/:pseudo', element: <UserPublicProfilePage /> },
       { path: 'profile/reviews', element: <UserReviewsPage /> },
       { path: 'game/:id', element: <GamePage /> },
       { path: 'game/igdb/:igdbId', element: <GamePage /> },

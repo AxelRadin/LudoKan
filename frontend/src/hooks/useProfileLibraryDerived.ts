@@ -8,6 +8,7 @@ import type {
   LibraryStatusFilter,
 } from '../constants/libraryFilter';
 
+/** Carte UserGame → ligne liste (réutilisé profil public / commun / filtres). */
 export function userGameToGameListItem(g: UserGame): GameListItem {
   return {
     id: g.game.id,
@@ -48,12 +49,27 @@ export function favoritesToGameListItems(
     .map(userGameToGameListItem);
 }
 
+export type ProfileLibraryDerived = {
+  userGamesForLibrary: UserGame[];
+  gamesEnCours: GameListItem[];
+  gamesTermines: GameListItem[];
+  gamesEnvie: GameListItem[];
+  gamesFavoris: GameListItem[];
+  libraryCounts: LibraryCounts;
+  gamesForLibraryFilter: GameListItem[];
+  singleFilterTitle: string;
+  libraryBadgeText: string;
+};
+
+/**
+ * Dérivés bibliothèque partagés entre la page profil connecté et le profil public.
+ */
 export function useProfileLibraryDerived(
   userGames: UserGame[],
   collectionFilterId: LibraryCollectionFilter,
   libraryFilter: LibraryStatusFilter,
   t: TFunction
-) {
+): ProfileLibraryDerived {
   const userGamesForLibrary = useMemo(
     () => filterUserGamesForCollection(userGames, collectionFilterId),
     [userGames, collectionFilterId]

@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { t } from 'i18next';
 
 const RATING_LABELS: Record<number, string> = {
@@ -92,6 +93,7 @@ export default function ReviewCard({
     : null;
 
   const authorName = review.user?.pseudo ?? review.user?.username ?? 'Anonyme';
+  const authorPseudo = review.user?.pseudo;
   const reviewCount = review.user?.review_count ?? null;
   const ratingValue = review.rating?.value
     ? Math.round(Number(review.rating.value))
@@ -207,19 +209,42 @@ export default function ReviewCard({
                   flexWrap: 'nowrap',
                 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: 15,
-                    letterSpacing: '0.04em',
-                    textTransform: 'uppercase',
-                    color: '#111',
-                    lineHeight: 1,
-                  }}
-                >
-                  {authorName}
-                </Typography>
+                {authorPseudo ? (
+                  <Typography
+                    variant="body2"
+                    component={Link}
+                    to={`/u/${encodeURIComponent(authorPseudo)}`}
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 15,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      color: '#111',
+                      lineHeight: 1,
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                        color: '#a32d2d',
+                      },
+                    }}
+                  >
+                    {authorName}
+                  </Typography>
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 15,
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
+                      color: '#111',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {authorName}
+                  </Typography>
+                )}
 
                 {isOwner && (
                   <Box

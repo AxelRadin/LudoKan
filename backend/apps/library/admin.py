@@ -12,8 +12,8 @@ class UserGameAdmin(admin.ModelAdmin):
 
 @admin.register(UserLibrary)
 class UserLibraryAdmin(admin.ModelAdmin):
-    list_display = ("name", "user", "system_key", "is_visible_on_profile", "sort_order")
-    list_filter = ("system_key", "is_visible_on_profile")
+    list_display = ("name", "user", "system_key", "is_visible_on_profile", "is_visible_to_friends", "sort_order")
+    list_filter = ("system_key", "is_visible_on_profile", "is_visible_to_friends")
     search_fields = ("name", "user__pseudo", "user__email")
 
 

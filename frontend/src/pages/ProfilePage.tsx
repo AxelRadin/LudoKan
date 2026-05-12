@@ -1575,7 +1575,6 @@ export default function ProfilePage() {
   const [manageCollectionsModalOpen, setManageCollectionsModalOpen] =
     useState(false);
   const [libraryPrivacyModalOpen, setLibraryPrivacyModalOpen] = useState(false);
-
   const handleCloseManageCollectionsModal = useCallback(() => {
     setManageCollectionsModalOpen(false);
     refreshCollections().catch(() => {});
