@@ -478,7 +478,7 @@ export default function ReviewForm({
           )}
 
           <Tooltip
-            title={!canSubmit ? t('reviewForm.ratingRequired') : ''}
+            title={canSubmit ? '' : t('reviewForm.ratingRequired')}
             disableHoverListener={canSubmit}
             placement="top"
           >
