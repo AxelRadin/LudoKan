@@ -419,6 +419,16 @@
     "steamSyncTooltipDefault": "Re-synchroniser ta ludothèque Steam",
     "steamDisconnect": "Déconnecter",
     "steamConnect": "Lier Steam",
+    "xboxLabel": "Xbox",
+    "xboxDesc": "Synchronisation de ta bibliothèque Xbox Live",
+    "xboxConnected": "Connecté",
+    "xboxSync": "Synchroniser",
+    "xboxSyncing": "Synchronisation Xbox en cours, vos jeux vont s'actualiser sous peu...",
+    "xboxSyncTooltip": "Synchronisation en cours...",
+    "xboxSyncTooltipDefault": "Re-synchroniser ta bibliothèque Xbox",
+    "xboxDisconnect": "Déconnecter",
+    "xboxConnect": "Lier Xbox",
+    "xboxGamerscoreLabel": "Gamerscore Xbox",
     "selection": "Sélection",
     "favorites": "Coups de cœur",
     "favoritesCount": "{{count}} jeu",
@@ -572,6 +582,13 @@
     "errorNoParams": "Aucun paramètre Steam reçu.",
     "errorFallback": "Échec de la connexion Steam",
     "backToProfile": "Retour au profil"
+  },
+  "microsoftCallback": {
+    "loadingTitle": "Liaison avec Microsoft en cours",
+    "loadingDesc": "Veuillez patienter pendant que nous finalisons la connexion Xbox...",
+    "errorMicrosoft": "Microsoft a renvoyé une erreur : {{error}}",
+    "errorNoCode": "Aucun code Microsoft reçu.",
+    "errorFallback": "Échec de la connexion Microsoft"
   },
   "testSentry": {
     "title": "Page de test Sentry",

@@ -454,6 +454,16 @@
     "steamSyncTooltipDefault": "Re-sync your Steam library",
     "steamDisconnect": "Disconnect",
     "steamConnect": "Link Steam",
+    "xboxLabel": "Xbox",
+    "xboxDesc": "Synchronize your Xbox Live library",
+    "xboxConnected": "Connected",
+    "xboxSync": "Sync",
+    "xboxSyncing": "Xbox synchronization in progress, your games will update shortly...",
+    "xboxSyncTooltip": "Synchronizing...",
+    "xboxSyncTooltipDefault": "Re-sync your Xbox library",
+    "xboxDisconnect": "Disconnect",
+    "xboxConnect": "Link Xbox",
+    "xboxGamerscoreLabel": "Xbox Gamerscore",
     "selection": "Selection",
     "favorites": "Favorites",
     "favoritesCount": "{{count}} game",
@@ -572,6 +582,13 @@
     "errorNoParams": "No Steam parameters received.",
     "errorFallback": "Steam login failed",
     "backToProfile": "Back to profile"
+  },
+  "microsoftCallback": {
+    "loadingTitle": "Linking with Microsoft",
+    "loadingDesc": "Please wait while we finalize Xbox linking...",
+    "errorMicrosoft": "Microsoft returned an error: {{error}}",
+    "errorNoCode": "No Microsoft code received.",
+    "errorFallback": "Microsoft linking failed"
   },
   "testSentry": {
     "title": "Sentry test page",

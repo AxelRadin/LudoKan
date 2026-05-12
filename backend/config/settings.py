@@ -448,6 +448,7 @@ EMAIL_ALLOWLIST = [e.strip() for e in config("EMAIL_ALLOWLIST", default="").spli
 SITE_ID = config("SITE_ID", default=1, cast=int)
 SITE_DOMAIN = config("SITE_DOMAIN", default="ludokan-local.fr")
 SITE_NAME = config("SITE_NAME", default="Ludokane Local")
+FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:5173")
 
 # -------------------------------------------------------------------
 # Logging centralisé -> system_logs
@@ -568,7 +569,15 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     },
     "microsoft": {
-        "TENANT": "common",  # "common", "organizations", or "consumers"
-        "SCOPE": ["user.read", "openid", "profile", "offline_access", "XboxLive.signin"],
+        "SCOPE": ["User.Read", "openid", "profile", "offline_access"],
+        "AUTH_PARAMS": {"access_type": "offline"},
+        "METHOD": "oauth2",
+        "APPS": [
+            {
+                "client_id": MICROSOFT_CLIENT_ID,
+                "secret": MICROSOFT_CLIENT_SECRET,
+                "key": "",
+            }
+        ],
     },
 }

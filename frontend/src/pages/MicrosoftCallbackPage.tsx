@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
-import { apiPost } from '../services/api';
+import { apiGet, apiPost } from '../services/api';
 import OAuthCallbackLayout from '../components/OAuthCallbackLayout';
 import { readOAuthReturnFromUrl } from '../utils/oauthCallbackUrl';
 
-const GoogleCallbackPage: React.FC = () => {
+const MicrosoftCallbackPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { setAuthenticated } = useAuth();
+  const { setAuthenticated, setUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const exchangeStarted = useRef(false);
 
@@ -18,42 +18,48 @@ const GoogleCallbackPage: React.FC = () => {
     exchangeStarted.current = true;
 
     const run = async () => {
-      const { code, providerError } = readOAuthReturnFromUrl(
+      const { code, state, providerError } = readOAuthReturnFromUrl(
         globalThis.location.href
       );
 
       if (providerError) {
-        setError(t('googleCallback.errorGoogle', { error: providerError }));
+        setError(
+          t('microsoftCallback.errorMicrosoft', { error: providerError })
+        );
         return;
       }
-      if (!code) {
-        setError(t('googleCallback.errorNoCode'));
+      if (!code || !state) {
+        setError(t('microsoftCallback.errorNoCode'));
         return;
       }
 
       try {
-        await apiPost('/api/auth/google/', { code });
+        await apiPost('/api/auth/microsoft/callback/', { code, state });
+        const me = await apiGet('/api/me/');
+        setUser(me);
         setAuthenticated(true);
-        navigate('/', { replace: true });
+        navigate('/profile?xbox_connected=true', { replace: true });
       } catch (err: unknown) {
         const message =
           err instanceof Error
             ? err.message
-            : t('googleCallback.errorFallback');
+            : t('microsoftCallback.errorFallback');
         setError(message);
       }
     };
 
     void run();
-  }, [navigate, setAuthenticated, t]);
+  }, [navigate, setAuthenticated, setUser, t]);
 
   return (
     <OAuthCallbackLayout
       error={error}
-      loadingTitle={t('googleCallback.loading')}
-      loadingTitleVariant="body1"
+      loadingTitle={t('microsoftCallback.loadingTitle')}
+      loadingSubtitle={t('microsoftCallback.loadingDesc')}
+      progressSize={60}
+      progressThickness={4}
     />
   );
 };
 
-export default GoogleCallbackPage;
+export default MicrosoftCallbackPage;
