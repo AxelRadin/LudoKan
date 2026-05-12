@@ -34,7 +34,6 @@ interface MatchmakingModalProps {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly onCancel: () => void;
-  readonly matches: any[];
   readonly startedAt: Date | null;
   readonly game: {
     readonly id?: string;
@@ -118,7 +117,7 @@ function PartyChatView({
           </Typography>
         )}
         {messages.map((msg, idx) => (
-          <Box key={idx} sx={{ mb: 1.5 }}>
+          <Box key={msg.id ?? idx} sx={{ mb: 1.5 }}>
             <Typography variant="caption" fontWeight="bold" color="primary">
               Joueur #{msg.user_id}
             </Typography>
@@ -171,6 +170,18 @@ function PartyChatView({
 // ----------------------------------------------------------------------
 // COMPOSANT PRINCIPAL
 // ----------------------------------------------------------------------
+function getMemberStatusText(member: any, status: string) {
+  if (member.wants_to_start_early && status === 'open') return 'Prêt à lancer';
+  if (status === 'waiting_ready') return `Statut : ${member.ready_state}`;
+  if (status === 'waiting_ready_for_chat') return `Chat : ${member.ready_for_chat_state}`;
+  return '';
+}
+
+function getMemberStatusColor(member: any) {
+  if (member.wants_to_start_early || member.ready_state === 'accepted') return 'success.main';
+  return 'text.secondary';
+}
+
 export default function MatchmakingModal({
   open,
   onClose,
@@ -364,22 +375,8 @@ export default function MatchmakingModal({
                     </ListItemAvatar>
                     <ListItemText
                       primary={member.pseudo || `Joueur #${member.user_id}`}
-                      secondary={
-                        member.wants_to_start_early && party.status === 'open'
-                          ? 'Prêt à lancer'
-                          : party.status === 'waiting_ready'
-                            ? `Statut : ${member.ready_state}`
-                            : party.status === 'waiting_ready_for_chat'
-                              ? `Chat : ${member.ready_for_chat_state}`
-                              : ''
-                      }
-                      secondaryTypographyProps={{
-                        color:
-                          member.wants_to_start_early ||
-                          member.ready_state === 'accepted'
-                            ? 'success.main'
-                            : 'text.secondary',
-                      }}
+                      secondary={getMemberStatusText(member, party.status)}
+                      secondaryTypographyProps={{ color: getMemberStatusColor(member) }}
                     />
                   </ListItem>
                 </Paper>

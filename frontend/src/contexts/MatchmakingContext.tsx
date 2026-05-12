@@ -327,7 +327,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         open={isMatchmakingModalOpen}
         onClose={() => setIsMatchmakingModalOpen(false)}
         onCancel={cancelMatchmaking}
-        matches={matches}
         startedAt={activeRequestStartedAt}
         game={activeGame}
         party={party}

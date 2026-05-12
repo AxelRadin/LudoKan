@@ -10,6 +10,7 @@ from apps.parties.services.members import active_member_count, active_members_qs
 from apps.parties.services.party_state_helpers import cancel_party
 from apps.parties.services.recruitment import transition_open_to_waiting_ready
 
+ERROR_USER_NOT_ACTIVE = "User is not an active participant in this party."
 
 def _timeout_pending_ready_states(*, party_id: int) -> int:
     return (
@@ -164,7 +165,7 @@ def mark_ready(*, party_id: int, user: AbstractBaseUser, accepted: bool) -> Game
     if party.status != GameParty.Status.WAITING_READY:
         raise ValueError("Party is not in waiting_ready status.")
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
-        raise ValueError("User is not an active participant in this party.")
+        raise ValueError(ERROR_USER_NOT_ACTIVE)
 
     member.ready_state = GamePartyMember.ReadyState.ACCEPTED if accepted else GamePartyMember.ReadyState.DECLINED
     member.save(update_fields=["ready_state", "updated_at"])
@@ -180,7 +181,7 @@ def mark_ready_for_chat(*, party_id: int, user: AbstractBaseUser, accepted: bool
     if party.status != GameParty.Status.WAITING_READY_FOR_CHAT:
         raise ValueError("Party is not in waiting_ready_for_chat status.")
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
-        raise ValueError("User is not an active participant in this party.")
+        raise ValueError(ERROR_USER_NOT_ACTIVE)
 
     member.ready_for_chat_state = GamePartyMember.ReadyForChatState.ACCEPTED if accepted else GamePartyMember.ReadyForChatState.DECLINED
     member.save(update_fields=["ready_for_chat_state", "updated_at"])
@@ -266,7 +267,7 @@ def mark_start_early(*, party_id: int, user: AbstractBaseUser, accepted: bool) -
         return member
 
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
-        raise ValueError("User is not an active participant in this party.")
+        raise ValueError(ERROR_USER_NOT_ACTIVE)
 
     member.wants_to_start_early = accepted
     member.save(update_fields=["wants_to_start_early", "updated_at"])
