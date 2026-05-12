@@ -14,6 +14,7 @@ import i18n from '../i18n';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
 import { joinOrCreateParty } from '../services/party';
 import { useAuth } from './useAuth';
+import { useActiveParty } from '../hooks/useActiveParty';
 
 interface MatchmakingContextType {
   startMatchmaking: (
@@ -61,6 +62,8 @@ async function getUserLocation(): Promise<{
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  const { party, refresh: refreshParty, leave: leaveParty } = useActiveParty();
 
   const [isMatching, setIsMatching] = useState(false);
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
@@ -198,8 +201,11 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
       try {
         await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
       } catch (error) {
-        console.error("Erreur lors de l'annulation côté serveur", error);
+        console.error("Erreur lors de l'annulation", error);
       }
+    }
+    if (party) {
+      await leaveParty();
     }
     setActiveRequestId(null);
     setActiveRequestStartedAt(null);
@@ -207,7 +213,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     setMatches([]);
     setHasNewMatch(false);
     setIsMatchmakingModalOpen(false);
-  }, [activeRequestId]);
+  }, [activeRequestId, party, leaveParty]);
 
   const confirmNewMatchmaking = useCallback(async () => {
     if (pendingGame) {
@@ -223,7 +229,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
 
   useEffect(() => {
-    if (!activeRequestId) return;
+    if (!activeRequestId || party) return;
 
     const intervalId = setInterval(async () => {
       try {
@@ -245,7 +251,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [activeRequestId]);
+  }, [activeRequestId, party]);
 
   useEffect(() => {
     if (!activeRequestId || hasNewMatch) return;
@@ -267,6 +273,26 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
 
     return () => clearTimeout(timeoutId);
   }, [activeRequestId, currentRadius, hasNewMatch]);
+
+  useEffect(() => {
+    if (activeRequestId && matches.length > 0 && !party && activeGame?.id) {
+      const transitionToParty = async () => {
+        try {
+          await joinOrCreateParty(Number(activeGame.id));
+          await apiDelete(
+            `/api/matchmaking/requests/${activeRequestId}/`
+          ).catch(() => {});
+
+          setActiveRequestId(null);
+          setMatches([]);
+          refreshParty();
+        } catch (error) {
+          console.error('Erreur lors du transfert vers le lobby', error);
+        }
+      };
+      transitionToParty();
+    }
+  }, [matches.length, activeRequestId, party, activeGame, refreshParty]);
 
   const contextValue = useMemo(
     () => ({

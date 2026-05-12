@@ -23,6 +23,7 @@ export interface PartyMember {
   ready_for_chat_state: ReadyForChatState;
   joined_at: string;
   left_at: string | null;
+  wants_to_start_early: boolean;
 }
 
 export interface Party {
@@ -72,4 +73,11 @@ export async function markPartyReadyForChat(
 
 export async function leaveParty(partyId: number): Promise<void> {
   return apiPost(`/api/parties/${partyId}/leave`, {});
+}
+
+export async function markPartyStartEarly(
+  partyId: number,
+  accepted: boolean = true
+): Promise<void> {
+  return apiPost(`/api/parties/${partyId}/start-early`, { accepted });
 }

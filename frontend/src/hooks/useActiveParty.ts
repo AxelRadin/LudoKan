@@ -5,6 +5,7 @@ import {
   leaveParty,
   markPartyReady,
   markPartyReadyForChat,
+  markPartyStartEarly,
 } from '../services/party';
 
 export function useActiveParty() {
@@ -95,6 +96,19 @@ export function useActiveParty() {
     }
   };
 
+  const markStartEarly = async (accepted: boolean = true) => {
+    if (!party) return;
+    setIsMarkingReady(true);
+    try {
+      await markPartyStartEarly(party.id, accepted);
+      await refresh();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsMarkingReady(false);
+    }
+  };
+
   return {
     party,
     isLoading,
@@ -105,5 +119,6 @@ export function useActiveParty() {
     markReady,
     markReadyForChat,
     leave,
+    markStartEarly,
   };
 }
