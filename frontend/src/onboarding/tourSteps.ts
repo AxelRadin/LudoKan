@@ -107,4 +107,34 @@ export const GAME_TOUR_STEPS: DriveStep[] = [
       align: 'start',
     },
   },
+  {
+    element: '[data-tour="game-status"]',
+    popover: {
+      title: '🏷️ Statut & favoris',
+      description:
+        "Marque ce jeu comme terminé, en cours ou en liste d'envie. Tu peux aussi l'ajouter à tes favoris pour le retrouver rapidement.",
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="game-gallery"]',
+    popover: {
+      title: '🖼️ Galerie médias',
+      description:
+        'Regarde les vidéos et screenshots du jeu avant de te lancer.',
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
+    element: '[data-tour="game-reviews"]',
+    popover: {
+      title: '⭐ Avis de la communauté',
+      description:
+        'Lis les avis des autres joueurs et laisse le tien pour partager ton expérience.',
+      side: 'top',
+      align: 'start',
+    },
+  },
 ];

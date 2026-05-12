@@ -22,7 +22,7 @@ import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
 import { useTour } from '../onboarding/useTour';
 import { GAME_TOUR_STEPS } from '../onboarding/tourSteps';
 
-const GAME_OPTIONAL_STEPS = new Set([0, 1]); // matchmaking, add-to-library : informatifs
+const GAME_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]);
 import { GENRE_ICON_MAP } from './gamePageGenreIcons';
 import { Sep, StatusChip } from './GamePageFragments';
 import { fdate, hi } from './gamePageUtils';
@@ -336,7 +336,10 @@ function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
       <Sep />
 
       <SectionAccentTitle label={t('gamePageBody.statusLabel')} />
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+      <Box
+        data-tour="game-status"
+        sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}
+      >
         <StatusChip
           icon={<CheckCircleIcon />}
           label={t('gamePageBody.statusDone')}
@@ -517,6 +520,7 @@ function GameGallerySection({ game, logic, appearance }: PageSectionProps) {
 
   return (
     <Box
+      data-tour="game-gallery"
       className="gp-c5"
       sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2 }}
     >
@@ -740,7 +744,10 @@ export function GamePageLoadedBody({
 
       <GameGallerySection game={game} logic={logic} appearance={appearance} />
 
-      <Box sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}>
+      <Box
+        data-tour="game-reviews"
+        sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}
+      >
         <ReviewSection
           gameId={reviewGameId}
           resolveGameId={logic.ensureDjangoId}
