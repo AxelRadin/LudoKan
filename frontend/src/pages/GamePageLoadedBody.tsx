@@ -5,7 +5,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import { Box, Button, Chip, Modal, Tooltip, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import GameRatingsSummary from '../components/GameRatingsSummary';
 import PlatformLogos from '../components/PlatformLogos';
@@ -18,6 +18,11 @@ import type { GamePageLogic } from '../hooks/useGamePageLogic';
 import type { NormalizedGame } from '../types/game';
 import type { GamePageAppearance } from './gamePageAppearance';
 import { GAME_PAGE_FONT } from './gamePageAppearance';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { GAME_TOUR_STEPS } from '../onboarding/tourSteps';
+
+const GAME_OPTIONAL_STEPS = new Set([0, 1]); // matchmaking, add-to-library : informatifs
 import { GENRE_ICON_MAP } from './gamePageGenreIcons';
 import { Sep, StatusChip } from './GamePageFragments';
 import { fdate, hi } from './gamePageUtils';
@@ -644,6 +649,20 @@ export function GamePageLoadedBody({
   const { t } = useTranslation();
   const game = logic.game as NormalizedGame;
   const { card, noHov, ink } = appearance;
+  const { isAuthenticated } = useAuth();
+  const { shouldShow: shouldShowTour, markAsDone: markTourDone } =
+    useOnboarding(TOUR_KEYS.game);
+  const { startTour } = useTour({
+    steps: GAME_TOUR_STEPS,
+    optionalSteps: GAME_OPTIONAL_STEPS,
+    onDone: markTourDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShowTour) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShowTour, startTour]);
 
   const description = buildDescriptionState(
     logic,
