@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaSteam } from 'react-icons/fa';
 import ConfirmModal from './ConfirmModal';
+import { formatPlaytime } from '../utils/timeUtils';
 
 export type GameListItem = {
   id: number;
@@ -188,7 +189,7 @@ export default function GameList({
                               variant="caption"
                               sx={{ fontWeight: 600, fontSize: '0.7rem' }}
                             >
-                              {game.playtime_forever}h
+                              {formatPlaytime(game.playtime_forever)}
                             </Typography>
                           )}
                       </Box>
