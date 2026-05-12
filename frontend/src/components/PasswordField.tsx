@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   TextField,
-  TextFieldProps,
+  type TextFieldProps,
   IconButton,
   InputAdornment,
 } from '@mui/material';
