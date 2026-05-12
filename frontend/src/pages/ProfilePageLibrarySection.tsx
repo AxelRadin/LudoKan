@@ -31,6 +31,7 @@ type ProfilePageLibrarySectionProps = Readonly<{
   setLibrarySectionMenuAnchor: (el: null | HTMLElement) => void;
   setCreateCollectionModalOpen: (open: boolean) => void;
   setManageCollectionsModalOpen: (open: boolean) => void;
+  onOpenLibraryPrivacy: () => void;
   libraryFilter: LibraryStatusFilter;
   setLibraryFilter: (next: LibraryStatusFilter) => void;
   libraryCounts: LibraryCounts;
@@ -65,6 +66,7 @@ export default function ProfilePageLibrarySection({
   setLibrarySectionMenuAnchor,
   setCreateCollectionModalOpen,
   setManageCollectionsModalOpen,
+  onOpenLibraryPrivacy,
   libraryFilter,
   setLibraryFilter,
   libraryCounts,
@@ -227,6 +229,15 @@ export default function ProfilePageLibrarySection({
               sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
             >
               {t('profilePage.manageCollections')}
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                setLibrarySectionMenuAnchor(null);
+                onOpenLibraryPrivacy();
+              }}
+              sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+            >
+              {t('profilePage.libraryPrivacyMenu')}
             </MenuItem>
           </Menu>
         </Box>
