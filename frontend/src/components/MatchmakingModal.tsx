@@ -1,6 +1,7 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import PersonIcon from '@mui/icons-material/Person';
 import RadarIcon from '@mui/icons-material/Radar';
+import PersonIcon from '@mui/icons-material/Person';
+import SendIcon from '@mui/icons-material/Send';
 import {
   Avatar,
   Box,
@@ -13,47 +14,182 @@ import {
   ListItemText,
   Paper,
   Typography,
+  TextField,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
+import { usePartyChat } from '../hooks/usePartyChat';
 
 const pulseRadar = keyframes`
   0% { transform: scale(0.8); opacity: 0.6; }
   100% { transform: scale(2.5); opacity: 0; }
 `;
 
-interface Match {
-  id: number;
-  user: any;
-  distance_km: number;
-}
-
 interface MatchmakingModalProps {
   readonly open: boolean;
   readonly onClose: () => void;
   readonly onCancel: () => void;
-  readonly matches: Match[];
+  readonly matches: any[];
   readonly startedAt: Date | null;
   readonly game: {
     readonly id?: string;
     readonly name: string;
     readonly image: string;
   } | null;
-  readonly onJoinLobby?: () => void;
+  readonly party: any | null;
+  readonly partyActions: any;
 }
 
+// ----------------------------------------------------------------------
+// SOUS-COMPOSANT : VUE DU CHAT (Se charge uniquement quand le chat est actif)
+// ----------------------------------------------------------------------
+function PartyChatView({
+  party,
+  onLeave,
+}: {
+  party: any;
+  onLeave: () => void;
+}) {
+  const { messages, sendMessage, isConnected } = usePartyChat(
+    party.chat_room_id
+  );
+  const [chatInput, setChatInput] = useState('');
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll en bas
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Logique d'auto-fermeture si on est seul (Règle des 30 secondes)
+  const activeMembers = party.members.filter(
+    (m: any) => m.membership_status === 'active' && !m.left_at
+  );
+
+  useEffect(() => {
+    if (activeMembers.length <= 1) {
+      if (timeLeft === null) setTimeLeft(30);
+    } else {
+      setTimeLeft(null);
+    }
+  }, [activeMembers.length]);
+
+  useEffect(() => {
+    if (timeLeft === null) return;
+    if (timeLeft <= 0) {
+      onLeave();
+      return;
+    }
+    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [timeLeft, onLeave]);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 400 }}>
+      {timeLeft !== null && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Il n'y a plus personne avec vous. Le salon se fermera dans {timeLeft}{' '}
+          secondes.
+        </Alert>
+      )}
+
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          p: 1,
+          bgcolor: '#fff',
+          borderRadius: 2,
+          mb: 2,
+          border: '1px solid #ddd',
+        }}
+      >
+        {messages.length === 0 && (
+          <Typography color="text.secondary" align="center" sx={{ mt: 2 }}>
+            {isConnected
+              ? 'Le chat est ouvert ! Dites bonjour.'
+              : 'Connexion au chat...'}
+          </Typography>
+        )}
+        {messages.map((msg, idx) => (
+          <Box key={idx} sx={{ mb: 1.5 }}>
+            <Typography variant="caption" fontWeight="bold" color="primary">
+              Joueur #{msg.user_id}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                bgcolor: 'grey.100',
+                p: 1.5,
+                borderRadius: 2,
+                display: 'inline-block',
+                mt: 0.5,
+              }}
+            >
+              {msg.content}
+            </Typography>
+          </Box>
+        ))}
+        <div ref={messagesEndRef} />
+      </Box>
+
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Écrivez un message..."
+          value={chatInput}
+          onChange={e => setChatInput(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter' && chatInput.trim()) {
+              sendMessage(chatInput);
+              setChatInput('');
+            }
+          }}
+        />
+        <Button
+          variant="contained"
+          disabled={!chatInput.trim() || !isConnected}
+          onClick={() => {
+            sendMessage(chatInput);
+            setChatInput('');
+          }}
+        >
+          <SendIcon fontSize="small" />
+        </Button>
+      </Box>
+    </Box>
+  );
+}
+
+// ----------------------------------------------------------------------
+// COMPOSANT PRINCIPAL
+// ----------------------------------------------------------------------
 export default function MatchmakingModal({
   open,
   onClose,
   onCancel,
-  matches,
   startedAt,
   game,
-  onJoinLobby,
+  party,
+  partyActions,
 }: MatchmakingModalProps) {
   const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
+
+  // Détermine la phase actuelle pour adapter l'affichage
+  const isRadarPhase = !party;
+  const isLobbyPhase =
+    party &&
+    ['open', 'waiting_ready', 'waiting_ready_for_chat', 'countdown'].includes(
+      party.status
+    );
+  const isChatPhase = party && party.status === 'chat_active';
 
   return (
     <Dialog
@@ -62,14 +198,14 @@ export default function MatchmakingModal({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 750 },
+        sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 650 },
       }}
     >
+      {/* HEADER (Bannière du Jeu) */}
       <Box
         sx={{
           position: 'relative',
-          height: 160,
-          width: '100%',
+          height: 120,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -87,7 +223,6 @@ export default function MatchmakingModal({
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               filter: 'blur(4px) brightness(0.4)',
-              zIndex: 0,
             }}
           />
         )}
@@ -105,7 +240,7 @@ export default function MatchmakingModal({
           >
             {game?.name || t('matchmakingModal.searchTitle')}
           </Typography>
-          {startedAt && (
+          {startedAt && isRadarPhase && (
             <Box
               sx={{
                 display: 'inline-flex',
@@ -127,78 +262,13 @@ export default function MatchmakingModal({
         </Box>
       </Box>
 
+      {/* CONTENU PRINCIPAL */}
       <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
-        {matches.length > 0 ? (
-          <>
-            <List sx={{ pt: 0 }}>
-              {matches.map(match => {
-                const user = match.user;
-                const userName =
-                  typeof user === 'object' && user !== null
-                    ? user.username ||
-                      t('matchmakingModal.player', { id: user.id })
-                    : t('matchmakingModal.player', { id: user });
-
-                return (
-                  <Paper
-                    key={match.id}
-                    elevation={1}
-                    sx={{ mb: 2, borderRadius: 3, overflow: 'hidden' }}
-                  >
-                    <ListItem sx={{ py: 2 }}>
-                      <ListItemAvatar>
-                        <Avatar
-                          sx={{
-                            bgcolor: 'primary.main',
-                            width: 50,
-                            height: 50,
-                          }}
-                        >
-                          <PersonIcon />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={userName}
-                        secondary={t('matchmakingModal.distance', {
-                          km: match.distance_km,
-                        })}
-                        primaryTypographyProps={{
-                          fontWeight: 700,
-                          variant: 'subtitle1',
-                        }}
-                        secondaryTypographyProps={{
-                          color: 'success.main',
-                          fontWeight: 600,
-                        }}
-                        sx={{ ml: 1 }}
-                      />
-                    </ListItem>
-                  </Paper>
-                );
-              })}
-            </List>
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-              <Button
-                variant="contained"
-                size="large"
-                color="primary"
-                sx={{
-                  borderRadius: 8,
-                  textTransform: 'none',
-                  px: 4,
-                  py: 1.5,
-                  fontWeight: 'bold',
-                }}
-                onClick={onJoinLobby}
-              >
-                Rejoindre le Lobby
-              </Button>
-            </Box>
-          </>
-        ) : (
+        {/* PHASE 1 : RADAR */}
+        {isRadarPhase && (
           <Box
             sx={{
-              py: { xs: 6, md: 10 },
+              py: 6,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -239,25 +309,114 @@ export default function MatchmakingModal({
                 <RadarIcon sx={{ fontSize: 48 }} />
               </Avatar>
             </Box>
-            <Typography
-              variant="h5"
-              fontWeight={700}
-              gutterBottom
-              sx={{ mb: 2 }}
-            >
+            <Typography variant="h6" fontWeight={700} gutterBottom>
               {t('matchmakingModal.analyzing')}
             </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              sx={{ maxWidth: 450, lineHeight: 1.6 }}
-            >
-              {t('matchmakingModal.searchDescription')}
+            <Typography variant="body2" color="text.secondary">
+              En attente de joueurs à proximité...
             </Typography>
           </Box>
         )}
+
+        {/* PHASE 2 : LOBBY (Recrutement & Validation) */}
+        {isLobbyPhase && (
+          <Box>
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              gutterBottom
+              textAlign="center"
+            >
+              {party.status === 'open'
+                ? 'Formation du groupe...'
+                : 'Préparation de la partie'}
+            </Typography>
+
+            <List>
+              {party.members
+                .filter((m: any) => !m.left_at)
+                .map((member: any) => (
+                  <Paper
+                    key={member.user_id}
+                    elevation={1}
+                    sx={{ mb: 1, borderRadius: 2 }}
+                  >
+                    <ListItem>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: 'primary.main' }}>
+                          <PersonIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={member.pseudo || `Joueur #${member.user_id}`}
+                        secondary={
+                          member.wants_to_start_early && party.status === 'open'
+                            ? 'Prêt à lancer'
+                            : party.status === 'waiting_ready'
+                              ? `Statut : ${member.ready_state}`
+                              : party.status === 'waiting_ready_for_chat'
+                                ? `Chat : ${member.ready_for_chat_state}`
+                                : ''
+                        }
+                        secondaryTypographyProps={{
+                          color:
+                            member.wants_to_start_early ||
+                            member.ready_state === 'accepted'
+                              ? 'success.main'
+                              : 'text.secondary',
+                        }}
+                      />
+                    </ListItem>
+                  </Paper>
+                ))}
+            </List>
+
+            {/* Actions dynamiques selon le statut de la party */}
+            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+              {party.status === 'open' && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => partyActions.markStartEarly(true)}
+                >
+                  Lancer tout de suite
+                </Button>
+              )}
+              {party.status === 'waiting_ready' && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={() => partyActions.markReady(true)}
+                >
+                  Je suis prêt
+                </Button>
+              )}
+              {party.status === 'waiting_ready_for_chat' && (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => partyActions.markReadyForChat(true)}
+                >
+                  Ouvrir le chat
+                </Button>
+              )}
+              {party.status === 'countdown' && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <CircularProgress size={24} />
+                  <Typography fontWeight="bold">
+                    Ouverture du chat imminente...
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
+
+        {/* PHASE 3 : CHAT ACTIF */}
+        {isChatPhase && <PartyChatView party={party} onLeave={onCancel} />}
       </DialogContent>
 
+      {/* FOOTER (Actions globales) */}
       <Box
         sx={{
           p: 2,
@@ -265,21 +424,20 @@ export default function MatchmakingModal({
           justifyContent: 'center',
           gap: 2,
           bgcolor: '#f8f9fa',
+          borderTop: '1px solid #eee',
         }}
       >
         <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-          {t('matchmakingModal.minimize')}
+          Réduire la fenêtre
         </Button>
-        {startedAt && (
-          <Button
-            onClick={onCancel}
-            color="error"
-            variant="outlined"
-            sx={{ fontWeight: 600 }}
-          >
-            {t('matchmakingModal.cancel')}
-          </Button>
-        )}
+        <Button
+          onClick={onCancel}
+          color="error"
+          variant="outlined"
+          sx={{ fontWeight: 600 }}
+        >
+          Quitter la recherche / le groupe
+        </Button>
       </Box>
     </Dialog>
   );

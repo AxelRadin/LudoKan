@@ -6,7 +6,6 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
@@ -61,9 +60,15 @@ async function getUserLocation(): Promise<{
 
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
 
-  const { party, refresh: refreshParty, leave: leaveParty } = useActiveParty();
+  const {
+    party,
+    refresh: refreshParty,
+    leave: leaveParty,
+    markReady,
+    markReadyForChat,
+    markStartEarly,
+  } = useActiveParty();
 
   const [isMatching, setIsMatching] = useState(false);
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
@@ -279,11 +284,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
       const transitionToParty = async () => {
         try {
           await joinOrCreateParty(Number(activeGame.id));
-          await apiDelete(
-            `/api/matchmaking/requests/${activeRequestId}/`
-          ).catch(() => {});
-
-          setActiveRequestId(null);
           setMatches([]);
           refreshParty();
         } catch (error) {
@@ -325,16 +325,12 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         matches={matches}
         startedAt={activeRequestStartedAt}
         game={activeGame}
-        onJoinLobby={async () => {
-          if (!activeGame) return;
-          try {
-            await joinOrCreateParty(Number(activeGame.id));
-            setIsMatchmakingModalOpen(false);
-            navigate('/lobby');
-          } catch (error) {
-            console.error('Impossible de rejoindre le lobby :', error);
-            alert("Erreur lors de l'accès au lobby.");
-          }
+        party={party}
+        partyActions={{
+          markReady,
+          markReadyForChat,
+          markStartEarly,
+          leave: leaveParty,
         }}
       />
       <ConfirmCancelMatchmakingModal
