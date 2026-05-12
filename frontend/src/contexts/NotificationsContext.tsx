@@ -1,5 +1,7 @@
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Snackbar from '@mui/material/Snackbar';
+import Typography from '@mui/material/Typography';
 import React, {
   createContext,
   useCallback,
@@ -9,6 +11,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   fetchAllNotifications,
   fetchNotificationsPage,
@@ -35,6 +38,9 @@ type NotificationsContextType = {
   loadMoreNotifications: () => Promise<void>;
   markAsRead: (notificationId: number) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  handleNotificationNavigation: (
+    notification: NotificationItem
+  ) => Promise<void>;
 };
 
 const NotificationsContext = createContext<
@@ -95,6 +101,11 @@ export function NotificationsProvider({
   const [connectionState, setConnectionState] =
     useState<NotificationConnectionState>('disconnected');
   const [wsErrorToastOpen, setWsErrorToastOpen] = useState(false);
+  const [lastNotification, setLastNotification] =
+    useState<NotificationItem | null>(null);
+  const [toastOpen, setToastOpen] = useState(false);
+
+  const navigate = useNavigate();
 
   const clearReconnectTimer = () => {
     if (reconnectTimeoutRef.current !== null) {
@@ -170,6 +181,59 @@ export function NotificationsProvider({
     setUnreadCount(0);
   }, [isAuthenticated]);
 
+  const handleNotificationNavigation = useCallback(
+    async (notification: NotificationItem) => {
+      if (notification.unread) {
+        await markAsRead(notification.id).catch(() => {});
+      }
+
+      const { verb, target, actor } = notification;
+
+      switch (verb) {
+        case 'friend_request_received':
+          navigate('/friends?tab=requests');
+          break;
+        case 'friend_request_accepted':
+          if (actor?.repr) {
+            navigate(`/u/${actor.repr}`);
+          } else {
+            navigate('/friends');
+          }
+          break;
+        case 'message':
+          if (target?.id) {
+            navigate(`/chat/${target.id}`);
+          }
+          break;
+        case 'review':
+          if (target?.id) {
+            navigate(`/game/${target.id}`);
+          }
+          break;
+        case 'match':
+          navigate('/friends');
+          break;
+        case 'ticket_reviewing':
+        case 'ticket_approved':
+        case 'ticket_rejected':
+        case 'ticket_published':
+        case 'ticket_created':
+          navigate('/admin/dashboard');
+          break;
+        default:
+          if (target?.type === 'game' && target.id) {
+            navigate(`/game/${target.id}`);
+          } else if (target?.type === 'user' && target.repr) {
+            navigate(`/u/${target.repr}`);
+          } else {
+            navigate('/profile');
+          }
+          break;
+      }
+    },
+    [markAsRead, navigate]
+  );
+
   const connectSocket = useCallback(() => {
     if (!isAuthenticated || socketRef.current) return;
     setConnectionState('connecting');
@@ -194,6 +258,8 @@ export function NotificationsProvider({
             );
             if (payload.notification?.unread && !exists) {
               setUnreadCount(prevCount => prevCount + 1);
+              setLastNotification(payload.notification as NotificationItem);
+              setToastOpen(true);
             }
             return mergeIncomingNotification(
               prev,
@@ -259,6 +325,7 @@ export function NotificationsProvider({
       loadMoreNotifications,
       markAsRead,
       markAllAsRead,
+      handleNotificationNavigation,
     }),
     [
       connectionState,
@@ -266,6 +333,7 @@ export function NotificationsProvider({
       loadingMore,
       markAllAsRead,
       markAsRead,
+      handleNotificationNavigation,
       nextPagePath,
       notifications,
       refreshNotifications,
@@ -290,6 +358,48 @@ export function NotificationsProvider({
           sx={{ width: '100%' }}
         >
           Reconnexion aux notifications en cours...
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={6000}
+        onClose={() => setToastOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{ cursor: 'pointer' }}
+        onClick={() => {
+          if (lastNotification) {
+            handleNotificationNavigation(lastNotification).catch(() => {});
+            setToastOpen(false);
+          }
+        }}
+      >
+        <Alert
+          severity="info"
+          variant="filled"
+          sx={{
+            width: '100%',
+            bgcolor: 'primary.main',
+            '& .MuiAlert-icon': { color: 'white' },
+          }}
+          onClose={e => {
+            e.stopPropagation();
+            setToastOpen(false);
+          }}
+        >
+          <Box>
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, lineHeight: 1.2 }}
+            >
+              {lastNotification?.verb.replaceAll('_', ' ')}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              {lastNotification?.target?.repr ??
+                lastNotification?.actor?.repr ??
+                ''}
+            </Typography>
+          </Box>
         </Alert>
       </Snackbar>
     </NotificationsContext.Provider>
