@@ -9,6 +9,12 @@ import GenreGrid from '../components/GenreGrid';
 import RecommendedGamesSection from '../components/RecommendedGamesSection';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
+import { useAuth } from '../contexts/useAuth';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { HOME_TOUR_STEPS } from '../onboarding/tourSteps';
+
+const HOME_OPTIONAL_STEPS = new Set([0, 1]); // search, genres : optionnels
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
@@ -251,6 +257,19 @@ export const HomePage = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { shouldShow, markAsDone } = useOnboarding(TOUR_KEYS.home);
+  const { startTour } = useTour({
+    steps: HOME_TOUR_STEPS,
+    optionalSteps: HOME_OPTIONAL_STEPS,
+    onDone: markAsDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShow) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShow, startTour]);
 
   const { sections } = useHomeTrending({ selectedGenre: null });
 

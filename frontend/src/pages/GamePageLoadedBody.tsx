@@ -299,6 +299,7 @@ function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
       <SectionAccentTitle label={t('gamePageBody.actionsLabel')} />
       <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 2.5 }}>
         <SecondaryButton
+          data-tour="matchmaking-button"
           onClick={() => logic.handleSetMatchmaking()}
           disabled={logic.isMatching}
         >
@@ -307,6 +308,7 @@ function GameActionsCard({ game: _game, logic, appearance }: PageSectionProps) {
             : t('gamePageBody.matchmaking')}
         </SecondaryButton>
         <Button
+          data-tour="add-to-library"
           variant="contained"
           onClick={onAddToCollectionClick}
           sx={redBtnSx}
