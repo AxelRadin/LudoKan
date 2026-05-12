@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import transaction
 from django.utils import timezone
 
-from apps.parties.constants import CHAT_COUNTDOWN, MIN_PLAYERS_TO_CONTINUE, READY_FOR_CHAT_TIMEOUT
+from apps.parties.constants import CHAT_COUNTDOWN, MIN_PLAYERS_TO_CONTINUE, READY_FOR_CHAT_TIMEOUT, READY_TIMEOUT
 from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.services.members import active_member_count, active_members_qs
 from apps.parties.services.party_state_helpers import cancel_party
@@ -275,7 +275,9 @@ def mark_start_early(*, party_id: int, user: AbstractBaseUser, accepted: bool) -
     if n_flow >= MIN_PLAYERS_TO_CONTINUE:
         n_ready = active_members_qs(party_id=party.id).filter(wants_to_start_early=True).count()
         if n_ready == n_flow:
-            transition_open_to_waiting_ready(party)
+            party.status = GameParty.Status.WAITING_READY
+            party.ready_deadline_at = timezone.now() + READY_TIMEOUT
+            party.save(update_fields=["status", "ready_deadline_at", "updated_at"])
 
     member.refresh_from_db()
     return member
