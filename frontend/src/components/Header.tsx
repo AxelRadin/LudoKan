@@ -175,7 +175,6 @@ export const Header: React.FC = () => {
       {isAuthenticated ? (
         <>
           <Button
-            data-tour="profile"
             color="inherit"
             onClick={handleProfileMenuOpen}
             endIcon={
@@ -196,7 +195,6 @@ export const Header: React.FC = () => {
             onClose={handleProfileMenuClose}
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            sx={{ zIndex: 100003 }}
             slotProps={{
               paper: {
                 elevation: 3,
@@ -317,7 +315,7 @@ export const Header: React.FC = () => {
         position="fixed"
         color="inherit"
         elevation={2}
-        sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)', zIndex: 100003 }}
+        sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
       >
         <Toolbar
           sx={{

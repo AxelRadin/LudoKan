@@ -14,7 +14,7 @@ import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
 import { useTour } from '../onboarding/useTour';
 import { HOME_TOUR_STEPS } from '../onboarding/tourSteps';
 
-const HOME_OPTIONAL_STEPS = new Set([0, 1]); // search, genres : optionnels
+const HOME_OPTIONAL_STEPS = new Set([0, 1, 2]); // tous les steps sont optionnels
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
