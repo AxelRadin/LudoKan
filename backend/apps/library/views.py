@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -13,8 +13,17 @@ from rest_framework.views import APIView
 
 from apps.games.models import Game
 from apps.library.models import UserGame, UserLibrary, UserLibraryEntry
-from apps.library.serializers import PublicUserLibrarySerializer, UserGameSerializer, UserLibrarySerializer
-from apps.library.tasks import sync_steam_library_task
+from apps.library.serializers import LibraryPrivacySerializer, PublicUserLibrarySerializer, UserGameSerializer, UserLibrarySerializer
+from apps.library.services_collections import ensure_ma_ludotheque
+from apps.library.tasks import sync_steam_library_task, sync_xbox_library_task
+from apps.library.visibility import collections_visible_to_viewer_queryset, viewer_can_see_collection, visible_user_games_queryset
+from apps.social.blocking import pair_has_block
+
+
+def _assert_public_owner_not_blocked(request, owner) -> None:
+    viewer = request.user if request.user.is_authenticated else None
+    if viewer and pair_has_block(viewer, owner):
+        raise NotFound()
 
 
 @extend_schema_view(
@@ -125,6 +134,33 @@ class SteamSyncView(APIView):
         return Response({"detail": "La synchronisation a été ajoutée à la file d'attente."}, status=status.HTTP_202_ACCEPTED)
 
 
+class XboxSyncThrottle(UserRateThrottle):
+    rate = "1/min"
+
+
+class XboxSyncView(APIView):
+    """
+    Déclenche la synchronisation de la bibliothèque Xbox en asynchrone via Celery.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [XboxSyncThrottle]
+
+    @extend_schema(
+        summary="Synchroniser la bibliothèque Xbox",
+        description="Lance une tâche asynchrone pour mettre à jour les jeux depuis Xbox Live.\nLimité à 1 appel par minute par utilisateur.",
+        responses={
+            202: {"description": "Synchronisation lancée en arrière-plan."},
+            429: {"description": "Trop de requêtes. Veuillez patienter."},
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        # We start the Celery task safely
+        sync_xbox_library_task.delay(request.user.id)
+
+        return Response({"detail": "La synchronisation a été ajoutée à la file d'attente."}, status=status.HTTP_202_ACCEPTED)
+
+
 class UserLibraryViewSet(viewsets.ModelViewSet):
     serializer_class = UserLibrarySerializer
     permission_classes = [IsAuthenticated]
@@ -178,6 +214,25 @@ class UserLibraryViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class LibraryPrivacyView(APIView):
+    """
+    GET/PATCH visibilité de la ludothèque complète (collection système MA_LUDOTHEQUE).
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        lib = ensure_ma_ludotheque(request.user)
+        return Response(LibraryPrivacySerializer(lib).data)
+
+    def patch(self, request):
+        lib = ensure_ma_ludotheque(request.user)
+        ser = LibraryPrivacySerializer(lib, data=request.data, partial=True)
+        ser.is_valid(raise_exception=True)
+        ser.save()
+        return Response(LibraryPrivacySerializer(lib).data)
+
+
 class PublicUserCollectionsView(ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = PublicUserLibrarySerializer
@@ -185,8 +240,103 @@ class PublicUserCollectionsView(ListAPIView):
     def get_queryset(self):
         pseudo = self.kwargs["pseudo"]
         owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(self.request, owner)
+        viewer = self.request.user if self.request.user.is_authenticated else None
         return (
-            UserLibrary.objects.filter(user=owner, is_visible_on_profile=True)
+            collections_visible_to_viewer_queryset(owner, viewer)
+            .exclude(system_key=UserLibrary.SystemKey.MA_LUDOTHEQUE)
             .annotate(games_count=Count("entries", distinct=True))
             .order_by("sort_order", "id")
+        )
+
+
+class PublicUserGamesView(ListAPIView):
+    """Jeux visibles sur le profil (collections publiques ou « amis » si applicable)."""
+
+    permission_classes = [AllowAny]
+    serializer_class = UserGameSerializer
+
+    def get_queryset(self):
+        pseudo = self.kwargs["pseudo"]
+        owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(self.request, owner)
+        viewer = self.request.user if self.request.user.is_authenticated else None
+        return (
+            visible_user_games_queryset(owner, viewer)
+            .select_related("game", "game__publisher")
+            .prefetch_related(
+                "game__genres",
+                "game__platforms",
+                Prefetch(
+                    "library_entries",
+                    queryset=UserLibraryEntry.objects.only("id", "library_id", "user_game_id"),
+                ),
+            )
+            .order_by("-date_added")
+        )
+
+
+class PublicUserCollectionGamesView(ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = UserGameSerializer
+
+    def get_queryset(self):
+        pseudo = self.kwargs["pseudo"]
+        pk = int(self.kwargs["pk"])
+        owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(self.request, owner)
+        viewer = self.request.user if self.request.user.is_authenticated else None
+        library = get_object_or_404(UserLibrary, pk=pk, user=owner)
+
+        if not viewer_can_see_collection(owner_id=owner.pk, viewer=viewer, library=library):
+            return UserGame.objects.none()
+        return (
+            UserGame.objects.filter(user=owner, library_entries__library_id=library.pk)
+            .select_related("game", "game__publisher")
+            .prefetch_related(
+                "game__genres",
+                "game__platforms",
+                Prefetch(
+                    "library_entries",
+                    queryset=UserLibraryEntry.objects.only("id", "library_id", "user_game_id"),
+                ),
+            )
+            .order_by("-date_added")
+            .distinct()
+        )
+
+
+class GamesInCommonView(ListAPIView):
+    """Jeux présents dans les ludothèques des deux utilisateurs (amis uniquement)."""
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserGameSerializer
+
+    def list(self, request, *args, **kwargs):
+        pseudo = self.kwargs["pseudo"]
+        owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        _assert_public_owner_not_blocked(request, owner)
+        from apps.social.utils import are_friends
+
+        if not are_friends(request.user, owner):
+            raise PermissionDenied("Seuls les amis peuvent voir les jeux en commun.")
+        return super().list(request, *args, **kwargs)
+
+    def get_queryset(self):
+        pseudo = self.kwargs["pseudo"]
+        owner = get_object_or_404(get_user_model(), pseudo=pseudo)
+        my_game_ids = UserGame.objects.filter(user=self.request.user).values_list("game_id", flat=True)
+        return (
+            UserGame.objects.filter(user=owner, game_id__in=my_game_ids)
+            .select_related("game", "game__publisher")
+            .prefetch_related(
+                "game__genres",
+                "game__platforms",
+                Prefetch(
+                    "library_entries",
+                    queryset=UserLibraryEntry.objects.only("id", "library_id", "user_game_id"),
+                ),
+            )
+            .order_by("-date_added")
+            .distinct()
         )

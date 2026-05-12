@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.openid",
     "allauth.socialaccount.providers.steam",
     "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.microsoft",
     "corsheaders",
     "django_filters",
     "notifications",
@@ -128,6 +129,8 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
 SITE_ID = 1
+
+SOCIALACCOUNT_STORE_TOKENS = True
 
 SOCIALACCOUNT_ADAPTER = "apps.users.adapters.SocialAccountAdapter"
 
@@ -445,6 +448,7 @@ EMAIL_ALLOWLIST = [e.strip() for e in config("EMAIL_ALLOWLIST", default="").spli
 SITE_ID = config("SITE_ID", default=1, cast=int)
 SITE_DOMAIN = config("SITE_DOMAIN", default="ludokan-local.fr")
 SITE_NAME = config("SITE_NAME", default="Ludokane Local")
+FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:5173")
 
 # -------------------------------------------------------------------
 # Logging centralisé -> system_logs
@@ -531,6 +535,13 @@ GOOGLE_CALLBACK_URL = config(
 )
 
 # -------------------------------------------------------------------
+# Microsoft API & Provider Config
+# -------------------------------------------------------------------
+
+MICROSOFT_CLIENT_ID = config("MICROSOFT_CLIENT_ID", default="")
+MICROSOFT_CLIENT_SECRET = config("MICROSOFT_CLIENT_SECRET", default="")
+
+# -------------------------------------------------------------------
 # Social Account Providers
 # -------------------------------------------------------------------
 
@@ -553,6 +564,18 @@ SOCIALACCOUNT_PROVIDERS = {
             {
                 "client_id": GOOGLE_CLIENT_ID,
                 "secret": GOOGLE_CLIENT_SECRET,
+                "key": "",
+            }
+        ],
+    },
+    "microsoft": {
+        "SCOPE": ["User.Read", "openid", "profile", "offline_access"],
+        "AUTH_PARAMS": {"access_type": "offline"},
+        "METHOD": "oauth2",
+        "APPS": [
+            {
+                "client_id": MICROSOFT_CLIENT_ID,
+                "secret": MICROSOFT_CLIENT_SECRET,
                 "key": "",
             }
         ],

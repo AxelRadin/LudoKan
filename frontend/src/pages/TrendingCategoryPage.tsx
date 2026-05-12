@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 import Pagination from '@mui/material/Pagination';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchTrendingGamesWithCount } from '../api/igdb';
@@ -8,7 +8,8 @@ import GamesGrid from '../components/GamesGrid';
 import PageLayout from '../components/PageLayout';
 import type { NormalizedGame } from '../types/game';
 
-const PAGE_SIZE = 25;
+// 24 au lieu de 25 -> divisible par 2, 3, 4, 6
+const PAGE_SIZE = 24;
 
 export default function TrendingCategoryPage() {
   const { t } = useTranslation();
@@ -19,7 +20,8 @@ export default function TrendingCategoryPage() {
   const [games, setGames] = useState<NormalizedGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const maxDiscoveredPage = useRef(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const isGenre = genreId != null;
 
@@ -34,11 +36,10 @@ export default function TrendingCategoryPage() {
     ? (state?.genreName ?? `Genre #${genreId}`)
     : ((sort && SORT_TITLES[sort]) ?? t('trendingCategory.default'));
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
   useEffect(() => {
     setPage(1);
-    setTotalCount(0);
+    setTotalPages(1);
+    maxDiscoveredPage.current = 1;
   }, [sort, genreId]);
 
   useEffect(() => {
@@ -48,18 +49,37 @@ export default function TrendingCategoryPage() {
     const sortKey = isGenre ? 'popularity' : (sort ?? 'popularity');
     const genreArg = isGenre ? Number(genreId) : undefined;
 
-    fetchTrendingGamesWithCount(
+    const fetchCurrent = fetchTrendingGamesWithCount(
       sortKey,
       PAGE_SIZE,
       genreArg,
       offset,
       controller.signal
-    )
-      .then(({ games: data, totalCount: count }) => {
-        if (!controller.signal.aborted) {
-          setGames(data);
-          setTotalCount(count);
+    );
+    const fetchNext = fetchTrendingGamesWithCount(
+      sortKey,
+      PAGE_SIZE,
+      genreArg,
+      offset + PAGE_SIZE,
+      controller.signal
+    );
+
+    Promise.all([fetchCurrent, fetchNext])
+      .then(([current, next]) => {
+        if (controller.signal.aborted) return;
+
+        setGames(current.games);
+
+        if (next.games.length > 0) {
+          maxDiscoveredPage.current = Math.max(
+            maxDiscoveredPage.current,
+            page + 1
+          );
+        } else {
+          maxDiscoveredPage.current = Math.max(maxDiscoveredPage.current, page);
         }
+
+        setTotalPages(maxDiscoveredPage.current);
       })
       .catch(() => {
         if (!controller.signal.aborted) setGames([]);
@@ -83,7 +103,10 @@ export default function TrendingCategoryPage() {
           <Pagination
             count={totalPages}
             page={page}
-            onChange={(_, value) => setPage(value)}
+            onChange={(_, value) => {
+              setPage(value);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             color="primary"
             siblingCount={1}
             boundaryCount={1}

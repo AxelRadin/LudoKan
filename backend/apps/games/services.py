@@ -69,6 +69,22 @@ def _heal_game_metadata(
         game.save(update_fields=update_fields)
 
 
+def _heal_player_counts(
+    game: Game,
+    min_players: Optional[int],
+    max_players: Optional[int],
+) -> None:
+    update_fields = []
+    if game.min_players is None and min_players is not None:
+        game.min_players = min_players
+        update_fields.append("min_players")
+    if game.max_players is None and max_players is not None:
+        game.max_players = max_players
+        update_fields.append("max_players")
+    if update_fields:
+        game.save(update_fields=update_fields)
+
+
 def _link_igdb_platforms(game: Game, platforms: list[dict]) -> None:
     """Create platforms if needed and link them to the game."""
     for p_data in platforms:
@@ -137,6 +153,8 @@ def get_or_create_game_from_igdb(
     genres: Optional[list[dict]] = None,
     screenshots: Optional[list[dict]] = None,
     videos: Optional[list[dict]] = None,
+    min_players: Optional[int] = None,
+    max_players: Optional[int] = None,
 ) -> tuple[Game, bool]:
     """
     Centralized logic to dynamically resolve or create an IGDB game in the local database.
@@ -153,6 +171,11 @@ def get_or_create_game_from_igdb(
         summary=summary,
     )
 
+    if min_players is not None:
+        defaults["min_players"] = min_players
+    if max_players is not None:
+        defaults["max_players"] = max_players
+
     game, created = Game.objects.get_or_create(
         igdb_id=igdb_id,
         defaults=defaults,
@@ -166,6 +189,7 @@ def get_or_create_game_from_igdb(
             release_date=release_date,
             summary=summary,
         )
+        _heal_player_counts(game, min_players, max_players)
 
     if platforms:
         _link_igdb_platforms(game, platforms)

@@ -1,9 +1,12 @@
+import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 
-const ADMIN_ROLES = ['moderator', 'admin', 'superadmin'];
+const ADMIN_ROLES = new Set(['moderator', 'admin', 'superadmin']);
 
-type Props = { children: React.ReactNode };
+type Props = Readonly<{
+  children: ReactNode;
+}>;
 
 export default function ProtectedAdminRoute({ children }: Props) {
   const { isAuthenticated, isAuthLoading, user } = useAuth();
@@ -14,7 +17,8 @@ export default function ProtectedAdminRoute({ children }: Props) {
     return <Navigate to="/" replace />;
   }
 
-  const hasAdminRole = user?.roles.some(r => ADMIN_ROLES.includes(r));
+  const hasAdminRole = user?.roles.some(role => ADMIN_ROLES.has(role));
+
   if (!user || (!hasAdminRole && !user.is_superuser)) {
     return <Navigate to="/" replace />;
   }

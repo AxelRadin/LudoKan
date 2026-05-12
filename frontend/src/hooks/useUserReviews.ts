@@ -69,7 +69,7 @@ export function useUserReviews(
       ...filters,
       search: searchDebounced,
     }),
-    [filters.ratingFilter, filters.ordering, searchDebounced]
+    [filters, searchDebounced]
   );
 
   const listUrl = useMemo(() => {

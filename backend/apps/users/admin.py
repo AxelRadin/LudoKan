@@ -7,7 +7,7 @@ from django.utils import timezone
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
-from .models import AdminAction, CustomUser, SteamProfile, UserRole, UserSuspension
+from .models import AdminAction, CustomUser, SteamProfile, UserRole, UserSuspension, XboxProfile
 from .permissions import has_permission
 from .utils import log_admin_action
 
@@ -239,6 +239,15 @@ class AdminActionAdmin(admin.ModelAdmin):
 class SteamProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "steam_id", "display_name", "linked_at", "last_sync_at")
     search_fields = ("user__email", "user__pseudo", "steam_id", "display_name")
+    list_filter = ("linked_at", "last_sync_at")
+    autocomplete_fields = ("user",)
+    readonly_fields = ("linked_at",)
+
+
+@admin.register(XboxProfile)
+class XboxProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "xbox_xuid", "gamertag", "gamerscore", "linked_at", "last_sync_at")
+    search_fields = ("user__email", "user__pseudo", "xbox_xuid", "gamertag")
     list_filter = ("linked_at", "last_sync_at")
     autocomplete_fields = ("user",)
     readonly_fields = ("linked_at",)

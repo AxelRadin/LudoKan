@@ -44,6 +44,7 @@ urlpatterns = [
     path("health/", health, name="health"),
     path("api/schema/", SpectacularAPIView.as_view(permission_classes=[AllowAny]), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("accounts/", include("allauth.urls")),
     # Auth
     path("api/auth/", include("apps.users.urls_auth")),
     path("api/", include("apps.users.urls")),
@@ -59,6 +60,8 @@ urlpatterns = [
     path("api/", include("apps.matchmaking.urls")),
     # Parties
     path("api/", include("apps.parties.urls")),
+    # Social (amis)
+    path("api/social/", include("apps.social.urls")),
     # Chat
     path("api/", include("apps.chat.urls")),
     # Game Tickets

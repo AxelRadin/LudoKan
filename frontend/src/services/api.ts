@@ -45,7 +45,10 @@ async function request(path: string, options: RequestInit = {}) {
 
   if (!response.ok) {
     const message =
-      data?.detail || JSON.stringify(data) || `Erreur API: ${response.status}`;
+      data?.detail ||
+      (data ? JSON.stringify(data) : null) ||
+      `Erreur API: ${response.status}`;
+
     throw new Error(message);
   }
 

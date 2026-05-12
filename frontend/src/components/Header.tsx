@@ -3,7 +3,10 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import SettingsIcon from '@mui/icons-material/Settings';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -25,6 +28,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
+import { useThemeMode } from '../contexts/useThemeMode';
 import { apiPost } from '../services/api';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
@@ -46,6 +50,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
   const { t, i18n } = useTranslation();
+  const { darkMode, toggleDarkMode } = useThemeMode();
 
   const {
     isAuthenticated,
@@ -169,8 +174,27 @@ export const Header: React.FC = () => {
     </>
   );
 
+  const themeToggleButton = (
+    <IconButton
+      color="inherit"
+      onClick={toggleDarkMode}
+      sx={{
+        transition: 'transform 0.3s ease',
+        '&:hover': { transform: 'rotate(20deg)' },
+      }}
+      aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
+    >
+      {darkMode ? (
+        <LightModeIcon sx={{ color: '#FDB813' }} />
+      ) : (
+        <DarkModeIcon sx={{ color: '#5B21B6' }} />
+      )}
+    </IconButton>
+  );
+
   const desktopActions = (
     <>
+      {themeToggleButton}
       {langDropdown}
       {isAuthenticated ? (
         <>
@@ -212,6 +236,7 @@ export const Header: React.FC = () => {
               onClick={() => {
                 handleProfileMenuClose();
                 navigate('/profile');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
               <ListItemIcon>
@@ -223,7 +248,21 @@ export const Header: React.FC = () => {
             <MenuItem
               onClick={() => {
                 handleProfileMenuClose();
+                navigate('/friends');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              <ListItemIcon>
+                <PersonSearchIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('nav.friends')}</ListItemText>
+            </MenuItem>
+
+            <MenuItem
+              onClick={() => {
+                handleProfileMenuClose();
                 navigate('/settings');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
               <ListItemIcon>
@@ -265,6 +304,7 @@ export const Header: React.FC = () => {
             onClick={() => {
               setDrawerOpen(false);
               navigate(isProfilePage ? '/' : '/profile');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
             {isProfilePage ? t('nav.home') : t('nav.profile')}
@@ -275,7 +315,20 @@ export const Header: React.FC = () => {
             fullWidth
             onClick={() => {
               setDrawerOpen(false);
+              navigate('/friends');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            {t('nav.friends')}
+          </Button>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => {
+              setDrawerOpen(false);
               navigate('/settings');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
             {t('nav.settings')}
@@ -305,86 +358,128 @@ export const Header: React.FC = () => {
           </Button>
         </>
       )}
+
+      <Divider sx={{ my: 1 }} />
+
+      {/* Theme toggle dans le drawer mobile */}
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        px={1}
+      >
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+          {darkMode ? 'Mode sombre' : 'Mode clair'}
+        </Typography>
+        {themeToggleButton}
+      </Box>
+
       {langDropdown}
     </Box>
   );
 
   return (
     <>
-      <AppBar
-        position="fixed"
-        color="inherit"
-        elevation={2}
-        sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+      {/* Wrapper pour créer l'effet arrondi */}
+      <Box
+        sx={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1100,
+          px: { xs: 0.5, md: 1 },
+          pt: { xs: 0.5, md: 0.5 },
+        }}
       >
-        <Toolbar
+        <AppBar
+          position="static"
+          color="inherit"
+          elevation={0}
           sx={{
-            justifyContent: 'space-between',
-            py: 1,
-            px: { xs: 2, md: 4 },
-            minHeight: 64,
-            width: '100%',
-            boxSizing: 'border-box',
+            borderRadius: { xs: '20px', md: '24px' },
+            boxShadow: darkMode
+              ? '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)'
+              : '0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)',
+            backdropFilter: 'blur(20px)',
+            background: darkMode
+              ? 'rgba(26,16,16,0.85)'
+              : 'rgba(255,255,255,0.85)',
+            transition: 'all 0.3s ease',
           }}
         >
-          <Box
-            onClick={() => {
-              navigate('/');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+          <Toolbar
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.2,
-              cursor: 'pointer',
+              justifyContent: 'space-between',
+              py: 1,
+              px: { xs: 2, md: 4 },
+              minHeight: 64,
+              width: '100%',
+              boxSizing: 'border-box',
             }}
           >
             <Box
-              component="img"
-              src="/logo.png"
-              alt="Ludokan"
-              sx={{
-                height: 44,
-                width: 44,
-                objectFit: 'contain',
-                borderRadius: '50%',
-                display: 'block',
+              onClick={() => {
+                navigate('/');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-            />
-            <Typography
               sx={{
-                fontWeight: 800,
-                fontSize: 20,
-                letterSpacing: '-0.5px',
-                color: 'inherit',
-                userSelect: 'none',
-                fontFamily: "'Outfit', sans-serif",
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                cursor: 'pointer',
               }}
             >
-              Ludokan
-            </Typography>
-          </Box>
+              <Box
+                component="img"
+                src="/logo.png"
+                alt="Ludokan"
+                sx={{
+                  height: 44,
+                  width: 44,
+                  objectFit: 'contain',
+                  borderRadius: '50%',
+                  display: 'block',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: 20,
+                  letterSpacing: '-0.5px',
+                  color: 'inherit',
+                  userSelect: 'none',
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                Ludokan
+              </Typography>
+            </Box>
 
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              edge="end"
-              onClick={() => setDrawerOpen(true)}
-              aria-label={t('header.openMenu')}
-              sx={rippleSx}
-            >
-              <MenuIcon />
-            </IconButton>
-          ) : (
-            <>
-              <SearchBar />
-              <Box display="flex" alignItems="center" gap={2}>
-                {desktopActions}
-              </Box>
-            </>
-          )}
-        </Toolbar>
-      </AppBar>
+            {isMobile ? (
+              <IconButton
+                color="inherit"
+                edge="end"
+                onClick={() => setDrawerOpen(true)}
+                aria-label={t('header.openMenu')}
+                sx={rippleSx}
+              >
+                <MenuIcon />
+              </IconButton>
+            ) : (
+              <>
+                <SearchBar />
+                <Box display="flex" alignItems="center" gap={2}>
+                  {desktopActions}
+                </Box>
+              </>
+            )}
+          </Toolbar>
+        </AppBar>
+      </Box>
+
+      {/* Spacer MINIMAL */}
+      <Box sx={{ height: { xs: 66, md: 68 } }} />
 
       <Drawer
         anchor="right"

@@ -2,15 +2,50 @@ import { Box, Divider, Typography } from '@mui/material';
 import type { AdminStats } from '../../types/admin';
 import LoadingSkeleton from './LoadingSkeleton';
 
-type Props = {
+type Props = Readonly<{
   data: AdminStats | null;
   loading: boolean;
-};
+}>;
+
+function renderRecentActivity(data: AdminStats | null, loading: boolean) {
+  if (loading || !data) {
+    return <LoadingSkeleton variant="table" count={3} />;
+  }
+
+  if (data.recent_activity.length === 0) {
+    return (
+      <Typography variant="caption" sx={{ color: '#aaa', fontSize: 12 }}>
+        Aucune activité récente
+      </Typography>
+    );
+  }
+
+  return data.recent_activity.slice(0, 5).map((activity, index) => (
+    <Box key={activity.id}>
+      {index > 0 && <Divider sx={{ my: 1 }} />}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
+            {activity.action}
+          </Typography>
+          <Typography variant="caption" sx={{ color: '#888', fontSize: 11 }}>
+            {activity.user}
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  ));
+}
 
 export default function RecentActivity({ data, loading }: Props) {
   return (
     <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap', mb: 4 }}>
-      {/* Derniers tickets */}
       <Box
         sx={{
           flex: 1,
@@ -35,44 +70,10 @@ export default function RecentActivity({ data, loading }: Props) {
         >
           Derniers tickets
         </Typography>
-        {loading || !data ? (
-          <LoadingSkeleton variant="table" count={3} />
-        ) : data.recent_activity.length === 0 ? (
-          <Typography variant="caption" sx={{ color: '#aaa', fontSize: 12 }}>
-            Aucune activité récente
-          </Typography>
-        ) : (
-          data.recent_activity.slice(0, 5).map((a, i) => (
-            <Box key={a.id}>
-              {i > 0 && <Divider sx={{ my: 1 }} />}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ fontWeight: 600, fontSize: 13 }}
-                  >
-                    {a.action}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: '#888', fontSize: 11 }}
-                  >
-                    {a.user}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          ))
-        )}
+
+        {renderRecentActivity(data, loading)}
       </Box>
 
-      {/* Placeholder reports */}
       <Box
         sx={{
           flex: 1,
@@ -97,12 +98,14 @@ export default function RecentActivity({ data, loading }: Props) {
         >
           Engagement
         </Typography>
+
         {loading || !data ? (
           <LoadingSkeleton variant="table" count={3} />
         ) : (
           <>
             <Typography variant="body2" sx={{ fontSize: 13 }}>
-              Actifs aujourd'hui : <strong>{data.engagement.active_day}</strong>
+              Actifs aujourd&apos;hui :{' '}
+              <strong>{data.engagement.active_day}</strong>
             </Typography>
             <Divider sx={{ my: 1 }} />
             <Typography variant="body2" sx={{ fontSize: 13 }}>

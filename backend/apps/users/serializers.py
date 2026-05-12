@@ -1,7 +1,9 @@
 from dj_rest_auth.registration.serializers import RegisterSerializer
+from django.db.models import Sum
 from rest_framework import serializers
 
 from apps.core.tasks import send_welcome_email
+from apps.library.models import UserGame
 
 from .errors import UserErrors
 from .models import AdminAction
@@ -10,10 +12,18 @@ from .models import UserRole, UserSuspension
 
 
 class CustomRegisterSerializer(RegisterSerializer):
+    username = serializers.CharField(required=False, allow_blank=True, write_only=True)
     pseudo = serializers.CharField(required=False, max_length=150)
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     description_courte = serializers.CharField(required=False, allow_blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "username" in self.fields:
+            self.fields["username"].required = False
+            self.fields["username"].allow_blank = True
+            self.fields["username"].allow_null = True
 
     def validate_email(self, value):
         """
@@ -67,6 +77,7 @@ class UserSerializer(serializers.ModelSerializer):
     banner_url = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     steam_id = serializers.SerializerMethodField()
+    xbox_profile = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
     is_superuser = serializers.BooleanField(read_only=True)
 
@@ -75,6 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
     games_finished_percentage = serializers.SerializerMethodField()
     games_played_percentage = serializers.SerializerMethodField()
     total_games_count = serializers.SerializerMethodField()
+    friends_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -92,23 +104,27 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
             "review_count",
             "steam_id",
+            "xbox_profile",
             "roles",
             "is_superuser",
             "total_playtime",
             "games_finished_percentage",
             "games_played_percentage",
             "total_games_count",
+            "friends_count",
         ]
         read_only_fields = [
             "id",
             "created_at",
             "steam_id",
+            "xbox_profile",
             "roles",
             "is_superuser",
             "total_playtime",
             "games_finished_percentage",
             "games_played_percentage",
             "total_games_count",
+            "friends_count",
         ]
 
     def validate_email(self, value):
@@ -132,19 +148,32 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.steam_profile.steam_id
         return None
 
+    def get_xbox_profile(self, obj):
+        if hasattr(obj, "xbox_profile"):
+            return {
+                "xuid": obj.xbox_profile.xbox_xuid,
+                "gamertag": obj.xbox_profile.gamertag,
+                "gamerscore": obj.xbox_profile.gamerscore,
+                "last_sync_at": obj.xbox_profile.last_sync_at,
+            }
+        return None
+
     def get_review_count(self, obj):
         return obj.reviews.count()
 
     def get_total_playtime(self, obj) -> float:
-        from django.db.models import Sum
 
         return obj.library_entries.aggregate(Sum("playtime_forever"))["playtime_forever__sum"] or 0.0
 
     def get_total_games_count(self, obj) -> int:
         return obj.library_entries.count()
 
+    def get_friends_count(self, obj) -> int:
+        from apps.social.utils import friends_count
+
+        return friends_count(obj)
+
     def get_games_finished_percentage(self, obj) -> float:
-        from apps.library.models import UserGame
 
         total = self.get_total_games_count(obj)
         if total == 0:
@@ -153,7 +182,6 @@ class UserSerializer(serializers.ModelSerializer):
         return round((finished / total) * 100, 1)
 
     def get_games_played_percentage(self, obj) -> float:
-        from apps.library.models import UserGame
 
         total = self.get_total_games_count(obj)
         if total == 0:
@@ -294,3 +322,158 @@ class AdminActionSerializer(serializers.ModelSerializer):
             "description",
         ]
         read_only_fields = fields
+
+
+class PublicUserProfileSerializer(serializers.ModelSerializer):
+    """Profil public d’un utilisateur (pas d’email)."""
+
+    avatar_url = serializers.SerializerMethodField()
+    banner_url = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+    steam_id = serializers.SerializerMethodField()
+    xbox_profile = serializers.SerializerMethodField()
+    total_playtime = serializers.SerializerMethodField()
+    games_finished_percentage = serializers.SerializerMethodField()
+    games_played_percentage = serializers.SerializerMethodField()
+    total_games_count = serializers.SerializerMethodField()
+    friends_count = serializers.SerializerMethodField()
+    relation_to_me = serializers.SerializerMethodField()
+    incoming_friend_request_id = serializers.SerializerMethodField()
+    outgoing_friend_request_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "pseudo",
+            "first_name",
+            "last_name",
+            "avatar_url",
+            "banner_url",
+            "description_courte",
+            "created_at",
+            "review_count",
+            "steam_id",
+            "xbox_profile",
+            "total_playtime",
+            "games_finished_percentage",
+            "games_played_percentage",
+            "total_games_count",
+            "friends_count",
+            "relation_to_me",
+            "incoming_friend_request_id",
+            "outgoing_friend_request_id",
+        ]
+        read_only_fields = fields
+
+    def _visible_entries(self, obj):
+        from apps.library.visibility import visible_user_games_queryset
+
+        request = self.context.get("request")
+        viewer = request.user if request and request.user.is_authenticated else None
+        return visible_user_games_queryset(obj, viewer)
+
+    def get_avatar_url(self, obj):
+        if obj.avatar:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+        return None
+
+    def get_banner_url(self, obj):
+        if obj.banner:
+            request = self.context.get("request")
+            if request:
+                return request.build_absolute_uri(obj.banner.url)
+        return None
+
+    def get_review_count(self, obj):
+        return obj.reviews.count()
+
+    def get_steam_id(self, obj):
+        request = self.context.get("request")
+        viewer = request.user if request and request.user.is_authenticated else None
+        from apps.social.utils import are_friends
+
+        if viewer and (viewer.pk == obj.pk or are_friends(viewer, obj)):
+            if hasattr(obj, "steam_profile"):
+                return obj.steam_profile.steam_id
+        return None
+
+    def get_xbox_profile(self, obj):
+        request = self.context.get("request")
+        viewer = request.user if request and request.user.is_authenticated else None
+        from apps.social.utils import are_friends
+
+        if viewer and (viewer.pk == obj.pk or are_friends(viewer, obj)):
+            if hasattr(obj, "xbox_profile"):
+                return {
+                    "xuid": obj.xbox_profile.xbox_xuid,
+                    "gamertag": obj.xbox_profile.gamertag,
+                    "gamerscore": obj.xbox_profile.gamerscore,
+                    "last_sync_at": obj.xbox_profile.last_sync_at,
+                }
+        return None
+
+    def get_total_playtime(self, obj) -> float:
+        return self._visible_entries(obj).aggregate(Sum("playtime_forever"))["playtime_forever__sum"] or 0.0
+
+    def get_total_games_count(self, obj) -> int:
+        return self._visible_entries(obj).count()
+
+    def get_games_finished_percentage(self, obj) -> float:
+        total = self.get_total_games_count(obj)
+        if total == 0:
+            return 0.0
+        finished = self._visible_entries(obj).filter(status=UserGame.GameStatus.TERMINE).count()
+        return round((finished / total) * 100, 1)
+
+    def get_games_played_percentage(self, obj) -> float:
+        total = self.get_total_games_count(obj)
+        if total == 0:
+            return 0.0
+        played = self._visible_entries(obj).exclude(status=UserGame.GameStatus.ENVIE_DE_JOUER).count()
+        return round((played / total) * 100, 1)
+
+    def get_friends_count(self, obj) -> int:
+        from apps.social.utils import friends_count
+
+        return friends_count(obj)
+
+    def get_relation_to_me(self, obj) -> str | None:
+        request = self.context.get("request")
+        viewer = request.user if request and request.user.is_authenticated else None
+        from apps.social.services import relation_state
+
+        state = relation_state(viewer, obj)
+        if state == "anonymous":
+            return None
+        return state
+
+    def get_incoming_friend_request_id(self, obj) -> int | None:
+        request = self.context.get("request")
+        viewer = request.user if request and request.user.is_authenticated else None
+        if not viewer:
+            return None
+        from apps.social.models import FriendRequest
+
+        fr = FriendRequest.objects.filter(
+            from_user=obj,
+            to_user=viewer,
+            status=FriendRequest.Status.PENDING,
+        ).first()
+        return fr.pk if fr else None
+
+    def get_outgoing_friend_request_id(self, obj) -> int | None:
+        request = self.context.get("request")
+        viewer = request.user if request and request.user.is_authenticated else None
+        if not viewer:
+            return None
+        from apps.social.models import FriendRequest
+
+        fr = FriendRequest.objects.filter(
+            from_user=viewer,
+            to_user=obj,
+            status=FriendRequest.Status.PENDING,
+        ).first()
+        return fr.pk if fr else None

@@ -67,6 +67,12 @@ ignore:
     reason: "CPython asyncio.sock_recvfrom_into buffer check — Windows ProactorEventLoop only; NVD/PSF: non-Windows not affected; Linux Docker — upgrade image when 3.11.x includes backport (cpython#148809)"
   - vulnerability: CVE-2026-5435
     reason: "Won't fix by Debian - libc system package"
+  - vulnerability: CVE-2026-33845
+    reason: "Won't fix by Debian - libgnutls30t64 system package"
+  - vulnerability: CVE-2026-33846
+    reason: "Debian trixie libgnutls30t64: no fixed package available yet; monitor and rebuild when fixed version is released"
+  - vulnerability: GHSA-wj6h-64fc-37mp
+    reason: "Debian trixie python3.11: no fixed package available yet; monitor and rebuild when fixed version is released"
 
 # Sources de données de vulnérabilités
 db:

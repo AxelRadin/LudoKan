@@ -94,14 +94,14 @@ class GameReviewFactory(DjangoModelFactory):
 
 
 class FriendRequestFactory(DjangoModelFactory):
-    """Factory pour créer des demandes d'ami"""
+    """Factory pour créer des demandes d'ami."""
 
     class Meta:
-        model = "social.FriendRequest"  # Sera défini quand le modèle sera créé
+        model = "social.FriendRequest"
 
     from_user = factory.SubFactory(UserFactory)
     to_user = factory.SubFactory(UserFactory)
-    status = factory.Faker("random_element", elements=["pending", "accepted", "declined"])
+    status = "pending"
 
 
 class GameRecommendationFactory(DjangoModelFactory):
