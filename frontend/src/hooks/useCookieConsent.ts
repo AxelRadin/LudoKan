@@ -26,7 +26,7 @@ export function getStoredConsent(): CookiePreferences | null {
 export function saveConsent(prefs: Omit<CookiePreferences, 'necessary'>): void {
   const full: CookiePreferences = { ...prefs, necessary: true };
   localStorage.setItem(COOKIE_KEY, JSON.stringify(full));
-  window.dispatchEvent(
+  globalThis.dispatchEvent(
     new CustomEvent('cookieconsentchange', { detail: full })
   );
 }
@@ -43,8 +43,9 @@ export function useCookieConsent() {
       setPrefs(detail);
       setHasChosen(true);
     };
-    window.addEventListener('cookieconsentchange', onchange);
-    return () => window.removeEventListener('cookieconsentchange', onchange);
+    globalThis.addEventListener('cookieconsentchange', onchange);
+    return () =>
+      globalThis.removeEventListener('cookieconsentchange', onchange);
   }, []);
 
   const updatePrefs = useCallback(

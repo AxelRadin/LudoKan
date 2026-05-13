@@ -39,7 +39,7 @@ if (getStoredConsent()?.analytics) {
   initSentry();
 }
 
-window.addEventListener('cookieconsentchange', (e: Event) => {
+globalThis.addEventListener('cookieconsentchange', (e: Event) => {
   if ((e as CustomEvent).detail?.analytics) {
     initSentry();
   }
