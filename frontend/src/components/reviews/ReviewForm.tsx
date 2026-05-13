@@ -5,13 +5,14 @@ import {
   CircularProgress,
   Divider,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/useAuth';
 import { useSubmitReview } from '../../hooks/useSubmitReview';
-import { t } from 'i18next';
 
 const C = {
   accent: '#d32f2f',
@@ -123,6 +124,7 @@ export default function ReviewForm({
   onSuccess,
   onCancel,
 }: ReviewFormProps) {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { loading, success, error, submitReview } = useSubmitReview();
   const [showTextFields, setShowTextFields] = useState(
@@ -475,37 +477,50 @@ export default function ReviewForm({
             </Button>
           )}
 
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={!canSubmit || loading}
-            startIcon={
-              loading ? <CircularProgress size={15} color="inherit" /> : null
-            }
-            sx={{
-              borderRadius: 999,
-              px: 3,
-              py: 0.9,
-              fontWeight: 700,
-              fontSize: 13.5,
-              textTransform: 'none',
-              fontFamily: FB,
-              background: `linear-gradient(135deg, ${C.accent} 0%, #ef5350 100%)`,
-              boxShadow: `0 4px 14px rgba(211,47,47,0.32)`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-                boxShadow: `0 7px 20px rgba(211,47,47,0.38)`,
-                transform: 'translateY(-1px)',
-              },
-              '&:disabled': {
-                background: 'rgba(0,0,0,0.08)',
-                boxShadow: 'none',
-              },
-              transition: 'all 0.18s ease',
-            }}
+          <Tooltip
+            title={canSubmit ? '' : t('reviewForm.ratingRequired')}
+            disableHoverListener={canSubmit}
+            placement="top"
           >
-            {submitLabel(loading, initialValues?.id)}
-          </Button>
+            <span>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!canSubmit || loading}
+                startIcon={
+                  loading ? (
+                    <CircularProgress size={15} color="inherit" />
+                  ) : null
+                }
+                sx={{
+                  borderRadius: 999,
+                  px: 3,
+                  py: 0.9,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  textTransform: 'none',
+                  fontFamily: FB,
+                  background: `linear-gradient(135deg, ${C.accent} 0%, #ef5350 100%)`,
+                  boxShadow: `0 4px 14px rgba(211,47,47,0.32)`,
+                  '&:hover': {
+                    background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
+                    boxShadow: `0 7px 20px rgba(211,47,47,0.38)`,
+                    transform: 'translateY(-1px)',
+                  },
+                  '&:disabled': {
+                    background: 'rgba(0,0,0,0.08)',
+                    boxShadow: 'none',
+                    cursor: 'not-allowed',
+                    pointerEvents: 'auto',
+                  },
+                  transition: 'all 0.18s ease',
+                  width: '100%',
+                }}
+              >
+                {submitLabel(loading, initialValues?.id)}
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
 
         {success && (

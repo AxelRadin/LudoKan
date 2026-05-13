@@ -54,6 +54,7 @@ export type ProfileLibraryDerived = {
   gamesEnCours: GameListItem[];
   gamesTermines: GameListItem[];
   gamesEnvie: GameListItem[];
+  gamesAbandonnes: GameListItem[];
   gamesFavoris: GameListItem[];
   libraryCounts: LibraryCounts;
   gamesForLibraryFilter: GameListItem[];
@@ -87,6 +88,10 @@ export function useProfileLibraryDerived(
     () => gamesForStatus(userGamesForLibrary, 'ENVIE_DE_JOUER'),
     [userGamesForLibrary]
   );
+  const gamesAbandonnes = useMemo(
+    () => gamesForStatus(userGamesForLibrary, 'ABANDONNE'),
+    [userGamesForLibrary]
+  );
   const gamesFavoris = useMemo(
     () => favoritesToGameListItems(userGamesForLibrary),
     [userGamesForLibrary]
@@ -98,12 +103,14 @@ export function useProfileLibraryDerived(
       enCours: gamesEnCours.length,
       termines: gamesTermines.length,
       envie: gamesEnvie.length,
+      abandonnes: gamesAbandonnes.length,
     }),
     [
       userGamesForLibrary.length,
       gamesEnCours.length,
       gamesTermines.length,
       gamesEnvie.length,
+      gamesAbandonnes.length,
     ]
   );
 
@@ -115,16 +122,19 @@ export function useProfileLibraryDerived(
         return gamesTermines;
       case 'ENVIE_DE_JOUER':
         return gamesEnvie;
+      case 'ABANDONNE':
+        return gamesAbandonnes;
       default:
         return [];
     }
-  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie]);
+  }, [libraryFilter, gamesEnCours, gamesTermines, gamesEnvie, gamesAbandonnes]);
 
   const singleFilterTitle = useMemo(() => {
     const map: Record<Exclude<LibraryStatusFilter, 'ALL'>, string> = {
       EN_COURS: t('profilePage.statusPlaying'),
       TERMINE: t('profilePage.statusDone'),
       ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
+      ABANDONNE: t('profilePage.statusAbandoned'),
     };
     if (libraryFilter === 'ALL') return '';
     return map[libraryFilter];
@@ -148,6 +158,7 @@ export function useProfileLibraryDerived(
     gamesEnCours,
     gamesTermines,
     gamesEnvie,
+    gamesAbandonnes,
     gamesFavoris,
     libraryCounts,
     gamesForLibraryFilter,

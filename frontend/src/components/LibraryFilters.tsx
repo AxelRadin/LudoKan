@@ -19,6 +19,7 @@ const STATUS_FILTERS: Exclude<LibraryStatusFilter, 'ALL'>[] = [
   'EN_COURS',
   'TERMINE',
   'ENVIE_DE_JOUER',
+  'ABANDONNE',
 ];
 
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -42,6 +43,8 @@ function countFor(id: LibraryStatusFilter, counts: LibraryCounts): number {
       return counts.termines;
     case 'ENVIE_DE_JOUER':
       return counts.envie;
+    case 'ABANDONNE':
+      return counts.abandonnes;
     default:
       return 0;
   }
@@ -82,6 +85,7 @@ export default function LibraryFilters({
       EN_COURS: t('profilePage.statusPlaying'),
       TERMINE: t('profilePage.statusDone'),
       ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
+      ABANDONNE: t('profilePage.statusAbandoned'),
     }),
     [t]
   );

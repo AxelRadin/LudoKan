@@ -86,6 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
     games_finished_percentage = serializers.SerializerMethodField()
     games_played_percentage = serializers.SerializerMethodField()
     total_games_count = serializers.SerializerMethodField()
+    abandoned_games_count = serializers.SerializerMethodField()
     friends_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -111,6 +112,7 @@ class UserSerializer(serializers.ModelSerializer):
             "games_finished_percentage",
             "games_played_percentage",
             "total_games_count",
+            "abandoned_games_count",
             "friends_count",
         ]
         read_only_fields = [
@@ -124,6 +126,7 @@ class UserSerializer(serializers.ModelSerializer):
             "games_finished_percentage",
             "games_played_percentage",
             "total_games_count",
+            "abandoned_games_count",
             "friends_count",
         ]
 
@@ -167,6 +170,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_total_games_count(self, obj) -> int:
         return obj.library_entries.count()
+
+    def get_abandoned_games_count(self, obj) -> int:
+        return obj.library_entries.filter(status=UserGame.GameStatus.ABANDONNE).count()
 
     def get_friends_count(self, obj) -> int:
         from apps.social.utils import friends_count
@@ -336,6 +342,7 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
     games_finished_percentage = serializers.SerializerMethodField()
     games_played_percentage = serializers.SerializerMethodField()
     total_games_count = serializers.SerializerMethodField()
+    abandoned_games_count = serializers.SerializerMethodField()
     friends_count = serializers.SerializerMethodField()
     relation_to_me = serializers.SerializerMethodField()
     incoming_friend_request_id = serializers.SerializerMethodField()
@@ -359,6 +366,7 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
             "games_finished_percentage",
             "games_played_percentage",
             "total_games_count",
+            "abandoned_games_count",
             "friends_count",
             "relation_to_me",
             "incoming_friend_request_id",
@@ -420,6 +428,9 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
 
     def get_total_games_count(self, obj) -> int:
         return self._visible_entries(obj).count()
+
+    def get_abandoned_games_count(self, obj) -> int:
+        return self._visible_entries(obj).filter(status=UserGame.GameStatus.ABANDONNE).count()
 
     def get_games_finished_percentage(self, obj) -> float:
         total = self.get_total_games_count(obj)
