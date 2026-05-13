@@ -20,7 +20,7 @@ export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const contextValue = useMemo(
-    () => ({ darkMode, toggleDarkMode }),
+    () => ({ darkMode, toggleDarkMode, setDarkMode }),
     [darkMode]
   );
 

@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
+import i18n from '../i18n';
 import { apiGet } from '../services/api';
 import { AuthContext, type AuthUser } from './AuthContextDef';
+import { ThemeContext } from './themeContextValue';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -12,6 +14,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
+  const { setDarkMode } = useContext(ThemeContext);
+
   useEffect(() => {
     let cancelled = false;
     const checkAuth = async () => {
@@ -20,6 +24,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!cancelled) {
           setAuthenticated(true);
           setUser(me);
+          setDarkMode(me.theme_preference === 'dark');
+          i18n.changeLanguage(me.language_preference || 'fr');
         }
       } catch {
         if (!cancelled) {
@@ -34,7 +40,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [setDarkMode]);
+
+  useEffect(() => {
+    if (!isAuthenticated || user !== null) return;
+    let cancelled = false;
+    apiGet('/api/me')
+      .then(me => {
+        if (!cancelled) {
+          setUser(me as AuthUser);
+          setDarkMode((me as AuthUser).theme_preference === 'dark');
+          i18n.changeLanguage((me as AuthUser).language_preference || 'fr');
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user, setDarkMode]);
 
   const value = useMemo(
     () => ({
