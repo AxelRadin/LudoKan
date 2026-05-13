@@ -42,6 +42,8 @@ interface MatchmakingModalProps {
     readonly image: string;
   } | null;
   readonly party?: Party | null;
+  readonly isExpanding: boolean;
+  readonly currentRadius: number;
   readonly partyActions: any;
 }
 
@@ -187,6 +189,8 @@ export default function MatchmakingModal({
   startedAt,
   game,
   party,
+  isExpanding,
+  currentRadius,
   partyActions,
 }: MatchmakingModalProps) {
   const { t } = useTranslation();
@@ -289,49 +293,47 @@ export default function MatchmakingModal({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              textAlign: 'center',
             }}
           >
-            <Box sx={{ position: 'relative', width: 100, height: 100, mb: 5 }}>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  border: '2px solid',
-                  borderColor: 'primary.main',
-                  animation: `${pulseRadar} 2s infinite ease-out`,
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  border: '2px solid',
-                  borderColor: 'primary.main',
-                  animation: `${pulseRadar} 2s infinite ease-out`,
-                  animationDelay: '1s',
-                }}
-              />
-              <Avatar
-                sx={{
-                  width: 100,
-                  height: 100,
-                  bgcolor: 'primary.main',
-                  zIndex: 2,
-                  position: 'relative',
-                }}
-              >
-                <RadarIcon sx={{ fontSize: 48 }} />
-              </Avatar>
-            </Box>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
+            <Avatar
+              sx={{
+                width: 100,
+                height: 100,
+                bgcolor: 'primary.main',
+                animation: `${pulseRadar} 2s infinite`,
+              }}
+            >
+              <RadarIcon sx={{ fontSize: 48 }} />
+            </Avatar>
+
+            <Typography variant="h6" sx={{ mt: 3 }}>
               {t('matchmakingModal.analyzing')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              En attente de joueurs à proximité...
-            </Typography>
+
+            {/* NOUVEAU MESSAGE D'ÉLARGISSEMENT */}
+            <Box sx={{ height: 24, mt: 1 }}>
+              {currentRadius >= 10000 ? (
+                <Typography
+                  variant="caption"
+                  color="secondary"
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Recherche mondiale activée...
+                </Typography>
+              ) : isExpanding ? (
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  sx={{ fontStyle: 'italic' }}
+                >
+                  Élargissement de la zone de recherche ({currentRadius} km)...
+                </Typography>
+              ) : (
+                <Typography variant="caption" color="text.secondary">
+                  Rayon actuel : {currentRadius} km
+                </Typography>
+              )}
+            </Box>
           </Box>
         )}
 
