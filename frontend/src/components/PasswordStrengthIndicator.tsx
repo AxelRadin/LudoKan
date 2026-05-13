@@ -115,7 +115,6 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
                   color: passed ? 'text.secondary' : 'text.disabled',
                   fontSize: 12,
                   lineHeight: 1.6,
-                  textDecoration: passed ? 'none' : 'none',
                 }}
               >
                 {ruleLabels[rule.key]}
