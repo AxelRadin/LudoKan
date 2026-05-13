@@ -1,11 +1,11 @@
 from datetime import timedelta
+from unittest.mock import PropertyMock, patch
 
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-from unittest.mock import PropertyMock, patch
-from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.tests.conftest import open_party_factory, party_member_create
