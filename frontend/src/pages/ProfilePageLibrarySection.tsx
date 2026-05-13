@@ -126,6 +126,7 @@ export default function ProfilePageLibrarySection({
 
   return (
     <Paper
+      data-tour="profile-library"
       elevation={0}
       className="lib-section"
       sx={{
@@ -173,7 +174,10 @@ export default function ProfilePageLibrarySection({
             {t('profilePage.libraryTitle')}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box
+          data-tour="profile-collections"
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+        >
           <Box
             sx={{
               px: 1.5,
@@ -265,15 +269,17 @@ export default function ProfilePageLibrarySection({
         </Box>
       ) : (
         <>
-          <LibraryFilters
-            value={libraryFilter}
-            onChange={setLibraryFilter}
-            counts={libraryCounts}
-            collections={collections}
-            collectionValue={collectionFilterId}
-            onCollectionChange={setLibraryCollectionFilter}
-            collectionsLoading={collectionsLoading}
-          />
+          <Box data-tour="profile-filters">
+            <LibraryFilters
+              value={libraryFilter}
+              onChange={setLibraryFilter}
+              counts={libraryCounts}
+              collections={collections}
+              collectionValue={collectionFilterId}
+              onCollectionChange={setLibraryCollectionFilter}
+              collectionsLoading={collectionsLoading}
+            />
+          </Box>
           <Box
             sx={{
               height: '1px',
