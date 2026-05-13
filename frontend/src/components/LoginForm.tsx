@@ -3,43 +3,18 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
 import { useTheme } from '@mui/material/styles';
 import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuth } from '../contexts/useAuth';
-import { apiPost } from '../services/api';
 import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginSection from './SocialLoginSection';
 import { useSocialAuth } from '../hooks/useSocialAuth';
 import PasswordField from './PasswordField';
-
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
-
-const isValidEmail = (value: string): boolean => {
-  const trimmedValue = value.trim();
-
-  if (trimmedValue.length > 254) {
-    return false;
-  }
-
-  const atIndex = trimmedValue.indexOf('@');
-  const lastDotIndex = trimmedValue.lastIndexOf('.');
-
-  return (
-    atIndex > 0 &&
-    lastDotIndex > atIndex + 1 &&
-    lastDotIndex < trimmedValue.length - 1 &&
-    !trimmedValue.includes(' ')
-  );
-};
+import { useLoginForm } from '../hooks/useLoginForm';
+import ForgotPasswordDialog from './ForgotPasswordDialog';
 
 type LoginFormProps = {
   onSwitchToRegister: () => void;
@@ -53,104 +28,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const navigate = useNavigate();
-  const { setAuthenticated } = useAuth();
+
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    setCaptchaToken,
+    loading,
+    error,
+    handleSubmit,
+    RECAPTCHA_SITE_KEY,
+  } = useLoginForm(onLoginSuccess);
+
   const {
     error: socialError,
     handleGoogleClick,
     handleSteamClick,
   } = useSocialAuth();
 
-  // Forgot Password Modal
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetSuccess, setResetSuccess] = useState(false);
-  const [resetError, setResetError] = useState<string | null>(null);
 
   const displayError = error || socialError;
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!email || !password) {
-      setError(t('loginForm.errorFillFields'));
-      return;
-    }
-    if (!RECAPTCHA_SITE_KEY) {
-      setError(t('loginForm.errorRecaptchaNotConfigured'));
-      return;
-    }
-    if (!captchaToken) {
-      setError(t('loginForm.errorRecaptcha'));
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await apiPost('/api/auth/login/', {
-        email,
-        password,
-        recaptcha_token: captchaToken,
-      });
-      setAuthenticated(true);
-      if (onLoginSuccess) onLoginSuccess();
-      else navigate('/', { replace: true });
-    } catch (err: any) {
-      setError(err.message || t('loginForm.errorFallback'));
-      recaptchaRef.current?.reset();
-      setCaptchaToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPasswordOpen = () => {
-    setForgotPasswordOpen(true);
-    setResetEmail('');
-    setResetSuccess(false);
-    setResetError(null);
-  };
-
-  const handleForgotPasswordClose = () => {
-    setForgotPasswordOpen(false);
-    setResetEmail('');
-    setResetSuccess(false);
-    setResetError(null);
-  };
-
-  const handleResetPassword = async () => {
-    setResetError(null);
-
-    if (!resetEmail) {
-      setResetError(t('loginForm.forgotEnterEmail'));
-      return;
-    }
-
-    if (!isValidEmail(resetEmail)) {
-      setResetError(t('loginForm.forgotInvalidEmail'));
-      return;
-    }
-
-    try {
-      setResetLoading(true);
-      await apiPost('/api/auth/password/reset/', {
-        email: resetEmail.trim(),
-      });
-      setResetSuccess(true);
-    } catch (err: any) {
-      setResetError(err.message || t('loginForm.forgotSendError'));
-    } finally {
-      setResetLoading(false);
-    }
-  };
 
   return (
     <AuthFormContainer
@@ -158,7 +58,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       switchLabel={t('loginForm.switchLabel')}
       onSwitch={onSwitchToRegister}
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={e => handleSubmit(e, recaptchaRef)}>
         <Stack spacing={2.5} width={320}>
           <TextField
             label={t('loginForm.email')}
@@ -219,11 +119,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             }}
           />
 
-          {/* Mot de passe oublié */}
           <Link
             component="button"
             type="button"
-            onClick={handleForgotPasswordOpen}
+            onClick={() => setForgotPasswordOpen(true)}
             underline="hover"
             sx={{
               alignSelf: 'flex-end',
@@ -341,100 +240,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </Typography>
       </form>
 
-      {/* Modal Mot de passe oublié */}
-      <Dialog
+      <ForgotPasswordDialog
         open={forgotPasswordOpen}
-        onClose={handleForgotPasswordClose}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            p: 1,
-            bgcolor: isDark ? '#2a2020' : '#ffffff',
-          },
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 20 }}>
-          {t('loginForm.forgotPasswordTitle')}
-        </DialogTitle>
-        <DialogContent>
-          {resetSuccess ? (
-            <Alert severity="success" sx={{ mt: 1 }}>
-              {t('loginForm.forgotSuccessMessage', { email: resetEmail })}
-            </Alert>
-          ) : (
-            <>
-              <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
-                {t('loginForm.forgotDescription')}
-              </Typography>
-              <TextField
-                autoFocus
-                label={t('loginForm.forgotEmailLabel')}
-                type="email"
-                fullWidth
-                variant="outlined"
-                value={resetEmail}
-                onChange={e => setResetEmail(e.target.value)}
-                error={!!resetError}
-                helperText={resetError}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: isDark
-                        ? 'rgba(255,255,255,0.23)'
-                        : 'rgba(0,0,0,0.23)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: isDark
-                        ? 'rgba(255,255,255,0.4)'
-                        : 'rgba(0,0,0,0.87)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#FF3D3D',
-                    },
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
-                  },
-                  '& .MuiInputLabel-root.Mui-focused': {
-                    color: '#FF3D3D',
-                  },
-                }}
-              />
-            </>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleForgotPasswordClose} sx={{ borderRadius: 2 }}>
-            {resetSuccess ? t('common.close') : t('common.cancel')}
-          </Button>
-          {!resetSuccess && (
-            <Button
-              onClick={handleResetPassword}
-              variant="contained"
-              disabled={resetLoading}
-              sx={{
-                borderRadius: 2,
-                background: 'linear-gradient(135deg, #FF3D3D 0%, #D32F2F 100%)',
-                '&:hover': {
-                  background:
-                    'linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%)',
-                },
-                '&:disabled': {
-                  background: isDark
-                    ? 'rgba(255,255,255,0.12)'
-                    : 'rgba(0,0,0,0.12)',
-                },
-              }}
-            >
-              {resetLoading
-                ? t('loginForm.forgotSending')
-                : t('loginForm.forgotSend')}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        onClose={() => setForgotPasswordOpen(false)}
+      />
     </AuthFormContainer>
   );
 };
