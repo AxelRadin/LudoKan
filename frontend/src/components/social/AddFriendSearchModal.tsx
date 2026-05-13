@@ -123,6 +123,20 @@ export default function AddFriendSearchModal({
       <List sx={{ mt: 1 }}>
         {results.map(u => {
           const isSelf = authUser && u.id === authUser.id;
+          const isInviting = invitingId === u.id;
+          const isAlreadyPending = pendingIds.has(u.id);
+
+          let inviteButtonContent: ReactNode;
+          if (isInviting) {
+            inviteButtonContent = (
+              <CircularProgress size={18} color="inherit" />
+            );
+          } else if (isAlreadyPending) {
+            inviteButtonContent = t('publicUserProfile.requestSent');
+          } else {
+            inviteButtonContent = t('friendsPage.invite');
+          }
+
           return (
             <ListItem
               key={u.id}
@@ -149,18 +163,12 @@ export default function AddFriendSearchModal({
                     <Button
                       size="small"
                       variant="contained"
-                      disabled={invitingId === u.id || pendingIds.has(u.id)}
+                      disabled={isInviting || isAlreadyPending}
                       onClick={() => {
                         handleInvite(u).catch(() => {});
                       }}
                     >
-                      {invitingId === u.id ? (
-                        <CircularProgress size={18} color="inherit" />
-                      ) : pendingIds.has(u.id) ? (
-                        t('publicUserProfile.requestSent')
-                      ) : (
-                        t('friendsPage.invite')
-                      )}
+                      {inviteButtonContent}
                     </Button>
                   )}
                 </Box>
