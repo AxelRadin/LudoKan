@@ -11,10 +11,8 @@ type PolicyDoc = {
 type PoliciesRecord = Record<'confidentialite' | 'cgu', PolicyDoc>;
 
 export function getPolicies(): PoliciesRecord {
-  return (
-    i18n.language === 'en' ? politiquesContentEn : politiquesContentFr
-  ) as PoliciesRecord;
+  return i18n.language === 'en' ? politiquesContentEn : politiquesContentFr;
 }
 
-export const POLICIES = politiquesContentFr as PoliciesRecord;
+export const POLICIES: PoliciesRecord = politiquesContentFr;
 export type PolicyId = keyof PoliciesRecord;

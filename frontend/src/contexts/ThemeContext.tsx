@@ -1,16 +1,7 @@
-import React, { createContext, useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
-
-interface ThemeContextType {
-  darkMode: boolean;
-  toggleDarkMode: () => void;
-}
-
-export const ThemeContext = createContext<ThemeContextType>({
-  darkMode: false,
-  toggleDarkMode: () => {},
-});
+import { ThemeContext } from './themeContextValue';
 
 export const ThemeModeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,

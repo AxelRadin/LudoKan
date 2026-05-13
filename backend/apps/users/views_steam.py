@@ -156,7 +156,7 @@ class SteamLoginCallbackView(APIView):
         return user, is_new_user
 
     def _sync_steam_profile(self, user, steam_id, is_new_user):
-        email_is_temporary = user.email.endswith("@steam.ludokan.internal") or user.email.endswith("@mailtemporaire.ludokan.internal")
+        email_is_temporary = user.email.endswith(("@steam.ludokan.internal", "@mailtemporaire.ludokan.internal"))
         if not (is_new_user or email_is_temporary):
             return
 
@@ -170,8 +170,11 @@ class SteamLoginCallbackView(APIView):
                 players = summary_res.json().get("response", {}).get("players", [])
                 if players:
                     self._update_user_from_player_data(user, players[0], email_is_temporary)
-        except Exception as e:
-            logger.error(f"Failed to fetch Steam profile summary for user {user.id}: {e}")
+        except Exception:
+            logger.exception(
+                "Failed to fetch Steam profile summary for user %s",
+                user.id,
+            )
 
     def _update_user_from_player_data(self, user, player, email_is_temporary):
         base_pseudo = player.get("personaname", user.pseudo)

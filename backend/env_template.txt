@@ -42,6 +42,7 @@ ENVIRONMENT=local
 SITE_ID=1
 SITE_DOMAIN=ludokan-local.fr
 SITE_NAME=LudoKan Local
+FRONTEND_BASE_URL=http://localhost:5173
 
 # ===========================================
 # EMAIL (allauth / reset / Celery / rapports)

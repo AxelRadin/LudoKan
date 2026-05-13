@@ -60,10 +60,14 @@ urlpatterns = [
     path("api/", include("apps.matchmaking.urls")),
     # Parties
     path("api/", include("apps.parties.urls")),
+    # Social (amis)
+    path("api/social/", include("apps.social.urls")),
     # Chat
     path("api/", include("apps.chat.urls")),
     # Game Tickets
     path("api/", include("apps.game_tickets.urls")),
+    # Recommendations
+    path("api/", include("apps.recommendations.urls")),
 ]
 
 if settings.DEBUG:

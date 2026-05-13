@@ -17,7 +17,7 @@ COPY requirements-dev.txt .
 RUN python -m pip install --upgrade "pip==26.1.1" \
     && pip install --root-user-action=ignore \
         --only-binary=:all: \
-        --no-binary=dj-rest-auth \
+        --no-binary=dj-rest-auth,ms-cv \
         -r requirements.txt \
     && pip install --root-user-action=ignore --only-binary=:all: -r requirements-dev.txt
 

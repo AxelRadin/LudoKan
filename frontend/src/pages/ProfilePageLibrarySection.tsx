@@ -31,6 +31,7 @@ type ProfilePageLibrarySectionProps = Readonly<{
   setLibrarySectionMenuAnchor: (el: null | HTMLElement) => void;
   setCreateCollectionModalOpen: (open: boolean) => void;
   setManageCollectionsModalOpen: (open: boolean) => void;
+  onOpenLibraryPrivacy: () => void;
   libraryFilter: LibraryStatusFilter;
   setLibraryFilter: (next: LibraryStatusFilter) => void;
   libraryCounts: LibraryCounts;
@@ -42,6 +43,7 @@ type ProfilePageLibrarySectionProps = Readonly<{
   gamesEnCours: GameListItem[];
   gamesTermines: GameListItem[];
   gamesEnvie: GameListItem[];
+  gamesAbandonnes: GameListItem[];
   gamesForLibraryFilter: GameListItem[];
   singleFilterTitle: string;
   removeGame: (userGameId: number) => void;
@@ -49,6 +51,8 @@ type ProfilePageLibrarySectionProps = Readonly<{
     Pick<GameListProps, 'onDetachFromCollection' | 'detachFromCollectionTitle'>
   >;
   gamesLoading: boolean;
+  /** Masque création / gestion de collections (profil d’un autre utilisateur). */
+  readOnly?: boolean;
 }>;
 
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -65,6 +69,7 @@ export default function ProfilePageLibrarySection({
   setLibrarySectionMenuAnchor,
   setCreateCollectionModalOpen,
   setManageCollectionsModalOpen,
+  onOpenLibraryPrivacy,
   libraryFilter,
   setLibraryFilter,
   libraryCounts,
@@ -76,11 +81,13 @@ export default function ProfilePageLibrarySection({
   gamesEnCours,
   gamesTermines,
   gamesEnvie,
+  gamesAbandonnes,
   gamesForLibraryFilter,
   singleFilterTitle,
   removeGame,
   gameListCollectionProps,
   gamesLoading,
+  readOnly = false,
 }: ProfilePageLibrarySectionProps) {
   const { t } = useTranslation();
 
@@ -95,6 +102,7 @@ export default function ProfilePageLibrarySection({
           },
           { games: gamesTermines, label: t('profilePage.statusDone') },
           { games: gamesEnvie, label: t('profilePage.statusWishlist') },
+          { games: gamesAbandonnes, label: t('profilePage.statusAbandoned') },
         ].map(({ games, label }) => (
           <GameList
             key={label}
@@ -118,6 +126,7 @@ export default function ProfilePageLibrarySection({
 
   return (
     <Paper
+      data-tour="profile-library"
       elevation={0}
       className="lib-section"
       sx={{
@@ -165,7 +174,10 @@ export default function ProfilePageLibrarySection({
             {t('profilePage.libraryTitle')}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box
+          data-tour="profile-collections"
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+        >
           <Box
             sx={{
               px: 1.5,
@@ -186,49 +198,62 @@ export default function ProfilePageLibrarySection({
               {libraryBadgeText}
             </Typography>
           </Box>
-          <IconButton
-            aria-label={t('profilePage.libraryOptionsAria')}
-            onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
-              setLibrarySectionMenuAnchor(e.currentTarget)
-            }
-            size="small"
-            sx={{ color: '#2e7d32' }}
-          >
-            <MoreVertIcon />
-          </IconButton>
-          <Menu
-            anchorEl={librarySectionMenuAnchor}
-            open={Boolean(librarySectionMenuAnchor)}
-            onClose={() => setLibrarySectionMenuAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            PaperProps={{
-              sx: {
-                borderRadius: '12px',
-                minWidth: 200,
-                fontFamily: FONT_BODY,
-              },
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                setLibrarySectionMenuAnchor(null);
-                setCreateCollectionModalOpen(true);
-              }}
-              sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
-            >
-              {t('profilePage.createCollection')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setLibrarySectionMenuAnchor(null);
-                setManageCollectionsModalOpen(true);
-              }}
-              sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
-            >
-              {t('profilePage.manageCollections')}
-            </MenuItem>
-          </Menu>
+          {readOnly ? null : (
+            <>
+              <IconButton
+                aria-label={t('profilePage.libraryOptionsAria')}
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) =>
+                  setLibrarySectionMenuAnchor(e.currentTarget)
+                }
+                size="small"
+                sx={{ color: '#2e7d32' }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+              <Menu
+                anchorEl={librarySectionMenuAnchor}
+                open={Boolean(librarySectionMenuAnchor)}
+                onClose={() => setLibrarySectionMenuAnchor(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  sx: {
+                    borderRadius: '12px',
+                    minWidth: 200,
+                    fontFamily: FONT_BODY,
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setLibrarySectionMenuAnchor(null);
+                    setCreateCollectionModalOpen(true);
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  {t('profilePage.createCollection')}
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setLibrarySectionMenuAnchor(null);
+                    setManageCollectionsModalOpen(true);
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  {t('profilePage.manageCollections')}
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    setLibrarySectionMenuAnchor(null);
+                    onOpenLibraryPrivacy();
+                  }}
+                  sx={{ fontFamily: FONT_BODY, fontSize: 14 }}
+                >
+                  {t('profilePage.libraryPrivacyMenu')}
+                </MenuItem>
+              </Menu>
+            </>
+          )}
         </Box>
       </Box>
       {gamesLoading ? (
@@ -244,15 +269,17 @@ export default function ProfilePageLibrarySection({
         </Box>
       ) : (
         <>
-          <LibraryFilters
-            value={libraryFilter}
-            onChange={setLibraryFilter}
-            counts={libraryCounts}
-            collections={collections}
-            collectionValue={collectionFilterId}
-            onCollectionChange={setLibraryCollectionFilter}
-            collectionsLoading={collectionsLoading}
-          />
+          <Box data-tour="profile-filters">
+            <LibraryFilters
+              value={libraryFilter}
+              onChange={setLibraryFilter}
+              counts={libraryCounts}
+              collections={collections}
+              collectionValue={collectionFilterId}
+              onCollectionChange={setLibraryCollectionFilter}
+              collectionsLoading={collectionsLoading}
+            />
+          </Box>
           <Box
             sx={{
               height: '1px',

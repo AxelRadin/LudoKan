@@ -3,6 +3,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
+import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
@@ -33,6 +34,7 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
+import NotificationIcon from './notifications/NotificationIcon';
 
 const rippleSx = {
   color: 'inherit',
@@ -197,6 +199,7 @@ export const Header: React.FC = () => {
       {langDropdown}
       {isAuthenticated ? (
         <>
+          <NotificationIcon />
           <Button
             color="inherit"
             onClick={handleProfileMenuOpen}
@@ -247,6 +250,19 @@ export const Header: React.FC = () => {
             <MenuItem
               onClick={() => {
                 handleProfileMenuClose();
+                navigate('/friends');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              <ListItemIcon>
+                <PersonSearchIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{t('nav.friends')}</ListItemText>
+            </MenuItem>
+
+            <MenuItem
+              onClick={() => {
+                handleProfileMenuClose();
                 navigate('/settings');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
@@ -284,6 +300,7 @@ export const Header: React.FC = () => {
     <Box display="flex" flexDirection="column" gap={2} mt={3}>
       {isAuthenticated ? (
         <>
+          <NotificationIcon mobile />
           <Button
             variant="outlined"
             fullWidth
@@ -294,6 +311,18 @@ export const Header: React.FC = () => {
             }}
           >
             {isProfilePage ? t('nav.home') : t('nav.profile')}
+          </Button>
+
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => {
+              setDrawerOpen(false);
+              navigate('/friends');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          >
+            {t('nav.friends')}
           </Button>
 
           <Button
@@ -442,7 +471,9 @@ export const Header: React.FC = () => {
               </IconButton>
             ) : (
               <>
-                <SearchBar />
+                <Box data-tour="search">
+                  <SearchBar />
+                </Box>
                 <Box display="flex" alignItems="center" gap={2}>
                   {desktopActions}
                 </Box>

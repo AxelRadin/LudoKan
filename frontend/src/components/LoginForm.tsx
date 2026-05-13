@@ -19,6 +19,7 @@ import AuthFormContainer from './AuthFormContainer';
 import PrimaryButton from './PrimaryButton';
 import SocialLoginSection from './SocialLoginSection';
 import { useSocialAuth } from '../hooks/useSocialAuth';
+import PasswordField from './PasswordField';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY ?? '';
 
@@ -190,9 +191,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               },
             }}
           />
-          <TextField
+          <PasswordField
             label={t('loginForm.password')}
-            type="password"
             variant="outlined"
             value={password}
             onChange={e => setPassword(e.target.value)}

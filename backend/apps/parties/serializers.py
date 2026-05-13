@@ -32,6 +32,7 @@ class PartyMemberReadSerializer(serializers.ModelSerializer):
             "ready_for_chat_state",
             "joined_at",
             "left_at",
+            "wants_to_start_early",
         )
 
 

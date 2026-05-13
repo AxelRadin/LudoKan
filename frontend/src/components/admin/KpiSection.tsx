@@ -10,10 +10,10 @@ import type { AdminStats } from '../../types/admin';
 import KpiCard from './KpiCard';
 import LoadingSkeleton from './LoadingSkeleton';
 
-type Props = {
+type Props = Readonly<{
   data: AdminStats | null;
   loading: boolean;
-};
+}>;
 
 export default function KpiSection({ data, loading }: Props) {
   return (

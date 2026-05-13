@@ -5,6 +5,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/ws-notifications': {
+        target: 'http://localhost:8000',
+        ws: true,
+      },
       '/gbapi': {
         target: 'https://www.giantbomb.com',
         changeOrigin: true,

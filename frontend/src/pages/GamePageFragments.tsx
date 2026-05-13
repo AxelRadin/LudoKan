@@ -1,7 +1,31 @@
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import { Box, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import React from 'react';
 import { GAME_PAGE_FONT } from './gamePageAppearance';
+
+type FavoriteGlyphProps = Readonly<{
+  isFavorite: boolean;
+  accent: string;
+  size: number;
+  color?: string;
+}>;
+
+export function FavoriteGlyph({
+  isFavorite,
+  accent,
+  size,
+  color,
+}: FavoriteGlyphProps) {
+  if (isFavorite)
+    return <FavoriteIcon sx={{ fontSize: size, color: color ?? accent }} />;
+  return (
+    <FavoriteBorderIcon
+      sx={{ fontSize: size, color: color ?? 'rgba(255,255,255,0.9)' }}
+    />
+  );
+}
 
 export function Sep() {
   const theme = useTheme();
@@ -21,7 +45,7 @@ export function Sep() {
 }
 
 type StatusChipProps = Readonly<{
-  icon: React.ReactElement;
+  icon: React.ReactElement<{ sx?: object }>;
   label: string;
   active: boolean;
   color: string;
@@ -63,7 +87,7 @@ export function StatusChip({
     >
       {React.cloneElement(icon, {
         sx: { fontSize: 14, color: 'inherit' },
-      } as never)}
+      })}
       <Typography
         sx={{
           fontFamily: GAME_PAGE_FONT,

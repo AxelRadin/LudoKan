@@ -1,6 +1,6 @@
 import { Alert } from '@mui/material';
 
-type Props = { message: string };
+type Props = Readonly<{ message: string }>;
 
 export default function ErrorAlert({ message }: Props) {
   return (
