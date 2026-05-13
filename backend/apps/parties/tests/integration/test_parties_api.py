@@ -4,9 +4,12 @@ import pytest
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
+from unittest.mock import patch, PropertyMock
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.tests.conftest import open_party_factory, party_member_create
+
 
 
 @pytest.mark.django_db
@@ -227,3 +230,52 @@ class TestPartyStartEarlyAPI:
         r = authenticated_api_client.post(f"/api/parties/{party.id}/start-early", {"accepted": True}, format="json")
         assert r.status_code == status.HTTP_400_BAD_REQUEST
         assert "detail" in r.data
+
+@pytest.mark.django_db
+class TestPartyAvatarCoverage:
+    def test_external_avatar_url(self, authenticated_api_client, user, game):
+        """Test que l'avatar externe est utilisé s'il n'y a pas d'image locale."""
+        user.avatar_url = "https://example.com/avatar.png"
+        user.save()
+        party = open_party_factory(game=game, max_players=4)
+        party_member_create(party=party, user=user)
+        
+        r = authenticated_api_client.get("/api/parties/me/active")
+        assert r.status_code == status.HTTP_200_OK
+        
+        member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
+        assert member_data["avatar_url"] == "https://example.com/avatar.png"
+
+    def test_local_avatar_success(self, authenticated_api_client, user, game):
+        """Test qu'un avatar local uploadé génère bien une URL absolue."""
+        avatar_file = SimpleUploadedFile("test_avatar.png", b"file_content", content_type="image/png")
+        user.avatar = avatar_file
+        user.save()
+        
+        party = open_party_factory(game=game, max_players=4)
+        party_member_create(party=party, user=user)
+
+        r = authenticated_api_client.get("/api/parties/me/active")
+        assert r.status_code == status.HTTP_200_OK
+        
+        member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
+        assert member_data["avatar_url"] is not None
+        assert "test_avatar" in member_data["avatar_url"]
+        assert member_data["avatar_url"].startswith("http")
+
+    def test_avatar_exception_fallback(self, authenticated_api_client, user, game):
+        """Test que si l'accès à l'avatar local crashe, le try/except rattrape l'erreur."""
+        user.avatar_url = "https://example.com/fallback.png"
+        user.save()
+        
+        party = open_party_factory(game=game, max_players=4)
+        party_member_create(party=party, user=user)
+
+        with patch("apps.users.models.CustomUser.avatar", new_callable=PropertyMock) as mock_avatar:
+            mock_avatar.side_effect = Exception("Erreur de stockage simulée !")
+            
+            r = authenticated_api_client.get("/api/parties/me/active")
+            
+        assert r.status_code == status.HTTP_200_OK
+        member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
+        assert member_data["avatar_url"] == "https://example.com/fallback.png"
