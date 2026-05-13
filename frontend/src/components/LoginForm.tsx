@@ -8,6 +8,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
+import { useTheme } from '@mui/material/styles';
 import React, { useRef, useState } from 'react';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
@@ -49,6 +50,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   onLoginSuccess,
 }) => {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -163,6 +166,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             variant="outlined"
             value={email}
             onChange={e => setEmail(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: isDark
+                    ? 'rgba(255,255,255,0.23)'
+                    : 'rgba(0,0,0,0.23)',
+                },
+                '&:hover fieldset': {
+                  borderColor: isDark
+                    ? 'rgba(255,255,255,0.4)'
+                    : 'rgba(0,0,0,0.87)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#FF3D3D',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#FF3D3D',
+              },
+            }}
           />
           <TextField
             label={t('loginForm.password')}
@@ -170,6 +196,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             variant="outlined"
             value={password}
             onChange={e => setPassword(e.target.value)}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: isDark
+                    ? 'rgba(255,255,255,0.23)'
+                    : 'rgba(0,0,0,0.23)',
+                },
+                '&:hover fieldset': {
+                  borderColor: isDark
+                    ? 'rgba(255,255,255,0.4)'
+                    : 'rgba(0,0,0,0.87)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#FF3D3D',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+              },
+              '& .MuiInputLabel-root.Mui-focused': {
+                color: '#FF3D3D',
+              },
+            }}
           />
 
           {/* Mot de passe oublié */}
@@ -183,6 +232,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               fontSize: 14,
               fontWeight: 500,
               cursor: 'pointer',
+              color: isDark ? '#FF8A80' : '#FF3D3D',
+              '&:hover': {
+                color: isDark ? '#FF6B6B' : '#D32F2F',
+              },
             }}
           >
             Mot de passe oublié ?
@@ -193,6 +246,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               ref={recaptchaRef}
               sitekey={RECAPTCHA_SITE_KEY}
               onChange={token => setCaptchaToken(token)}
+              theme={isDark ? 'dark' : 'light'}
             />
           ) : (
             <Alert severity="warning" sx={{ width: '100%' }}>
@@ -221,14 +275,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {loading ? t('loginForm.submitting') : t('loginForm.submit')}
         </PrimaryButton>
 
-        <Typography variant="body2" mt={2}>
+        <Typography
+          variant="body2"
+          mt={2}
+          sx={{
+            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+          }}
+        >
           {t('loginForm.noAccount')}{' '}
           <Link
             component="button"
             type="button"
             onClick={onSwitchToRegister}
             underline="hover"
-            sx={{ fontWeight: 600 }}
+            sx={{
+              fontWeight: 600,
+              color: isDark ? '#FF8A80' : '#FF3D3D',
+              '&:hover': {
+                color: isDark ? '#FF6B6B' : '#D32F2F',
+              },
+            }}
           >
             {t('loginForm.createAccount')}
           </Link>
@@ -237,14 +303,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Typography
           variant="body2"
           mt={2}
-          sx={{ width: 320, textAlign: 'center' }}
+          sx={{
+            width: 320,
+            textAlign: 'center',
+            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+          }}
         >
           {t('loginForm.terms')}{' '}
           <Link
             component={RouterLink}
             to="/conditions"
             underline="hover"
-            sx={{ fontWeight: 600 }}
+            sx={{
+              fontWeight: 600,
+              color: isDark ? '#FF8A80' : '#FF3D3D',
+              '&:hover': {
+                color: isDark ? '#FF6B6B' : '#D32F2F',
+              },
+            }}
           >
             {t('loginForm.termsLink')}
           </Link>{' '}
@@ -253,7 +329,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             component={RouterLink}
             to="/politique"
             underline="hover"
-            sx={{ fontWeight: 600 }}
+            sx={{
+              fontWeight: 600,
+              color: isDark ? '#FF8A80' : '#FF3D3D',
+              '&:hover': {
+                color: isDark ? '#FF6B6B' : '#D32F2F',
+              },
+            }}
           >
             {t('loginForm.privacyLink')}
           </Link>
@@ -271,10 +353,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           sx: {
             borderRadius: 3,
             p: 1,
+            bgcolor: isDark ? '#2a2020' : '#ffffff',
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: 20 }}>
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: 20,
+            color: isDark ? '#f5e6e6' : '#241818',
+          }}
+        >
           Mot de passe oublié
         </DialogTitle>
         <DialogContent>
@@ -285,7 +374,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             </Alert>
           ) : (
             <>
-              <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 2,
+                  mt: 1,
+                  color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+                }}
+              >
                 Entrez votre adresse email et nous vous enverrons un lien pour
                 réinitialiser votre mot de passe.
               </Typography>
@@ -299,12 +395,46 @@ export const LoginForm: React.FC<LoginFormProps> = ({
                 onChange={e => setResetEmail(e.target.value)}
                 error={!!resetError}
                 helperText={resetError}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: isDark
+                        ? 'rgba(255,255,255,0.23)'
+                        : 'rgba(0,0,0,0.23)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: isDark
+                        ? 'rgba(255,255,255,0.4)'
+                        : 'rgba(0,0,0,0.87)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#FF3D3D',
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#FF3D3D',
+                  },
+                }}
               />
             </>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleForgotPasswordClose} sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={handleForgotPasswordClose}
+            sx={{
+              borderRadius: 2,
+              color: isDark ? '#FF8A80' : '#FF3D3D',
+              '&:hover': {
+                bgcolor: isDark
+                  ? 'rgba(255,138,128,0.08)'
+                  : 'rgba(255,61,61,0.08)',
+              },
+            }}
+          >
             {resetSuccess ? 'Fermer' : 'Annuler'}
           </Button>
           {!resetSuccess && (
@@ -312,7 +442,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               onClick={handleResetPassword}
               variant="contained"
               disabled={resetLoading}
-              sx={{ borderRadius: 2 }}
+              sx={{
+                borderRadius: 2,
+                background: 'linear-gradient(135deg, #FF3D3D 0%, #D32F2F 100%)',
+                '&:hover': {
+                  background:
+                    'linear-gradient(135deg, #D32F2F 0%, #B71C1C 100%)',
+                },
+                '&:disabled': {
+                  background: isDark
+                    ? 'rgba(255,255,255,0.12)'
+                    : 'rgba(0,0,0,0.12)',
+                },
+              }}
             >
               {resetLoading ? 'Envoi...' : 'Envoyer'}
             </Button>
