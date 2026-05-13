@@ -190,7 +190,9 @@ describe('LoginForm', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTestId('social-btn-google'));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Se connecter avec Google/i })
+    );
     expect(googleOAuth.startGoogleLogin).toHaveBeenCalled();
   });
 
@@ -205,7 +207,9 @@ describe('LoginForm', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTestId('social-btn-google'));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Se connecter avec Google/i })
+    );
 
     expect(await screen.findByText('Erreur popup Google')).toBeInTheDocument();
   });

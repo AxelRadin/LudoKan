@@ -1,0 +1,27 @@
+{% extends "account/email/base_message.html" %}
+{% load account i18n %}
+
+{% block head_title %}{% trans "Welcome to LudoKan!" %}{% endblock %}
+
+{% block content %}
+<p style="margin:0 0 8px;color:#c8c5d4;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;">
+  {% trans "Welcome" %}
+</p>
+<p style="margin:0 0 20px;color:#e8e6f0;font-size:16px;">
+  {% user_display user as user_display %}
+  {% blocktrans %}Hi {{ user_display }},{% endblocktrans %}
+</p>
+<p style="margin:0 0 20px;color:#e8e6f0;font-size:15px;line-height:1.6;">
+  {% blocktrans %}Your account has been successfully verified! We are thrilled to have you in the LudoKan community.{% endblocktrans %}
+</p>
+<p style="margin:0 0 20px;color:#e8e6f0;font-size:15px;line-height:1.6;">
+  {% blocktrans %}You can now start exploring games, tracking your library, and connecting with other players.{% endblocktrans %}
+</p>
+
+{% trans "Go to LudoKan" as cta_welcome_label %}
+{% include "account/email/partials/cta_button.html" with cta_url=frontend_url cta_label=cta_welcome_label %}
+
+<p style="margin:0 0 12px;color:#9e9ab0;font-size:13px;line-height:1.5;">
+  {% blocktrans %}See you soon on LudoKan!{% endblocktrans %}
+</p>
+{% endblock %}
