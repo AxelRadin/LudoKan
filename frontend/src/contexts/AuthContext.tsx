@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
+import i18n from '../i18n';
 import { apiGet } from '../services/api';
 import { AuthContext, type AuthUser } from './AuthContextDef';
 import { ThemeContext } from './themeContextValue';
@@ -24,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setAuthenticated(true);
           setUser(me);
           setDarkMode(me.theme_preference === 'dark');
+          i18n.changeLanguage(me.language_preference || 'fr');
         }
       } catch {
         if (!cancelled) {
@@ -48,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!cancelled) {
           setUser(me as AuthUser);
           setDarkMode((me as AuthUser).theme_preference === 'dark');
+          i18n.changeLanguage((me as AuthUser).language_preference || 'fr');
         }
       })
       .catch(() => {});
