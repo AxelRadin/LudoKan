@@ -37,8 +37,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         <Button
           onClick={onGoogleClick}
           sx={{
-            minWidth: 64,
-            height: 64,
+            minWidth: 56,
+            height: 56,
             borderRadius: 3,
             border: isDark
               ? '1px solid rgba(255,255,255,0.12)'
@@ -53,8 +53,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
           }}
         >
           <svg
-            width="28"
-            height="28"
+            width="22"
+            height="22"
             viewBox="0 0 18 18"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -83,8 +83,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         <Button
           onClick={onSteamClick}
           sx={{
-            minWidth: 64,
-            height: 64,
+            minWidth: 56,
+            height: 56,
             borderRadius: 3,
             bgcolor: '#171a21',
             transition: 'all 0.2s ease',
@@ -96,8 +96,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
           }}
         >
           <svg
-            width="28"
-            height="28"
+            width="22"
+            height="22"
             viewBox="0 0 256 259"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -120,8 +120,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         <Button
           disabled
           sx={{
-            minWidth: 64,
-            height: 64,
+            minWidth: 56,
+            height: 56,
             borderRadius: 3,
             bgcolor: isDark ? '#ffffff' : '#000000',
             opacity: 0.5,
@@ -133,8 +133,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
           }}
         >
           <svg
-            width="28"
-            height="28"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -149,8 +149,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         <Button
           disabled
           sx={{
-            minWidth: 64,
-            height: 64,
+            minWidth: 56,
+            height: 56,
             borderRadius: 3,
             bgcolor: '#000000',
             opacity: 0.5,
@@ -162,8 +162,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
           }}
         >
           <svg
-            width="28"
-            height="28"
+            width="22"
+            height="22"
             viewBox="0 0 24 24"
             xmlns="http://www.w3.org/2000/svg"
           >
