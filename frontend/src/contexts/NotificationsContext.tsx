@@ -367,9 +367,9 @@ export function NotificationsProvider({
       reconnectTimeoutRef.current = globalThis.setTimeout(
         connectSocket,
         delayMs
-      );
+      ) as unknown as number;
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshUnreadCount]);
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
