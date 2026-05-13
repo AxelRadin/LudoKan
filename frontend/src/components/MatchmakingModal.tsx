@@ -45,13 +45,11 @@ interface MatchmakingModalProps {
   readonly partyActions: any;
 }
 
-function PartyChatView({
-  party,
-  onLeave,
-}: {
-  readonly party: any;
+interface PartyChatViewProps {
+  readonly party: Party;
   readonly onLeave: () => void;
-}) {
+}
+function PartyChatView({ party, onLeave }: PartyChatViewProps) {
   const { messages, sendMessage, isConnected } = usePartyChat(
     party.chat_room_id
   );
