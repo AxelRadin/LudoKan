@@ -21,12 +21,14 @@ PARTY_READ_FIELDS = (
 class PartyMemberReadSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(read_only=True)
     pseudo = serializers.CharField(read_only=True, source="user.pseudo")
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = GamePartyMember
         fields = (
             "user_id",
             "pseudo",
+            "avatar_url",
             "membership_status",
             "ready_state",
             "ready_for_chat_state",
@@ -34,6 +36,22 @@ class PartyMemberReadSerializer(serializers.ModelSerializer):
             "left_at",
             "wants_to_start_early",
         )
+
+    def get_avatar_url(self, obj):
+        try:
+            if obj.user.avatar and hasattr(obj.user.avatar, 'url'):
+                url = obj.user.avatar.url
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(url)
+                return url
+        except Exception:
+            pass
+        
+        if getattr(obj.user, 'avatar_url', None):
+            return obj.user.avatar_url
+            
+        return None
 
 
 class PartyReadSerializer(serializers.ModelSerializer):
@@ -47,8 +65,7 @@ class PartyReadSerializer(serializers.ModelSerializer):
 
     def get_members(self, obj: GameParty) -> list:
         members = list(obj.members.all())
-        return PartyMemberReadSerializer(members, many=True).data
-
+        return PartyMemberReadSerializer(members, many=True, context=self.context).data
 
 class PartyJoinOrCreateSerializer(serializers.Serializer):
     game = serializers.PrimaryKeyRelatedField(queryset=Game.objects.all())
