@@ -273,7 +273,7 @@ class TestPartyAvatarCoverage:
         party = open_party_factory(game=game, max_players=4)
         party_member_create(party=party, user=user)
 
-        with patch("rest_framework.request.Request.build_absolute_uri") as mock_build:
+        with patch("django.http.HttpRequest.build_absolute_uri") as mock_build:
             mock_build.side_effect = Exception("Erreur de génération d'URL simulée !")
 
             r = authenticated_api_client.get("/api/parties/me/active")
