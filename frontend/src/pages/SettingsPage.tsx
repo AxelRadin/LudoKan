@@ -4,6 +4,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import {
   Box,
   Container,
@@ -21,6 +22,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '../contexts/useThemeMode';
+import { TOUR_KEYS } from '../hooks/useOnboarding';
 
 const settingsSectionHeadingSx = {
   color: 'text.secondary',
@@ -45,6 +47,10 @@ const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const { darkMode, toggleDarkMode } = useThemeMode();
   const navigate = useNavigate();
+  const handleRestartTour = () => {
+    Object.values(TOUR_KEYS).forEach(key => localStorage.removeItem(key));
+    navigate('/', { state: { startTour: true } });
+  };
 
   const externalLinks = [
     {
@@ -89,6 +95,30 @@ const SettingsPage: React.FC = () => {
               />
             </ListItemSecondaryAction>
           </ListItem>
+        </List>
+      </Box>
+
+      {/* Section Aide */}
+      <Typography variant="overline" sx={settingsSectionHeadingSx}>
+        Aide
+      </Typography>
+
+      <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
+        <List disablePadding>
+          <ListItemButton
+            onClick={handleRestartTour}
+            sx={settingsListRowButtonSx}
+          >
+            <ListItemIcon sx={{ color: 'text.secondary' }}>
+              <SchoolOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Revoir le didacticiel"
+              secondary="Relance le guide de prise en main"
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+          </ListItemButton>
         </List>
       </Box>
 

@@ -271,7 +271,9 @@ export async function resolveIgdbGame(
   igdbId: number,
   name?: string,
   coverUrl?: string | null,
-  releaseDate?: string | null
+  releaseDate?: string | null,
+  genres?: Array<{ id?: number; name: string }>,
+  platforms?: Array<{ id?: number; name: string }>
 ): Promise<{
   game_id: number;
   normalized_game: NormalizedGame;
@@ -282,6 +284,8 @@ export async function resolveIgdbGame(
     name,
     cover_url: coverUrl,
     release_date: releaseDate,
+    genres,
+    platforms,
   });
 }
 
@@ -301,7 +305,9 @@ export async function resolveGameIdIfNeeded(game: NormalizedGame): Promise<{
     game.igdb_id,
     game.name,
     game.cover_url ?? null,
-    game.release_date ?? null
+    game.release_date ?? null,
+    game.genres,
+    game.platforms
   );
 }
 

@@ -6,7 +6,7 @@ import {
   Typography,
   Skeleton,
 } from '@mui/material';
-import { useState, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import PlatformLogos from '../components/PlatformLogos';
 import { SectionAccentTitle } from '../components/SectionAccentTitle';
@@ -15,6 +15,10 @@ import type { GamePageLogic } from '../hooks/useGamePageLogic';
 import type { NormalizedGame } from '../types/game';
 import type { GamePageAppearance } from './gamePageAppearance';
 import { GAME_PAGE_FONT } from './gamePageAppearance';
+import { useAuth } from '../contexts/useAuth';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { GAME_TOUR_STEPS } from '../onboarding/tourSteps';
 import { GENRE_ICON_MAP } from './gamePageGenreIcons';
 import { FavoriteGlyph } from './GamePageFragments';
 import { buildPlayerLabel, fdate, hi } from './gamePageUtils';
@@ -40,6 +44,8 @@ const SectionSkeleton = () => (
     />
   </Box>
 );
+
+const GAME_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]);
 
 const DLIMIT = 220;
 
@@ -409,6 +415,20 @@ export function GamePageLoadedBody({
   const { t } = useTranslation();
   const game = logic.game as NormalizedGame;
   const { card, noHov, ink } = appearance;
+  const { isAuthenticated } = useAuth();
+  const { shouldShow: shouldShowTour, markAsDone: markTourDone } =
+    useOnboarding(TOUR_KEYS.game);
+  const { startTour } = useTour({
+    steps: GAME_TOUR_STEPS,
+    optionalSteps: GAME_OPTIONAL_STEPS,
+    onDone: markTourDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShowTour) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShowTour, startTour]);
 
   const description = buildDescriptionState(
     logic,
@@ -493,6 +513,7 @@ export function GamePageLoadedBody({
       </Suspense>
 
       <Box
+        data-tour="game-reviews"
         id="reviews-section"
         sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' } }}
       >
