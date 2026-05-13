@@ -8,6 +8,32 @@ import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import PrimaryButton from '../components/PrimaryButton';
 import { apiPost } from '../services/api';
 
+function normalizeFieldErrors(value: unknown): string | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) return value.map(String).join(' ');
+  return String(value);
+}
+
+/** Message affiché après échec POST reset/confirm (lien invalide, JSON Django, texte brut). */
+function mapResetConfirmApiError(
+  rawMessage: string,
+  t: (key: string) => string
+): string {
+  if (rawMessage.includes('token') || rawMessage.includes('uid')) {
+    return t('resetPasswordPage.errorInvalidLink');
+  }
+  try {
+    const parsed = JSON.parse(rawMessage) as Record<string, unknown>;
+    return (
+      normalizeFieldErrors(parsed.new_password2) ??
+      normalizeFieldErrors(parsed.new_password1) ??
+      (rawMessage || t('resetPasswordPage.errorGeneric'))
+    );
+  } catch {
+    return rawMessage || t('resetPasswordPage.errorGeneric');
+  }
+}
+
 const ResetPasswordPage: React.FC = () => {
   const { uid, token } = useParams<{ uid: string; token: string }>();
   const { t } = useTranslation();
@@ -55,33 +81,9 @@ const ResetPasswordPage: React.FC = () => {
       });
       setSuccess(true);
       setTimeout(() => navigate('/', { replace: true }), 3000);
-    } catch (err: any) {
-      const msg = err?.message || '';
-      if (msg.includes('token') || msg.includes('uid')) {
-        setError(t('resetPasswordPage.errorInvalidLink'));
-      } else {
-        // Try to parse Django field errors
-        try {
-          const parsed = JSON.parse(msg);
-          if (parsed.new_password2) {
-            const msgs = Array.isArray(parsed.new_password2)
-              ? parsed.new_password2
-              : [parsed.new_password2];
-            setError(msgs.join(' '));
-            return;
-          }
-          if (parsed.new_password1) {
-            const msgs = Array.isArray(parsed.new_password1)
-              ? parsed.new_password1
-              : [parsed.new_password1];
-            setError(msgs.join(' '));
-            return;
-          }
-        } catch {
-          // not JSON
-        }
-        setError(msg || t('resetPasswordPage.errorGeneric'));
-      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      setError(mapResetConfirmApiError(msg, t));
     } finally {
       setLoading(false);
     }

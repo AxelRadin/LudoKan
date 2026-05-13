@@ -1,21 +1,18 @@
 import { Box, Container, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 
-type AuthFlowPageLayoutProps = {
+type AuthFlowPageLayoutProps = Readonly<{
   title: string;
   subtitle?: string;
   children: ReactNode;
-};
+}>;
 
 /**
  * Shell commun (logo, titre, sous-titre) pour les flux auth hors modale
  * (réinitialisation mot de passe, vérification e-mail, etc.).
  */
-export function AuthFlowPageLayout({
-  title,
-  subtitle,
-  children,
-}: AuthFlowPageLayoutProps) {
+export function AuthFlowPageLayout(props: AuthFlowPageLayoutProps) {
+  const { title, subtitle, children } = props;
   return (
     <Container maxWidth="sm" sx={{ pt: 12, pb: 6 }}>
       <Box
