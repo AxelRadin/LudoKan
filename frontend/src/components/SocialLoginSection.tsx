@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 
 type SocialLoginSectionProps = {
   title: string;
@@ -15,6 +16,7 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
   onGoogleClick,
   onSteamClick,
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
@@ -37,6 +39,7 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         <Button
           type="button"
           data-testid="social-btn-google"
+          aria-label={t('socialLogin.google')}
           onClick={onGoogleClick}
           sx={{
             minWidth: 56,
@@ -85,6 +88,7 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         <Button
           type="button"
           data-testid="social-btn-steam"
+          aria-label={t('socialLogin.steam')}
           onClick={onSteamClick}
           sx={{
             minWidth: 56,
@@ -123,6 +127,7 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         {/* Apple */}
         <Button
           disabled
+          aria-label={t('socialLogin.apple')}
           sx={{
             minWidth: 56,
             height: 56,
@@ -152,6 +157,7 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
         {/* X (Twitter) */}
         <Button
           disabled
+          aria-label={t('socialLogin.x')}
           sx={{
             minWidth: 56,
             height: 56,
