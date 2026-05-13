@@ -265,7 +265,7 @@ def mark_start_early(*, party_id: int, user: AbstractBaseUser, accepted: bool) -
     member = GamePartyMember.objects.select_for_update().get(party_id=party_id, user=user)
 
     if party.status != GameParty.Status.OPEN:
-        return member
+        raise ValueError("Party is not in open status.")
 
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
         raise ValueError(ERROR_USER_NOT_ACTIVE)
