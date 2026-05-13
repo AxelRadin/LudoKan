@@ -53,7 +53,7 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
     <Box sx={{ mt: -0.5, mb: 0.5 }}>
       {/* Strength bar */}
       <Box sx={{ display: 'flex', gap: 0.5, mb: 0.75 }}>
-        {COLORS.map((color, i) => (
+        {COLORS.map((_, i) => (
           <Box
             key={i}
             sx={{
