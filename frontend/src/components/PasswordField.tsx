@@ -36,8 +36,22 @@ export const PasswordField: React.FC<TextFieldProps> = props => {
               onClick={handleClickShowPassword}
               onMouseDown={handleMouseDownPassword}
               edge="end"
+              sx={{
+                width: 42,
+                height: 42,
+                color: showPassword ? 'primary.main' : 'text.secondary',
+                transition: 'all 0.15s ease',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 61, 61, 0.08)',
+                  color: 'primary.main',
+                },
+              }}
             >
-              {showPassword ? <VisibilityOff /> : <Visibility />}
+              {showPassword ? (
+                <VisibilityOff sx={{ fontSize: 22 }} />
+              ) : (
+                <Visibility sx={{ fontSize: 22 }} />
+              )}
             </IconButton>
           </InputAdornment>
         ),

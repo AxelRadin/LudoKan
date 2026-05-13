@@ -164,7 +164,7 @@
     "forgotEnterEmail": "Please enter your email address.",
     "forgotInvalidEmail": "Invalid email address.",
     "forgotSendError": "Error sending the reset email.",
-    "forgotSuccessMessage": "A password reset email has been sent to {{email}}. Check your inbox.",
+    "forgotSuccessMessage": "A password reset email has been sent to {{email}}. The link expires in 10 minutes. Check your inbox.",
     "forgotSending": "Sending...",
     "forgotSend": "Send"
   },
@@ -231,6 +231,7 @@
     "submitting": "Signing up...",
     "errorFillFields": "Please fill in all fields.",
     "errorPasswordMatch": "Passwords do not match.",
+    "errorMinLength": "Password must be at least 8 characters.",
     "errorGoogle": "Google login unavailable.",
     "errorFallback": "An error occurred."
   },
@@ -747,5 +748,15 @@
     "cguTitle": "Terms of Use",
     "cguSubtitle": "Access rules, services, responsibilities, moderation",
     "back": "Back to policies"
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "fair": "Fair",
+    "good": "Good",
+    "strong": "Strong",
+    "ruleMinLength": "At least 8 characters",
+    "ruleHasDigit": "At least 1 number",
+    "ruleHasSpecial": "At least 1 special character",
+    "ruleHasUppercase": "At least 1 uppercase letter"
   }
 }

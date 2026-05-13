@@ -164,7 +164,7 @@
     "forgotEnterEmail": "Veuillez entrer votre adresse email.",
     "forgotInvalidEmail": "Adresse email invalide.",
     "forgotSendError": "Erreur lors de l'envoi de l'email de réinitialisation.",
-    "forgotSuccessMessage": "Un email de réinitialisation a été envoyé à {{email}}. Vérifiez votre boîte de réception.",
+    "forgotSuccessMessage": "Un email de réinitialisation a été envoyé à {{email}}. Le lien expire dans 10 minutes. Vérifiez votre boîte de réception.",
     "forgotSending": "Envoi...",
     "forgotSend": "Envoyer"
   },
@@ -231,6 +231,7 @@
     "submitting": "Inscription...",
     "errorFillFields": "Veuillez remplir tous les champs.",
     "errorPasswordMatch": "Les mots de passe ne correspondent pas.",
+    "errorMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
     "errorGoogle": "Connexion Google indisponible.",
     "errorFallback": "Une erreur est survenue."
   },
@@ -751,5 +752,15 @@
     "errorAllNumeric": "Le mot de passe ne peut pas être entièrement numérique.",
     "errorInvalidLink": "Ce lien de réinitialisation est invalide ou a expiré. Veuillez refaire une demande.",
     "errorGeneric": "Erreur lors de la réinitialisation du mot de passe."
+  },
+  "passwordStrength": {
+    "weak": "Faible",
+    "fair": "Moyen",
+    "good": "Bon",
+    "strong": "Fort",
+    "ruleMinLength": "8 caractères minimum",
+    "ruleHasDigit": "Au moins 1 chiffre",
+    "ruleHasSpecial": "Au moins 1 caractère spécial",
+    "ruleHasUppercase": "Au moins 1 majuscule"
   }
 }
