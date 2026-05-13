@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 RUN python -m pip install --upgrade "pip==25.1.1" \
-    && python -m pip install --only-binary :all: --no-binary dj-rest-auth --requirement requirements.txt
+    && python -m pip install --only-binary :all: --no-binary dj-rest-auth,ms-cv --requirement requirements.txt
 
 COPY manage.py ./manage.py
 COPY config/ ./config/
