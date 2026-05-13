@@ -191,7 +191,9 @@ describe('LoginForm', () => {
     );
 
     fireEvent.click(
-      screen.getByRole('button', { name: /Se connecter avec Google/i })
+      screen.getByRole('button', {
+        name: /Se connecter avec Google|Log in with Google/i,
+      })
     );
     expect(googleOAuth.startGoogleLogin).toHaveBeenCalled();
   });
@@ -208,7 +210,9 @@ describe('LoginForm', () => {
     );
 
     fireEvent.click(
-      screen.getByRole('button', { name: /Se connecter avec Google/i })
+      screen.getByRole('button', {
+        name: /Se connecter avec Google|Log in with Google/i,
+      })
     );
 
     expect(await screen.findByText('Erreur popup Google')).toBeInTheDocument();
