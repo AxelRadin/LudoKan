@@ -26,7 +26,8 @@ class NotificationListView(ListAPIView):
     """
     Liste paginée des notifications de l'utilisateur connecté.
 
-    GET /api/notifications
+    GET /api/notifications/
+    GET /api/notifications/?unread=true   → uniquement les non-lues
     """
 
     serializer_class = NotificationSerializer
@@ -34,8 +35,14 @@ class NotificationListView(ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
+        qs = Notification.objects.filter(recipient=user).select_related("recipient").order_by("-timestamp")
 
-        return Notification.objects.filter(recipient=user).select_related("recipient").order_by("-timestamp")
+        # Filtre optionnel ?unread=true
+        unread_param = self.request.query_params.get("unread", "").lower()
+        if unread_param == "true":
+            qs = qs.filter(unread=True)
+
+        return qs
 
     def list(self, request, *args, **kwargs):
         """
