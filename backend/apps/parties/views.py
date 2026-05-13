@@ -39,14 +39,15 @@ def _maybe_lazy_open_chat(*, party_id: int) -> None:
     open_chat_if_eligible(party_id)
 
 
-def _serialize_party_after_lazy_chat(party_id: int) -> dict:
+def _serialize_party_after_lazy_chat(party_id: int, request=None) -> dict:
     _maybe_lazy_open_chat(party_id=party_id)
     party = _get_party_for_read(party_id)
-    return PartyReadSerializer(party).data
+    context = {"request": request} if request else {}
+    return PartyReadSerializer(party, context=context).data
 
 
-def _response_party_read_lazy(party_id: int) -> Response:
-    return Response(_serialize_party_after_lazy_chat(party_id), status=status.HTTP_200_OK)
+def _response_party_read_lazy(party_id: int, request=None) -> Response:
+    return Response(_serialize_party_after_lazy_chat(party_id, request=request), status=status.HTTP_200_OK)
 
 
 def _get_active_party_for_user(user) -> GameParty | None:
@@ -80,12 +81,16 @@ class PartyJoinOrCreateView(APIView):
         ser.is_valid(raise_exception=True)
         game = ser.validated_data["game"]
         max_players_override = ser.validated_data.get("max_players")
+
         party = join_or_create_party(
             request.user,
             game,
             max_players_override=max_players_override,
         )
-        data = PartyReadSerializer(_get_party_for_read(party.id)).data
+
+        context = {"request": request}
+        data = PartyReadSerializer(_get_party_for_read(party.id), context=context).data
+
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -101,7 +106,7 @@ class PartyMeActiveView(APIView):
         party = _get_active_party_for_user(request.user)
         if party is None:
             return Response({"detail": "No active party."}, status=status.HTTP_404_NOT_FOUND)
-        return _response_party_read_lazy(party.id)
+        return _response_party_read_lazy(party.id, request=request)
 
 
 @extend_schema(tags=["Parties"])
@@ -115,7 +120,7 @@ class PartyDetailView(APIView):
     def get(self, request, party_id: int):
         party = get_object_or_404(GameParty, pk=party_id)
         self.check_object_permissions(request, party)
-        return _response_party_read_lazy(party_id)
+        return _response_party_read_lazy(party_id, request=request)
 
 
 @extend_schema(tags=["Parties"])
@@ -137,7 +142,7 @@ class PartyReadyView(APIView):
             mark_ready(party_id=party_id, user=request.user, accepted=accepted)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return _response_party_read_lazy(party_id)
+        return _response_party_read_lazy(party_id, request=request)
 
 
 @extend_schema(tags=["Parties"])
@@ -159,7 +164,7 @@ class PartyReadyForChatView(APIView):
             mark_ready_for_chat(party_id=party_id, user=request.user, accepted=accepted)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return _response_party_read_lazy(party_id)
+        return _response_party_read_lazy(party_id, request=request)
 
 
 @extend_schema(tags=["Parties"])
@@ -174,7 +179,7 @@ class PartyLeaveView(APIView):
         party = get_object_or_404(GameParty, pk=party_id)
         self.check_object_permissions(request, party)
         leave_party(party_id=party_id, user=request.user)
-        return _response_party_read_lazy(party_id)
+        return _response_party_read_lazy(party_id, request=request)
 
 
 @extend_schema(tags=["Parties"])
@@ -196,4 +201,4 @@ class PartyStartEarlyView(APIView):
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return _response_party_read_lazy(party_id)
+        return _response_party_read_lazy(party_id, request=request)

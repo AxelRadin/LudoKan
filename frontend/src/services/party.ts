@@ -24,6 +24,8 @@ export interface PartyMember {
   joined_at: string;
   left_at: string | null;
   wants_to_start_early: boolean;
+  pseudo?: string;
+  avatar_url?: string | null;
 }
 
 export interface Party {

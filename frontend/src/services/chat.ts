@@ -6,6 +6,7 @@ export interface ChatMessage {
   user_id: number;
   content: string;
   created_at: string;
+  timestamp?: string;
 }
 
 interface PaginatedMessages {
