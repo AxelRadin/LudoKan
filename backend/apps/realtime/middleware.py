@@ -78,18 +78,28 @@ class JwtAuthMiddleware:
             # Si on a un sessionid, Channels peut parfois déjà avoir peuplé le user
             # via SessionMiddleware, mais on assure le coup ici si besoin.
             from django.contrib.auth import get_user_model
-            from django.contrib.sessions.models import Session
 
             User = get_user_model()
 
             @database_sync_to_async
             def get_user_from_session(s_id):
                 try:
-                    s = Session.objects.get(session_key=s_id)
-                    uid = s.get_decoded().get("_auth_user_id")
-                    return User.objects.get(pk=uid)
+                    from importlib import import_module
+
+                    from django.conf import settings
+
+                    engine = import_module(settings.SESSION_ENGINE)
+                    store = engine.SessionStore(session_key=s_id)
+                    # Force session materialization before reading auth keys.
+                    session_data = store.load() or {}
+                    uid = session_data.get("_auth_user_id")
+                    if uid is None:
+                        uid = store.get("_auth_user_id")
+                    if uid:
+                        return User.objects.filter(pk=uid).first() or AnonymousUser()
                 except Exception:
-                    return AnonymousUser()
+                    pass
+                return AnonymousUser()
 
             scope["user"] = await get_user_from_session(cookies.get("sessionid"))
         else:
