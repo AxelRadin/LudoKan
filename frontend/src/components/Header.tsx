@@ -51,7 +51,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
   const { t, i18n } = useTranslation();
-  const { darkMode, toggleDarkMode } = useThemeMode();
+  const { darkMode, toggleDarkMode, setDarkMode } = useThemeMode();
 
   const {
     isAuthenticated,
@@ -103,6 +103,7 @@ export const Header: React.FC = () => {
       console.error('Erreur lors du logout', e);
     } finally {
       setAuthenticated(false);
+      setDarkMode(false);
       setDrawerOpen(false);
       navigate('/');
     }
