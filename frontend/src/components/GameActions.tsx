@@ -2,7 +2,8 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import PlayCircleIcon from '@mui/icons-material/PlayCircle';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
-import { Box, Button, Tooltip, Typography } from '@mui/material';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { Box, Button, Tooltip } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
@@ -10,7 +11,7 @@ import type { GamePageLogic } from '../hooks/useGamePageLogic';
 import type { NormalizedGame } from '../types/game';
 import type { GamePageAppearance } from '../pages/gamePageAppearance';
 import { GAME_PAGE_FONT } from '../pages/gamePageAppearance';
-import { FavoriteGlyph, Sep, StatusChip } from '../pages/GamePageFragments';
+import { Sep, StatusChip } from '../pages/GamePageFragments';
 import SecondaryButton from './SecondaryButton';
 import { AddToCollectionModal } from './UserCollectionModals';
 import { SectionAccentTitle } from './SectionAccentTitle';
@@ -27,8 +28,7 @@ export default function GameActions({
   appearance,
 }: GameActionsProps) {
   const { t } = useTranslation();
-  const { card, redBtnSx, accent, muted } = appearance;
-  const isFavorite = Boolean(logic.userGame?.is_favorite);
+  const { card, redBtnSx, accent } = appearance;
   const isSolo = game.max_players === 1;
   const { isAuthenticated, setAuthModalOpen, setPendingAction } = useAuth();
   const [collectionModalOpen, setCollectionModalOpen] = useState(false);
@@ -150,51 +150,13 @@ export default function GameActions({
           color="#fb8c00"
           onClick={() => logic.handleSetStatus('ENVIE_DE_JOUER')}
         />
-
-        <Tooltip title={t('gamePageBody.favoriteTooltip')} arrow>
-          <Box
-            onClick={() => logic.handleToggleFavorite()}
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 0.6,
-              px: 1.5,
-              py: 0.7,
-              borderRadius: '12px',
-              cursor: 'pointer',
-              background: isFavorite
-                ? 'rgba(255,61,61,0.12)'
-                : 'rgba(0,0,0,0.03)',
-              border: isFavorite
-                ? '1px solid rgba(255,61,61,0.35)'
-                : '1px solid rgba(0,0,0,0.06)',
-              color: isFavorite ? accent : muted,
-              transition: 'all 0.18s ease',
-              '&:hover': {
-                background: 'rgba(255,61,61,0.10)',
-                color: accent,
-                transform: 'translateY(-1px)',
-              },
-            }}
-          >
-            <FavoriteGlyph
-              isFavorite={isFavorite}
-              accent={accent}
-              size={14}
-              color="inherit"
-            />
-            <Typography
-              sx={{
-                fontFamily: GAME_PAGE_FONT,
-                fontSize: 12.5,
-                fontWeight: isFavorite ? 700 : 500,
-                color: 'inherit',
-              }}
-            >
-              {t('gamePageBody.favorite')}
-            </Typography>
-          </Box>
-        </Tooltip>
+        <StatusChip
+          icon={<DeleteOutlineIcon />}
+          label={t('gamePageBody.statusAbandoned')}
+          active={logic.userGame?.status === 'ABANDONNE'}
+          color="#757575"
+          onClick={() => logic.handleSetStatus('ABANDONNE')}
+        />
       </Box>
     </Box>
   );
