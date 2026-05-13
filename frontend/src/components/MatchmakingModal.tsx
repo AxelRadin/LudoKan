@@ -132,7 +132,7 @@ function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
           const pseudo = member?.pseudo || `Joueur #${msg.user_id}`;
           const avatarUrl = member?.avatar_url || undefined;
 
-          const rawDate = msg.created_at || (msg as any).timestamp;
+          const rawDate = msg.created_at || msg.timestamp;
           const messageDate = rawDate ? new Date(rawDate) : new Date();
 
           return (

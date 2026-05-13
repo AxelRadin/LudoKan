@@ -281,3 +281,20 @@ class TestPartyAvatarCoverage:
         assert r.status_code == status.HTTP_200_OK
         member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
         assert member_data["avatar_url"] == "https://example.com/fallback.png"
+
+    def test_local_avatar_no_request_context(self, user, game):
+        """Test que le sérialiseur renvoie une URL relative s'il n'y a pas de 'request' dans le contexte."""
+        avatar_file = SimpleUploadedFile("test_avatar.png", b"file_content", content_type="image/png")
+        user.avatar = avatar_file
+        user.save()
+
+        party = open_party_factory(game=game, max_players=4)
+        party_member_create(party=party, user=user)
+
+        from apps.parties.serializers import PartyReadSerializer
+
+        serializer = PartyReadSerializer(party)
+
+        member_data = next(m for m in serializer.data["members"] if m["user_id"] == user.id)
+
+        assert member_data["avatar_url"] == user.avatar.url
