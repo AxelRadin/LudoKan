@@ -297,6 +297,33 @@ export function NotificationsProvider({
   );
 
   // ── WebSocket ────────────────────────────────────────────────────────────
+  const handleWebSocketMessage = useCallback(
+    (event: MessageEvent) => {
+      console.log('[WS] 📨 Message reçu:', event.data);
+      try {
+        const payload = JSON.parse(event.data) as {
+          type?: string;
+          notification?: NotificationItem;
+        };
+
+        if (payload.type === 'notification' && payload.notification) {
+          const incoming = payload.notification;
+          setNotifications(prev => {
+            const exists = prev.some(item => item.id === incoming.id);
+            if (!exists && incoming.unread) {
+              setLastNotification(incoming);
+              setToastOpen(true);
+              refreshUnreadCount().catch(() => {});
+            }
+            return mergeIncomingNotification(prev, incoming);
+          });
+        }
+      } catch (err) {
+        console.error('[WS] ❌ Erreur de parsing:', err, '| brut:', event.data);
+      }
+    },
+    [refreshUnreadCount]
+  );
 
   const connectSocket = useCallback(() => {
     if (!isAuthenticated || socketRef.current) return;
@@ -310,36 +337,6 @@ export function NotificationsProvider({
       console.log('[WS] ✅ Connexion établie');
       reconnectAttemptsRef.current = 0;
       setConnectionState('connected');
-    };
-
-    const handleWebSocketMessage = (event: MessageEvent) => {
-      console.log('[WS] 📨 Message reçu:', event.data);
-      try {
-        const payload = JSON.parse(event.data) as {
-          type?: string;
-          notification?: NotificationItem;
-        };
-        console.log('[WS] type payload:', payload.type);
-
-        if (payload.type === 'notification' && payload.notification) {
-          const incoming = payload.notification;
-          console.log(
-            `[WS] Notification — id:${incoming.id} verb:"${incoming.verb}" unread:${incoming.unread}`
-          );
-
-          setNotifications(prev => {
-            const exists = prev.some(item => item.id === incoming.id);
-            if (!exists && incoming.unread) {
-              setLastNotification(incoming);
-              setToastOpen(true);
-              refreshUnreadCount();
-            }
-            return mergeIncomingNotification(prev, incoming);
-          });
-        }
-      } catch (err) {
-        console.error('[WS] ❌ Erreur de parsing:', err, '| brut:', event.data);
-      }
     };
 
     socket.onmessage = handleWebSocketMessage;
@@ -364,12 +361,11 @@ export function NotificationsProvider({
       console.log(
         `[WS] Reconnexion dans ${delayMs}ms (tentative n°${reconnectAttemptsRef.current})`
       );
-      reconnectTimeoutRef.current = globalThis.setTimeout(
-        connectSocket,
-        delayMs
-      ) as unknown as number;
+      reconnectTimeoutRef.current = Number(
+        globalThis.setTimeout(connectSocket, delayMs)
+      );
     };
-  }, [isAuthenticated, refreshUnreadCount]);
+  }, [isAuthenticated, handleWebSocketMessage]);
 
   // ── Effects ──────────────────────────────────────────────────────────────
 

@@ -145,6 +145,180 @@ type NotificationListProps = {
   readonly overrideItems?: NotificationItem[];
 };
 
+function NotificationListItem({
+  notification,
+  onItemClick,
+}: {
+  readonly notification: NotificationItem;
+  readonly onItemClick?: () => void;
+}) {
+  const { t, i18n } = useTranslation();
+  const { markAsRead, handleNotificationNavigation } = useNotifications();
+
+  const color = verbColor(notification.verb);
+  const desc = notificationDescription(notification);
+
+  const handleNavigate = () => {
+    onItemClick?.();
+    handleNotificationNavigation(notification).catch(err => {
+      console.error('Navigation error:', err);
+    });
+  };
+
+  const handleMarkAsRead = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    markAsRead(notification.id).catch(err => {
+      console.error('Mark as read error:', err);
+    });
+  };
+
+  return (
+    <ListItem
+      disablePadding
+      sx={{
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        position: 'relative',
+        '&::before': notification.unread
+          ? {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: 3,
+              borderRadius: '0 2px 2px 0',
+              bgcolor: color,
+            }
+          : {},
+        bgcolor: notification.unread ? `${color}08` : 'transparent',
+        transition: 'background-color 0.2s',
+        '&:hover': {
+          bgcolor: notification.unread ? `${color}14` : 'action.hover',
+        },
+      }}
+    >
+      <Box
+        onClick={handleNavigate}
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1.5,
+          px: 2,
+          py: 1.5,
+          pl: notification.unread ? 2.5 : 2,
+          flex: 1,
+          cursor: 'pointer',
+          minWidth: 0,
+        }}
+      >
+        <Box sx={{ position: 'relative', flexShrink: 0 }}>
+          <Avatar
+            sx={{
+              width: 38,
+              height: 38,
+              bgcolor: `${color}20`,
+              color,
+              fontSize: '0.85rem',
+              fontWeight: 700,
+              border: `1.5px solid ${color}30`,
+            }}
+          >
+            {getInitial(notification)}
+          </Avatar>
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: -2,
+              right: -2,
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              bgcolor: color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1.5px solid',
+              borderColor: 'background.paper',
+              '& svg': { fontSize: '0.6rem !important', color: '#fff' },
+            }}
+          >
+            <NotifTypeIcon verb={notification.verb} />
+          </Box>
+        </Box>
+
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 1,
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                fontWeight: notification.unread ? 700 : 500,
+                color: notification.unread ? 'text.primary' : 'text.secondary',
+                lineHeight: 1.3,
+              }}
+            >
+              {notificationTitle(t, notification.verb)}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.disabled',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                fontSize: '0.68rem',
+              }}
+            >
+              {relativeDate(notification.timestamp, i18n.language)}
+            </Typography>
+          </Box>
+
+          {desc && (
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.disabled',
+                fontSize: '0.75rem',
+                mt: 0.3,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {desc}
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
+      {notification.unread && (
+        <Tooltip title={t('notifications.markRead')} placement="left">
+          <IconButton
+            size="small"
+            onClick={handleMarkAsRead}
+            sx={{
+              mr: 1,
+              color: 'text.disabled',
+              opacity: 0,
+              transition: 'opacity 0.2s',
+              'li:hover &': { opacity: 1 },
+              '&:hover': { color },
+            }}
+          >
+            <CheckCircleOutlineIcon sx={{ fontSize: '1.1rem' }} />
+          </IconButton>
+        </Tooltip>
+      )}
+    </ListItem>
+  );
+}
+
 export default function NotificationList({
   maxHeight,
   onItemClick,
@@ -152,8 +326,7 @@ export default function NotificationList({
   overrideItems,
 }: NotificationListProps) {
   const { t, i18n } = useTranslation();
-  const { notifications, markAsRead, handleNotificationNavigation } =
-    useNotifications();
+  const { notifications } = useNotifications();
 
   // Source de données : override externe ou context
   const sourceNotifications = overrideItems ?? notifications;
@@ -184,18 +357,17 @@ export default function NotificationList({
   if (sortedNotifications.length === 0) {
     const isFilteredEmpty = filterUnread;
     const isFR = i18n.language.startsWith('fr');
-    const emptyMessage = isFilteredEmpty
-      ? isFR
+    let emptyMessage = t('notifications.empty');
+    if (isFilteredEmpty) {
+      emptyMessage = isFR
         ? 'Aucune notification non-lue'
-        : 'No unread notifications'
-      : t('notifications.empty');
+        : 'No unread notifications';
+    }
 
-    const caughtUpMessage =
-      isFilteredEmpty && isFR
-        ? 'Vous êtes à jour !'
-        : isFilteredEmpty
-          ? "You're all caught up!"
-          : '';
+    let caughtUpMessage = '';
+    if (isFilteredEmpty) {
+      caughtUpMessage = isFR ? 'Vous êtes à jour !' : "You're all caught up!";
+    }
 
     return (
       <Box
@@ -250,179 +422,13 @@ export default function NotificationList({
           </Box>
 
           {/* Items du groupe */}
-          {items.map(notification => {
-            const color = verbColor(notification.verb);
-            const desc = notificationDescription(notification);
-
-            return (
-              <ListItem
-                key={notification.id}
-                disablePadding
-                sx={{
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  position: 'relative',
-                  // Ligne d'accent gauche pour non-lus
-                  '&::before': notification.unread
-                    ? {
-                        content: '""',
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: 3,
-                        borderRadius: '0 2px 2px 0',
-                        bgcolor: color,
-                      }
-                    : {},
-                  bgcolor: notification.unread ? `${color}08` : 'transparent',
-                  transition: 'background-color 0.2s',
-                  '&:hover': {
-                    bgcolor: notification.unread
-                      ? `${color}14`
-                      : 'action.hover',
-                  },
-                }}
-              >
-                <Box
-                  onClick={() => {
-                    onItemClick?.();
-                    handleNotificationNavigation(notification).catch(err => {
-                      console.error('Navigation error:', err);
-                    });
-                  }}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 1.5,
-                    px: 2,
-                    py: 1.5,
-                    pl: notification.unread ? 2.5 : 2,
-                    flex: 1,
-                    cursor: 'pointer',
-                    minWidth: 0,
-                  }}
-                >
-                  {/* Avatar avec icône */}
-                  <Box sx={{ position: 'relative', flexShrink: 0 }}>
-                    <Avatar
-                      sx={{
-                        width: 38,
-                        height: 38,
-                        bgcolor: `${color}20`,
-                        color,
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: `1.5px solid ${color}30`,
-                      }}
-                    >
-                      {getInitial(notification)}
-                    </Avatar>
-                    {/* Badge icône type */}
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        bottom: -2,
-                        right: -2,
-                        width: 16,
-                        height: 16,
-                        borderRadius: '50%',
-                        bgcolor: color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1.5px solid',
-                        borderColor: 'background.paper',
-                        '& svg': {
-                          fontSize: '0.6rem !important',
-                          color: '#fff',
-                        },
-                      }}
-                    >
-                      <NotifTypeIcon verb={notification.verb} />
-                    </Box>
-                  </Box>
-
-                  {/* Contenu */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        justifyContent: 'space-between',
-                        gap: 1,
-                      }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: notification.unread ? 700 : 500,
-                          color: notification.unread
-                            ? 'text.primary'
-                            : 'text.secondary',
-                          lineHeight: 1.3,
-                        }}
-                      >
-                        {notificationTitle(t, notification.verb)}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: 'text.disabled',
-                          whiteSpace: 'nowrap',
-                          flexShrink: 0,
-                          fontSize: '0.68rem',
-                        }}
-                      >
-                        {relativeDate(notification.timestamp, i18n.language)}
-                      </Typography>
-                    </Box>
-
-                    {desc && (
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: 'text.disabled',
-                          fontSize: '0.75rem',
-                          mt: 0.3,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {desc}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-
-                {/* Bouton marquer comme lu — icône discrète au hover */}
-                {notification.unread && (
-                  <Tooltip title={t('notifications.markRead')} placement="left">
-                    <IconButton
-                      size="small"
-                      onClick={e => {
-                        e.stopPropagation();
-                        markAsRead(notification.id).catch(err => {
-                          console.error('Mark as read error:', err);
-                        });
-                      }}
-                      sx={{
-                        mr: 1,
-                        color: 'text.disabled',
-                        opacity: 0,
-                        transition: 'opacity 0.2s',
-                        'li:hover &': { opacity: 1 },
-                        '&:hover': { color },
-                      }}
-                    >
-                      <CheckCircleOutlineIcon sx={{ fontSize: '1.1rem' }} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </ListItem>
-            );
-          })}
+          {items.map(notification => (
+            <NotificationListItem
+              key={notification.id}
+              notification={notification}
+              onItemClick={onItemClick}
+            />
+          ))}
         </Box>
       ))}
     </List>
