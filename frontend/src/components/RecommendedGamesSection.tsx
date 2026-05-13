@@ -39,10 +39,10 @@ function getScreenshots(game: NormalizedGame): string[] {
 }
 
 interface FeaturedGameProps {
-  game: NormalizedGame;
+  readonly game: NormalizedGame;
 }
 
-function FeaturedGame({ game }: FeaturedGameProps) {
+function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
@@ -51,6 +51,7 @@ function FeaturedGame({ game }: FeaturedGameProps) {
   const screenshots = getScreenshots(game);
   const coverUrl = toAbsoluteUrl(game.cover_url);
   const genres = game.genres ?? [];
+  const screenshotOccurrences = new Map<string, number>();
 
   const handleClick = () => {
     if (game.django_id) navigate(`/game/${game.django_id}`);
@@ -181,33 +182,40 @@ function FeaturedGame({ game }: FeaturedGameProps) {
             flex: 1,
           }}
         >
-          {screenshots.map((url, i) => (
-            <Box
-              key={i}
-              sx={{
-                borderRadius: '6px',
-                overflow: 'hidden',
-                aspectRatio: '16/9',
-                bgcolor: isDark ? '#1a0f0f' : '#f0e0e0',
-              }}
-            >
-              {url ? (
-                <Box
-                  component="img"
-                  src={url}
-                  alt={`screenshot-${i}`}
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    display: 'block',
-                  }}
-                />
-              ) : (
-                <Skeleton variant="rectangular" width="100%" height="100%" />
-              )}
-            </Box>
-          ))}
+          {screenshots.map(url => {
+            const screenshotOccurrence =
+              (screenshotOccurrences.get(url) ?? 0) + 1;
+            screenshotOccurrences.set(url, screenshotOccurrence);
+            const screenshotKey = `${url || 'fallback'}-${screenshotOccurrence}`;
+
+            return (
+              <Box
+                key={screenshotKey}
+                sx={{
+                  borderRadius: '6px',
+                  overflow: 'hidden',
+                  aspectRatio: '16/9',
+                  bgcolor: isDark ? '#1a0f0f' : '#f0e0e0',
+                }}
+              >
+                {url ? (
+                  <Box
+                    component="img"
+                    src={url}
+                    alt={`screenshot-${screenshotOccurrence}`}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <Skeleton variant="rectangular" width="100%" height="100%" />
+                )}
+              </Box>
+            );
+          })}
         </Box>
 
         {/* Mention genre sous les screenshots */}
@@ -270,6 +278,139 @@ export function RecommendedGamesSection() {
   const isEmpty = !loading && games.length === 0;
   const current = games[index] ?? null;
 
+  let content: JSX.Element;
+  if (loading) {
+    content = (
+      <Skeleton
+        variant="rectangular"
+        width="100%"
+        height={380}
+        sx={{ borderRadius: '20px' }}
+      />
+    );
+  } else if (isEmpty) {
+    content = (
+      <Box
+        sx={{ pl: '18px', display: 'flex', flexDirection: 'column', gap: 2 }}
+      >
+        <Typography sx={{ fontFamily: F, color: inkColor, opacity: 0.6 }}>
+          Aucune suggestion disponible pour le moment.
+        </Typography>
+        <Button
+          href="/search"
+          variant="outlined"
+          sx={{
+            alignSelf: 'flex-start',
+            fontFamily: F,
+            borderColor: accentColor,
+            color: accentColor,
+            '&:hover': {
+              borderColor: accentColor,
+              bgcolor: 'transparent',
+              opacity: 0.8,
+            },
+          }}
+        >
+          Explorer le catalogue
+        </Button>
+      </Box>
+    );
+  } else {
+    content = (
+      <Box sx={{ position: 'relative' }}>
+        {current && <FeaturedGame game={current} />}
+
+        {/* Flèches */}
+        {games.length > 1 && (
+          <>
+            <IconButton
+              onClick={e => {
+                e.stopPropagation();
+                prev();
+              }}
+              sx={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 4,
+                bgcolor: 'common.white',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                '&:hover': {
+                  bgcolor: 'common.white',
+                  transform: 'translateY(-50%) scale(1.05)',
+                },
+              }}
+            >
+              <ChevronLeftIcon />
+            </IconButton>
+            <IconButton
+              onClick={e => {
+                e.stopPropagation();
+                next();
+              }}
+              sx={{
+                position: 'absolute',
+                right: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 4,
+                bgcolor: 'common.white',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                '&:hover': {
+                  bgcolor: 'common.white',
+                  transform: 'translateY(-50%) scale(1.05)',
+                },
+              }}
+            >
+              <ChevronRightIcon />
+            </IconButton>
+          </>
+        )}
+
+        {/* Dots de pagination */}
+        {games.length > 1 && (
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: 0.75,
+              mt: 2,
+            }}
+          >
+            {games.map((game, i) => {
+              const isActive = i === index;
+              const gameKey = game.django_id
+                ? `django-${game.django_id}`
+                : `igdb-${game.igdb_id}`;
+              let dotColor = accentColor;
+              if (!isActive) {
+                dotColor = isDark
+                  ? 'rgba(255,255,255,0.2)'
+                  : 'rgba(0,0,0,0.15)';
+              }
+
+              return (
+                <Box
+                  key={gameKey}
+                  onClick={() => setIndex(i)}
+                  sx={{
+                    width: isActive ? 20 : 8,
+                    height: 8,
+                    borderRadius: '4px',
+                    bgcolor: dotColor,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                  }}
+                />
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box data-tour="suggestions" sx={{ mb: 6 }}>
       {/* Header */}
@@ -312,123 +453,7 @@ export function RecommendedGamesSection() {
       </Box>
 
       {/* Contenu */}
-      {loading ? (
-        <Skeleton
-          variant="rectangular"
-          width="100%"
-          height={380}
-          sx={{ borderRadius: '20px' }}
-        />
-      ) : isEmpty ? (
-        <Box
-          sx={{ pl: '18px', display: 'flex', flexDirection: 'column', gap: 2 }}
-        >
-          <Typography sx={{ fontFamily: F, color: inkColor, opacity: 0.6 }}>
-            Aucune suggestion disponible pour le moment.
-          </Typography>
-          <Button
-            href="/search"
-            variant="outlined"
-            sx={{
-              alignSelf: 'flex-start',
-              fontFamily: F,
-              borderColor: accentColor,
-              color: accentColor,
-              '&:hover': {
-                borderColor: accentColor,
-                bgcolor: 'transparent',
-                opacity: 0.8,
-              },
-            }}
-          >
-            Explorer le catalogue
-          </Button>
-        </Box>
-      ) : (
-        <Box sx={{ position: 'relative' }}>
-          {current && <FeaturedGame game={current} />}
-
-          {/* Flèches */}
-          {games.length > 1 && (
-            <>
-              <IconButton
-                onClick={e => {
-                  e.stopPropagation();
-                  prev();
-                }}
-                sx={{
-                  position: 'absolute',
-                  left: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 4,
-                  bgcolor: 'common.white',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                  '&:hover': {
-                    bgcolor: 'common.white',
-                    transform: 'translateY(-50%) scale(1.05)',
-                  },
-                }}
-              >
-                <ChevronLeftIcon />
-              </IconButton>
-              <IconButton
-                onClick={e => {
-                  e.stopPropagation();
-                  next();
-                }}
-                sx={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 4,
-                  bgcolor: 'common.white',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                  '&:hover': {
-                    bgcolor: 'common.white',
-                    transform: 'translateY(-50%) scale(1.05)',
-                  },
-                }}
-              >
-                <ChevronRightIcon />
-              </IconButton>
-            </>
-          )}
-
-          {/* Dots de pagination */}
-          {games.length > 1 && (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                gap: 0.75,
-                mt: 2,
-              }}
-            >
-              {games.map((_, i) => (
-                <Box
-                  key={i}
-                  onClick={() => setIndex(i)}
-                  sx={{
-                    width: i === index ? 20 : 8,
-                    height: 8,
-                    borderRadius: '4px',
-                    bgcolor:
-                      i === index
-                        ? accentColor
-                        : isDark
-                          ? 'rgba(255,255,255,0.2)'
-                          : 'rgba(0,0,0,0.15)',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                  }}
-                />
-              ))}
-            </Box>
-          )}
-        </Box>
-      )}
+      {content}
     </Box>
   );
 }

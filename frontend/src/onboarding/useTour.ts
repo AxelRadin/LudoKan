@@ -49,8 +49,10 @@ export function useTour({ steps, optionalSteps, onDone }: UseTourOptions) {
           const el = driverRef.current?.getActiveElement();
           if (el) {
             el.classList.remove('tour-must-click');
-            void (el as HTMLElement).offsetWidth;
-            el.classList.add('tour-must-click');
+            const forceReflow = (el as HTMLElement).offsetWidth;
+            if (forceReflow >= 0) {
+              el.classList.add('tour-must-click');
+            }
             setTimeout(() => el.classList.remove('tour-must-click'), 600);
           }
           return;
