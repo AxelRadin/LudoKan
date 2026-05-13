@@ -22,26 +22,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-vi.mock('../../components/SocialLoginButton', () => ({
-  default: function MockSocialLoginButton({
-    icon,
-    onClick,
-  }: {
-    icon: string;
-    onClick?: () => void;
-  }) {
-    return (
-      <button
-        type="button"
-        data-testid={`social-btn-${icon}`}
-        onClick={onClick}
-      >
-        {icon}
-      </button>
-    );
-  },
-}));
-
 const mockRecaptchaReset = vi.fn();
 vi.mock('react-google-recaptcha', () => {
   return {
@@ -210,7 +190,9 @@ describe('LoginForm', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTestId('social-btn-google'));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Se connecter avec Google/i })
+    );
     expect(googleOAuth.startGoogleLogin).toHaveBeenCalled();
   });
 
@@ -225,7 +207,9 @@ describe('LoginForm', () => {
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTestId('social-btn-google'));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Se connecter avec Google/i })
+    );
 
     expect(await screen.findByText('Erreur popup Google')).toBeInTheDocument();
   });

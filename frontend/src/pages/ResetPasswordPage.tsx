@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import {
-  Box,
-  Container,
-  Typography,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
+import { Box, Alert, CircularProgress } from '@mui/material';
+import { AuthFlowPageLayout } from '../components/AuthFlowPageLayout';
 import PasswordField from '../components/PasswordField';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import PrimaryButton from '../components/PrimaryButton';
@@ -93,93 +88,69 @@ const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ pt: 12, pb: 6 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 3,
-        }}
-      >
-        <Box sx={{ textAlign: 'center', mb: 1 }}>
-          <img
-            src="/logo.png"
-            alt="LudoKan"
-            style={{ height: 56, marginBottom: 16 }}
+    <AuthFlowPageLayout
+      title={t('resetPasswordPage.title')}
+      subtitle={t('resetPasswordPage.subtitle')}
+    >
+      {success ? (
+        <Alert severity="success" sx={{ width: '100%', borderRadius: 3 }}>
+          {t('resetPasswordPage.success')}
+        </Alert>
+      ) : (
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          sx={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2.5,
+            maxWidth: 400,
+          }}
+        >
+          <PasswordField
+            label={t('resetPasswordPage.newPassword')}
+            variant="outlined"
+            fullWidth
+            value={newPassword1}
+            onChange={e => setNewPassword1(e.target.value)}
+            autoFocus
           />
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            sx={{ color: 'secondary.main' }}
-          >
-            {t('resetPasswordPage.title')}
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-            {t('resetPasswordPage.subtitle')}
-          </Typography>
-        </Box>
+          <PasswordStrengthIndicator password={newPassword1} />
+          <PasswordField
+            label={t('resetPasswordPage.confirmPassword')}
+            variant="outlined"
+            fullWidth
+            value={newPassword2}
+            onChange={e => setNewPassword2(e.target.value)}
+            error={!!newPassword2 && newPassword1 !== newPassword2}
+            helperText={
+              newPassword2 && newPassword1 !== newPassword2
+                ? t('resetPasswordPage.errorMismatch')
+                : undefined
+            }
+          />
 
-        {success ? (
-          <Alert severity="success" sx={{ width: '100%', borderRadius: 3 }}>
-            {t('resetPasswordPage.success')}
-          </Alert>
-        ) : (
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 2.5,
-              maxWidth: 400,
-            }}
-          >
-            <PasswordField
-              label={t('resetPasswordPage.newPassword')}
-              variant="outlined"
-              fullWidth
-              value={newPassword1}
-              onChange={e => setNewPassword1(e.target.value)}
-              autoFocus
-            />
-            <PasswordStrengthIndicator password={newPassword1} />
-            <PasswordField
-              label={t('resetPasswordPage.confirmPassword')}
-              variant="outlined"
-              fullWidth
-              value={newPassword2}
-              onChange={e => setNewPassword2(e.target.value)}
-              error={!!newPassword2 && newPassword1 !== newPassword2}
-              helperText={
-                newPassword2 && newPassword1 !== newPassword2
-                  ? t('resetPasswordPage.errorMismatch')
-                  : undefined
-              }
-            />
+          {error && (
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-            {error && (
-              <Alert severity="error" sx={{ borderRadius: 2 }}>
-                {error}
-              </Alert>
+          <PrimaryButton
+            type="submit"
+            disabled={loading}
+            sx={{ height: 48, fontSize: 16, mt: 1 }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              t('resetPasswordPage.submit')
             )}
-
-            <PrimaryButton
-              type="submit"
-              disabled={loading}
-              sx={{ height: 48, fontSize: 16, mt: 1 }}
-            >
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                t('resetPasswordPage.submit')
-              )}
-            </PrimaryButton>
-          </Box>
-        )}
-      </Box>
-    </Container>
+          </PrimaryButton>
+        </Box>
+      )}
+    </AuthFlowPageLayout>
   );
 };
 
