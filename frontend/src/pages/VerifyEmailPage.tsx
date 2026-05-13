@@ -31,7 +31,7 @@ const VerifyEmailPage: React.FC = () => {
       try {
         await apiPost('/api/auth/registration/verify-email/', { key });
         setSuccess(true);
-      } catch (err: any) {
+      } catch {
         setError(t('verifyEmailPage.error'));
       } finally {
         setLoading(false);
@@ -79,7 +79,10 @@ const VerifyEmailPage: React.FC = () => {
           </Box>
         ) : success ? (
           <Box sx={{ width: '100%', textAlign: 'center' }}>
-            <Alert severity="success" sx={{ width: '100%', borderRadius: 3, mb: 4, textAlign: 'left' }}>
+            <Alert
+              severity="success"
+              sx={{ width: '100%', borderRadius: 3, mb: 4, textAlign: 'left' }}
+            >
               {t('verifyEmailPage.success')}
             </Alert>
             <PrimaryButton
@@ -91,7 +94,10 @@ const VerifyEmailPage: React.FC = () => {
           </Box>
         ) : (
           <Box sx={{ width: '100%', textAlign: 'center' }}>
-            <Alert severity="error" sx={{ width: '100%', borderRadius: 3, mb: 4, textAlign: 'left' }}>
+            <Alert
+              severity="error"
+              sx={{ width: '100%', borderRadius: 3, mb: 4, textAlign: 'left' }}
+            >
               {error || t('verifyEmailPage.error')}
             </Alert>
             <PrimaryButton

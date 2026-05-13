@@ -1,7 +1,7 @@
+from allauth.account.adapter import get_adapter
 from allauth.account.signals import email_confirmed, user_signed_up
 from allauth.socialaccount.signals import social_account_added
 from django.dispatch import receiver
-from allauth.account.adapter import get_adapter
 
 from .models import XboxProfile
 

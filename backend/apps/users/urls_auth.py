@@ -1,11 +1,7 @@
 from django.urls import include, path, re_path
 
 from apps.users.login_views import RecaptchaLoginView
-from apps.users.views import (
-    SuspensionAwareUserDetailsView,
-    email_confirm_redirect,
-    password_reset_confirm_redirect,
-)
+from apps.users.views import SuspensionAwareUserDetailsView, email_confirm_redirect, password_reset_confirm_redirect
 from apps.users.views_social import GoogleLoginView
 from apps.users.views_steam import SteamDisconnectView, SteamLoginCallbackView, SteamLoginInitiateView
 from apps.users.views_xbox import XboxConnectCallbackView, XboxConnectInitiateView, XboxDisconnectView
