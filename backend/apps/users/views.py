@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
@@ -419,3 +419,15 @@ class AdminActionListView(ListAPIView):
             qs = qs.filter(timestamp__gte=created_after)
 
         return qs
+
+
+def password_reset_confirm_redirect(_request, uidb64, token):
+    """Redirige le lien de l'email de reset vers la page frontend correspondante."""
+    frontend_url = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+    return HttpResponseRedirect(f"{frontend_url}/reset-password/{uidb64}/{token}")
+
+
+def email_confirm_redirect(_request, key):
+    """Redirige le lien de confirmation d'email vers la page frontend correspondante."""
+    frontend_url = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+    return HttpResponseRedirect(f"{frontend_url}/verify-email/{key}")

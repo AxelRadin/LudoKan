@@ -127,25 +127,23 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setResetError(null);
 
     if (!resetEmail) {
-      setResetError('Veuillez entrer votre adresse email.');
+      setResetError(t('loginForm.forgotEnterEmail'));
       return;
     }
 
     if (!isValidEmail(resetEmail)) {
-      setResetError('Adresse email invalide.');
+      setResetError(t('loginForm.forgotInvalidEmail'));
       return;
     }
 
     try {
       setResetLoading(true);
-      await apiPost('/api/auth/password-reset/', {
+      await apiPost('/api/auth/password/reset/', {
         email: resetEmail.trim(),
       });
       setResetSuccess(true);
     } catch (err: any) {
-      setResetError(
-        err.message || "Erreur lors de l'envoi de l'email de réinitialisation."
-      );
+      setResetError(err.message || t('loginForm.forgotSendError'));
     } finally {
       setResetLoading(false);
     }
@@ -185,7 +183,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               cursor: 'pointer',
             }}
           >
-            Mot de passe oublié ?
+            {t('loginForm.forgotPasswordLink')}
           </Link>
 
           {RECAPTCHA_SITE_KEY ? (
@@ -275,23 +273,21 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         }}
       >
         <DialogTitle sx={{ fontWeight: 700, fontSize: 20 }}>
-          Mot de passe oublié
+          {t('loginForm.forgotPasswordTitle')}
         </DialogTitle>
         <DialogContent>
           {resetSuccess ? (
             <Alert severity="success" sx={{ mt: 1 }}>
-              Un email de réinitialisation a été envoyé à{' '}
-              <strong>{resetEmail}</strong>. Vérifiez votre boîte de réception.
+              {t('loginForm.forgotSuccessMessage', { email: resetEmail })}
             </Alert>
           ) : (
             <>
               <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
-                Entrez votre adresse email et nous vous enverrons un lien pour
-                réinitialiser votre mot de passe.
+                {t('loginForm.forgotDescription')}
               </Typography>
               <TextField
                 autoFocus
-                label="Adresse email"
+                label={t('loginForm.forgotEmailLabel')}
                 type="email"
                 fullWidth
                 variant="outlined"
@@ -305,7 +301,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleForgotPasswordClose} sx={{ borderRadius: 2 }}>
-            {resetSuccess ? 'Fermer' : 'Annuler'}
+            {resetSuccess ? t('common.close') : t('common.cancel')}
           </Button>
           {!resetSuccess && (
             <Button
@@ -314,7 +310,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
               disabled={resetLoading}
               sx={{ borderRadius: 2 }}
             >
-              {resetLoading ? 'Envoi...' : 'Envoyer'}
+              {resetLoading
+                ? t('loginForm.forgotSending')
+                : t('loginForm.forgotSend')}
             </Button>
           )}
         </DialogActions>
