@@ -7,7 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, type ReactElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRecommendations } from '../hooks/useRecommendations';
 import type { NormalizedGame } from '../types/game';
@@ -278,7 +278,7 @@ export function RecommendedGamesSection() {
   const isEmpty = !loading && games.length === 0;
   const current = games[index] ?? null;
 
-  let content: JSX.Element;
+  let content: ReactElement;
   if (loading) {
     content = (
       <Skeleton
