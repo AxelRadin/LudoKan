@@ -44,7 +44,12 @@ interface MatchmakingModalProps {
   readonly party?: Party | null;
   readonly isExpanding: boolean;
   readonly currentRadius: number;
-  readonly partyActions: any;
+  readonly partyActions: {
+    readonly markReady: (val: boolean) => Promise<void>;
+    readonly markReadyForChat: (val: boolean) => Promise<void>;
+    readonly markStartEarly: (val: boolean) => Promise<void>;
+    readonly leave: () => Promise<void>;
+  };
 }
 
 interface PartyChatViewProps {
@@ -258,9 +263,6 @@ function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
   );
 }
 
-// ----------------------------------------------------------------------
-// COMPOSANT PRINCIPAL
-// ----------------------------------------------------------------------
 function getMemberStatusText(member: any, status: string) {
   if (member.wants_to_start_early && status === 'open') return 'Prêt à lancer';
   if (status === 'waiting_ready') return `Statut : ${member.ready_state}`;
@@ -305,6 +307,36 @@ export default function MatchmakingModal({
     );
   const isChatPhase = party?.status === 'chat_active';
 
+  const renderRadiusMessage = () => {
+    if (currentRadius >= 10000) {
+      return (
+        <Typography
+          variant="caption"
+          color="secondary"
+          sx={{ fontWeight: 'bold' }}
+        >
+          Recherche mondiale activée...
+        </Typography>
+      );
+    }
+    if (isExpanding) {
+      return (
+        <Typography
+          variant="caption"
+          color="primary"
+          sx={{ fontStyle: 'italic' }}
+        >
+          Élargissement de la zone de recherche ({currentRadius} km)...
+        </Typography>
+      );
+    }
+    return (
+      <Typography variant="caption" color="text.secondary">
+        Rayon actuel : {currentRadius} km
+      </Typography>
+    );
+  };
+
   return (
     <Dialog
       open={open}
@@ -315,7 +347,6 @@ export default function MatchmakingModal({
         sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 650 },
       }}
     >
-      {/* HEADER (Bannière du Jeu) */}
       <Box
         sx={{
           position: 'relative',
@@ -376,9 +407,7 @@ export default function MatchmakingModal({
         </Box>
       </Box>
 
-      {/* CONTENU PRINCIPAL */}
       <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
-        {/* PHASE 1 : RADAR */}
         {isRadarPhase && (
           <Box
             sx={{
@@ -402,35 +431,10 @@ export default function MatchmakingModal({
             <Typography variant="h6" sx={{ mt: 3 }}>
               {t('matchmakingModal.analyzing')}
             </Typography>
-
-            {/* NOUVEAU MESSAGE D'ÉLARGISSEMENT */}
-            <Box sx={{ height: 24, mt: 1 }}>
-              {currentRadius >= 10000 ? (
-                <Typography
-                  variant="caption"
-                  color="secondary"
-                  sx={{ fontWeight: 'bold' }}
-                >
-                  Recherche mondiale activée...
-                </Typography>
-              ) : isExpanding ? (
-                <Typography
-                  variant="caption"
-                  color="primary"
-                  sx={{ fontStyle: 'italic' }}
-                >
-                  Élargissement de la zone de recherche ({currentRadius} km)...
-                </Typography>
-              ) : (
-                <Typography variant="caption" color="text.secondary">
-                  Rayon actuel : {currentRadius} km
-                </Typography>
-              )}
-            </Box>
+            <Box sx={{ height: 24, mt: 1 }}>{renderRadiusMessage()}</Box>
           </Box>
         )}
 
-        {/* PHASE 2 : LOBBY (Recrutement & Validation) */}
         {isLobbyPhase && (
           <Box>
             <Typography
@@ -478,7 +482,6 @@ export default function MatchmakingModal({
               ))}
             </List>
 
-            {/* Actions dynamiques selon le statut de la party */}
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
               {party.status === 'open' && (
                 <Button
@@ -532,7 +535,6 @@ export default function MatchmakingModal({
         )}
       </DialogContent>
 
-      {/* FOOTER (Actions globales) */}
       <Box
         sx={{
           p: 2,
