@@ -21,6 +21,7 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemSecondaryAction,
+  Snackbar,
   Switch,
   Typography,
   ListItemButton,
@@ -31,6 +32,7 @@ import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '../contexts/useThemeMode';
 import { TOUR_KEYS } from '../hooks/useOnboarding';
 import PasswordField from '../components/PasswordField';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import { apiPost } from '../services/api';
 
 const settingsSectionHeadingSx = {
@@ -52,6 +54,33 @@ const settingsListRowButtonSx = {
   '&:hover': { bgcolor: 'rgba(255, 100, 100, 0.06)' },
 } as const;
 
+function parsePasswordErrors(raw: string, t: (key: string) => string): string {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed.old_password) {
+      return t('settings.pwErrorWrongOld');
+    }
+    if (parsed.new_password2) {
+      const msgs = Array.isArray(parsed.new_password2)
+        ? parsed.new_password2
+        : [parsed.new_password2];
+      return msgs.join(' ');
+    }
+    if (parsed.new_password1) {
+      const msgs = Array.isArray(parsed.new_password1)
+        ? parsed.new_password1
+        : [parsed.new_password1];
+      return msgs.join(' ');
+    }
+  } catch {
+    // not JSON
+  }
+  if (raw.includes('old_password') || raw.toLowerCase().includes('incorrect')) {
+    return t('settings.pwErrorWrongOld');
+  }
+  return raw || t('settings.pwErrorGeneric');
+}
+
 const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const { darkMode, toggleDarkMode } = useThemeMode();
@@ -64,7 +93,11 @@ const SettingsPage: React.FC = () => {
   const [newPassword2, setNewPassword2] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
-  const [pwSuccess, setPwSuccess] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    isError: false,
+  });
 
   const handlePwModalOpen = () => {
     setPwModalOpen(true);
@@ -72,13 +105,11 @@ const SettingsPage: React.FC = () => {
     setNewPassword1('');
     setNewPassword2('');
     setPwError(null);
-    setPwSuccess(false);
   };
 
   const handlePwModalClose = () => {
     setPwModalOpen(false);
     setPwError(null);
-    setPwSuccess(false);
   };
 
   const handleChangePassword = async () => {
@@ -104,17 +135,15 @@ const SettingsPage: React.FC = () => {
         new_password1: newPassword1,
         new_password2: newPassword2,
       });
-      setPwSuccess(true);
+      // Success: close modal + show snackbar
+      handlePwModalClose();
+      setSnackbar({
+        open: true,
+        message: t('settings.pwSuccess'),
+        isError: false,
+      });
     } catch (err: any) {
-      const msg = err?.message || '';
-      if (
-        msg.includes('old_password') ||
-        msg.toLowerCase().includes('ancien')
-      ) {
-        setPwError(t('settings.pwErrorWrongOld'));
-      } else {
-        setPwError(msg || t('settings.pwErrorGeneric'));
-      }
+      setPwError(parsePasswordErrors(err?.message || '', t));
     } finally {
       setPwLoading(false);
     }
@@ -312,65 +341,81 @@ const SettingsPage: React.FC = () => {
           {t('settings.changePasswordTitle')}
         </DialogTitle>
         <DialogContent>
-          {pwSuccess ? (
-            <Alert severity="success" sx={{ mt: 1, borderRadius: 2 }}>
-              {t('settings.pwSuccess')}
-            </Alert>
-          ) : (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                mt: 1,
-              }}
-            >
-              <PasswordField
-                label={t('settings.pwOldPassword')}
-                variant="outlined"
-                fullWidth
-                value={oldPassword}
-                onChange={e => setOldPassword(e.target.value)}
-                autoFocus
-              />
-              <PasswordField
-                label={t('settings.pwNewPassword')}
-                variant="outlined"
-                fullWidth
-                value={newPassword1}
-                onChange={e => setNewPassword1(e.target.value)}
-              />
-              <PasswordField
-                label={t('settings.pwConfirmPassword')}
-                variant="outlined"
-                fullWidth
-                value={newPassword2}
-                onChange={e => setNewPassword2(e.target.value)}
-              />
-              {pwError && (
-                <Alert severity="error" sx={{ borderRadius: 2 }}>
-                  {pwError}
-                </Alert>
-              )}
-            </Box>
-          )}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              mt: 1,
+            }}
+          >
+            <PasswordField
+              label={t('settings.pwOldPassword')}
+              variant="outlined"
+              fullWidth
+              value={oldPassword}
+              onChange={e => setOldPassword(e.target.value)}
+              autoFocus
+            />
+            <PasswordField
+              label={t('settings.pwNewPassword')}
+              variant="outlined"
+              fullWidth
+              value={newPassword1}
+              onChange={e => setNewPassword1(e.target.value)}
+            />
+            <PasswordStrengthIndicator password={newPassword1} />
+            <PasswordField
+              label={t('settings.pwConfirmPassword')}
+              variant="outlined"
+              fullWidth
+              value={newPassword2}
+              onChange={e => setNewPassword2(e.target.value)}
+              error={!!newPassword2 && newPassword1 !== newPassword2}
+              helperText={
+                newPassword2 && newPassword1 !== newPassword2
+                  ? t('settings.pwErrorMismatch')
+                  : undefined
+              }
+            />
+            {pwError && (
+              <Alert severity="error" sx={{ borderRadius: 2 }}>
+                {pwError}
+              </Alert>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handlePwModalClose} sx={{ borderRadius: 2 }}>
-            {pwSuccess ? t('common.close') : t('common.cancel')}
+            {t('common.cancel')}
           </Button>
-          {!pwSuccess && (
-            <Button
-              onClick={handleChangePassword}
-              variant="contained"
-              disabled={pwLoading}
-              sx={{ borderRadius: 2 }}
-            >
-              {pwLoading ? t('settings.pwSaving') : t('settings.pwSave')}
-            </Button>
-          )}
+          <Button
+            onClick={handleChangePassword}
+            variant="contained"
+            disabled={pwLoading}
+            sx={{ borderRadius: 2 }}
+          >
+            {pwLoading ? t('settings.pwSaving') : t('settings.pwSave')}
+          </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar success/error */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+          severity={snackbar.isError ? 'error' : 'success'}
+          variant="filled"
+          sx={{ borderRadius: 2 }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

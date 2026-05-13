@@ -29,6 +29,8 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LibraryPrivacyModal from '../components/LibraryPrivacyModal';
 import {
   CreateCollectionModal,
@@ -890,6 +892,7 @@ function ProfileEditDialog({
   C,
 }: ProfileEditDialogProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const fieldSx = {
     fontFamily: FONT_BODY,
@@ -1154,9 +1157,11 @@ function ProfileEditDialog({
         <Button
           onClick={() => {
             onClose();
-            window.location.href = '/settings';
+            navigate('/settings');
           }}
           size="small"
+          startIcon={<LockOutlinedIcon sx={{ fontSize: 16 }} />}
+          endIcon={<ChevronRightIcon sx={{ fontSize: 18 }} />}
           sx={{
             color: C.accent,
             fontSize: 13,

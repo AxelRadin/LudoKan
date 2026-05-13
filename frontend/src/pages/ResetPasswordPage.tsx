@@ -9,6 +9,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import PasswordField from '../components/PasswordField';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
 import PrimaryButton from '../components/PrimaryButton';
 import { apiPost } from '../services/api';
 
@@ -64,6 +65,26 @@ const ResetPasswordPage: React.FC = () => {
       if (msg.includes('token') || msg.includes('uid')) {
         setError(t('resetPasswordPage.errorInvalidLink'));
       } else {
+        // Try to parse Django field errors
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed.new_password2) {
+            const msgs = Array.isArray(parsed.new_password2)
+              ? parsed.new_password2
+              : [parsed.new_password2];
+            setError(msgs.join(' '));
+            return;
+          }
+          if (parsed.new_password1) {
+            const msgs = Array.isArray(parsed.new_password1)
+              ? parsed.new_password1
+              : [parsed.new_password1];
+            setError(msgs.join(' '));
+            return;
+          }
+        } catch {
+          // not JSON
+        }
         setError(msg || t('resetPasswordPage.errorGeneric'));
       }
     } finally {
@@ -123,12 +144,19 @@ const ResetPasswordPage: React.FC = () => {
               onChange={e => setNewPassword1(e.target.value)}
               autoFocus
             />
+            <PasswordStrengthIndicator password={newPassword1} />
             <PasswordField
               label={t('resetPasswordPage.confirmPassword')}
               variant="outlined"
               fullWidth
               value={newPassword2}
               onChange={e => setNewPassword2(e.target.value)}
+              error={!!newPassword2 && newPassword1 !== newPassword2}
+              helperText={
+                newPassword2 && newPassword1 !== newPassword2
+                  ? t('resetPasswordPage.errorMismatch')
+                  : undefined
+              }
             />
 
             {error && (
