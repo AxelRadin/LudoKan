@@ -61,6 +61,32 @@ export default function NotificationsPage() {
     }
   };
 
+  // Rendu de la liste selon l'état
+  let listContent;
+  if (isUnread && loadingUnread) {
+    listContent = (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          py: 8,
+        }}
+      >
+        <CircularProgress size={28} sx={{ color: 'primary.main' }} />
+      </Box>
+    );
+  } else if (isUnread) {
+    listContent = <NotificationList overrideItems={unreadNotifications} />;
+  } else {
+    listContent = <NotificationList />;
+  }
+
+  const unreadSuffix = unreadCount > 1 ? 's' : '';
+  const unreadLabel = i18n.language.startsWith('fr')
+    ? `non-lue${unreadSuffix}`
+    : 'unread';
+
   return (
     <PageLayout title={t('notifications.title')} backTo="/">
       <Container maxWidth="md" sx={{ mt: 4, mb: 8 }}>
@@ -100,10 +126,7 @@ export default function NotificationsPage() {
               </Typography>
               {unreadCount > 0 && (
                 <Typography variant="caption" color="text.secondary">
-                  {unreadCount}{' '}
-                  {i18n.language.startsWith('fr')
-                    ? 'non-lue' + (unreadCount > 1 ? 's' : '')
-                    : 'unread'}
+                  {unreadCount} {unreadLabel}
                 </Typography>
               )}
             </Box>
@@ -227,24 +250,7 @@ export default function NotificationsPage() {
             bgcolor: 'background.paper',
           }}
         >
-          {isUnread && loadingUnread ? (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                py: 8,
-              }}
-            >
-              <CircularProgress size={28} sx={{ color: 'primary.main' }} />
-            </Box>
-          ) : isUnread ? (
-            // Mode non-lues : on passe la liste complète du backend via prop
-            <NotificationList overrideItems={unreadNotifications} />
-          ) : (
-            // Mode toutes : comportement paginé habituel du contexte
-            <NotificationList />
-          )}
+          {listContent}
         </Paper>
 
         {/* Charger plus (uniquement en mode "Toutes") */}

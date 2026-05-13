@@ -17,7 +17,7 @@ import NotificationList from './NotificationList';
 export default function NotificationDropdown({
   onClose,
 }: {
-  onClose?: () => void;
+  readonly onClose?: () => void;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();

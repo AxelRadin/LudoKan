@@ -63,15 +63,15 @@ const NotificationsContext = createContext<
 function wsBaseUrl() {
   // Le proxy Vite redirige /ws-notifications vers le backend (port 8000).
   // Le navigateur envoie automatiquement les cookies HttpOnly car c'est le même domaine.
-  const apiBase = window.location.origin;
+  const apiBase = globalThis.location.origin;
   try {
     const url = new URL(apiBase);
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     url.pathname = '/ws-notifications/';
     return url.toString();
   } catch {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    return `${protocol}://${window.location.host}/ws-notifications/`;
+    const protocol = globalThis.location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${protocol}://${globalThis.location.host}/ws-notifications/`;
   }
 }
 
@@ -113,7 +113,7 @@ function getNotificationLabel(notification: NotificationItem): string {
 }
 
 /** Icône MUI selon le verb */
-function NotifIcon({ verb }: { verb: string }) {
+function NotifIcon({ verb }: { readonly verb: string }) {
   const sx = { fontSize: '1.15rem', color: '#FF3D3D' };
   switch (verb) {
     case 'friend_request_received':
@@ -164,7 +164,7 @@ export function NotificationsProvider({
 
   const clearReconnectTimer = () => {
     if (reconnectTimeoutRef.current !== null) {
-      window.clearTimeout(reconnectTimeoutRef.current);
+      globalThis.clearTimeout(reconnectTimeoutRef.current);
       reconnectTimeoutRef.current = null;
     }
   };
@@ -188,26 +188,30 @@ export function NotificationsProvider({
    * Source de vérité unique pour unreadCount : on relit toujours depuis l'API.
    * Ne jamais incrémenter manuellement, pour éviter les décalages.
    */
+  const refreshUnreadCount = useCallback(async () => {
+    try {
+      const allNotifications = await fetchAllNotifications();
+      const newCount = allNotifications.filter(item => item.unread).length;
+      setUnreadCount(newCount);
+    } catch (err) {
+      console.error('[Notifs] Erreur refresh compteur:', err);
+    }
+  }, []);
+
   const refreshNotifications = useCallback(async () => {
     if (!isAuthenticated) return;
-    console.log('[Notifs] refreshNotifications — début');
     setLoading(true);
     try {
-      const [firstPage, allNotifications] = await Promise.all([
+      const [firstPage] = await Promise.all([
         fetchNotificationsPage(),
-        fetchAllNotifications(),
+        refreshUnreadCount(),
       ]);
-      const newCount = allNotifications.filter(item => item.unread).length;
-      console.log(
-        `[Notifs] refreshNotifications — ${newCount} non-lues / ${allNotifications.length} total`
-      );
       setNotifications(firstPage.results);
       setNextPagePath(firstPage.next);
-      setUnreadCount(newCount);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, refreshUnreadCount]);
 
   const loadMoreNotifications = useCallback(async () => {
     if (!isAuthenticated || !nextPagePath || loadingMore) return;
@@ -228,7 +232,7 @@ export function NotificationsProvider({
   const markAsRead = useCallback(
     async (notificationId: number) => {
       const target = notifications.find(item => item.id === notificationId);
-      if (!target || !target.unread) return;
+      if (!target?.unread) return;
       await markNotificationRead(notificationId, false);
       setNotifications(prev =>
         prev.map(item =>
@@ -308,7 +312,7 @@ export function NotificationsProvider({
       setConnectionState('connected');
     };
 
-    socket.onmessage = event => {
+    const handleWebSocketMessage = (event: MessageEvent) => {
       console.log('[WS] 📨 Message reçu:', event.data);
       try {
         const payload = JSON.parse(event.data) as {
@@ -325,39 +329,20 @@ export function NotificationsProvider({
 
           setNotifications(prev => {
             const exists = prev.some(item => item.id === incoming.id);
-            console.log(
-              `[WS] Déjà présente: ${exists} | Liste actuelle: ${prev.length} élément(s)`
-            );
-
             if (!exists && incoming.unread) {
               setLastNotification(incoming);
               setToastOpen(true);
-
-              // FIX: on NE fait pas d'incrément local (+1).
-              // On relit le vrai compteur depuis l'API pour éviter tout décalage.
-              // (L'incrément local causait un +1 si la notif était déjà comptée
-              //  lors du refreshNotifications initial, selon le timing backend.)
-              console.log("[WS] Rafraîchissement du compteur depuis l'API…");
-              fetchAllNotifications()
-                .then(all => {
-                  const count = all.filter(n => n.unread).length;
-                  console.log(`[WS] ✅ Nouveau compteur réel: ${count}`);
-                  setUnreadCount(count);
-                })
-                .catch(err =>
-                  console.error('[WS] Erreur refresh compteur:', err)
-                );
+              refreshUnreadCount();
             }
-
             return mergeIncomingNotification(prev, incoming);
           });
-        } else {
-          console.log('[WS] Payload ignoré — type inattendu:', payload.type);
         }
       } catch (err) {
         console.error('[WS] ❌ Erreur de parsing:', err, '| brut:', event.data);
       }
     };
+
+    socket.onmessage = handleWebSocketMessage;
 
     socket.onerror = err => {
       console.error('[WS] ❌ Erreur socket:', err);
@@ -379,7 +364,10 @@ export function NotificationsProvider({
       console.log(
         `[WS] Reconnexion dans ${delayMs}ms (tentative n°${reconnectAttemptsRef.current})`
       );
-      reconnectTimeoutRef.current = window.setTimeout(connectSocket, delayMs);
+      reconnectTimeoutRef.current = globalThis.setTimeout(
+        connectSocket,
+        delayMs
+      );
     };
   }, [isAuthenticated]);
 

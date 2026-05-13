@@ -37,72 +37,71 @@ class JwtAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
+        token = self._get_token(scope)
+
+        if token:
+            scope["user"] = await get_user_from_token(token)
+        else:
+            scope["user"] = await self._get_session_user(scope)
+
+        return await self.inner(scope, receive, send)
+
+    def _get_token(self, scope):
         # 1) Récupérer le token dans la querystring ?token=<JWT>
         query_string = scope.get("query_string", b"").decode("utf-8")
         params = parse_qs(query_string)
 
-        print(f"[WS Auth] Query params: {params.keys()}")
-
-        token = None
-
         if "token" in params and params["token"]:
-            token = params["token"][0]
-            print("[WS Auth] Token found in query string")
+            return params["token"][0]
 
         # 2) Sinon, essayer de récupérer le token dans les cookies (header Cookie)
-        if token is None:
-            headers = dict(scope.get("headers") or [])
-            cookie_header = headers.get(b"cookie", b"").decode("utf-8")
-            print(f"[WS Auth] Cookie header found: {bool(cookie_header)}")
+        headers = dict(scope.get("headers") or [])
+        cookie_header = headers.get(b"cookie", b"").decode("utf-8")
 
-            cookies = {}
-            for part in cookie_header.split(";"):
-                if "=" in part:
-                    key, value = part.strip().split("=", 1)
-                    cookies[key] = value
+        cookies = {}
+        for part in cookie_header.split(";"):
+            if "=" in part:
+                key, value = part.strip().split("=", 1)
+                cookies[key] = value
 
-            print(f"[WS Auth] Available cookies: {list(cookies.keys())}")
-            token = cookies.get("access_token")
-            if token:
-                print("[WS Auth] Token found in cookies (access_token)")
+        return cookies.get("access_token")
 
-            # Fallback sur le sessionid si le JWT est absent (authentification classique)
-            session_id = cookies.get("sessionid")
-            if not token and session_id:
-                print("[WS Auth] No JWT found, but sessionid present. Attempting session auth.")
+    async def _get_session_user(self, scope):
+        headers = dict(scope.get("headers") or [])
+        cookie_header = headers.get(b"cookie", b"").decode("utf-8")
 
-        # 3) Résolution de l'utilisateur
-        if token:
-            scope["user"] = await get_user_from_token(token)
-        elif cookies.get("sessionid"):
-            from django.contrib.auth import get_user_model
+        cookies = {}
+        for part in cookie_header.split(";"):
+            if "=" in part:
+                key, value = part.strip().split("=", 1)
+                cookies[key] = value
 
-            User = get_user_model()
+        session_id = cookies.get("sessionid")
+        if not session_id:
+            return AnonymousUser()
 
-            @database_sync_to_async
-            def get_user_from_session(s_id):
-                try:
-                    from importlib import import_module
+        from django.contrib.auth import get_user_model
 
-                    from django.conf import settings
+        user_model = get_user_model()
 
-                    engine = import_module(settings.SESSION_ENGINE)
-                    store = engine.SessionStore(session_key=s_id)
-                    session_data = store.load() or {}
-                    uid = session_data.get("_auth_user_id")
-                    if uid is None:
-                        uid = store.get("_auth_user_id")
-                    if uid:
-                        return User.objects.filter(pk=uid).first() or AnonymousUser()
-                except Exception:
-                    pass
-                return AnonymousUser()
+        @database_sync_to_async
+        def get_user_from_session(s_id):
+            try:
+                from importlib import import_module
 
-            scope["user"] = await get_user_from_session(cookies.get("sessionid"))
-        else:
-            scope["user"] = AnonymousUser()
+                from django.conf import settings
 
-        return await self.inner(scope, receive, send)
+                engine = import_module(settings.SESSION_ENGINE)
+                store = engine.SessionStore(session_key=s_id)
+                session_data = store.load() or {}
+                uid = session_data.get("_auth_user_id") or store.get("_auth_user_id")
+                if uid:
+                    return user_model.objects.filter(pk=uid).first() or AnonymousUser()
+            except Exception:
+                pass
+            return AnonymousUser()
+
+        return await get_user_from_session(session_id)
 
 
 def jwt_auth_middleware_stack(inner):

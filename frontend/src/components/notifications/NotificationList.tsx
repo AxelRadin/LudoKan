@@ -83,7 +83,7 @@ function dateGroupLabel(timestamp: string, lang: string): string {
 }
 
 /** Icône MUI selon le verb */
-function NotifTypeIcon({ verb }: { verb: string }) {
+function NotifTypeIcon({ verb }: { readonly verb: string }) {
   const sx = { fontSize: '1.1rem' };
   switch (verb) {
     case 'friend_request_received':
@@ -139,10 +139,10 @@ function getInitial(notification: NotificationItem): string {
 // ---------------------------------------------------------------------------
 
 type NotificationListProps = {
-  maxHeight?: number | string;
-  onItemClick?: () => void;
-  filterUnread?: boolean;
-  overrideItems?: NotificationItem[];
+  readonly maxHeight?: number | string;
+  readonly onItemClick?: () => void;
+  readonly filterUnread?: boolean;
+  readonly overrideItems?: NotificationItem[];
 };
 
 export default function NotificationList({
@@ -183,6 +183,20 @@ export default function NotificationList({
   // État vide
   if (sortedNotifications.length === 0) {
     const isFilteredEmpty = filterUnread;
+    const isFR = i18n.language.startsWith('fr');
+    const emptyMessage = isFilteredEmpty
+      ? isFR
+        ? 'Aucune notification non-lue'
+        : 'No unread notifications'
+      : t('notifications.empty');
+
+    const caughtUpMessage =
+      isFilteredEmpty && isFR
+        ? 'Vous êtes à jour !'
+        : isFilteredEmpty
+          ? "You're all caught up!"
+          : '';
+
     return (
       <Box
         sx={{
@@ -195,18 +209,10 @@ export default function NotificationList({
       >
         <NotificationsNoneIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
         <Typography variant="body2" color="text.secondary" fontWeight={500}>
-          {isFilteredEmpty
-            ? i18n.language.startsWith('fr')
-              ? 'Aucune notification non-lue'
-              : 'No unread notifications'
-            : t('notifications.empty')}
+          {emptyMessage}
         </Typography>
         <Typography variant="caption" color="text.disabled">
-          {isFilteredEmpty
-            ? i18n.language.startsWith('fr')
-              ? 'Vous êtes à jour !'
-              : "You're all caught up!"
-            : ''}
+          {caughtUpMessage}
         </Typography>
       </Box>
     );
@@ -281,7 +287,9 @@ export default function NotificationList({
                 <Box
                   onClick={() => {
                     onItemClick?.();
-                    handleNotificationNavigation(notification).catch(() => {});
+                    handleNotificationNavigation(notification).catch(err => {
+                      console.error('Navigation error:', err);
+                    });
                   }}
                   sx={{
                     display: 'flex',
@@ -395,7 +403,9 @@ export default function NotificationList({
                       size="small"
                       onClick={e => {
                         e.stopPropagation();
-                        markAsRead(notification.id).catch(() => {});
+                        markAsRead(notification.id).catch(err => {
+                          console.error('Mark as read error:', err);
+                        });
                       }}
                       sx={{
                         mr: 1,

@@ -12,8 +12,8 @@ import { useNotifications } from '../../contexts/NotificationsContext';
 import NotificationDropdown from './NotificationDropdown';
 
 type NotificationIconProps = {
-  mobile?: boolean;
-  menuProps?: Partial<MenuProps>;
+  readonly mobile?: boolean;
+  readonly menuProps?: Partial<MenuProps>;
 };
 
 export default function NotificationIcon({
