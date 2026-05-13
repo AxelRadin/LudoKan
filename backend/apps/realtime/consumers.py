@@ -76,13 +76,17 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         user = self.scope.get("user")
+        print(f"[WS] Attempting connection for user: {user}")
+
         if not user or getattr(user, "is_anonymous", True):
+            print("[WS] Connection rejected: Anonymous user or missing token")
             # Token manquant / invalide -> on ferme la connexion.
             await self.close(code=4401)
             return
 
         self.user = user
         self.group_name = f"user_notifications_{self.user.id}"
+        print(f"[WS] Connection accepted for user {self.user.id}. Group: {self.group_name}")
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()

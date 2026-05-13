@@ -114,6 +114,28 @@
     "langFr": "Français 🇫🇷",
     "langEn": "English 🇬🇧"
   },
+  "notifications": {
+    "open": "Ouvrir les notifications",
+    "title": "Notifications",
+    "empty": "Aucune notification",
+    "markRead": "Marquer lue",
+    "markAllRead": "Tout marquer comme lu",
+    "loadMore": "Charger plus",
+    "loadingMore": "Chargement...",
+    "verb": {
+      "friend_request_received": "Demande d'ami",
+      "friend_request_accepted": "Ami accepté",
+      "message": "Nouveau message",
+      "match": "Match trouvé",
+      "review": "Nouvel avis",
+      "ticket_reviewing": "Ticket en revue",
+      "ticket_approved": "Ticket approuvé",
+      "ticket_rejected": "Ticket rejeté",
+      "ticket_published": "Ticket publié",
+      "ticket_created": "Nouveau ticket"
+    },
+    "viewAll": "Voir toutes les notifications"
+  },
   "loginForm": {
     "title": "Connexion",
     "switchLabel": "S'inscrire",
@@ -211,7 +233,8 @@
     "submit": "Publier l'avis",
     "submitting": "Envoi...",
     "success": "Avis publié avec succès !",
-    "counter": "{{count}} / 500"
+    "counter": "{{count}} / 500",
+    "ratingRequired": "Veuillez donner une note pour publier votre avis"
   },
   "searchBar": {
     "placeholder": "Recherchez des jeux…",
@@ -255,7 +278,8 @@
     "statusLabel": "Mon statut",
     "statusDone": "Terminé",
     "statusPlaying": "En cours",
-    "statusWishlist": "Envie",
+    "statusWishlist": "Envie d'y jouer",
+    "statusAbandoned": "Abandonné",
     "genresLabel": "Genres",
     "genresEmpty": "Non renseigné",
     "translating": "Traduction en cours…",
@@ -453,9 +477,11 @@
     "inProgress": "En cours",
     "completed": "Terminés",
     "wishlist": "Envie d'y jouer",
+    "abandoned": "Abandonnés",
     "statusPlaying": "En cours",
     "statusDone": "Terminés",
     "statusWishlist": "Envie d'y jouer",
+    "statusAbandoned": "Abandonnés",
     "gameRemoved": "Jeu retiré de la bibliothèque.",
     "gameRemoveError": "Impossible de retirer le jeu. Réessayez plus tard.",
     "undo": "Annuler",

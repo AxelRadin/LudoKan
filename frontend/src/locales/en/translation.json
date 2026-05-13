@@ -114,6 +114,28 @@
     "langFr": "Français 🇫🇷",
     "langEn": "English 🇬🇧"
   },
+  "notifications": {
+    "open": "Open notifications",
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "loadMore": "Load more",
+    "loadingMore": "Loading...",
+    "verb": {
+      "friend_request_received": "Friend request",
+      "friend_request_accepted": "Friend request accepted",
+      "message": "New message",
+      "match": "Match found",
+      "review": "New review",
+      "ticket_reviewing": "Ticket in review",
+      "ticket_approved": "Ticket approved",
+      "ticket_rejected": "Ticket rejected",
+      "ticket_published": "Ticket published",
+      "ticket_created": "New ticket"
+    },
+    "viewAll": "See all notifications"
+  },
   "loginForm": {
     "title": "Log in",
     "switchLabel": "Sign up",
@@ -288,6 +310,7 @@
     "statusDone": "Completed",
     "statusPlaying": "Playing",
     "statusWishlist": "Wishlist",
+    "statusAbandoned": "Dropped",
     "genresLabel": "Genres",
     "genresEmpty": "Not specified",
     "translating": "Translating…",
@@ -485,9 +508,11 @@
     "inProgress": "In progress",
     "completed": "Completed",
     "wishlist": "Wishlist",
+    "abandoned": "Dropped",
     "statusPlaying": "In progress",
     "statusDone": "Completed",
     "statusWishlist": "Wishlist",
+    "statusAbandoned": "Dropped",
     "gameRemoved": "Game removed from library.",
     "gameRemoveError": "Unable to remove game. Please try again.",
     "undo": "Undo",

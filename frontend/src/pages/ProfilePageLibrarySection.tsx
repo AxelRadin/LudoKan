@@ -43,6 +43,7 @@ type ProfilePageLibrarySectionProps = Readonly<{
   gamesEnCours: GameListItem[];
   gamesTermines: GameListItem[];
   gamesEnvie: GameListItem[];
+  gamesAbandonnes: GameListItem[];
   gamesForLibraryFilter: GameListItem[];
   singleFilterTitle: string;
   removeGame: (userGameId: number) => void;
@@ -80,6 +81,7 @@ export default function ProfilePageLibrarySection({
   gamesEnCours,
   gamesTermines,
   gamesEnvie,
+  gamesAbandonnes,
   gamesForLibraryFilter,
   singleFilterTitle,
   removeGame,
@@ -100,6 +102,7 @@ export default function ProfilePageLibrarySection({
           },
           { games: gamesTermines, label: t('profilePage.statusDone') },
           { games: gamesEnvie, label: t('profilePage.statusWishlist') },
+          { games: gamesAbandonnes, label: t('profilePage.statusAbandoned') },
         ].map(({ games, label }) => (
           <GameList
             key={label}

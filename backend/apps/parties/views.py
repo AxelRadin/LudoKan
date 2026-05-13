@@ -14,7 +14,7 @@ from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.permissions import IsPartyFlowMember
 from apps.parties.serializers import PartyAcceptanceSerializer, PartyJoinOrCreateSerializer, PartyReadSerializer
 from apps.parties.services.chat_bootstrap import open_chat_if_eligible
-from apps.parties.services.lifecycle import leave_party, mark_ready, mark_ready_for_chat
+from apps.parties.services.lifecycle import leave_party, mark_ready, mark_ready_for_chat, mark_start_early
 from apps.parties.services.recruitment import join_or_create_party
 
 
@@ -174,4 +174,26 @@ class PartyLeaveView(APIView):
         party = get_object_or_404(GameParty, pk=party_id)
         self.check_object_permissions(request, party)
         leave_party(party_id=party_id, user=request.user)
+        return _response_party_read_lazy(party_id)
+
+
+@extend_schema(tags=["Parties"])
+class PartyStartEarlyView(APIView):
+    permission_classes = [IsAuthenticated, IsPartyFlowMember]
+
+    @extend_schema(
+        summary="Voter pour lancer la party tout de suite",
+        responses={200: PartyReadSerializer, 400: OpenApiResponse(description="Erreur métier")},
+    )
+    def post(self, request, party_id: int):
+        party = get_object_or_404(GameParty, pk=party_id)
+        self.check_object_permissions(request, party)
+
+        accepted = request.data.get("accepted", True)
+
+        try:
+            mark_start_early(party_id=party_id, user=request.user, accepted=accepted)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         return _response_party_read_lazy(party_id)

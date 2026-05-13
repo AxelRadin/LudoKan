@@ -108,9 +108,29 @@ Le frontend ne doit pas :
 ### Chat
 À utiliser seulement quand `chat_room_id` est présent dans la party :
 
-- `GET /api/chats/<room_id>/messages`
+- `GET /api/chats/<room_id>/messages` *(Supporte la pagination, ex: `?page=2`)*
 - `POST /api/chats/<room_id>/messages`
 - `WS /ws/chat/<room_id>/`
+
+**⚠️ Contrat strict pour le WebSocket :**
+Pour envoyer un message via le WebSocket, le frontend **doit** envoyer un JSON avec la clé `"type": "message"`, sinon le serveur renverra une erreur.
+
+Exemple d'envoi (Frontend -> Backend) :
+```json
+{
+  "type": "message",
+  "content": "Salut l'équipe !"
+}
+
+Exemple de réception (Broadcast Backend -> Frontend) :
+
+{
+  "id": 123,
+  "room_id": 1,
+  "user_id": 45,
+  "content": "Salut l'équipe !",
+  "created_at": "2026-05-07T10:00:00Z"
+}
 
 ---
 
@@ -547,9 +567,9 @@ Fonctions typiques :
 
 ## `chatApi`
 Fonctions typiques :
-- `getMessages(roomId, page?)`
-- `sendMessage(roomId, content)`
-- `connectChatSocket(roomId, token)`
+- `getMessages(roomId, page?)` : Récupère l'historique paginé (le backend supporte désormais la pagination).
+- `connectChatSocket(roomId, token)` : Établit la connexion WebSocket.
+- `sendSocketMessage(socket, content)` : Formate et envoie le JSON obligatoire `{"type": "message", "content": content}` sur la socket.
 
 ---
 

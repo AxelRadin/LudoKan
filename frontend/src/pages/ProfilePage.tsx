@@ -137,13 +137,14 @@ type UserProfile = {
   games_finished_percentage?: number;
   games_played_percentage?: number;
   total_games_count?: number;
+  abandoned_games_count?: number;
+  friends_count?: number;
   xbox_profile?: {
     gamertag?: string;
     xuid?: string;
     gamerscore?: number;
     last_sync_at?: string;
   } | null;
-  friends_count?: number;
 };
 
 type UserGame = {
@@ -1557,6 +1558,7 @@ export default function ProfilePage() {
     gamesEnCours,
     gamesTermines,
     gamesEnvie,
+    gamesAbandonnes,
     gamesFavoris,
     libraryCounts,
     gamesForLibraryFilter,
@@ -2173,7 +2175,7 @@ export default function ProfilePage() {
               display: 'grid',
               gridTemplateColumns: {
                 xs: 'repeat(2, 1fr)',
-                md: 'repeat(4, 1fr)',
+                md: 'repeat(5, 1fr)',
               },
               gap: 2,
             }}
@@ -2201,6 +2203,11 @@ export default function ProfilePage() {
                 value: user?.games_finished_percentage
                   ? `${user.games_finished_percentage}%`
                   : '0%',
+                cls: 'stat-card-3',
+              },
+              {
+                label: t('profilePage.abandoned'),
+                value: user?.abandoned_games_count?.toString() || '0',
                 cls: 'stat-card-3',
               },
               ...(user?.xbox_profile
@@ -2263,6 +2270,7 @@ export default function ProfilePage() {
           gamesEnCours={gamesEnCours}
           gamesTermines={gamesTermines}
           gamesEnvie={gamesEnvie}
+          gamesAbandonnes={gamesAbandonnes}
           gamesForLibraryFilter={gamesForLibraryFilter}
           singleFilterTitle={singleFilterTitle}
           removeGame={removeGame}

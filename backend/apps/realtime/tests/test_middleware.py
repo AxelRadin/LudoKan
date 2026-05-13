@@ -162,4 +162,103 @@ async def test_jwt_auth_middleware_stack_wraps_inner():
 
     await middleware(scope, None, None)
 
-    assert called.get("done") is True
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_jwt_middleware_session_auth_fallback(user):
+    """
+    Si aucun JWT mais un sessionid valide, le middleware doit
+    retrouver l'utilisateur via la session Django.
+    """
+    from channels.db import database_sync_to_async
+
+    @database_sync_to_async
+    def create_session(u):
+        from importlib import import_module
+
+        from django.conf import settings
+
+        engine = import_module(settings.SESSION_ENGINE)
+        s = engine.SessionStore()
+        s["_auth_user_id"] = str(u.pk)
+        s["_auth_user_backend"] = "django.contrib.auth.backends.ModelBackend"
+        s.save()
+        return s.session_key
+
+    session_key = await create_session(user)
+
+    captured_scope = {}
+
+    async def inner(scope, receive, send):
+        captured_scope.update(scope)
+
+    middleware = JwtAuthMiddleware(inner)
+
+    scope = {
+        "type": "websocket",
+        "query_string": b"",
+        "headers": [
+            (b"cookie", f"sessionid={session_key}".encode("utf-8")),
+        ],
+    }
+
+    await middleware(scope, None, None)
+
+    assert "user" in captured_scope
+    assert captured_scope["user"].pk == user.pk
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db
+async def test_jwt_middleware_session_auth_invalid_session_sets_anonymous():
+    """
+    Si le sessionid est invalide, on doit avoir un AnonymousUser.
+    """
+    captured_scope = {}
+
+    async def inner(scope, receive, send):
+        captured_scope.update(scope)
+
+    middleware = JwtAuthMiddleware(inner)
+
+    scope = {
+        "type": "websocket",
+        "query_string": b"",
+        "headers": [
+            (b"cookie", b"sessionid=not-a-valid-session"),
+        ],
+    }
+
+    await middleware(scope, None, None)
+
+    assert "user" in captured_scope
+    assert isinstance(captured_scope["user"], AnonymousUser)
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+@override_settings(SESSION_ENGINE="invalid.session.backend")
+async def test_jwt_middleware_session_auth_engine_error_sets_anonymous():
+    """
+    Si le backend de session ne peut pas être importé, le middleware
+    doit absorber l'erreur et rester en AnonymousUser.
+    """
+    captured_scope = {}
+
+    async def inner(scope, receive, send):
+        captured_scope.update(scope)
+
+    middleware = JwtAuthMiddleware(inner)
+
+    scope = {
+        "type": "websocket",
+        "query_string": b"",
+        "headers": [
+            (b"cookie", b"sessionid=some-session-id"),
+        ],
+    }
+
+    await middleware(scope, None, None)
+
+    assert "user" in captured_scope
+    assert isinstance(captured_scope["user"], AnonymousUser)

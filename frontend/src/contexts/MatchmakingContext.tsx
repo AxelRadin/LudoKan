@@ -6,13 +6,14 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
-import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
-import { useAuth } from './useAuth';
 import i18n from '../i18n';
+import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
+import { joinOrCreateParty } from '../services/party';
+import { useAuth } from './useAuth';
+import { useActiveParty } from '../hooks/useActiveParty';
 
 interface MatchmakingContextType {
   startMatchmaking: (
@@ -59,7 +60,15 @@ async function getUserLocation(): Promise<{
 
 export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+
+  const {
+    party,
+    refresh: refreshParty,
+    leave: leaveParty,
+    markReady,
+    markReadyForChat,
+    markStartEarly,
+  } = useActiveParty();
 
   const [isMatching, setIsMatching] = useState(false);
   const [isMatchmakingModalOpen, setIsMatchmakingModalOpen] = useState(false);
@@ -72,6 +81,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   const [hasNewMatch, setHasNewMatch] = useState(false);
 
   const [activeGame, setActiveGame] = useState<{
+    id: string;
     name: string;
     image: string;
   } | null>(null);
@@ -86,7 +96,9 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   useEffect(() => {
     if (isAuthenticated) {
       apiGet('/api/matchmaking/requests/')
-        .then(async reqs => {
+        .then(async res => {
+          const reqs = Array.isArray(res) ? res : res?.results;
+
           if (reqs?.length > 0) {
             const active = reqs[0];
             setActiveRequestId(active.id);
@@ -101,7 +113,11 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
               } else if (image?.includes('t_cover_big')) {
                 image = image.replace('t_cover_big', 't_1080p');
               }
-              setActiveGame({ name: gameData.name_fr || gameData.name, image });
+              setActiveGame({
+                id: active.game,
+                name: gameData.name_fr || gameData.name,
+                image,
+              });
             } catch (e) {
               console.error(e);
             }
@@ -145,10 +161,10 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
           reqId = res.id;
           startedDate = new Date(res.created_at);
         } catch {
-          const activeReqs = await apiGet(
-            `/api/matchmaking/requests/?game=${gameId}`
-          );
-          if (activeReqs?.length > 0) {
+          const res = await apiGet(`/api/matchmaking/requests/?game=${gameId}`);
+          const activeReqs = Array.isArray(res) ? res : res?.results;
+
+          if (activeReqs && activeReqs.length > 0) {
             reqId = activeReqs[0].id;
             radius = activeReqs[0].radius_km;
             startedDate = new Date(activeReqs[0].created_at);
@@ -158,7 +174,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         setActiveRequestId(reqId);
         setCurrentRadius(radius);
         setActiveRequestStartedAt(startedDate);
-        setActiveGame({ name: gameName, image: gameImage });
+        setActiveGame({ id: gameId, name: gameName, image: gameImage });
 
         const matchesData = await apiGet('/api/matchmaking/matches/');
         setMatches(matchesData);
@@ -192,8 +208,11 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
       try {
         await apiDelete(`/api/matchmaking/requests/${activeRequestId}/`);
       } catch (error) {
-        console.error("Erreur lors de l'annulation côté serveur", error);
+        console.error("Erreur lors de l'annulation", error);
       }
+    }
+    if (party) {
+      await leaveParty();
     }
     setActiveRequestId(null);
     setActiveRequestStartedAt(null);
@@ -201,7 +220,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     setMatches([]);
     setHasNewMatch(false);
     setIsMatchmakingModalOpen(false);
-  }, [activeRequestId]);
+  }, [activeRequestId, party, leaveParty]);
 
   const confirmNewMatchmaking = useCallback(async () => {
     if (pendingGame) {
@@ -217,7 +236,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   }, [pendingGame, cancelMatchmaking, executeMatchmaking]);
 
   useEffect(() => {
-    if (!activeRequestId) return;
+    if (!activeRequestId || party) return;
 
     const intervalId = setInterval(async () => {
       try {
@@ -239,7 +258,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [activeRequestId]);
+  }, [activeRequestId, party]);
 
   useEffect(() => {
     if (!activeRequestId || hasNewMatch) return;
@@ -262,6 +281,21 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     return () => clearTimeout(timeoutId);
   }, [activeRequestId, currentRadius, hasNewMatch]);
 
+  useEffect(() => {
+    if (activeRequestId && matches.length > 0 && !party && activeGame?.id) {
+      const transitionToParty = async () => {
+        try {
+          await joinOrCreateParty(Number(activeGame.id));
+          setMatches([]);
+          refreshParty();
+        } catch (error) {
+          console.error('Erreur lors du transfert vers le lobby', error);
+        }
+      };
+      transitionToParty();
+    }
+  }, [matches.length, activeRequestId, party, activeGame, refreshParty]);
+
   const contextValue = useMemo(
     () => ({
       startMatchmaking,
@@ -275,35 +309,32 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     <MatchmakingContext.Provider value={contextValue}>
       {children}
 
-      {activeRequestStartedAt && !isMatchmakingModalOpen && isAuthenticated && (
-        <FloatingMatchmakingWidget
-          startedAt={activeRequestStartedAt}
-          hasNewMatch={hasNewMatch}
-          onClick={() => {
-            setIsMatchmakingModalOpen(true);
-            setHasNewMatch(false);
-          }}
-        />
-      )}
+      {(activeRequestStartedAt || party) &&
+        !isMatchmakingModalOpen &&
+        isAuthenticated && (
+          <FloatingMatchmakingWidget
+            startedAt={activeRequestStartedAt}
+            hasNewMatch={hasNewMatch}
+            party={party}
+            onClick={() => {
+              setIsMatchmakingModalOpen(true);
+              setHasNewMatch(false);
+            }}
+          />
+        )}
 
       <MatchmakingModal
         open={isMatchmakingModalOpen}
         onClose={() => setIsMatchmakingModalOpen(false)}
         onCancel={cancelMatchmaking}
-        matches={matches}
         startedAt={activeRequestStartedAt}
         game={activeGame}
-        onContactPlayer={async targetUserId => {
-          try {
-            const data = await apiPost('/api/chats/get-or-create/', {
-              target_user_id: targetUserId,
-            });
-            const roomId = data.room_id || data.id;
-            setIsMatchmakingModalOpen(false);
-            navigate(`/chat/${roomId}`);
-          } catch (error) {
-            console.error('Impossible de contacter le joueur :', error);
-          }
+        party={party}
+        partyActions={{
+          markReady,
+          markReadyForChat,
+          markStartEarly,
+          leave: leaveParty,
         }}
       />
       <ConfirmCancelMatchmakingModal

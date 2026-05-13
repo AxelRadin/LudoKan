@@ -20,19 +20,22 @@ export type LibraryStatusFilter =
   | 'ALL'
   | 'EN_COURS'
   | 'TERMINE'
-  | 'ENVIE_DE_JOUER';
+  | 'ENVIE_DE_JOUER'
+  | 'ABANDONNE';
 
 export type LibraryCounts = {
   all: number;
   enCours: number;
   termines: number;
   envie: number;
+  abandonnes: number;
 };
 
 const STATUS_FILTERS: Exclude<LibraryStatusFilter, 'ALL'>[] = [
   'EN_COURS',
   'TERMINE',
   'ENVIE_DE_JOUER',
+  'ABANDONNE',
 ];
 
 export function parseLibraryStatusParam(
