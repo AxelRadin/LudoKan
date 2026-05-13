@@ -29,6 +29,7 @@ import CookiesPage from './pages/CookiesPage.tsx';
 import CookieBanner from './pages/CookieBanner.tsx';
 import AboutPage from './pages/AboutPage.tsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.tsx';
+import VerifyEmailPage from './pages/VerifyEmailPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
 import { Root } from './Root.tsx';
@@ -68,6 +69,7 @@ const router = createBrowserRouter([
       { path: 'cookie-banner', element: <CookieBanner /> },
       { path: 'about', element: <AboutPage /> },
       { path: 'reset-password/:uid/:token', element: <ResetPasswordPage /> },
+      { path: 'verify-email/:key', element: <VerifyEmailPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
       { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
       { path: 'auth/microsoft/callback', element: <MicrosoftCallbackPage /> },

@@ -762,5 +762,12 @@
     "ruleHasDigit": "Au moins 1 chiffre",
     "ruleHasSpecial": "Au moins 1 caractère spécial",
     "ruleHasUppercase": "Au moins 1 majuscule"
+  },
+  "verifyEmailPage": {
+    "title": "Vérification de votre compte",
+    "verifying": "Vérification de votre adresse e-mail en cours...",
+    "success": "Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.",
+    "error": "Le lien de vérification est invalide ou a expiré.",
+    "backToLogin": "Retour à la connexion"
   }
 }

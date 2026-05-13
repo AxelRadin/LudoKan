@@ -425,3 +425,9 @@ def password_reset_confirm_redirect(request, uidb64, token):
     """Redirige le lien de l'email de reset vers la page frontend correspondante."""
     frontend_url = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
     return HttpResponseRedirect(f"{frontend_url}/reset-password/{uidb64}/{token}")
+
+
+def email_confirm_redirect(request, key):
+    """Redirige le lien de confirmation d'email vers la page frontend correspondante."""
+    frontend_url = getattr(settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+    return HttpResponseRedirect(f"{frontend_url}/verify-email/{key}")

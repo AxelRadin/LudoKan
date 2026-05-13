@@ -758,5 +758,12 @@
     "ruleHasDigit": "At least 1 number",
     "ruleHasSpecial": "At least 1 special character",
     "ruleHasUppercase": "At least 1 uppercase letter"
+  },
+  "verifyEmailPage": {
+    "title": "Account verification",
+    "verifying": "Verifying your email address...",
+    "success": "Your account has been successfully activated! You can now log in.",
+    "error": "The verification link is invalid or has expired.",
+    "backToLogin": "Back to login"
   }
 }
