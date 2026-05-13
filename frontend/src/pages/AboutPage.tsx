@@ -83,6 +83,20 @@ export default function AboutPage() {
       desc: t('about.feature4Desc'),
     },
   ];
+  const narrativeTitleSx = {
+    fontFamily: F,
+    fontWeight: 700,
+    fontSize: { xs: 22, md: 28 },
+    color: ink,
+    letterSpacing: -0.5,
+    mb: 2,
+  };
+  const narrativeDescriptionSx = {
+    fontFamily: F,
+    fontSize: 15,
+    color: muted,
+    lineHeight: 1.85,
+  };
 
   return (
     <Box
@@ -141,21 +155,10 @@ export default function AboutPage() {
             label={t('about.missionLabel')}
             marginBottom={2.5}
           />
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontWeight: 700,
-              fontSize: { xs: 22, md: 28 },
-              color: ink,
-              letterSpacing: -0.5,
-              mb: 2,
-            }}
-          >
+          <Typography sx={narrativeTitleSx}>
             {t('about.missionTitle')}
           </Typography>
-          <Typography
-            sx={{ fontFamily: F, fontSize: 15, color: muted, lineHeight: 1.85 }}
-          >
+          <Typography sx={narrativeDescriptionSx}>
             {t('about.missionDesc')}
           </Typography>
         </Box>
@@ -218,21 +221,10 @@ export default function AboutPage() {
             label={t('about.visionLabel')}
             marginBottom={2.5}
           />
-          <Typography
-            sx={{
-              fontFamily: F,
-              fontWeight: 700,
-              fontSize: { xs: 22, md: 28 },
-              color: ink,
-              letterSpacing: -0.5,
-              mb: 2,
-            }}
-          >
+          <Typography sx={narrativeTitleSx}>
             {t('about.visionTitle')}
           </Typography>
-          <Typography
-            sx={{ fontFamily: F, fontSize: 15, color: muted, lineHeight: 1.85 }}
-          >
+          <Typography sx={narrativeDescriptionSx}>
             {t('about.visionDesc')}
           </Typography>
         </Box>
