@@ -4,7 +4,7 @@ import pytest
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
-from unittest.mock import patch, PropertyMock
+from unittest.mock import PropertyMock, patch
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from apps.parties.models import GameParty, GamePartyMember
