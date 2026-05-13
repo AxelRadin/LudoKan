@@ -50,8 +50,9 @@ interface MatchmakingModalProps {
 interface PartyChatViewProps {
   readonly party: Party;
   readonly onLeave: () => void;
+  readonly currentUserId?: number;
 }
-function PartyChatView({ party, onLeave }: PartyChatViewProps) {
+function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
   const { messages, sendMessage, isConnected } = usePartyChat(
     party.chat_room_id
   );
@@ -93,7 +94,8 @@ function PartyChatView({ party, onLeave }: PartyChatViewProps) {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 450 }}>
       {timeLeft !== null && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          Il n'y a plus personne avec vous. Le salon se fermera dans {timeLeft} secondes.
+          Il n'y a plus personne avec vous. Le salon se fermera dans {timeLeft}{' '}
+          secondes.
         </Alert>
       )}
 
@@ -120,9 +122,13 @@ function PartyChatView({ party, onLeave }: PartyChatViewProps) {
         )}
 
         {messages.map((msg, idx) => {
+          const isMe = msg.user_id === currentUserId;
           const member = getMemberInfo(msg.user_id);
           const pseudo = member?.pseudo || `Joueur #${msg.user_id}`;
           const avatarUrl = member?.avatar_url || undefined;
+
+          const rawDate = msg.created_at || (msg as any).timestamp;
+          const messageDate = rawDate ? new Date(rawDate) : new Date();
 
           return (
             <Box
@@ -131,42 +137,91 @@ function PartyChatView({ party, onLeave }: PartyChatViewProps) {
                 display: 'flex',
                 gap: 2,
                 alignItems: 'flex-start',
-                '&:hover .profile-btn': { opacity: 1, visibility: 'visible' }
+                flexDirection: isMe ? 'row-reverse' : 'row',
+                '&:hover .profile-btn': { opacity: 1, visibility: 'visible' },
               }}
             >
-              <Avatar src={avatarUrl} sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+              <Avatar
+                src={avatarUrl}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  bgcolor: isMe ? 'secondary.main' : 'primary.main',
+                }}
+              >
                 {pseudo.charAt(0).toUpperCase()}
               </Avatar>
 
-              <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                  <Typography variant="subtitle2" fontWeight="bold" color="primary.main">
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: isMe ? 'flex-end' : 'flex-start',
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 1,
+                    flexDirection: isMe ? 'row-reverse' : 'row',
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight="bold"
+                    color={isMe ? 'secondary.main' : 'primary.main'}
+                  >
                     {pseudo}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {messageDate.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </Typography>
                 </Box>
-                <Typography variant="body2" sx={{ mt: 0.5, color: 'text.primary', wordBreak: 'break-word' }}>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    bgcolor: isMe ? 'primary.main' : 'grey.100',
+                    color: isMe ? '#fff' : 'text.primary',
+                    p: 1.5,
+                    borderRadius: 2,
+                    borderTopRightRadius: isMe ? 0 : 8,
+                    borderTopLeftRadius: isMe ? 8 : 0,
+                    display: 'inline-block',
+                    mt: 0.5,
+                    wordBreak: 'break-word',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                  }}
+                >
                   {msg.content}
                 </Typography>
               </Box>
 
-              <Button
-                className="profile-btn"
-                variant="outlined"
-                size="small"
-                onClick={() => window.open(`/profile/${msg.user_id}`, '_blank')}
-                sx={{
-                  opacity: 0,
-                  visibility: 'hidden',
-                  transition: '0.2s',
-                  textTransform: 'none',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                Voir le profil
-              </Button>
+              {!isMe && (
+                <Button
+                  className="profile-btn"
+                  variant="outlined"
+                  size="small"
+                  onClick={() =>
+                    window.open(`/profile/${msg.user_id}`, '_blank')
+                  }
+                  sx={{
+                    opacity: 0,
+                    visibility: 'hidden',
+                    transition: '0.2s',
+                    textTransform: 'none',
+                    whiteSpace: 'nowrap',
+                    mt: 3,
+                  }}
+                >
+                  Voir le profil
+                </Button>
+              )}
             </Box>
           );
         })}
@@ -468,7 +523,13 @@ export default function MatchmakingModal({
         )}
 
         {/* PHASE 3 : CHAT ACTIF */}
-        {isChatPhase && <PartyChatView party={party} onLeave={onCancel} />}
+        {isChatPhase && (
+          <PartyChatView
+            party={party}
+            onLeave={onCancel}
+            currentUserId={user?.id}
+          />
+        )}
       </DialogContent>
 
       {/* FOOTER (Actions globales) */}
