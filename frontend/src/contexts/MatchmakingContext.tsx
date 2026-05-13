@@ -79,6 +79,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     useState<Date | null>(null);
   const [currentRadius, setCurrentRadius] = useState<number>(20);
   const [hasNewMatch, setHasNewMatch] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
 
   const [activeGame, setActiveGame] = useState<{
     id: string;
@@ -92,8 +93,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     name: string;
     image: string;
   } | null>(null);
-
-  const [isExpanding, setIsExpanding] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -241,26 +240,31 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     if (!activeRequestId || party) return;
 
     const intervalId = setInterval(async () => {
-      try {
-        const currentMatches = await apiGet(
-          `/api/matchmaking/matches/?_t=${Date.now()}`
-        );
-        if (Array.isArray(currentMatches)) {
-          setMatches(prevMatches => {
-            if (currentMatches.length > prevMatches.length) {
-              setHasNewMatch(true);
-            }
-            return currentMatches;
+      const now = new Date();
+      const startTime = activeRequestStartedAt || now;
+      const diffSeconds = (now.getTime() - startTime.getTime()) / 1000;
+
+      const newRadius = diffSeconds >= 300 ? 20000 : currentRadius + 50;
+
+      if (newRadius !== currentRadius) {
+        try {
+          setIsExpanding(true);
+          await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
+            radius_km: newRadius,
           });
+          setCurrentRadius(newRadius);
+
+          setTimeout(() => setIsExpanding(false), 3000);
+        } catch (error) {
+          console.error("Erreur d'extension du rayon", error);
         }
-      } catch {
-        setActiveRequestId(null);
-        setActiveRequestStartedAt(null);
       }
-    }, 5000);
+
+      if (newRadius >= 20000) clearInterval(intervalId);
+    }, 30000);
 
     return () => clearInterval(intervalId);
-  }, [activeRequestId, party]);
+  }, [activeRequestId, party, activeRequestStartedAt, currentRadius]);
 
   useEffect(() => {
     if (!activeRequestId || hasNewMatch || party) return;

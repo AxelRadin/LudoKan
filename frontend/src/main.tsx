@@ -9,6 +9,7 @@ import ErrorFallback from './components/ErrorFallback';
 import './index.css';
 import 'driver.js/dist/driver.css';
 import { initSentry } from './monitoring/sentry';
+import { getStoredConsent } from './hooks/useCookieConsent';
 import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
@@ -34,7 +35,15 @@ import { Root } from './Root.tsx';
 import { ThemeModeProvider } from './contexts/ThemeContext';
 import { AdminRoot } from './AdminRoot.tsx';
 
-initSentry();
+if (getStoredConsent()?.analytics) {
+  initSentry();
+}
+
+globalThis.addEventListener('cookieconsentchange', (e: Event) => {
+  if ((e as CustomEvent).detail?.analytics) {
+    initSentry();
+  }
+});
 
 const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
   error,

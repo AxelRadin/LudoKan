@@ -1,18 +1,17 @@
 import * as Sentry from '@sentry/react';
+import { useEffect } from 'react';
 import {
   createRoutesFromChildren,
   matchRoutes,
   useLocation,
   useNavigationType,
 } from 'react-router-dom';
-import { useEffect } from 'react';
+
+import { getStoredConsent } from '../hooks/useCookieConsent';
 
 export function initSentry() {
   const dsn = import.meta.env.VITE_SENTRY_DSN?.trim();
   if (!dsn) return;
-
-  // Temporary debug logs to verify Sentry initialization in production
-  // Remove once verified on Render
 
   Sentry.init({
     dsn,
@@ -31,7 +30,6 @@ export function initSentry() {
     ),
     environment: import.meta.env.VITE_SENTRY_ENVIRONMENT,
     release: import.meta.env.VITE_SENTRY_RELEASE,
-    // enabled: import.meta.env.PROD || !!import.meta.env.VITE_SENTRY_ENABLE_IN_DEV,
     enabled: true,
     beforeSend(event) {
       return event;
@@ -39,14 +37,23 @@ export function initSentry() {
   });
 }
 
-export const reportError = (err: unknown, extra?: Record<string, unknown>) =>
+function isAnalyticsAllowed(): boolean {
+  return getStoredConsent()?.analytics === true;
+}
+
+export const reportError = (err: unknown, extra?: Record<string, unknown>) => {
+  if (!isAnalyticsAllowed()) return;
   Sentry.captureException(err, extra ? { extra } : undefined);
+};
 
 export const reportMessage = (
   msg: string,
   level: Sentry.SeverityLevel = 'info',
   extra?: Record<string, unknown>
-) => Sentry.captureMessage(msg, { level, extra });
+) => {
+  if (!isAnalyticsAllowed()) return;
+  Sentry.captureMessage(msg, { level, extra });
+};
 
 export const setUser = (user?: { id?: string; username?: string }) =>
   Sentry.setUser(user ?? null);
