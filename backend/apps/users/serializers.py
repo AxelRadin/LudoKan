@@ -100,6 +100,8 @@ class UserSerializer(serializers.ModelSerializer):
             "banner",
             "banner_url",
             "description_courte",
+            "theme_preference",
+            "language_preference",
             "created_at",
             "review_count",
             "steam_id",

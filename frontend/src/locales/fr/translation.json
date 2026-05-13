@@ -713,6 +713,10 @@
     "cguSubtitle": "Règles d'accès, services, responsabilités, modération",
     "back": "Retour aux politiques"
   },
+  "recommendations": {
+    "personalised": "Personnalisé",
+    "suggestionsTitle": "Suggestions pour vous"
+  },
   "settings": {
     "title": "Paramètres",
     "appearanceSection": "Apparence",
