@@ -100,3 +100,22 @@ class TestNotificationAPI:
 
         assert Notification.objects.filter(recipient=user, unread=True).count() == 0
         assert Notification.objects.filter(recipient=admin_user, unread=True).count() == 1
+
+    def test_list_unread_only(self, authenticated_api_client, user):
+        """
+        Vérifie que le filtre ?unread=true fonctionne.
+        """
+        notify.send(user, recipient=user, verb="unread-1")
+        notify.send(user, recipient=user, verb="read-1")
+
+        n_read = Notification.objects.get(recipient=user, verb="read-1")
+        n_read.unread = False
+        n_read.save()
+
+        url = "/api/notifications/?unread=true"
+        response = authenticated_api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        verbs = {item["verb"] for item in response.data["results"]}
+        assert "unread-1" in verbs
+        assert "read-1" not in verbs

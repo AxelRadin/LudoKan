@@ -16,6 +16,6 @@ Endpoints actuels :
 websocket_urlpatterns = [
     path("ws/ping/", PingConsumer.as_asgi()),
     path("ws/ping-auth/", PingAuthConsumer.as_asgi()),
-    path("ws/notifications/", NotificationConsumer.as_asgi()),
+    path("ws-notifications/", NotificationConsumer.as_asgi()),
     path("ws/chat/<int:room_id>/", ChatConsumer.as_asgi()),
 ]

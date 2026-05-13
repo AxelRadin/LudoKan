@@ -22,6 +22,7 @@ import SteamCallbackPage from './pages/SteamCallbackPage.tsx';
 import MicrosoftCallbackPage from './pages/MicrosoftCallbackPage.tsx';
 import UserReviewsPage from './pages/UserReviewsPage.tsx';
 import SettingsPage from './pages/SettingsPage';
+import NotificationsPage from './pages/NotificationsPage.tsx';
 import PolitiquesPage from './pages/PolitiquesPage.tsx';
 import CookiesPage from './pages/CookiesPage.tsx';
 import CookieBanner from './pages/CookieBanner.tsx';
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       { path: 'trending/genre/:genreId', element: <TrendingCategoryPage /> },
       { path: 'trending/:sort', element: <TrendingCategoryPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'notifications', element: <NotificationsPage /> },
       { path: 'politiques', element: <PolitiquesPage /> },
       { path: 'cookies', element: <CookiesPage /> },
       { path: 'cookie-banner', element: <CookieBanner /> },

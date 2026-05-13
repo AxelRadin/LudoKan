@@ -37,34 +37,71 @@ class JwtAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
+        token = self._get_token(scope)
+
+        if token:
+            scope["user"] = await get_user_from_token(token)
+        else:
+            scope["user"] = await self._get_session_user(scope)
+
+        return await self.inner(scope, receive, send)
+
+    def _get_token(self, scope):
         # 1) Récupérer le token dans la querystring ?token=<JWT>
         query_string = scope.get("query_string", b"").decode("utf-8")
         params = parse_qs(query_string)
 
-        token = None
-
         if "token" in params and params["token"]:
-            token = params["token"][0]
+            return params["token"][0]
 
         # 2) Sinon, essayer de récupérer le token dans les cookies (header Cookie)
-        if token is None:
-            headers = dict(scope.get("headers") or [])
-            cookie_header = headers.get(b"cookie", b"").decode("utf-8")
-            cookies = {}
-            for part in cookie_header.split(";"):
-                if "=" in part:
-                    key, value = part.strip().split("=", 1)
-                    cookies[key] = value
+        headers = dict(scope.get("headers") or [])
+        cookie_header = headers.get(b"cookie", b"").decode("utf-8")
 
-            token = cookies.get("access_token")
+        cookies = {}
+        for part in cookie_header.split(";"):
+            if "=" in part:
+                key, value = part.strip().split("=", 1)
+                cookies[key] = value
 
-        # 3) Résolution de l'utilisateur à partir du token (ou AnonymousUser)
-        if token:
-            scope["user"] = await get_user_from_token(token)
-        else:
-            scope["user"] = AnonymousUser()
+        return cookies.get("access_token")
 
-        return await self.inner(scope, receive, send)
+    async def _get_session_user(self, scope):
+        headers = dict(scope.get("headers") or [])
+        cookie_header = headers.get(b"cookie", b"").decode("utf-8")
+
+        cookies = {}
+        for part in cookie_header.split(";"):
+            if "=" in part:
+                key, value = part.strip().split("=", 1)
+                cookies[key] = value
+
+        session_id = cookies.get("sessionid")
+        if not session_id:
+            return AnonymousUser()
+
+        from django.contrib.auth import get_user_model
+
+        user_model = get_user_model()
+
+        @database_sync_to_async
+        def get_user_from_session(s_id):
+            try:
+                from importlib import import_module
+
+                from django.conf import settings
+
+                engine = import_module(settings.SESSION_ENGINE)
+                store = engine.SessionStore(session_key=s_id)
+                session_data = store.load() or {}
+                uid = session_data.get("_auth_user_id") or store.get("_auth_user_id")
+                if uid:
+                    return user_model.objects.filter(pk=uid).first() or AnonymousUser()
+            except Exception:
+                pass
+            return AnonymousUser()
+
+        return await get_user_from_session(session_id)
 
 
 def jwt_auth_middleware_stack(inner):
