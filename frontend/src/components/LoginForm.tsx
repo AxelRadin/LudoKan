@@ -16,6 +16,26 @@ import PasswordField from './PasswordField';
 import { useLoginForm } from '../hooks/useLoginForm';
 import ForgotPasswordDialog from './ForgotPasswordDialog';
 
+const getTextFieldStyles = (isDark: boolean) => ({
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': {
+      borderColor: isDark ? 'rgba(255,255,255,0.23)' : 'rgba(0,0,0,0.23)',
+    },
+    '&:hover fieldset': {
+      borderColor: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.87)',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#FF3D3D',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#FF3D3D',
+  },
+});
+
 type LoginFormProps = {
   onSwitchToRegister: () => void;
   onLoginSuccess?: () => void;
@@ -65,58 +85,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             variant="outlined"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: isDark
-                    ? 'rgba(255,255,255,0.23)'
-                    : 'rgba(0,0,0,0.23)',
-                },
-                '&:hover fieldset': {
-                  borderColor: isDark
-                    ? 'rgba(255,255,255,0.4)'
-                    : 'rgba(0,0,0,0.87)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#FF3D3D',
-                },
-              },
-              '& .MuiInputLabel-root': {
-                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
-              },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: '#FF3D3D',
-              },
-            }}
+            sx={getTextFieldStyles(isDark)}
           />
           <PasswordField
             label={t('loginForm.password')}
             variant="outlined"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                '& fieldset': {
-                  borderColor: isDark
-                    ? 'rgba(255,255,255,0.23)'
-                    : 'rgba(0,0,0,0.23)',
-                },
-                '&:hover fieldset': {
-                  borderColor: isDark
-                    ? 'rgba(255,255,255,0.4)'
-                    : 'rgba(0,0,0,0.87)',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#FF3D3D',
-                },
-              },
-              '& .MuiInputLabel-root': {
-                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
-              },
-              '& .MuiInputLabel-root.Mui-focused': {
-                color: '#FF3D3D',
-              },
-            }}
+            sx={getTextFieldStyles(isDark)}
           />
 
           <Link
@@ -172,72 +148,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           {loading ? t('loginForm.submitting') : t('loginForm.submit')}
         </PrimaryButton>
 
-        <Typography
-          variant="body2"
-          mt={2}
-          sx={{
-            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
-          }}
-        >
-          {t('loginForm.noAccount')}{' '}
-          <Link
-            component="button"
-            type="button"
-            onClick={onSwitchToRegister}
-            underline="hover"
-            sx={{
-              fontWeight: 600,
-              color: isDark ? '#FF8A80' : '#FF3D3D',
-              '&:hover': {
-                color: isDark ? '#FF6B6B' : '#D32F2F',
-              },
-            }}
-          >
-            {t('loginForm.createAccount')}
-          </Link>
-        </Typography>
-
-        <Typography
-          variant="body2"
-          mt={2}
-          sx={{
-            width: 320,
-            textAlign: 'center',
-            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
-          }}
-        >
-          {t('loginForm.terms')}{' '}
-          <Link
-            component={RouterLink}
-            to="/conditions"
-            underline="hover"
-            sx={{
-              fontWeight: 600,
-              color: isDark ? '#FF8A80' : '#FF3D3D',
-              '&:hover': {
-                color: isDark ? '#FF6B6B' : '#D32F2F',
-              },
-            }}
-          >
-            {t('loginForm.termsLink')}
-          </Link>{' '}
-          {t('loginForm.and')}{' '}
-          <Link
-            component={RouterLink}
-            to="/politique"
-            underline="hover"
-            sx={{
-              fontWeight: 600,
-              color: isDark ? '#FF8A80' : '#FF3D3D',
-              '&:hover': {
-                color: isDark ? '#FF6B6B' : '#D32F2F',
-              },
-            }}
-          >
-            {t('loginForm.privacyLink')}
-          </Link>
-          .
-        </Typography>
+        <LoginFormFooter
+          isDark={isDark}
+          t={t}
+          onSwitchToRegister={onSwitchToRegister}
+        />
       </form>
 
       <ForgotPasswordDialog
@@ -247,5 +162,80 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     </AuthFormContainer>
   );
 };
+
+const LoginFormFooter: React.FC<{
+  isDark: boolean;
+  t: any;
+  onSwitchToRegister: () => void;
+}> = ({ isDark, t, onSwitchToRegister }) => (
+  <>
+    <Typography
+      variant="body2"
+      mt={2}
+      sx={{
+        color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+      }}
+    >
+      {t('loginForm.noAccount')}{' '}
+      <Link
+        component="button"
+        type="button"
+        onClick={onSwitchToRegister}
+        underline="hover"
+        sx={{
+          fontWeight: 600,
+          color: isDark ? '#FF8A80' : '#FF3D3D',
+          '&:hover': {
+            color: isDark ? '#FF6B6B' : '#D32F2F',
+          },
+        }}
+      >
+        {t('loginForm.createAccount')}
+      </Link>
+    </Typography>
+
+    <Typography
+      variant="body2"
+      mt={2}
+      sx={{
+        width: 320,
+        textAlign: 'center',
+        color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+      }}
+    >
+      {t('loginForm.terms')}{' '}
+      <Link
+        component={RouterLink}
+        to="/conditions"
+        underline="hover"
+        sx={{
+          fontWeight: 600,
+          color: isDark ? '#FF8A80' : '#FF3D3D',
+          '&:hover': {
+            color: isDark ? '#FF6B6B' : '#D32F2F',
+          },
+        }}
+      >
+        {t('loginForm.termsLink')}
+      </Link>{' '}
+      {t('loginForm.and')}{' '}
+      <Link
+        component={RouterLink}
+        to="/politique"
+        underline="hover"
+        sx={{
+          fontWeight: 600,
+          color: isDark ? '#FF8A80' : '#FF3D3D',
+          '&:hover': {
+            color: isDark ? '#FF6B6B' : '#D32F2F',
+          },
+        }}
+      >
+        {t('loginForm.privacyLink')}
+      </Link>
+      .
+    </Typography>
+  </>
+);
 
 export default LoginForm;
