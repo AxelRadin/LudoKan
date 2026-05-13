@@ -33,7 +33,7 @@ export type GamePageLogic = Readonly<{
   /** Recharge le jeu Django (moyenne, nombre de notes, bibliothèque, etc.) */
   refreshGame: () => Promise<void>;
   handleSetStatus: (
-    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
+    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER' | 'ABANDONNE',
     p?: boolean
   ) => Promise<void>;
   handleToggleFavorite: (p?: boolean) => Promise<void>;
@@ -174,7 +174,7 @@ export function useGamePageLogic(): GamePageLogic {
   }
 
   async function handleSetStatus(
-    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER',
+    s: 'EN_COURS' | 'TERMINE' | 'ENVIE_DE_JOUER' | 'ABANDONNE',
     p = false
   ) {
     if (!isAuthenticated && !p) {

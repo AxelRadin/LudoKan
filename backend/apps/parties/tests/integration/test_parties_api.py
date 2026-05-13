@@ -205,3 +205,25 @@ def test_cannot_act_for_another_user_via_ready(authenticated_api_client, user, a
     assert r.status_code == status.HTTP_200_OK
     other = GamePartyMember.objects.get(party=party, user=another_user)
     assert other.ready_state == GamePartyMember.ReadyState.PENDING
+
+
+@pytest.mark.django_db
+class TestPartyStartEarlyAPI:
+    def test_start_early_updates_state(self, authenticated_api_client, user, game):
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.OPEN)
+        party_member_create(party=party, user=user)
+
+        r = authenticated_api_client.post(f"/api/parties/{party.id}/start-early", {"accepted": True}, format="json")
+        assert r.status_code == status.HTTP_200_OK
+        m = GamePartyMember.objects.get(party=party, user=user)
+        assert m.wants_to_start_early is True
+
+    def test_start_early_returns_400_on_service_error(self, authenticated_api_client, user, game):
+        # Party in WAITING_READY status (not OPEN)
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.WAITING_READY)
+        # User is an active member (passes permission check)
+        party_member_create(party=party, user=user)
+
+        r = authenticated_api_client.post(f"/api/parties/{party.id}/start-early", {"accepted": True}, format="json")
+        assert r.status_code == status.HTTP_400_BAD_REQUEST
+        assert "detail" in r.data

@@ -495,6 +495,7 @@ export default function UserPublicProfilePage() {
     gamesEnCours,
     gamesTermines,
     gamesEnvie,
+    gamesAbandonnes,
     gamesFavoris,
     libraryCounts,
     gamesForLibraryFilter,
@@ -765,6 +766,14 @@ export default function UserPublicProfilePage() {
               <Typography
                 sx={{ fontFamily: FONT_BODY, fontSize: 13, color: muted }}
               >
+                {t('profilePage.abandoned')}:{' '}
+                <strong style={{ color: titleColor }}>
+                  {profile.abandoned_games_count ?? 0}
+                </strong>
+              </Typography>
+              <Typography
+                sx={{ fontFamily: FONT_BODY, fontSize: 13, color: muted }}
+              >
                 {t('publicUserProfile.friendsLabel')} —{' '}
                 {profile.friends_count ?? 0}
               </Typography>
@@ -804,6 +813,7 @@ export default function UserPublicProfilePage() {
             gamesEnCours={gamesEnCours}
             gamesTermines={gamesTermines}
             gamesEnvie={gamesEnvie}
+            gamesAbandonnes={gamesAbandonnes}
             gamesForLibraryFilter={gamesForLibraryFilter}
             singleFilterTitle={singleFilterTitle}
             removeGame={() => {}}

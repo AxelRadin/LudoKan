@@ -25,6 +25,7 @@ export type PublicUserProfile = {
   games_finished_percentage?: number;
   games_played_percentage?: number;
   total_games_count?: number;
+  abandoned_games_count?: number;
   friends_count?: number;
   relation_to_me?: PublicProfileRelation | null;
   incoming_friend_request_id?: number | null;
