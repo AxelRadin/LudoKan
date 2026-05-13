@@ -45,15 +45,12 @@ interface MatchmakingModalProps {
   readonly partyActions: any;
 }
 
-// ----------------------------------------------------------------------
-// SOUS-COMPOSANT : VUE DU CHAT (Se charge uniquement quand le chat est actif)
-// ----------------------------------------------------------------------
 function PartyChatView({
   party,
   onLeave,
 }: {
-  party: any;
-  onLeave: () => void;
+  readonly party: any;
+  readonly onLeave: () => void;
 }) {
   const { messages, sendMessage, isConnected } = usePartyChat(
     party.chat_room_id
