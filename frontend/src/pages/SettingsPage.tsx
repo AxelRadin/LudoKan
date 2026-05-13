@@ -1,11 +1,12 @@
+import BarChartIcon from '@mui/icons-material/BarChart';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CookieOutlinedIcon from '@mui/icons-material/CookieOutlined';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import TuneIcon from '@mui/icons-material/Tune';
 import {
   Alert,
   Box,
@@ -18,18 +19,19 @@ import {
   Divider,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
-  ListItemText,
   ListItemSecondaryAction,
+  ListItemText,
   Snackbar,
   Switch,
   Typography,
-  ListItemButton,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '../contexts/useThemeMode';
+import { useCookieConsent } from '../hooks/useCookieConsent';
 import { TOUR_KEYS } from '../hooks/useOnboarding';
 import PasswordField from '../components/PasswordField';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator';
@@ -85,6 +87,7 @@ const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const { darkMode, toggleDarkMode } = useThemeMode();
   const navigate = useNavigate();
+  const { prefs, updatePrefs } = useCookieConsent();
 
   // Change password modal state
   const [pwModalOpen, setPwModalOpen] = useState(false);
@@ -154,14 +157,6 @@ const SettingsPage: React.FC = () => {
     navigate('/', { state: { startTour: true } });
   };
 
-  const externalLinks = [
-    {
-      label: t('settings.cookies'),
-      icon: <CookieOutlinedIcon />,
-      href: 'https://ludokan.fr/cookies',
-    },
-  ];
-
   return (
     <Container maxWidth="sm" sx={{ pt: 12, pb: 6 }}>
       <Typography
@@ -172,6 +167,7 @@ const SettingsPage: React.FC = () => {
         {t('settings.title')}
       </Typography>
 
+      {/* Section Apparence */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
         {t('settings.appearanceSection')}
       </Typography>
@@ -224,6 +220,93 @@ const SettingsPage: React.FC = () => {
         </List>
       </Box>
 
+      {/* Section Cookies */}
+      <Typography variant="overline" sx={settingsSectionHeadingSx}>
+        Cookies
+      </Typography>
+
+      <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
+        <List disablePadding>
+          <ListItem>
+            <ListItemIcon
+              sx={{
+                color: prefs.analytics ? 'primary.main' : 'text.secondary',
+              }}
+            >
+              <BarChartIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Analytics"
+              secondary="Mesure d'audience anonymisée (Sentry)"
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ListItemSecondaryAction>
+              <Switch
+                checked={prefs.analytics}
+                onChange={e =>
+                  updatePrefs({
+                    analytics: e.target.checked,
+                    personnalisation: prefs.personnalisation,
+                  })
+                }
+                color="primary"
+              />
+            </ListItemSecondaryAction>
+          </ListItem>
+
+          <Divider variant="inset" component="li" />
+
+          <ListItem>
+            <ListItemIcon
+              sx={{
+                color: prefs.personnalisation
+                  ? 'primary.main'
+                  : 'text.secondary',
+              }}
+            >
+              <TuneIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Personnalisation"
+              secondary="Thème, préférences, recommandations"
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ListItemSecondaryAction>
+              <Switch
+                checked={prefs.personnalisation}
+                onChange={e =>
+                  updatePrefs({
+                    analytics: prefs.analytics,
+                    personnalisation: e.target.checked,
+                  })
+                }
+                color="primary"
+              />
+            </ListItemSecondaryAction>
+          </ListItem>
+
+          <Divider variant="inset" component="li" />
+
+          <ListItemButton
+            onClick={() => {
+              navigate('/cookies');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={settingsListRowButtonSx}
+          >
+            <ListItemIcon sx={{ color: 'text.secondary' }}>
+              <CookieOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('settings.cookies')}
+              secondary="Détail des cookies utilisés"
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+          </ListItemButton>
+        </List>
+      </Box>
+
       {/* Section Aide */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
         Aide
@@ -248,6 +331,7 @@ const SettingsPage: React.FC = () => {
         </List>
       </Box>
 
+      {/* Section Informations */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
         {t('settings.infoSection')}
       </Typography>
@@ -289,32 +373,6 @@ const SettingsPage: React.FC = () => {
             />
             <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
           </ListItemButton>
-
-          <Divider variant="inset" component="li" />
-
-          {externalLinks.map((item, index) => (
-            <React.Fragment key={item.label}>
-              <ListItemButton
-                component="a"
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={settingsListRowButtonSx}
-              >
-                <ListItemIcon sx={{ color: 'text.secondary' }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-                <OpenInNewIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
-              </ListItemButton>
-              {index < externalLinks.length - 1 && (
-                <Divider variant="inset" component="li" />
-              )}
-            </React.Fragment>
-          ))}
         </List>
       </Box>
 

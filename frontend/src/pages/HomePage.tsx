@@ -317,9 +317,11 @@ export const HomePage = () => {
           pb: { xs: 4, md: 5 },
         }}
       >
-        <Box className="lux-s1">
-          <RecommendedGamesSection />
-        </Box>
+        {isAuthenticated && (
+          <Box className="lux-s1">
+            <RecommendedGamesSection />
+          </Box>
+        )}
 
         <Section
           className="lux-s2"

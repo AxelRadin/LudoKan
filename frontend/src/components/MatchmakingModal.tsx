@@ -42,13 +42,21 @@ interface MatchmakingModalProps {
     readonly image: string;
   } | null;
   readonly party?: Party | null;
-  readonly partyActions: any;
+  readonly isExpanding: boolean;
+  readonly currentRadius: number;
+  readonly partyActions: {
+    readonly markReady: (val: boolean) => Promise<void>;
+    readonly markReadyForChat: (val: boolean) => Promise<void>;
+    readonly markStartEarly: (val: boolean) => Promise<void>;
+    readonly leave: () => Promise<void>;
+  };
 }
 
 interface PartyChatViewProps {
   readonly party: Party;
   readonly onLeave: () => void;
 }
+
 function PartyChatView({ party, onLeave }: PartyChatViewProps) {
   const { messages, sendMessage, isConnected } = usePartyChat(
     party.chat_room_id
@@ -57,12 +65,10 @@ function PartyChatView({ party, onLeave }: PartyChatViewProps) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll en bas
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Logique d'auto-fermeture si on est seul (Règle des 30 secondes)
   const activeMembers = party.members.filter(
     (m: any) => m.membership_status === 'active' && !m.left_at
   );
@@ -163,9 +169,6 @@ function PartyChatView({ party, onLeave }: PartyChatViewProps) {
   );
 }
 
-// ----------------------------------------------------------------------
-// COMPOSANT PRINCIPAL
-// ----------------------------------------------------------------------
 function getMemberStatusText(member: any, status: string) {
   if (member.wants_to_start_early && status === 'open') return 'Prêt à lancer';
   if (status === 'waiting_ready') return `Statut : ${member.ready_state}`;
@@ -187,6 +190,8 @@ export default function MatchmakingModal({
   startedAt,
   game,
   party,
+  isExpanding,
+  currentRadius,
   partyActions,
 }: MatchmakingModalProps) {
   const { t } = useTranslation();
@@ -208,6 +213,36 @@ export default function MatchmakingModal({
     );
   const isChatPhase = party?.status === 'chat_active';
 
+  const renderRadiusMessage = () => {
+    if (currentRadius >= 10000) {
+      return (
+        <Typography
+          variant="caption"
+          color="secondary"
+          sx={{ fontWeight: 'bold' }}
+        >
+          Recherche mondiale activée...
+        </Typography>
+      );
+    }
+    if (isExpanding) {
+      return (
+        <Typography
+          variant="caption"
+          color="primary"
+          sx={{ fontStyle: 'italic' }}
+        >
+          Élargissement de la zone de recherche ({currentRadius} km)...
+        </Typography>
+      );
+    }
+    return (
+      <Typography variant="caption" color="text.secondary">
+        Rayon actuel : {currentRadius} km
+      </Typography>
+    );
+  };
+
   return (
     <Dialog
       open={open}
@@ -218,7 +253,6 @@ export default function MatchmakingModal({
         sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 650 },
       }}
     >
-      {/* HEADER (Bannière du Jeu) */}
       <Box
         sx={{
           position: 'relative',
@@ -279,9 +313,7 @@ export default function MatchmakingModal({
         </Box>
       </Box>
 
-      {/* CONTENU PRINCIPAL */}
       <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
-        {/* PHASE 1 : RADAR */}
         {isRadarPhase && (
           <Box
             sx={{
@@ -289,53 +321,26 @@ export default function MatchmakingModal({
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              textAlign: 'center',
             }}
           >
-            <Box sx={{ position: 'relative', width: 100, height: 100, mb: 5 }}>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  border: '2px solid',
-                  borderColor: 'primary.main',
-                  animation: `${pulseRadar} 2s infinite ease-out`,
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  border: '2px solid',
-                  borderColor: 'primary.main',
-                  animation: `${pulseRadar} 2s infinite ease-out`,
-                  animationDelay: '1s',
-                }}
-              />
-              <Avatar
-                sx={{
-                  width: 100,
-                  height: 100,
-                  bgcolor: 'primary.main',
-                  zIndex: 2,
-                  position: 'relative',
-                }}
-              >
-                <RadarIcon sx={{ fontSize: 48 }} />
-              </Avatar>
-            </Box>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
+            <Avatar
+              sx={{
+                width: 100,
+                height: 100,
+                bgcolor: 'primary.main',
+                animation: `${pulseRadar} 2s infinite`,
+              }}
+            >
+              <RadarIcon sx={{ fontSize: 48 }} />
+            </Avatar>
+
+            <Typography variant="h6" sx={{ mt: 3 }}>
               {t('matchmakingModal.analyzing')}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              En attente de joueurs à proximité...
-            </Typography>
+            <Box sx={{ height: 24, mt: 1 }}>{renderRadiusMessage()}</Box>
           </Box>
         )}
 
-        {/* PHASE 2 : LOBBY (Recrutement & Validation) */}
         {isLobbyPhase && (
           <Box>
             <Typography
@@ -383,7 +388,6 @@ export default function MatchmakingModal({
               ))}
             </List>
 
-            {/* Actions dynamiques selon le statut de la party */}
             <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
               {party.status === 'open' && (
                 <Button
@@ -427,11 +431,9 @@ export default function MatchmakingModal({
           </Box>
         )}
 
-        {/* PHASE 3 : CHAT ACTIF */}
         {isChatPhase && <PartyChatView party={party} onLeave={onCancel} />}
       </DialogContent>
 
-      {/* FOOTER (Actions globales) */}
       <Box
         sx={{
           p: 2,
