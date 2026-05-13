@@ -75,8 +75,6 @@ class JwtAuthMiddleware:
         if token:
             scope["user"] = await get_user_from_token(token)
         elif cookies.get("sessionid"):
-            # Si on a un sessionid, Channels peut parfois déjà avoir peuplé le user
-            # via SessionMiddleware, mais on assure le coup ici si besoin.
             from django.contrib.auth import get_user_model
 
             User = get_user_model()
@@ -90,7 +88,6 @@ class JwtAuthMiddleware:
 
                     engine = import_module(settings.SESSION_ENGINE)
                     store = engine.SessionStore(session_key=s_id)
-                    # Force session materialization before reading auth keys.
                     session_data = store.load() or {}
                     uid = session_data.get("_auth_user_id")
                     if uid is None:
