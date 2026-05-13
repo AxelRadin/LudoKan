@@ -22,7 +22,7 @@ export function usePartyChat(roomId: number | null) {
     setIsLoadingHistory(true);
     try {
       const data = await getChatMessages(roomId, 1);
-      setMessages([...data.results].reverse());
+      setMessages([...data.results]);
     } catch (err) {
       console.error('Erreur historique chat :', err);
     } finally {
