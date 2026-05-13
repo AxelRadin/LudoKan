@@ -48,7 +48,8 @@
   "common": {
     "confirm": "Confirmer",
     "cancel": "Annuler",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "close": "Fermer"
   },
   "error404": {
     "title": "Error 404",
@@ -155,7 +156,17 @@
     "errorRecaptchaNotConfigured": "reCAPTCHA non configuré : définissez VITE_RECAPTCHA_SITE_KEY (voir frontend/.env.example).",
     "errorRecaptcha": "Veuillez valider le reCAPTCHA.",
     "errorGoogle": "Connexion Google indisponible.",
-    "errorFallback": "Une erreur est survenue."
+    "errorFallback": "Une erreur est survenue.",
+    "forgotPasswordLink": "Mot de passe oublié ?",
+    "forgotPasswordTitle": "Mot de passe oublié",
+    "forgotDescription": "Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.",
+    "forgotEmailLabel": "Adresse email",
+    "forgotEnterEmail": "Veuillez entrer votre adresse email.",
+    "forgotInvalidEmail": "Adresse email invalide.",
+    "forgotSendError": "Erreur lors de l'envoi de l'email de réinitialisation.",
+    "forgotSuccessMessage": "Un email de réinitialisation a été envoyé à {{email}}. Le lien expire dans 10 minutes. Vérifiez votre boîte de réception.",
+    "forgotSending": "Envoi...",
+    "forgotSend": "Envoyer"
   },
   "matchmakingModal": {
     "searchTitle": "Recherche de joueurs",
@@ -220,6 +231,7 @@
     "submitting": "Inscription...",
     "errorFillFields": "Veuillez remplir tous les champs.",
     "errorPasswordMatch": "Les mots de passe ne correspondent pas.",
+    "errorMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
     "errorGoogle": "Connexion Google indisponible.",
     "errorFallback": "Une erreur est survenue."
   },
@@ -714,6 +726,52 @@
     "policies": "Politiques",
     "about": "À propos",
     "cookies": "Cookies",
-    "version": "Ludokan • v1.0.0"
+    "version": "Ludokan • v1.0.0",
+    "securitySection": "Sécurité",
+    "changePassword": "Changer le mot de passe",
+    "changePasswordDesc": "Modifier votre mot de passe actuel",
+    "changePasswordTitle": "Changer le mot de passe",
+    "pwOldPassword": "Ancien mot de passe",
+    "pwNewPassword": "Nouveau mot de passe",
+    "pwConfirmPassword": "Confirmer le nouveau mot de passe",
+    "pwSave": "Modifier",
+    "pwSaving": "Modification...",
+    "pwSuccess": "Mot de passe modifié avec succès",
+    "pwErrorFillFields": "Veuillez remplir tous les champs.",
+    "pwErrorMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
+    "pwErrorMismatch": "Les mots de passe ne correspondent pas.",
+    "pwErrorWrongOld": "L'ancien mot de passe est incorrect.",
+    "pwErrorGeneric": "Erreur lors de la modification du mot de passe."
+  },
+  "resetPasswordPage": {
+    "title": "Nouveau mot de passe",
+    "subtitle": "Choisissez un nouveau mot de passe pour votre compte LudoKan.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "submit": "Réinitialiser le mot de passe",
+    "success": "Votre mot de passe a été réinitialisé avec succès ! Vous allez être redirigé vers la page de connexion...",
+    "errorFillFields": "Veuillez remplir tous les champs.",
+    "errorMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
+    "errorMismatch": "Les mots de passe ne correspondent pas.",
+    "errorAllNumeric": "Le mot de passe ne peut pas être entièrement numérique.",
+    "errorInvalidLink": "Ce lien de réinitialisation est invalide ou a expiré. Veuillez refaire une demande.",
+    "errorGeneric": "Erreur lors de la réinitialisation du mot de passe."
+  },
+  "passwordStrength": {
+    "weak": "Faible",
+    "fair": "Moyen",
+    "good": "Bon",
+    "strong": "Fort",
+    "ruleMinLength": "8 caractères minimum",
+    "ruleHasDigit": "Au moins 1 chiffre",
+    "ruleHasSpecial": "Au moins 1 caractère spécial",
+    "ruleHasUppercase": "Au moins 1 majuscule"
+  },
+  "verifyEmailPage": {
+    "title": "Vérification de votre compte",
+    "verifying": "Vérification de votre adresse e-mail en cours...",
+    "success": "Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.",
+    "error": "Le lien de vérification est invalide ou a expiré.",
+    "backToLogin": "Retour à la connexion"
   }
 }

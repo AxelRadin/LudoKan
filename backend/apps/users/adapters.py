@@ -1,6 +1,16 @@
+from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
+from django.conf import settings as django_settings
 
 from apps.users.models import CustomUser
+
+
+class LudokanAccountAdapter(DefaultAccountAdapter):
+    """Injecte frontend_url dans le contexte de tous les emails allauth."""
+
+    def send_mail(self, template_prefix, email, context):
+        context["frontend_url"] = getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+        return super().send_mail(template_prefix, email, context)
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

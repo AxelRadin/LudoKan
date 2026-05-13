@@ -38,9 +38,8 @@ def get_errors_payload(response):
 class TestRegistrationView:
     """Tests pour l'endpoint d'inscription"""
 
-    @patch("apps.users.serializers.send_welcome_email.delay")
-    def test_register_success_with_all_fields(self, mock_welcome_delay, api_client):
-        """Test inscription réussie avec tous les champs"""
+    def test_register_success_with_all_fields(self, api_client):
+        """Test inscription avec tous les champs optionnels"""
         url = "/api/auth/registration/"
         data = {
             "email": "newuser@example.com",
@@ -61,10 +60,8 @@ class TestRegistrationView:
         user = CustomUser.objects.get(email=data["email"])
         assert user.pseudo == data["pseudo"]
         assert user.first_name == data["first_name"]
-        mock_welcome_delay.assert_called_once_with(data["email"], data["pseudo"])
 
-    @patch("apps.users.serializers.send_welcome_email.delay")
-    def test_register_success_minimal_fields(self, mock_welcome_delay, api_client):
+    def test_register_success_minimal_fields(self, api_client):
         """Test inscription avec champs minimaux (email + passwords)"""
         url = "/api/auth/registration/"
         data = {
@@ -79,7 +76,6 @@ class TestRegistrationView:
         # Vérifier que le pseudo a été généré automatiquement
         assert user.pseudo != ""
         assert user.pseudo is not None
-        mock_welcome_delay.assert_called_once_with(data["email"], user.pseudo)
 
     def test_register_duplicate_email(self, api_client, user):
         """Test inscription avec email déjà utilisé"""
