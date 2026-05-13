@@ -8,6 +8,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
 import { useCallback, useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useRecommendations } from '../hooks/useRecommendations';
 import type { NormalizedGame } from '../types/game';
@@ -258,6 +259,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
 }
 
 export function RecommendedGamesSection() {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const accentColor = isDark ? C.darkAccent : C.accent;
@@ -435,7 +437,7 @@ export function RecommendedGamesSection() {
               opacity: 0.85,
             }}
           >
-            Personnalisé
+            {t('recommendations.personalised')}
           </Typography>
         </Box>
         <Typography
@@ -448,7 +450,7 @@ export function RecommendedGamesSection() {
             lineHeight: 1.15,
           }}
         >
-          Suggestions pour vous
+          {t('recommendations.suggestionsTitle')}
         </Typography>
       </Box>
 

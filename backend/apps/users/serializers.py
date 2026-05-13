@@ -2,7 +2,6 @@ from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.db.models import Sum
 from rest_framework import serializers
 
-from apps.core.tasks import send_welcome_email
 from apps.library.models import UserGame
 
 from .errors import UserErrors
@@ -66,7 +65,6 @@ class CustomRegisterSerializer(RegisterSerializer):
             last_name=self.validated_data.get("last_name", ""),
             description_courte=self.validated_data.get("description_courte", ""),
         )
-        send_welcome_email.delay(user.email, user.pseudo or user.email.split("@", 1)[0])
         return user
 
 
@@ -102,6 +100,8 @@ class UserSerializer(serializers.ModelSerializer):
             "banner",
             "banner_url",
             "description_courte",
+            "theme_preference",
+            "language_preference",
             "created_at",
             "review_count",
             "steam_id",

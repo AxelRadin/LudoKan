@@ -53,6 +53,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     banner = models.ImageField(upload_to="banners/", null=True, blank=True, validators=[validate_avatar])
     banner_url = models.URLField(blank=True)
     description_courte = models.TextField(blank=True)
+    theme_preference = models.CharField(max_length=10, default="system")
+    language_preference = models.CharField(max_length=5, default="fr")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
