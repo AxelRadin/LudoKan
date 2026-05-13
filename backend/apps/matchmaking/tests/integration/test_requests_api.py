@@ -148,7 +148,7 @@ class TestMatchmakingRequestsAPI:
 
         req.refresh_from_db()
         assert req.radius_km == 25
-        
+
     def test_cancel_request_sets_expired(self, authenticated_api_client, user, game):
         """Test que la suppression (DELETE) annule la requête en la passant à EXPIRED"""
         req = MatchmakingRequest.objects.create(
@@ -164,6 +164,6 @@ class TestMatchmakingRequestsAPI:
         )
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        
+
         req.refresh_from_db()
         assert req.status == MatchmakingRequest.STATUS_EXPIRED

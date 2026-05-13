@@ -11,7 +11,6 @@ from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.tests.conftest import open_party_factory, party_member_create
 
 
-
 @pytest.mark.django_db
 class TestPartyJoinOrCreateAPI:
     def test_requires_authentication(self, api_client, game):
@@ -231,6 +230,7 @@ class TestPartyStartEarlyAPI:
         assert r.status_code == status.HTTP_400_BAD_REQUEST
         assert "detail" in r.data
 
+
 @pytest.mark.django_db
 class TestPartyAvatarCoverage:
     def test_external_avatar_url(self, authenticated_api_client, user, game):
@@ -239,10 +239,10 @@ class TestPartyAvatarCoverage:
         user.save()
         party = open_party_factory(game=game, max_players=4)
         party_member_create(party=party, user=user)
-        
+
         r = authenticated_api_client.get("/api/parties/me/active")
         assert r.status_code == status.HTTP_200_OK
-        
+
         member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
         assert member_data["avatar_url"] == "https://example.com/avatar.png"
 
@@ -251,13 +251,13 @@ class TestPartyAvatarCoverage:
         avatar_file = SimpleUploadedFile("test_avatar.png", b"file_content", content_type="image/png")
         user.avatar = avatar_file
         user.save()
-        
+
         party = open_party_factory(game=game, max_players=4)
         party_member_create(party=party, user=user)
 
         r = authenticated_api_client.get("/api/parties/me/active")
         assert r.status_code == status.HTTP_200_OK
-        
+
         member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
         assert member_data["avatar_url"] is not None
         assert "test_avatar" in member_data["avatar_url"]
@@ -267,15 +267,15 @@ class TestPartyAvatarCoverage:
         """Test que si l'accès à l'avatar local crashe, le try/except rattrape l'erreur."""
         user.avatar_url = "https://example.com/fallback.png"
         user.save()
-        
+
         party = open_party_factory(game=game, max_players=4)
         party_member_create(party=party, user=user)
 
         with patch("apps.users.models.CustomUser.avatar", new_callable=PropertyMock) as mock_avatar:
             mock_avatar.side_effect = Exception("Erreur de stockage simulée !")
-            
+
             r = authenticated_api_client.get("/api/parties/me/active")
-            
+
         assert r.status_code == status.HTTP_200_OK
         member_data = next(m for m in r.data["members"] if m["user_id"] == user.id)
         assert member_data["avatar_url"] == "https://example.com/fallback.png"
