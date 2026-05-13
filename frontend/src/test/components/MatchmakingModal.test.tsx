@@ -113,9 +113,11 @@ describe('MatchmakingModal', () => {
 
     expect(screen.getByText(/Il n'y a plus personne/)).toBeInTheDocument();
 
-    act(() => {
-      vi.advanceTimersByTime(31000);
-    });
+    for (let i = 0; i <= 31; i++) {
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+    }
 
     expect(mockCancel).toHaveBeenCalled();
   });
