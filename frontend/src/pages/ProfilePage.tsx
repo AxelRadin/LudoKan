@@ -1504,6 +1504,24 @@ function useProfilePageCollections(
   return { collections, collectionsLoading, refreshCollections };
 }
 
+function getProfilePageBackground(isDark: boolean, pageBg: string): string {
+  if (isDark) {
+    return `
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+      radial-gradient(ellipse 120% 80% at 15% -10%, rgba(74,48,48,0.6) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 90% 110%, rgba(255,61,61,0.12) 0%, transparent 50%),
+      ${pageBg}
+    `;
+  }
+
+  return `
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+    radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+    ${pageBg}
+  `;
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1635,19 +1653,7 @@ export default function ProfilePage() {
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
-        background: isDark
-          ? `
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
-            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(74,48,48,0.6) 0%, transparent 55%),
-            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(255,61,61,0.12) 0%, transparent 50%),
-            ${C.pageBg}
-          `
-          : `
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
-            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
-            ${C.pageBg}
-          `,
+        background: getProfilePageBackground(isDark, C.pageBg),
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
