@@ -79,7 +79,7 @@ class MatchmakingRequestViewSet(ModelViewSet):
             raise serializers.ValidationError("This matchmaking request has expired.")
 
         serializer.save()
-        
+
     @extend_schema(
         summary="Annuler une demande de matchmaking",
         description="Annule la demande en la marquant comme expirée.",

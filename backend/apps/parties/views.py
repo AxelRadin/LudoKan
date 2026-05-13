@@ -45,6 +45,7 @@ def _serialize_party_after_lazy_chat(party_id: int, request=None) -> dict:
     context = {"request": request} if request else {}
     return PartyReadSerializer(party, context=context).data
 
+
 def _response_party_read_lazy(party_id: int, request=None) -> Response:
     return Response(_serialize_party_after_lazy_chat(party_id, request=request), status=status.HTTP_200_OK)
 
@@ -80,16 +81,16 @@ class PartyJoinOrCreateView(APIView):
         ser.is_valid(raise_exception=True)
         game = ser.validated_data["game"]
         max_players_override = ser.validated_data.get("max_players")
-        
+
         party = join_or_create_party(
             request.user,
             game,
             max_players_override=max_players_override,
         )
-        
+
         context = {"request": request}
         data = PartyReadSerializer(_get_party_for_read(party.id), context=context).data
-        
+
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -106,6 +107,7 @@ class PartyMeActiveView(APIView):
         if party is None:
             return Response({"detail": "No active party."}, status=status.HTTP_404_NOT_FOUND)
         return _response_party_read_lazy(party.id, request=request)
+
 
 @extend_schema(tags=["Parties"])
 class PartyDetailView(APIView):

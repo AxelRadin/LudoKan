@@ -39,18 +39,18 @@ class PartyMemberReadSerializer(serializers.ModelSerializer):
 
     def get_avatar_url(self, obj):
         try:
-            if obj.user.avatar and hasattr(obj.user.avatar, 'url'):
+            if obj.user.avatar and hasattr(obj.user.avatar, "url"):
                 url = obj.user.avatar.url
-                request = self.context.get('request')
+                request = self.context.get("request")
                 if request:
                     return request.build_absolute_uri(url)
                 return url
         except Exception:
             pass
-        
-        if getattr(obj.user, 'avatar_url', None):
+
+        if getattr(obj.user, "avatar_url", None):
             return obj.user.avatar_url
-            
+
         return None
 
 
@@ -66,6 +66,7 @@ class PartyReadSerializer(serializers.ModelSerializer):
     def get_members(self, obj: GameParty) -> list:
         members = list(obj.members.all())
         return PartyMemberReadSerializer(members, many=True, context=self.context).data
+
 
 class PartyJoinOrCreateSerializer(serializers.Serializer):
     game = serializers.PrimaryKeyRelatedField(queryset=Game.objects.all())
