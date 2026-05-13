@@ -9,49 +9,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import PeopleIcon from '@mui/icons-material/People';
 import CollectionsBookmarkIcon from '@mui/icons-material/CollectionsBookmark';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import { SectionAccentTitle } from '../components/SectionAccentTitle';
 
 const F = "'Outfit', sans-serif";
-
-function AboutSectionHeading({
-  label,
-  accent,
-}: Readonly<{ label: string; accent: string }>) {
-  return (
-    <Box sx={{ position: 'relative', pl: '14px', mb: 2.5 }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          left: 0,
-          top: '50%',
-          transform: 'translateY(-50%)',
-          width: '3px',
-          height: '80%',
-          background: `linear-gradient(to bottom, transparent, ${accent}, transparent)`,
-          borderRadius: '2px',
-          opacity: 0.8,
-        }}
-      />
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box
-          sx={{ width: 14, height: '1px', background: accent, opacity: 0.6 }}
-        />
-        <Typography
-          sx={{
-            fontFamily: F,
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 3,
-            textTransform: 'uppercase',
-            color: accent,
-            opacity: 0.9,
-          }}
-        >
-          {label}
-        </Typography>
-      </Box>
-    </Box>
-  );
-}
 
 export default function AboutPage() {
   const { t } = useTranslation();
@@ -177,9 +137,9 @@ export default function AboutPage() {
 
         {/* MISSION */}
         <Box sx={{ ...card, p: { xs: 3, md: 5 }, mb: 3 }}>
-          <AboutSectionHeading
+          <SectionAccentTitle
             label={t('about.missionLabel')}
-            accent={accent}
+            marginBottom={2.5}
           />
           <Typography
             sx={{
@@ -254,7 +214,10 @@ export default function AboutPage() {
 
         {/* VISION */}
         <Box sx={{ ...card, p: { xs: 3, md: 5 }, mb: 3 }}>
-          <AboutSectionHeading label={t('about.visionLabel')} accent={accent} />
+          <SectionAccentTitle
+            label={t('about.visionLabel')}
+            marginBottom={2.5}
+          />
           <Typography
             sx={{
               fontFamily: F,
