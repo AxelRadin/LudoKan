@@ -17,6 +17,12 @@ async function request(path: string, options: RequestInit = {}) {
 
   const headers = new Headers(options.headers || {});
 
+  // Send Accept-Language for backend i18n
+  if (!headers.has('Accept-Language')) {
+    const lang = localStorage.getItem('i18nextLng') || 'en';
+    headers.set('Accept-Language', lang);
+  }
+
   // Ajoute le header CSRF pour les méthodes non-sûres
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
     const csrftoken = getCookie('csrftoken');

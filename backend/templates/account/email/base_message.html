@@ -20,7 +20,7 @@
             <!-- Header with logo -->
             <tr>
               <td align="center" style="padding:32px 32px 16px;">
-                <img src="https://ludokan.fr/logo.png" alt="LudoKan" width="140" height="auto" style="display:block;border:0;max-width:140px;" />
+                <img src="{{ frontend_url }}/logo.png" alt="LudoKan" width="140" height="auto" style="display:block;border:0;max-width:140px;" />
               </td>
             </tr>
             <!-- Accent line -->
@@ -41,7 +41,7 @@
                 <div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:16px;"></div>
                 <p style="margin:0;color:#6e6a7a;font-size:12px;line-height:1.5;text-align:center;">
                   {% blocktrans with site_name=current_site.name %}© {{ site_name }}. All rights reserved.{% endblocktrans %}<br/>
-                  <a href="https://ludokan.fr" style="color:#FF3D3D;text-decoration:none;">ludokan.fr</a>
+                  <a href="{{ frontend_url }}" style="color:#FF3D3D;text-decoration:none;">ludokan.fr</a>
                 </p>
               </td>
             </tr>

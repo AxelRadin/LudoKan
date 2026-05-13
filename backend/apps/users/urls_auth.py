@@ -1,20 +1,11 @@
 from allauth.account.views import ConfirmEmailView
-from django.conf import settings as django_settings
-from django.http import HttpResponseRedirect
 from django.urls import include, path, re_path
 
 from apps.users.login_views import RecaptchaLoginView
-from apps.users.views import SuspensionAwareUserDetailsView
+from apps.users.views import SuspensionAwareUserDetailsView, password_reset_confirm_redirect
 from apps.users.views_social import GoogleLoginView
 from apps.users.views_steam import SteamDisconnectView, SteamLoginCallbackView, SteamLoginInitiateView
 from apps.users.views_xbox import XboxConnectCallbackView, XboxConnectInitiateView, XboxDisconnectView
-
-
-def password_reset_confirm_redirect(request, uidb64, token):
-    """Redirige le lien de l'email de reset vers la page frontend correspondante."""
-    frontend_url = getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
-    return HttpResponseRedirect(f"{frontend_url}/reset-password/{uidb64}/{token}")
-
 
 urlpatterns = [
     re_path(
