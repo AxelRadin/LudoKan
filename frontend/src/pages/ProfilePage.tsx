@@ -1148,46 +1148,67 @@ function ProfileEditDialog({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3.5, pb: 3, pt: 1, gap: 1 }}>
+      <DialogActions
+        sx={{ px: 3.5, pb: 3, pt: 1, justifyContent: 'space-between' }}
+      >
         <Button
-          onClick={onClose}
+          onClick={() => {
+            onClose();
+            window.location.href = '/settings';
+          }}
+          size="small"
           sx={{
-            borderRadius: 999,
-            color: C.muted,
-            px: 2.5,
-            py: 0.9,
+            color: C.accent,
+            fontSize: 13,
             fontWeight: 500,
-            fontSize: 14,
             textTransform: 'none',
             fontFamily: FONT_BODY,
-            '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+            '&:hover': { backgroundColor: `${C.accent}10` },
           }}
         >
-          {t('profilePage.cancel')}
+          {t('settings.changePassword')}
         </Button>
-        <Button
-          onClick={() => void onSave()}
-          variant="contained"
-          sx={{
-            borderRadius: 999,
-            px: 3.5,
-            py: 1,
-            fontWeight: 700,
-            fontSize: 14,
-            textTransform: 'none',
-            fontFamily: FONT_BODY,
-            background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
-            boxShadow: `0 4px 18px ${C.accentGlow}`,
-            '&:hover': {
-              background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-              boxShadow: `0 6px 24px ${C.accentGlow}`,
-              transform: 'translateY(-1px)',
-            },
-            transition: 'all 0.18s ease',
-          }}
-        >
-          {t('profilePage.save')}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            onClick={onClose}
+            sx={{
+              borderRadius: 999,
+              color: C.muted,
+              px: 2.5,
+              py: 0.9,
+              fontWeight: 500,
+              fontSize: 14,
+              textTransform: 'none',
+              fontFamily: FONT_BODY,
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+            }}
+          >
+            {t('profilePage.cancel')}
+          </Button>
+          <Button
+            onClick={() => void onSave()}
+            variant="contained"
+            sx={{
+              borderRadius: 999,
+              px: 3.5,
+              py: 1,
+              fontWeight: 700,
+              fontSize: 14,
+              textTransform: 'none',
+              fontFamily: FONT_BODY,
+              background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
+              boxShadow: `0 4px 18px ${C.accentGlow}`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
+                boxShadow: `0 6px 24px ${C.accentGlow}`,
+                transform: 'translateY(-1px)',
+              },
+              transition: 'all 0.18s ease',
+            }}
+          >
+            {t('profilePage.save')}
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );
