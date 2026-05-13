@@ -79,6 +79,17 @@ class MatchmakingRequestViewSet(ModelViewSet):
             raise serializers.ValidationError("This matchmaking request has expired.")
 
         serializer.save()
+        
+    @extend_schema(
+        summary="Annuler une demande de matchmaking",
+        description="Annule la demande en la marquant comme expirée.",
+        responses={204: None},
+    )
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.status = MatchmakingRequest.STATUS_EXPIRED
+        instance.save(update_fields=["status"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MatchmakingMatchesView(APIView):
