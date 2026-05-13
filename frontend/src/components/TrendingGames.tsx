@@ -113,6 +113,28 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     '&:active': { transform: 'translateY(-50%) scale(0.98)' },
   });
 
+  let carouselContent: React.ReactNode;
+  if (loading) {
+    carouselContent = Array.from({ length: 6 }, (_, idx) => (
+      <Box key={`skeleton-${idx}`} width={160}>
+        <Skeleton variant="rectangular" width={160} height={220} />
+        <Skeleton width="80%" />
+      </Box>
+    ));
+  } else if (games.length === 0) {
+    carouselContent = (
+      <Card sx={{ p: 2 }}>
+        <Typography variant="body2" color="text.secondary">
+          {t('trendingGames.empty')}
+        </Typography>
+      </Card>
+    );
+  } else {
+    carouselContent = games.map(game => (
+      <GameCard key={game.igdb_id} game={game} />
+    ));
+  }
+
   return (
     <Box position="relative">
       <Box display="flex" alignItems="center" position="relative">
@@ -142,22 +164,7 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             px: 1,
           }}
         >
-          {loading ? (
-            Array.from({ length: 6 }, (_, idx) => (
-              <Box key={`skeleton-${idx}`} width={160}>
-                <Skeleton variant="rectangular" width={160} height={220} />
-                <Skeleton width="80%" />
-              </Box>
-            ))
-          ) : games.length === 0 ? (
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {t('trendingGames.empty')}
-              </Typography>
-            </Card>
-          ) : (
-            games.map(game => <GameCard key={game.igdb_id} game={game} />)
-          )}
+          {carouselContent}
         </Box>
 
         {canScrollRight && (

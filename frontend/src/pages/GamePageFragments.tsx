@@ -45,7 +45,7 @@ export function Sep() {
 }
 
 type StatusChipProps = Readonly<{
-  icon: React.ReactElement;
+  icon: React.ReactElement<{ sx?: object }>;
   label: string;
   active: boolean;
   color: string;
@@ -87,7 +87,7 @@ export function StatusChip({
     >
       {React.cloneElement(icon, {
         sx: { fontSize: 14, color: 'inherit' },
-      } as never)}
+      })}
       <Typography
         sx={{
           fontFamily: GAME_PAGE_FONT,
