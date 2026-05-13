@@ -15,18 +15,8 @@
   {% blocktrans with site_domain=current_site.domain %}Welcome to LudoKan! To finalize your registration on {{ site_domain }}, please confirm your email address by clicking the button below:{% endblocktrans %}
 </p>
 
-<!-- CTA Button -->
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;">
-  <tr>
-    <td align="center">
-      <a href="{{ activate_url }}"
-         target="_blank"
-         style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#FF3D3D 0%,#FF8C42 100%);color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;border-radius:12px;box-shadow:0 4px 16px rgba(255,61,61,0.35);letter-spacing:0.3px;">
-        {% trans "Confirm my email" %}
-      </a>
-    </td>
-  </tr>
-</table>
+{% trans "Confirm my email" as cta_confirm_label %}
+{% include "account/email/partials/cta_button.html" with cta_url=activate_url cta_label=cta_confirm_label %}
 
 <p style="margin:0 0 12px;color:#9e9ab0;font-size:13px;line-height:1.5;">
   {% blocktrans %}If the button doesn't work, copy and paste this link into your browser:{% endblocktrans %}

@@ -21,7 +21,12 @@ function getStrength(password: string): number {
   return RULES.filter(r => r.test(password)).length;
 }
 
-const COLORS = ['#f44336', '#ff9800', '#ffc107', '#4caf50'];
+const STRENGTH_BAR_SEGMENTS = [
+  { id: 'strength-bar-weak', color: '#f44336' },
+  { id: 'strength-bar-fair', color: '#ff9800' },
+  { id: 'strength-bar-good', color: '#ffc107' },
+  { id: 'strength-bar-strong', color: '#4caf50' },
+] as const;
 
 type PasswordStrengthIndicatorProps = {
   password: string;
@@ -49,21 +54,21 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
     hasUppercase: t('passwordStrength.ruleHasUppercase'),
   };
 
+  const strengthIdx = Math.min(Math.max(strength - 1, 0), 3);
+  const activeColor = STRENGTH_BAR_SEGMENTS[strengthIdx].color;
+
   return (
     <Box sx={{ mt: -0.5, mb: 0.5 }}>
       {/* Strength bar */}
       <Box sx={{ display: 'flex', gap: 0.5, mb: 0.75 }}>
-        {COLORS.map((_, i) => (
+        {STRENGTH_BAR_SEGMENTS.map((segment, i) => (
           <Box
-            key={i}
+            key={segment.id}
             sx={{
               flex: 1,
               height: 4,
               borderRadius: 2,
-              bgcolor:
-                i < strength
-                  ? COLORS[Math.min(strength - 1, 3)]
-                  : 'action.disabledBackground',
+              bgcolor: i < strength ? activeColor : 'action.disabledBackground',
               transition: 'background-color 0.2s ease',
             }}
           />
@@ -74,14 +79,14 @@ const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
       <Typography
         variant="caption"
         sx={{
-          color: COLORS[Math.min(strength - 1, 3)],
+          color: activeColor,
           fontWeight: 600,
           fontSize: 11.5,
           mb: 0.5,
           display: 'block',
         }}
       >
-        {strengthLabels[Math.min(strength - 1, 3)]}
+        {strengthLabels[strengthIdx]}
       </Typography>
 
       {/* Rules checklist */}

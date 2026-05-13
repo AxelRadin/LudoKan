@@ -11,7 +11,11 @@ import { apiPost } from '../services/api';
 function normalizeFieldErrors(value: unknown): string | null {
   if (value == null) return null;
   if (Array.isArray(value)) return value.map(String).join(' ');
-  return String(value);
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return null;
 }
 
 /** Message affiché après échec POST reset/confirm (lien invalide, JSON Django, texte brut). */

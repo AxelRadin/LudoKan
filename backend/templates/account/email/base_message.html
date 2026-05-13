@@ -7,47 +7,30 @@
     <title>{% block head_title %}LudoKan{% endblock %}</title>
     <!--[if mso]>
     <style>
-      table { border-collapse: collapse; }
       .fallback-font { font-family: Arial, sans-serif !important; }
     </style>
     <![endif]-->
   </head>
   <body style="margin:0;padding:0;background-color:#13111a;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#13111a;padding:32px 16px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:linear-gradient(145deg,#1e1b2e 0%,#252238 100%);border-radius:16px;border:1px solid rgba(255,61,61,0.15);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
-            <!-- Header with logo -->
-            <tr>
-              <td align="center" style="padding:32px 32px 16px;">
-                <img src="{{ frontend_url }}/logo.png" alt="LudoKan" width="140" height="auto" style="display:block;border:0;max-width:140px;" />
-              </td>
-            </tr>
-            <!-- Accent line -->
-            <tr>
-              <td align="center" style="padding:0 48px;">
-                <div style="height:2px;background:linear-gradient(to right,transparent,#FF3D3D,#FF8C42,transparent);border-radius:1px;"></div>
-              </td>
-            </tr>
-            <!-- Content -->
-            <tr>
-              <td style="padding:24px 32px 8px;color:#e8e6f0;font-size:15px;line-height:1.6;">
-                {% block content %}{% endblock %}
-              </td>
-            </tr>
-            <!-- Footer -->
-            <tr>
-              <td style="padding:16px 32px 32px;">
-                <div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:16px;"></div>
-                <p style="margin:0;color:#6e6a7a;font-size:12px;line-height:1.5;text-align:center;">
-                  {% blocktrans with site_name=current_site.name %}© {{ site_name }}. All rights reserved.{% endblocktrans %}<br/>
-                  <a href="{{ frontend_url }}" style="color:#FF3D3D;text-decoration:none;">ludokan.fr</a>
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
+    <div style="background-color:#13111a;padding:32px 16px;box-sizing:border-box;">
+      <div style="max-width:560px;margin:0 auto;width:100%;box-sizing:border-box;background:linear-gradient(145deg,#1e1b2e 0%,#252238 100%);border-radius:16px;border:1px solid rgba(255,61,61,0.15);box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+        <div style="text-align:center;padding:32px 32px 16px;box-sizing:border-box;">
+          <img src="{{ frontend_url }}/logo.png" alt="LudoKan" style="display:block;margin:0 auto;border:0;max-width:140px;width:140px;height:auto;" />
+        </div>
+        <div style="text-align:center;padding:0 48px 0;box-sizing:border-box;">
+          <div style="height:2px;background:linear-gradient(to right,transparent,#FF3D3D,#FF8C42,transparent);border-radius:1px;"></div>
+        </div>
+        <div style="padding:24px 32px 8px;color:#e8e6f0;font-size:15px;line-height:1.6;box-sizing:border-box;">
+          {% block content %}{% endblock %}
+        </div>
+        <div style="padding:16px 32px 32px;box-sizing:border-box;">
+          <div style="height:1px;background:rgba(255,255,255,0.08);margin-bottom:16px;"></div>
+          <p style="margin:0;color:#6e6a7a;font-size:12px;line-height:1.5;text-align:center;">
+            {% blocktrans with site_name=current_site.name %}© {{ site_name }}. All rights reserved.{% endblocktrans %}<br/>
+            <a href="{{ frontend_url }}" style="color:#FF3D3D;text-decoration:none;">ludokan.fr</a>
+          </p>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
