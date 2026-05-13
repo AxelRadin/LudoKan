@@ -38,6 +38,27 @@ export async function fetchAllNotifications(
   return all;
 }
 
+/**
+ * Récupère toutes les notifications non-lues en dépaginant depuis le backend.
+ * Utilise le filtre ?unread=true côté serveur pour une requête précise.
+ */
+export async function fetchAllUnreadNotifications(
+  maxPages = 20
+): Promise<NotificationItem[]> {
+  const all: NotificationItem[] = [];
+  let nextPath: string | null = '/api/notifications/?unread=true';
+  let pageCount = 0;
+
+  while (nextPath && pageCount < maxPages) {
+    const page = await fetchNotificationsPage(nextPath);
+    all.push(...page.results);
+    nextPath = page.next ? normalizePagePath(page.next) : null;
+    pageCount += 1;
+  }
+
+  return all;
+}
+
 export function markNotificationRead(
   id: number,
   unread: boolean
