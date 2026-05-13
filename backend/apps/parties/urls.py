@@ -1,6 +1,14 @@
 from django.urls import path
 
-from apps.parties.views import PartyDetailView, PartyJoinOrCreateView, PartyLeaveView, PartyMeActiveView, PartyReadyForChatView, PartyReadyView
+from apps.parties.views import (
+    PartyDetailView,
+    PartyJoinOrCreateView,
+    PartyLeaveView,
+    PartyMeActiveView,
+    PartyReadyForChatView,
+    PartyReadyView,
+    PartyStartEarlyView,
+)
 
 urlpatterns = [
     path("parties/join-or-create", PartyJoinOrCreateView.as_view(), name="party-join-or-create"),
@@ -9,4 +17,5 @@ urlpatterns = [
     path("parties/<int:party_id>/ready", PartyReadyView.as_view(), name="party-ready"),
     path("parties/<int:party_id>/ready-for-chat", PartyReadyForChatView.as_view(), name="party-ready-for-chat"),
     path("parties/<int:party_id>/leave", PartyLeaveView.as_view(), name="party-leave"),
+    path("parties/<int:party_id>/start-early", PartyStartEarlyView.as_view(), name="party-start-early"),
 ]
