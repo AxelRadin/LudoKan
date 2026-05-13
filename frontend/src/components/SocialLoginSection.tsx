@@ -35,6 +35,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
       <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
         {/* Google */}
         <Button
+          type="button"
+          data-testid="social-btn-google"
           onClick={onGoogleClick}
           sx={{
             minWidth: 56,
@@ -81,6 +83,8 @@ const SocialLoginSection: React.FC<SocialLoginSectionProps> = ({
 
         {/* Steam */}
         <Button
+          type="button"
+          data-testid="social-btn-steam"
           onClick={onSteamClick}
           sx={{
             minWidth: 56,
