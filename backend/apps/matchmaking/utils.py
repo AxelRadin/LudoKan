@@ -61,6 +61,7 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 # apps/matchmaking/utils.py
 
+
 def nearby_requests(
     lat: float,
     lon: float,
@@ -77,16 +78,18 @@ def nearby_requests(
             "status": MatchmakingRequest.STATUS_PENDING,
             "expires_at__gt": timezone.now(),
         }
-        
+
         if not is_unlimited:
             bbox = compute_bbox(lat, lon, radius_km)
-            filters.update({
-                "latitude__gte": bbox.lat_min,
-                "latitude__lte": bbox.lat_max,
-                "longitude__gte": bbox.lon_min,
-                "longitude__lte": bbox.lon_max,
-            })
-            
+            filters.update(
+                {
+                    "latitude__gte": bbox.lat_min,
+                    "latitude__lte": bbox.lat_max,
+                    "longitude__gte": bbox.lon_min,
+                    "longitude__lte": bbox.lon_max,
+                }
+            )
+
         qs = MatchmakingRequest.objects.filter(**filters)
     else:
         qs = queryset

@@ -287,7 +287,14 @@ export default function MatchmakingModal({
       <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
         {/* PHASE 1 : RADAR */}
         {isRadarPhase && (
-          <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <Box
+            sx={{
+              py: 6,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+          >
             <Avatar
               sx={{
                 width: 100,
@@ -306,11 +313,19 @@ export default function MatchmakingModal({
             {/* NOUVEAU MESSAGE D'ÉLARGISSEMENT */}
             <Box sx={{ height: 24, mt: 1 }}>
               {currentRadius >= 10000 ? (
-                <Typography variant="caption" color="secondary" sx={{ fontWeight: 'bold' }}>
+                <Typography
+                  variant="caption"
+                  color="secondary"
+                  sx={{ fontWeight: 'bold' }}
+                >
                   Recherche mondiale activée...
                 </Typography>
               ) : isExpanding ? (
-                <Typography variant="caption" color="primary" sx={{ fontStyle: 'italic' }}>
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  sx={{ fontStyle: 'italic' }}
+                >
                   Élargissement de la zone de recherche ({currentRadius} km)...
                 </Typography>
               ) : (

@@ -273,7 +273,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
       let newRadius = currentRadius;
 
       if (diffSeconds >= 300) {
-        newRadius = 20000
+        newRadius = 20000;
       } else {
         newRadius = currentRadius + 50;
       }
@@ -293,11 +293,16 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
       }
 
       if (newRadius >= 20000) clearInterval(expansionInterval);
-
     }, 30000);
 
     return () => clearInterval(expansionInterval);
-  }, [activeRequestId, currentRadius, hasNewMatch, party, activeRequestStartedAt]);
+  }, [
+    activeRequestId,
+    currentRadius,
+    hasNewMatch,
+    party,
+    activeRequestStartedAt,
+  ]);
 
   useEffect(() => {
     if (activeRequestId && matches.length > 0 && !party && activeGame?.id) {

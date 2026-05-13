@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, render, screen, act } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  act,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MatchmakingModal from '../../components/MatchmakingModal';
 
@@ -48,7 +54,7 @@ describe('MatchmakingModal', () => {
     vi.useFakeTimers();
   });
 
-  it("affiche la phase Radar au début avec le rayon actuel", () => {
+  it('affiche la phase Radar au début avec le rayon actuel', () => {
     render(<MatchmakingModal {...defaultProps} />);
     expect(screen.getByText('Super Game')).toBeInTheDocument();
     expect(screen.getByText('matchmakingModal.analyzing')).toBeInTheDocument();
@@ -56,13 +62,23 @@ describe('MatchmakingModal', () => {
   });
 
   it("affiche le message d'élargissement quand isExpanding est true", () => {
-    render(<MatchmakingModal {...defaultProps} currentRadius={70} isExpanding={true} />);
-    expect(screen.getByText('Élargissement de la zone de recherche (70 km)...')).toBeInTheDocument();
+    render(
+      <MatchmakingModal
+        {...defaultProps}
+        currentRadius={70}
+        isExpanding={true}
+      />
+    );
+    expect(
+      screen.getByText('Élargissement de la zone de recherche (70 km)...')
+    ).toBeInTheDocument();
   });
 
-  it("affiche la recherche mondiale si le rayon est >= 10000", () => {
+  it('affiche la recherche mondiale si le rayon est >= 10000', () => {
     render(<MatchmakingModal {...defaultProps} currentRadius={20000} />);
-    expect(screen.getByText('Recherche mondiale activée...')).toBeInTheDocument();
+    expect(
+      screen.getByText('Recherche mondiale activée...')
+    ).toBeInTheDocument();
   });
 
   it('gère le vote "Lancer tout de suite" en phase OPEN', () => {
@@ -70,7 +86,12 @@ describe('MatchmakingModal', () => {
       status: 'open',
       max_players: 4,
       members: [
-        { user_id: 1, pseudo: 'Moi', wants_to_start_early: false, left_at: null },
+        {
+          user_id: 1,
+          pseudo: 'Moi',
+          wants_to_start_early: false,
+          left_at: null,
+        },
       ],
     } as any;
 
@@ -81,7 +102,7 @@ describe('MatchmakingModal', () => {
     expect(mockActions.markStartEarly).toHaveBeenCalledWith(true);
   });
 
-  it('affiche le chat et gère le timer d\'auto-fermeture', () => {
+  it("affiche le chat et gère le timer d'auto-fermeture", () => {
     const party = {
       status: 'chat_active',
       chat_room_id: 99,
