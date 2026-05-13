@@ -1,11 +1,30 @@
-import { Box, Button, Container, Paper, Typography } from '@mui/material';
+import DoneAllIcon from '@mui/icons-material/DoneAll';
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Container,
+  IconButton,
+  Paper,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { fetchAllUnreadNotifications } from '../api/notifications';
 import NotificationList from '../components/notifications/NotificationList';
 import PageLayout from '../components/PageLayout';
 import { useNotifications } from '../contexts/NotificationsContext';
+import type { NotificationItem } from '../types/notification';
+
+type FilterMode = 'all' | 'unread';
 
 export default function NotificationsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     hasMore,
     loadingMore,
@@ -14,60 +33,235 @@ export default function NotificationsPage() {
     loadMoreNotifications,
   } = useNotifications();
 
+  const [filter, setFilter] = useState<FilterMode>('all');
+
+  // État pour les non-lues chargées depuis le backend
+  const [unreadNotifications, setUnreadNotifications] = useState<
+    NotificationItem[]
+  >([]);
+  const [loadingUnread, setLoadingUnread] = useState(false);
+
+  const isUnread = filter === 'unread';
+
+  // Charge toutes les non-lues depuis le backend quand on bascule sur ce filtre
+  useEffect(() => {
+    if (!isUnread) return;
+    setLoadingUnread(true);
+    fetchAllUnreadNotifications()
+      .then(data => setUnreadNotifications(data))
+      .catch(() => {})
+      .finally(() => setLoadingUnread(false));
+  }, [isUnread]);
+
+  // Rafraîchit la liste non-lues après un "tout marquer comme lu"
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead().catch(() => {});
+    if (isUnread) {
+      setUnreadNotifications([]);
+    }
+  };
+
   return (
     <PageLayout title={t('notifications.title')} backTo="/">
       <Container maxWidth="md" sx={{ mt: 4, mb: 8 }}>
+        {/* En-tête de page */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            mb: 3,
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          {/* Titre + compteur */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 42,
+                height: 42,
+                borderRadius: '12px',
+                bgcolor: 'primary.main',
+                color: '#fff',
+              }}
+            >
+              <NotificationsNoneIcon />
+            </Box>
+            <Box>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 800, lineHeight: 1.2 }}
+              >
+                {t('notifications.title')}
+              </Typography>
+              {unreadCount > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {unreadCount}{' '}
+                  {i18n.language.startsWith('fr')
+                    ? 'non-lue' + (unreadCount > 1 ? 's' : '')
+                    : 'unread'}
+                </Typography>
+              )}
+            </Box>
+            {unreadCount > 0 && (
+              <Chip
+                label={unreadCount}
+                size="small"
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  fontWeight: 700,
+                  height: 22,
+                }}
+              />
+            )}
+          </Box>
+
+          {/* Filtres + action */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {/* Toggle All / Non-lus */}
+            <ToggleButtonGroup
+              value={filter}
+              exclusive
+              onChange={(_, val) => {
+                if (val !== null) setFilter(val);
+              }}
+              size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  px: 1.75,
+                  py: 0.5,
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  borderRadius: '8px !important',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: '#fff',
+                    borderColor: 'primary.main',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  },
+                },
+                '& .MuiToggleButtonGroup-grouped:not(:last-of-type)': {
+                  mr: 0.5,
+                },
+              }}
+            >
+              <ToggleButton value="all">
+                {i18n.language.startsWith('fr') ? 'Toutes' : 'All'}
+              </ToggleButton>
+              <ToggleButton value="unread">
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  {i18n.language.startsWith('fr') ? 'Non-lues' : 'Unread'}
+                  {unreadCount > 0 && (
+                    <Box
+                      sx={{
+                        px: 0.6,
+                        py: 0.05,
+                        borderRadius: 10,
+                        bgcolor: isUnread
+                          ? 'rgba(255,255,255,0.25)'
+                          : 'primary.main',
+                        color: '#fff',
+                        fontSize: '0.6rem',
+                        fontWeight: 700,
+                        lineHeight: 1.6,
+                        minWidth: 16,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {unreadCount}
+                    </Box>
+                  )}
+                </Box>
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {/* Tout marquer comme lu */}
+            <Tooltip title={t('notifications.markAllRead')}>
+              <span>
+                <IconButton
+                  onClick={handleMarkAllAsRead}
+                  disabled={unreadCount === 0}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: unreadCount > 0 ? 'primary.main' : 'divider',
+                    color: unreadCount > 0 ? 'primary.main' : 'text.disabled',
+                    borderRadius: '10px',
+                    gap: 0.75,
+                    px: 1.5,
+                  }}
+                >
+                  <DoneAllIcon sx={{ fontSize: '1.1rem' }} />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 600,
+                      display: { xs: 'none', sm: 'block' },
+                      fontSize: '0.75rem',
+                    }}
+                  >
+                    {t('notifications.markAllRead')}
+                  </Typography>
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+        </Box>
+
+        {/* Carte principale */}
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 2, md: 3 },
             borderRadius: 3,
             border: '1px solid',
             borderColor: 'divider',
+            overflow: 'hidden',
             bgcolor: 'background.paper',
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              mb: 3,
-              pb: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
-              {t('notifications.title')}
-            </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => markAllAsRead().catch(() => {})}
-              disabled={unreadCount === 0}
+          {isUnread && loadingUnread ? (
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                py: 8,
+              }}
             >
-              {t('notifications.markAllRead')}
-            </Button>
-          </Box>
-
-          <NotificationList />
-
-          {hasMore && (
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-              <Button
-                variant="contained"
-                onClick={() => loadMoreNotifications().catch(() => {})}
-                disabled={loadingMore}
-                sx={{ px: 4 }}
-              >
-                {loadingMore
-                  ? t('notifications.loadingMore')
-                  : t('notifications.loadMore')}
-              </Button>
+              <CircularProgress size={28} sx={{ color: 'primary.main' }} />
             </Box>
+          ) : isUnread ? (
+            // Mode non-lues : on passe la liste complète du backend via prop
+            <NotificationList overrideItems={unreadNotifications} />
+          ) : (
+            // Mode toutes : comportement paginé habituel du contexte
+            <NotificationList />
           )}
         </Paper>
+
+        {/* Charger plus (uniquement en mode "Toutes") */}
+        {hasMore && !isUnread && (
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+            <Button
+              variant="outlined"
+              onClick={() => loadMoreNotifications().catch(() => {})}
+              disabled={loadingMore}
+              sx={{ px: 4, borderRadius: '10px' }}
+            >
+              {loadingMore
+                ? t('notifications.loadingMore')
+                : t('notifications.loadMore')}
+            </Button>
+          </Box>
+        )}
       </Container>
     </PageLayout>
   );
