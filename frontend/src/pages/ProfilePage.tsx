@@ -47,7 +47,12 @@ import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api';
 import { useAuth } from '../contexts/useAuth';
 import zeldaBanner from '../assets/default/zelda-banner.png';
 import ProfilePageLibrarySection from './ProfilePageLibrarySection';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { PROFILE_TOUR_STEPS } from '../onboarding/tourSteps';
 import { useProfileLibraryFilters } from '../hooks/useProfileLibraryFilters';
+
+const PROFILE_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]);
 
 /* ─── Google Fonts injection ─── */
 const fontLink = document.createElement('link');
@@ -1571,6 +1576,21 @@ export default function ProfilePage() {
     t,
   });
 
+  const { isAuthenticated } = useAuth();
+  const { shouldShow: shouldShowTour, markAsDone: markTourDone } =
+    useOnboarding(TOUR_KEYS.profile);
+  const { startTour } = useTour({
+    steps: PROFILE_TOUR_STEPS,
+    optionalSteps: PROFILE_OPTIONAL_STEPS,
+    onDone: markTourDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShowTour) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShowTour, startTour]);
+
   const [librarySectionMenuAnchor, setLibrarySectionMenuAnchor] =
     useState<null | HTMLElement>(null);
   const [createCollectionModalOpen, setCreateCollectionModalOpen] =
@@ -1907,7 +1927,10 @@ export default function ProfilePage() {
                   alignSelf: { xs: 'flex-start', md: 'center' },
                 }}
               >
-                <SecondaryButton onClick={handleEditOpen}>
+                <SecondaryButton
+                  data-tour="profile-edit"
+                  onClick={handleEditOpen}
+                >
                   {t('profilePage.editProfile')}
                 </SecondaryButton>
               </Box>
@@ -2145,7 +2168,7 @@ export default function ProfilePage() {
         </Box>
 
         {/* ── STATS SECTION ── */}
-        <Box sx={{ mb: 2.5 }}>
+        <Box data-tour="profile-stats" sx={{ mb: 2.5 }}>
           <ProfileSectionHeader label={t('profilePage.statsLabel')} C={C} />
           <Box
             sx={{

@@ -69,7 +69,7 @@ function PartyChatView({ party, onLeave }: PartyChatViewProps) {
 
   useEffect(() => {
     if (activeMembers.length <= 1) {
-      if (timeLeft === null) setTimeLeft(30);
+      setTimeLeft(prev => (prev === null ? 30 : prev));
     } else {
       setTimeLeft(null);
     }
