@@ -66,3 +66,29 @@ def test_find_matches_with_expired_request(user, game):
     # find_matches doit retourner une liste vide
     results = find_matches(expired_req)
     assert results == []
+
+
+@pytest.mark.django_db
+def test_nearby_requests_unlimited_radius(user, game, another_user):
+    """
+    Test la logique de 'Recherche mondiale' (radius_km >= 10000)
+    où le filtrage géographique (bbox et haversine) est ignoré.
+    """
+    req = MatchmakingRequest.objects.create(
+        user=another_user,
+        game=game,
+        latitude=40.7128,
+        longitude=-74.0060,
+        radius_km=10,
+        expires_at=timezone.now() + timedelta(hours=1),
+    )
+
+    results = nearby_requests(
+        lat=48.8566,
+        lon=2.3522,
+        radius_km=20000,
+        game=game,
+        exclude_user=user,
+    )
+
+    assert req in results
