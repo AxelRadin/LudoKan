@@ -133,7 +133,8 @@
       "ticket_rejected": "Ticket rejeté",
       "ticket_published": "Ticket publié",
       "ticket_created": "Nouveau ticket"
-    }
+    },
+    "viewAll": "Voir toutes les notifications"
   },
   "loginForm": {
     "title": "Connexion",
