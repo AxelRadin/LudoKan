@@ -290,24 +290,52 @@ export function RecommendedGamesSection() {
   } else if (isEmpty) {
     content = (
       <Box
-        sx={{ pl: '18px', display: 'flex', flexDirection: 'column', gap: 2 }}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+          py: 6,
+          px: 3,
+          borderRadius: '20px',
+          border: `1px dashed ${isDark ? 'rgba(239,83,80,0.25)' : 'rgba(198,40,40,0.2)'}`,
+          textAlign: 'center',
+        }}
       >
-        <Typography sx={{ fontFamily: F, color: inkColor, opacity: 0.6 }}>
-          Aucune suggestion disponible pour le moment.
+        <Typography
+          sx={{
+            fontFamily: F,
+            fontWeight: 700,
+            fontSize: { xs: 18, md: 22 },
+            color: inkColor,
+          }}
+        >
+          Tes suggestions t'attendent 🎮
+        </Typography>
+        <Typography
+          sx={{
+            fontFamily: F,
+            fontSize: 15,
+            color: inkColor,
+            opacity: 0.55,
+            maxWidth: 420,
+          }}
+        >
+          {
+            "Ajoute des jeux à ta bibliothèque pour qu'on te suggère des titres qui correspondent à tes goûts."
+          }
         </Typography>
         <Button
           href="/search"
-          variant="outlined"
+          variant="contained"
           sx={{
-            alignSelf: 'flex-start',
+            mt: 1,
             fontFamily: F,
-            borderColor: accentColor,
-            color: accentColor,
-            '&:hover': {
-              borderColor: accentColor,
-              bgcolor: 'transparent',
-              opacity: 0.8,
-            },
+            fontWeight: 700,
+            bgcolor: accentColor,
+            borderRadius: '12px',
+            px: 3,
+            '&:hover': { bgcolor: accentColor, opacity: 0.88 },
           }}
         >
           Explorer le catalogue

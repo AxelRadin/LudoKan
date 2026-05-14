@@ -31,16 +31,19 @@ export const HOME_TOUR_STEPS: DriveStep[] = [
     'top'
   ),
   createStep(
-    '[data-tour="suggestions"]',
-    '✨ Suggestions personnalisées',
-    "Cette section t'affiche des jeux sélectionnés selon les genres de ta bibliothèque. Plus tu ajoutes de jeux, plus les suggestions s'affinent."
-  ),
-  createStep(
     '[data-tour="notif-bell"]',
     '🔔 Notifications',
     "Reçois des alertes pour tes demandes d'amis, le matchmaking et les nouveaux avis. Le badge rouge indique le nombre de notifications non lues.",
     'bottom',
     'end'
+  ),
+];
+
+export const SUGGESTIONS_TOUR_STEPS: DriveStep[] = [
+  createStep(
+    '[data-tour="suggestions"]',
+    '✨ Suggestions personnalisées',
+    "Cette section t'affiche des jeux sélectionnés selon les genres de ta bibliothèque. Plus tu ajoutes de jeux, plus les suggestions s'affinent."
   ),
 ];
 
