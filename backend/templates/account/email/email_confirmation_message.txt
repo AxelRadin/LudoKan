@@ -1,12 +1,12 @@
-{% load account i18n %}{% user_display user as user_display %}{% blocktrans %}Hi {{ user_display }},
+{% load account i18n %}{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_url=frontend_url activate_url=activate_url %}Hi {{ user_display }},
 
 Welcome to LudoKan!
 
-To finalize your registration on{% endblocktrans %} {{ current_site.name }} ({{ frontend_url }}), {% blocktrans %}please confirm your email address by clicking the following link:{% endblocktrans %}
+To finalize your registration on {{ site_name }} ({{ site_url }}), please confirm your email address by clicking the following link:
 
 {{ activate_url }}
 
-{% blocktrans %}If you did not create an account on LudoKan, you can safely ignore this email.
+If you did not create an account on LudoKan, you can safely ignore this email.
 
 Thank you,
 The LudoKan team{% endblocktrans %}

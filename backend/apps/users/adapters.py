@@ -2,7 +2,6 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings as django_settings
 from django.utils import translation
-from django.utils.translation import get_language_from_request
 
 from apps.users.models import CustomUser
 
@@ -16,32 +15,43 @@ class LudokanAccountAdapter(DefaultAccountAdapter):
     def send_mail(self, template_prefix, email, context):
         context["frontend_url"] = self._frontend_base()
         request = context.get("request")
+        lang = None
         if request is not None:
-            try:
-                lang = get_language_from_request(request)
-            except Exception:
-                lang = django_settings.LANGUAGE_CODE
-            with translation.override(lang):
-                return super().send_mail(template_prefix, email, context)
-        return super().send_mail(template_prefix, email, context)
+            lang = translation.get_language_from_request(request)
+        if not lang:
+            lang = translation.get_language() or django_settings.LANGUAGE_CODE
+
+        with translation.override(lang):
+            return super().send_mail(template_prefix, email, context)
 
     def get_email_confirmation_url(self, request, emailconfirmation):
         """
-        allauth 65+ n'utilise le domaine du frontend (HEADLESS_*) que si allauth.headless
-        est installé ; sinon l'URL absolue reprend le host du backend. On force le SPA.
+        Force l'URL vers le SPA avec un paramètre de langue optionnel.
         """
-        return f"{self._frontend_base()}/verify-email/{emailconfirmation.key}"
+        lang = translation.get_language()
+        url = f"{self._frontend_base()}/verify-email/{emailconfirmation.key}"
+        if lang:
+            url += f"?lang={lang}"
+        return url
 
     def get_reset_password_from_key_url(self, key):
         """
-        Lien direct vers le SPA (uid/token). La clé opaque allauth est « uid-temp_token »
-        (premier tiret = séparateur, comme la route allauth account_reset_password_from_key).
+        Lien direct vers le SPA (uid/token) avec paramètre de langue.
         """
         base = self._frontend_base()
+        lang = translation.get_language()
+        url = None
+
         if "-" in key:
             uid, token = key.split("-", 1)
-            return f"{base}/reset-password/{uid}/{token}"
-        return super().get_reset_password_from_key_url(key)
+            url = f"{base}/reset-password/{uid}/{token}"
+        else:
+            url = super().get_reset_password_from_key_url(key)
+
+        if url and lang:
+            separator = "&" if "?" in url else "?"
+            url += f"{separator}lang={lang}"
+        return url
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

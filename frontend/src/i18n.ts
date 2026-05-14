@@ -4,12 +4,20 @@ import en from './locales/en/translation.json';
 import fr from './locales/fr/translation.json';
 
 try {
+  const urlParams = new URLSearchParams(window.location.search);
+  const langParam = urlParams.get('lang');
+  const storedLang =
+    typeof localStorage !== 'undefined'
+      ? localStorage.getItem('i18nextLng')
+      : null;
+  const lng = langParam || storedLang || 'fr';
+
   await i18n.use(initReactI18next).init({
     resources: {
       en: { translation: en },
       fr: { translation: fr },
     },
-    lng: 'fr',
+    lng,
     fallbackLng: 'fr',
     interpolation: { escapeValue: false },
   });
