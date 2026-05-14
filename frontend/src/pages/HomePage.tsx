@@ -304,7 +304,7 @@ export const HomePage = () => {
 
   const handleGenreClick = (id: number, name: string) => {
     navigate(`/trending/genre/${id}`, { state: { genreName: name } });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

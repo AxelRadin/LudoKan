@@ -289,7 +289,7 @@ const SettingsPage: React.FC = () => {
           <ListItemButton
             onClick={() => {
               navigate('/cookies');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             sx={settingsListRowButtonSx}
           >
@@ -340,7 +340,7 @@ const SettingsPage: React.FC = () => {
           <ListItemButton
             onClick={() => {
               navigate('/politiques');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             sx={settingsListRowButtonSx}
           >
@@ -359,7 +359,7 @@ const SettingsPage: React.FC = () => {
           <ListItemButton
             onClick={() => {
               navigate('/about');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             sx={settingsListRowButtonSx}
           >

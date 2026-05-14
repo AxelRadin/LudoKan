@@ -15,7 +15,7 @@ try {
   });
   const persistLng = (lng: string) => {
     try {
-      localStorage.setItem('i18nextLng', lng);
+      globalThis.localStorage.setItem('i18nextLng', lng);
     } catch {
       /* ignore */
     }
