@@ -270,13 +270,15 @@ export async function searchGamesPage(
   q: string,
   limit = 24,
   offset = 0,
-  filters?: IgdbListFilters
+  filters?: IgdbListFilters,
+  sort?: string
 ): Promise<IgdbGame[]> {
   const params = new URLSearchParams({
     q,
     limit: String(limit),
     offset: String(offset),
   });
+  if (sort) params.set('sort', sort);
   appendIgdbListFilters(params, filters);
   return apiGet(`/api/igdb/search-page/?${params}`);
 }

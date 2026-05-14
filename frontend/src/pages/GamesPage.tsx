@@ -84,7 +84,8 @@ export const GamesPage: React.FC = () => {
           q,
           PAGE_SIZE,
           offset,
-          activeFilters
+          activeFilters,
+          sort
         );
         setGames(results);
         setTotalCount(results.length > 0 ? 1000 : 0);
@@ -187,12 +188,6 @@ export const GamesPage: React.FC = () => {
             >
               {t('games.title', 'Explorer les jeux')}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {t(
-                'games.subtitle',
-                "Découvrez des milliers de titres à travers l'API IGDB."
-              )}
-            </Typography>
           </Box>
 
           <Box
@@ -217,30 +212,31 @@ export const GamesPage: React.FC = () => {
               }}
             />
 
-            {!q && (
-              <FormControl size="small" sx={{ minWidth: 160 }}>
-                <InputLabel>{t('common.sort', 'Trier par')}</InputLabel>
-                <Select
-                  value={sort}
-                  label={t('common.sort', 'Trier par')}
-                  onChange={e => updateParam('sort', e.target.value)}
-                  sx={{ borderRadius: '12px' }}
-                >
-                  <MenuItem value="popularity">
-                    {t('games.sort.popularity', 'Popularité')}
-                  </MenuItem>
-                  <MenuItem value="recent">
-                    {t('games.sort.recent', 'Récent')}
-                  </MenuItem>
-                  <MenuItem value="rating">
-                    {t('games.sort.rating', 'Mieux notés')}
-                  </MenuItem>
-                  <MenuItem value="most_rated">
-                    {t('games.sort.mostRated', 'Plus notés')}
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            )}
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>{t('common.sort', 'Trier par')}</InputLabel>
+              <Select
+                value={sort}
+                label={t('common.sort', 'Trier par')}
+                onChange={e => updateParam('sort', e.target.value)}
+                sx={{ borderRadius: '12px' }}
+              >
+                <MenuItem value="popularity">
+                  {t('games.sort.popularity', 'Popularité')}
+                </MenuItem>
+                <MenuItem value="recent">
+                  {t('games.sort.recent', 'Récent')}
+                </MenuItem>
+                <MenuItem value="rating">
+                  {t('games.sort.rating', 'Mieux notés')}
+                </MenuItem>
+                <MenuItem value="most_rated">
+                  {t('games.sort.mostRated', 'Plus notés')}
+                </MenuItem>
+                <MenuItem value="name">
+                  {t('games.sort.name', 'Nom (A-Z)')}
+                </MenuItem>
+              </Select>
+            </FormControl>
           </Box>
         </Box>
 

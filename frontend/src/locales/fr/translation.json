@@ -62,7 +62,8 @@
       "popularity": "Popularité",
       "recent": "Récent",
       "rating": "Mieux notés",
-      "mostRated": "Plus notés"
+      "mostRated": "Plus notés",
+      "name": "Nom (A-Z)"
     },
     "filters": {
       "title": "Filtres",

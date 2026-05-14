@@ -8,12 +8,14 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Slider,
   Divider,
   Button,
   useTheme,
   IconButton,
   Chip,
+  Rating,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -248,70 +250,119 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
           </AccordionDetails>
         </Accordion>
 
-        {/* SLIDERS (AGE, PLAYERS, RATING) */}
-        <Box sx={{ px: 2, py: 2 }}>
-          <Box mb={3}>
-            <Typography
-              variant="caption"
-              gutterBottom
-              sx={{ fontWeight: 700, color: 'text.secondary' }}
-            >
-              {t('games.filters.minRating', 'Note minimale')} :{' '}
-              {filters.min_rating || 0}%
-            </Typography>
-            <Slider
-              size="small"
-              value={filters.min_rating || 0}
-              onChange={(_, v) => handleSliderChange('min_rating', v as number)}
-              min={0}
-              max={100}
-              step={5}
-              valueLabelDisplay="auto"
+        {/* Rating */}
+        <Accordion
+          defaultExpanded
+          elevation={0}
+          sx={{ background: 'transparent' }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <SectionTitle
+              title={t('games.filters.minRating', 'Note minimale')}
             />
-          </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box
+              px={1}
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              gap={1}
+            >
+              <Rating
+                value={(filters.min_rating || 0) / 20}
+                precision={0.5}
+                onChange={(_, newValue) =>
+                  handleSliderChange('min_rating', (newValue || 0) * 20)
+                }
+                size="large"
+              />
+              <Typography variant="caption" color="text.secondary">
+                {filters.min_rating
+                  ? `${filters.min_rating}% +`
+                  : t('common.all', 'Tous')}
+              </Typography>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
 
-          <Box mb={3}>
-            <Typography
-              variant="caption"
-              gutterBottom
-              sx={{ fontWeight: 700, color: 'text.secondary' }}
-            >
-              {t('games.filters.minAge', 'Âge minimum')} :{' '}
-              {filters.min_age || 3}+
-            </Typography>
-            <Slider
-              size="small"
-              value={filters.min_age || 3}
-              onChange={(_, v) => handleSliderChange('min_age', v as number)}
-              min={3}
-              max={18}
-              step={1}
-              valueLabelDisplay="auto"
-            />
-          </Box>
+        <Divider sx={{ my: 1, opacity: 0.5 }} />
 
-          <Box mb={3}>
-            <Typography
-              variant="caption"
-              gutterBottom
-              sx={{ fontWeight: 700, color: 'text.secondary' }}
-            >
-              {t('games.filters.minPlayers', 'Joueurs min.')} :{' '}
-              {filters.min_players || 1}
-            </Typography>
-            <Slider
-              size="small"
-              value={filters.min_players || 1}
-              onChange={(_, v) =>
-                handleSliderChange('min_players', v as number)
-              }
-              min={1}
-              max={8}
-              step={1}
-              valueLabelDisplay="auto"
+        {/* Age */}
+        <Accordion
+          defaultExpanded
+          elevation={0}
+          sx={{ background: 'transparent' }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <SectionTitle title={t('games.filters.minAge', 'Âge minimal')} />
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box px={1}>
+              <ToggleButtonGroup
+                value={filters.min_age}
+                exclusive
+                onChange={(_, val) => handleSliderChange('min_age', val)}
+                fullWidth
+                size="small"
+                sx={{
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  '& .MuiToggleButtonGroup-grouped': {
+                    border: '1px solid !important',
+                    borderRadius: '8px !important',
+                  },
+                }}
+              >
+                {[3, 7, 12, 16, 18].map(age => (
+                  <ToggleButton key={age} value={age} sx={{ px: 2, py: 1 }}>
+                    {age}+
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
+
+        <Divider sx={{ my: 1, opacity: 0.5 }} />
+
+        {/* Players */}
+        <Accordion
+          defaultExpanded
+          elevation={0}
+          sx={{ background: 'transparent' }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <SectionTitle
+              title={t('games.filters.minPlayers', 'Joueurs min.')}
             />
-          </Box>
-        </Box>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Box px={1}>
+              <ToggleButtonGroup
+                value={filters.min_players}
+                exclusive
+                onChange={(_, val) => handleSliderChange('min_players', val)}
+                fullWidth
+                size="small"
+                sx={{
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  '& .MuiToggleButtonGroup-grouped': {
+                    border: '1px solid !important',
+                    borderRadius: '8px !important',
+                  },
+                }}
+              >
+                {[1, 2, 4, 8].map(p => (
+                  <ToggleButton key={p} value={p} sx={{ px: 2, py: 1 }}>
+                    {p === 8 ? '8+' : p}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Box>
+          </AccordionDetails>
+        </Accordion>
       </Box>
 
       <Box sx={{ p: 2 }}>

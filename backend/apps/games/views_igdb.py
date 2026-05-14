@@ -384,6 +384,7 @@ class IgdbSearchPageView(APIView):
         min_rating = parse_optional_float_query(request.query_params.get("min_rating"))
         release_year_min = parse_optional_int_query(request.query_params.get("release_year_min"))
         release_year_max = parse_optional_int_query(request.query_params.get("release_year_max"))
+        sort = request.query_params.get("sort") or "popularity"
 
         q_esc = escape_igdb_string(q)
         q_norm_esc = escape_igdb_string(normalize_query(q))
@@ -406,6 +407,7 @@ class IgdbSearchPageView(APIView):
                 min_rating=min_rating,
                 release_year_min=release_year_min,
                 release_year_max=release_year_max,
+                sort_key=sort,
             )
             if not arr and offset == 0:
                 arr = search_page_fallback_search(

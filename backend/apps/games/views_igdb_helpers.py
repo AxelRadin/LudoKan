@@ -193,6 +193,7 @@ def search_page_name_matches(
     min_rating: float | None = None,
     release_year_min: int | None = None,
     release_year_max: int | None = None,
+    sort_key: str = "popularity",
 ) -> list:
     genre_ids, platform_ids, use_demo = _normalize_optional_genre_platform(genre_ids, platform_ids, min_age, min_players, max_players)
     needs_post_slice = use_demo
@@ -211,11 +212,24 @@ def search_page_name_matches(
             release_year_min=release_year_min,
             release_year_max=release_year_max,
         )
+        from apps.games.igdb_proxy_constants import TRENDING_SORTS
+
+        sort_clause = TRENDING_SORTS.get(sort_key, TRENDING_SORTS["popularity"])
+        if "sort" in sort_clause:
+            # On ne garde que la partie après le dernier ';' si il y a un 'where'
+            sort_part = sort_clause.split(";")[-2].strip() + ";" if ";" in sort_clause else sort_clause
+            if not sort_part.startswith("sort"):
+                # Si le split n'a pas donné que le sort, on cherche le mot clef
+                parts = sort_clause.split(";")
+                sort_part = next((p.strip() + ";" for p in parts if p.strip().startswith("sort")), "sort total_rating_count desc;")
+        else:
+            sort_part = "sort total_rating_count desc;"
+
         if needs_post_slice:
             raw_cap = min(max((offset + limit) * 5, 50), 200)
-            name_body = f"{fields} {where_line}; sort total_rating_count desc; limit {raw_cap}; offset 0;"
+            name_body = f"{fields} {where_line}; {sort_part} limit {raw_cap}; offset 0;"
         else:
-            name_body = f"{fields} {where_line}; sort total_rating_count desc; limit {limit}; offset {offset};"
+            name_body = f"{fields} {where_line}; {sort_part} limit {limit}; offset {offset};"
         arr = igdb_response_as_list(igdb_request("games", name_body))
         arr = filter_games_raw_by_demographics(igdb_request, arr, min_age, min_players, max_players)
         if needs_post_slice:
