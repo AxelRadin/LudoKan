@@ -111,7 +111,7 @@ def test_merge_igdb_where_predicates_platform_only():
 def test_merge_igdb_where_predicates_base_only_no_extras():
     f = IgdbFilters()
     out = merge_igdb_where_predicates("total_rating_count > 0", f)
-    assert out == "where total_rating_count > 0"
+    assert out == "where total_rating_count > 0;"
 
 
 def test_merge_trending_where_returns_unchanged_if_head_not_where():

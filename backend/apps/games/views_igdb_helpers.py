@@ -127,9 +127,35 @@ def _genre_platform_where_extra_clauses(f: IgdbFilters) -> list[str]:
 
 
 def merge_igdb_where_predicates(base_predicate: str, f: IgdbFilters) -> str:
+    s = base_predicate.strip()
+    where_part = s
+    sort_part = ""
+    if "sort " in s.lower():
+        idx = s.lower().find("sort ")
+        where_part = s[:idx].strip().rstrip(";")
+        sort_part = s[idx:].strip()
+
+    if where_part.lower().startswith("where "):
+        where_part = where_part[6:].strip()
+
     extras = _genre_platform_where_extra_clauses(f)
-    parts = extras + [base_predicate.strip()]
-    return "where " + " & ".join(parts)
+    combined = extras
+    if where_part:
+        combined.append(where_part)
+
+    res = ""
+    if combined:
+        res = "where " + " & ".join(combined)
+
+    if sort_part:
+        if res:
+            res = res.rstrip(";") + "; " + sort_part
+        else:
+            res = sort_part
+
+    if res and not res.endswith(";"):
+        res += ";"
+    return res
 
 
 def _ids_from_igdb_relation(game: dict, field: str) -> set[int]:
