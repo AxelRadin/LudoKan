@@ -205,14 +205,6 @@ export const Header: React.FC = () => {
     <>
       {themeToggleButton}
       {langDropdown}
-      <Button
-        color="inherit"
-        onClick={() => navigate('/games')}
-        startIcon={<ExploreIcon />}
-        sx={{ fontWeight: 700 }}
-      >
-        {t('nav.games', 'Jeux')}
-      </Button>
       {isAuthenticated ? (
         <>
           <NotificationIcon />
@@ -500,8 +492,30 @@ export const Header: React.FC = () => {
               </IconButton>
             ) : (
               <>
-                <Box data-tour="search">
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  gap={2}
+                  data-tour="search"
+                >
                   <SearchBar />
+                  <Button
+                    color="inherit"
+                    onClick={() => navigate('/games')}
+                    startIcon={<ExploreIcon />}
+                    sx={{
+                      fontWeight: 800,
+                      borderRadius: '12px',
+                      px: 2,
+                      '&:hover': {
+                        background: darkMode
+                          ? 'rgba(255,255,255,0.05)'
+                          : 'rgba(0,0,0,0.04)',
+                      },
+                    }}
+                  >
+                    {t('nav.games', 'Jeux')}
+                  </Button>
                 </Box>
                 <Box display="flex" alignItems="center" gap={2}>
                   {desktopActions}
