@@ -52,7 +52,9 @@
     "delete": "Delete",
     "close": "Close",
     "reset": "Reset",
-    "resetAll": "Reset all"
+    "resetAll": "Reset all",
+    "search": "Search",
+    "sort": "Sort by"
   },
   "games": {
     "title": "Explore Games",
@@ -73,7 +75,8 @@
       "gameModes": "Game Modes",
       "minRating": "Minimum Rating",
       "minAge": "Minimum Age",
-      "minPlayers": "Min. Players"
+      "minPlayers": "Min. Players",
+      "playerPerspectives": "Perspectives"
     }
   },
   "error404": {
@@ -122,18 +125,58 @@
   },
   "genres": {
     "Action": "Action",
-    "Aventure": "Adventure",
+    "Adventure": "Adventure",
     "RPG": "RPG",
     "FPS": "FPS",
     "TPS": "TPS",
-    "Stratégie": "Strategy",
+    "Strategy": "Strategy",
     "Simulation": "Simulation",
     "Puzzle": "Puzzle",
-    "Course": "Racing",
+    "Racing": "Racing",
     "Sport": "Sport",
     "Hack'n Slash": "Hack'n Slash",
-    "Plateforme": "Platformer",
-    "Jeu de cartes": "Card Game"
+    "Platform": "Platform",
+    "Card & Board": "Card & Board"
+  },
+  "platforms": {
+    "PC": "PC",
+    "PS5": "PS5",
+    "PS4": "PS4",
+    "Xbox Series X|S": "Xbox Series X|S",
+    "Xbox One": "Xbox One",
+    "Nintendo Switch": "Nintendo Switch",
+    "iOS": "iOS",
+    "Android": "Android"
+  },
+  "themes": {
+    "Action": "Action",
+    "Horror": "Horror",
+    "Fantasy": "Fantasy",
+    "Sci-fi": "Sci-fi",
+    "Open World": "Open World",
+    "Survival": "Survival",
+    "Stealth": "Stealth",
+    "Comedy": "Comedy",
+    "Sandbox": "Sandbox",
+    "Historical": "Historical",
+    "Warfare": "Warfare",
+    "Non-fiction": "Non-fiction",
+    "Mystery": "Mystery"
+  },
+  "gameModes": {
+    "Single player": "Single player",
+    "Multiplayer": "Multiplayer",
+    "Co-operative": "Co-operative",
+    "Split screen": "Split screen",
+    "MMO": "MMO",
+    "Battle Royale": "Battle Royale"
+  },
+  "perspectives": {
+    "First person": "First person",
+    "Third person": "Third person",
+    "Bird's eye / Top-down": "Bird's eye / Top-down",
+    "Side view": "Side view",
+    "Virtual Reality": "Virtual Reality"
   },
   "header": {
     "openMenu": "Open menu",

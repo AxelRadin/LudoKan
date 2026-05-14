@@ -52,7 +52,9 @@
     "delete": "Supprimer",
     "close": "Fermer",
     "reset": "Réinitialiser",
-    "resetAll": "Tout réinitialiser"
+    "resetAll": "Tout réinitialiser",
+    "search": "Recherche",
+    "sort": "Trier par"
   },
   "games": {
     "title": "Explorer les jeux",
@@ -73,7 +75,8 @@
       "gameModes": "Modes de jeu",
       "minRating": "Note minimale",
       "minAge": "Âge minimum",
-      "minPlayers": "Joueurs min."
+      "minPlayers": "Joueurs min.",
+      "playerPerspectives": "Perspectives"
     }
   },
   "error404": {
@@ -122,18 +125,58 @@
   },
   "genres": {
     "Action": "Action",
-    "Aventure": "Aventure",
+    "Adventure": "Aventure",
     "RPG": "RPG",
     "FPS": "FPS",
     "TPS": "TPS",
-    "Stratégie": "Stratégie",
+    "Strategy": "Stratégie",
     "Simulation": "Simulation",
     "Puzzle": "Puzzle",
-    "Course": "Course",
+    "Racing": "Course",
     "Sport": "Sport",
     "Hack'n Slash": "Hack'n Slash",
-    "Plateforme": "Plateforme",
-    "Jeu de cartes": "Jeu de cartes"
+    "Platform": "Plateforme",
+    "Card & Board": "Cartes & Plateau"
+  },
+  "platforms": {
+    "PC": "PC",
+    "PS5": "PS5",
+    "PS4": "PS4",
+    "Xbox Series X|S": "Xbox Series X|S",
+    "Xbox One": "Xbox One",
+    "Nintendo Switch": "Nintendo Switch",
+    "iOS": "iOS",
+    "Android": "Android"
+  },
+  "themes": {
+    "Action": "Action",
+    "Horror": "Horreur",
+    "Fantasy": "Fantaisie",
+    "Sci-fi": "Science-fiction",
+    "Open World": "Monde ouvert",
+    "Survival": "Survie",
+    "Stealth": "Infiltration",
+    "Comedy": "Humour",
+    "Sandbox": "Bac à sable",
+    "Historical": "Historique",
+    "Warfare": "Guerre",
+    "Non-fiction": "Non-fiction",
+    "Mystery": "Mystère"
+  },
+  "gameModes": {
+    "Single player": "Solo",
+    "Multiplayer": "Multijoueur",
+    "Co-operative": "Coopératif",
+    "Split screen": "Écran scindé",
+    "MMO": "MMO",
+    "Battle Royale": "Battle Royale"
+  },
+  "perspectives": {
+    "First person": "Première personne",
+    "Third person": "Troisième personne",
+    "Bird's eye / Top-down": "Vue de dessus",
+    "Side view": "Vue de côté",
+    "Virtual Reality": "Réalité Virtuelle"
   },
   "header": {
     "openMenu": "Ouvrir le menu",

@@ -182,7 +182,11 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
                       }
                     />
                   }
-                  label={<Typography variant="body2">{p.name}</Typography>}
+                  label={
+                    <Typography variant="body2">
+                      {t(`platforms.${p.name}`, p.name)}
+                    </Typography>
+                  }
                 />
               ))}
             </FormGroup>
@@ -208,7 +212,11 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
                       }
                     />
                   }
-                  label={<Typography variant="body2">{t_.name}</Typography>}
+                  label={
+                    <Typography variant="body2">
+                      {t(`themes.${t_.name}`, t_.name)}
+                    </Typography>
+                  }
                 />
               ))}
             </FormGroup>
@@ -236,7 +244,11 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
                       }
                     />
                   }
-                  label={<Typography variant="body2">{m.name}</Typography>}
+                  label={
+                    <Typography variant="body2">
+                      {t(`gameModes.${m.name}`, m.name)}
+                    </Typography>
+                  }
                 />
               ))}
             </FormGroup>
