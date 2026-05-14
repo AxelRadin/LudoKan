@@ -39,6 +39,7 @@ def send_welcome_email_on_confirmation(request, email_address, **kwargs):
     adapter = get_adapter(request)
     context = {
         "user": user,
+        "request": request,
     }
     adapter.send_mail("account/email/welcome", email_address.email, context)
 
@@ -55,5 +56,5 @@ def send_welcome_email_on_social_signup(request, user, **kwargs):
     email_obj = EmailAddress.objects.filter(user=user, verified=True).first()
     if email_obj:
         adapter = get_adapter(request)
-        context = {"user": user}
+        context = {"user": user, "request": request}
         adapter.send_mail("account/email/welcome", email_obj.email, context)
