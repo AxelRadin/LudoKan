@@ -111,6 +111,8 @@ export default function UsersTable() {
                 alignItems: 'center',
                 borderBottom: '1px solid rgba(0,0,0,0.04)',
                 '&:last-child': { borderBottom: 'none' },
+                opacity: user.is_active ? 1 : 0.45,
+                bgcolor: user.is_active ? 'transparent' : 'rgba(0,0,0,0.02)',
               }}
             >
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
