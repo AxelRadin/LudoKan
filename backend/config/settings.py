@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import warnings
 from datetime import timedelta
 from pathlib import Path
 
@@ -83,9 +82,8 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.realtime",
     "apps.matchmaking",
-    "apps.game_tickets",
+    "apps.support",
     "apps.chat",
-    "django_fsm",
     "api",
 ]
 
@@ -525,9 +523,6 @@ if SENTRY_DSN:
         environment=config("SENTRY_ENVIRONMENT", default=None),
         send_default_pii=True,
     )
-
-# Réduire le bruit : avertissement django-fsm / viewflow (en fin de fichier pour Ruff E402)
-warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
 
 # -------------------------------------------------------------------
 # Steam API & Provider Config

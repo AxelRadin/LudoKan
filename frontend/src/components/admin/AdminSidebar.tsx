@@ -29,10 +29,10 @@ const NAV_ITEMS = [
     permission: 'user.view',
   },
   {
-    label: 'Tickets',
+    label: 'Support',
     icon: <ConfirmationNumberIcon />,
     path: '/admin/tickets',
-    permission: 'ticket_read',
+    permission: 'support.view',
   },
   {
     label: 'Reports',

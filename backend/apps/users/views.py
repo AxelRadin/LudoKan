@@ -16,10 +16,10 @@ from rest_framework.views import APIView
 
 from apps.chat.models import Message
 from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_users_csv, build_users_pdf
-from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Rating
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportAdminSerializer
+from apps.support.models import SupportTicket
 from apps.users.models import AdminAction, UserRole, UserSuspension
 from apps.users.permissions import IsAdminWithPermission, IsNotSuspended, has_permission
 from apps.users.serializers import AdminActionSerializer, AdminUserListSerializer, UserSuspendSerializer, UserSuspensionSerializer
@@ -163,7 +163,8 @@ class AdminStatsView(APIView):
       "totals": {
         "users": 1234,
         "games": 542,
-        "tickets": 32,
+        "support_tickets": 12,
+        "support_tickets_open": 3,
         "reviews": 900
       }
     }
@@ -205,9 +206,12 @@ class AdminStatsView(APIView):
 
         # Totaux simples sur autres entités
         games_total = Game.objects.count()
-        ticket_agg = GameTicket.objects.aggregate(
+        support_agg = SupportTicket.objects.aggregate(
             total=Count("id"),
-            pending=Count("id", filter=Q(status="pending")),
+            open_count=Count(
+                "id",
+                filter=Q(status__in=[SupportTicket.Status.OPEN, SupportTicket.Status.IN_PROGRESS]),
+            ),
         )
 
         reports_unresolved = ContentReport.objects.filter(handled=False).count()
@@ -220,8 +224,8 @@ class AdminStatsView(APIView):
             "users": user_agg["total"],
             "users_new_last_7_days": user_agg["new_last_7_days"],
             "games": games_total,
-            "tickets": ticket_agg["total"],
-            "tickets_pending": ticket_agg["pending"],
+            "support_tickets": support_agg["total"],
+            "support_tickets_open": support_agg["open_count"],
             "reviews": review_agg["total"],
             "reports_unresolved": reports_unresolved,
         }

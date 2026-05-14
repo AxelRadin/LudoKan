@@ -14,10 +14,10 @@ const ACTIONS = [
     permission: 'user.view',
   },
   {
-    label: 'Voir les tickets',
+    label: 'Voir le support',
     icon: <ConfirmationNumberIcon fontSize="small" />,
     path: '/admin/tickets',
-    permission: 'ticket_read',
+    permission: 'support.view',
   },
   {
     label: 'Voir les reports',

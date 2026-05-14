@@ -3,10 +3,11 @@ import { apiGet } from '../services/api';
 
 export type AdminTicket = {
   id: number;
-  game_name: string;
+  category: string;
+  subject: string;
+  status: string;
   user_pseudo?: string | null;
   user_email?: string | null;
-  status: string;
   created_at: string;
 };
 
@@ -25,14 +26,14 @@ export function useAdminTickets(): UseAdminTicketsReturn {
     const controller = new AbortController();
     (async () => {
       try {
-        const data = await apiGet('/api/admin/tickets/', {
+        const data = await apiGet('/api/admin/support/tickets/', {
           signal: controller.signal,
         });
         const list = Array.isArray(data) ? data : (data.results ?? []);
         setTickets(list);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
-        setError('Erreur lors du chargement des tickets');
+        setError('Erreur lors du chargement du support');
       } finally {
         setLoading(false);
       }

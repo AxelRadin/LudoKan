@@ -15,19 +15,24 @@ import LoadingSkeleton from '../../components/admin/LoadingSkeleton';
 import { useAdminTickets } from '../../hooks/useAdminTickets';
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'En attente',
-  reviewing: 'En cours',
-  approved: 'Approuvé',
-  rejected: 'Rejeté',
-  published: 'Publié',
+  open: 'Ouvert',
+  in_progress: 'En cours',
+  resolved: 'Résolu',
+  closed: 'Fermé',
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  bug: 'Bug',
+  account: 'Compte',
+  other: 'Autre',
 };
 
 function getStatusColor(
   status: string
 ): 'default' | 'warning' | 'success' | 'error' {
-  if (status === 'approved' || status === 'published') return 'success';
-  if (status === 'rejected') return 'error';
-  if (status === 'reviewing') return 'warning';
+  if (status === 'resolved' || status === 'closed') return 'success';
+  if (status === 'in_progress') return 'warning';
+  if (status === 'open') return 'default';
   return 'default';
 }
 
@@ -37,7 +42,7 @@ export default function AdminTickets() {
   return (
     <AdminLayout>
       <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        Tickets
+        Support
       </Typography>
 
       {loading ? <LoadingSkeleton variant="table" count={8} /> : null}
@@ -55,7 +60,8 @@ export default function AdminTickets() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Jeu</TableCell>
+                <TableCell>Sujet</TableCell>
+                <TableCell>Catégorie</TableCell>
                 <TableCell>Utilisateur</TableCell>
                 <TableCell>Statut</TableCell>
                 <TableCell>Date</TableCell>
@@ -64,10 +70,10 @@ export default function AdminTickets() {
             <TableBody>
               {tickets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4}>
+                  <TableCell colSpan={5}>
                     <Box sx={{ py: 3 }}>
                       <Typography variant="body2" color="text.secondary">
-                        Aucun ticket.
+                        Aucun ticket support.
                       </Typography>
                     </Box>
                   </TableCell>
@@ -75,7 +81,10 @@ export default function AdminTickets() {
               ) : (
                 tickets.map(ticket => (
                   <TableRow key={ticket.id} hover>
-                    <TableCell>{ticket.game_name}</TableCell>
+                    <TableCell>{ticket.subject}</TableCell>
+                    <TableCell>
+                      {CATEGORY_LABELS[ticket.category] ?? ticket.category}
+                    </TableCell>
                     <TableCell>
                       {ticket.user_pseudo ?? ticket.user_email ?? '—'}
                     </TableCell>

@@ -67,15 +67,15 @@ export default function KpiSection({ data, loading }: Props) {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <KpiCard
-              title="Tickets"
-              value={data.totals.tickets}
+              title="Support"
+              value={data.totals.support_tickets}
               icon={<ConfirmationNumberIcon fontSize="small" />}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <KpiCard
-              title="Tickets en attente"
-              value={data.totals.tickets_pending}
+              title="Support ouverts"
+              value={data.totals.support_tickets_open}
               icon={<PendingActionsIcon fontSize="small" />}
             />
           </Grid>

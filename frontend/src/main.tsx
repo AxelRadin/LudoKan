@@ -45,6 +45,7 @@ const MicrosoftCallbackPage = lazy(
 );
 const UserReviewsPage = lazy(() => import('./pages/UserReviewsPage.tsx'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const SupportPage = lazy(() => import('./pages/SupportPage.tsx'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage.tsx'));
 const PolitiquesPage = lazy(() => import('./pages/PolitiquesPage.tsx'));
 const CookiesPage = lazy(() => import('./pages/CookiesPage.tsx'));
@@ -201,6 +202,14 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: 'support',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <SupportPage />
+          </Suspense>
+        ),
+      },
+      {
         path: 'notifications',
         element: (
           <Suspense fallback={<PageLoader />}>
@@ -311,7 +320,7 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProtectedAdminRoute>
-              <PermissionGuard permission="ticket_read">
+              <PermissionGuard permission="support.view">
                 <AdminTickets />
               </PermissionGuard>
             </ProtectedAdminRoute>
