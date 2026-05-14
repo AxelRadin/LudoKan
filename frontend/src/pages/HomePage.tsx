@@ -15,7 +15,7 @@ import { useTour } from '../onboarding/useTour';
 import { HOME_TOUR_STEPS } from '../onboarding/tourSteps';
 import { bleedUnderHeader } from '../layout/bleedUnderHeader';
 
-const HOME_OPTIONAL_STEPS = new Set([0, 1, 2]);
+const HOME_OPTIONAL_STEPS = new Set([0, 1, 2, 3]);
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');

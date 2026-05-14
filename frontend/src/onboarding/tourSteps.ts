@@ -35,6 +35,13 @@ export const HOME_TOUR_STEPS: DriveStep[] = [
     '✨ Suggestions personnalisées',
     "Cette section t'affiche des jeux sélectionnés selon les genres de ta bibliothèque. Plus tu ajoutes de jeux, plus les suggestions s'affinent."
   ),
+  createStep(
+    '[data-tour="notif-bell"]',
+    '🔔 Notifications',
+    "Reçois des alertes pour tes demandes d'amis, le matchmaking et les nouveaux avis. Le badge rouge indique le nombre de notifications non lues.",
+    'bottom',
+    'end'
+  ),
 ];
 
 export const PROFILE_TOUR_STEPS: DriveStep[] = [
@@ -87,6 +94,25 @@ export const FRIENDS_TOUR_STEPS: DriveStep[] = [
     '[data-tour="friends-list"]',
     '👥 Tes amis',
     'Clique sur un ami pour voir son profil et sa bibliothèque de jeux.',
+    'top'
+  ),
+];
+
+export const NOTIFICATIONS_TOUR_STEPS: DriveStep[] = [
+  createStep(
+    '[data-tour="notif-filter"]',
+    '🔎 Filtrer les notifications',
+    "Bascule entre toutes tes notifications et uniquement les non-lues pour t'y retrouver plus facilement."
+  ),
+  createStep(
+    '[data-tour="notif-mark-all"]',
+    '✅ Tout marquer comme lu',
+    'Un clic pour marquer toutes tes notifications comme lues en une seule fois.'
+  ),
+  createStep(
+    '[data-tour="notif-list"]',
+    '🔔 Tes notifications',
+    "Demandes d'amis, matchmaking, avis… toutes tes alertes sont ici.",
     'top'
   ),
 ];

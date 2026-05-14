@@ -5,6 +5,7 @@ export const TOUR_KEYS = {
   profile: 'tour_profile_done',
   game: 'tour_game_done',
   friends: 'tour_friends_done',
+  notifications: 'tour_notifications_done',
 } as const;
 
 export interface UseOnboardingResult {

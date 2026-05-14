@@ -38,6 +38,7 @@ export default function NotificationIcon({
     <>
       <Tooltip title={t('notifications.open')} arrow>
         <IconButton
+          data-tour="notif-bell"
           color="inherit"
           onClick={openMenu}
           aria-label={t('notifications.open')}
