@@ -1,15 +1,25 @@
 from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings as django_settings
+from django.utils import translation
+from django.utils.translation import get_language_from_request
 
 from apps.users.models import CustomUser
 
 
 class LudokanAccountAdapter(DefaultAccountAdapter):
-    """Injecte frontend_url dans le contexte de tous les emails allauth."""
+    """Injecte frontend_url et applique la langue de la requête pour les e-mails allauth."""
 
     def send_mail(self, template_prefix, email, context):
         context["frontend_url"] = getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+        request = context.get("request")
+        if request is not None:
+            try:
+                lang = get_language_from_request(request)
+            except Exception:
+                lang = django_settings.LANGUAGE_CODE
+            with translation.override(lang):
+                return super().send_mail(template_prefix, email, context)
         return super().send_mail(template_prefix, email, context)
 
 

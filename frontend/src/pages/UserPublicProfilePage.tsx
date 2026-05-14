@@ -625,6 +625,23 @@ export default function UserPublicProfilePage() {
           mt: { xs: -10, md: -12 },
         }}
       >
+        <Button
+          variant="text"
+          onClick={() => navigate(-1)}
+          sx={{
+            fontFamily: FONT_BODY,
+            mb: 1,
+            color: 'white',
+            bgcolor: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(6px)',
+            borderRadius: 2,
+            px: 1.5,
+            '&:hover': { bgcolor: 'rgba(0,0,0,0.6)' },
+          }}
+        >
+          {t('licensePage.back')}
+        </Button>
+
         <Paper
           elevation={0}
           sx={{
@@ -821,16 +838,6 @@ export default function UserPublicProfilePage() {
             gamesLoading={gamesLoading}
             readOnly
           />
-        </Box>
-
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Button
-            variant="text"
-            onClick={() => navigate(-1)}
-            sx={{ fontFamily: FONT_BODY }}
-          >
-            ← {t('licensePage.back')}
-          </Button>
         </Box>
       </Box>
 

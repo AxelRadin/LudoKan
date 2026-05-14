@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  fetchFriendRequests,
   searchUsersForFriends,
   sendFriendRequest,
   type UserSearchHit,
@@ -46,6 +47,7 @@ export default function AddFriendSearchModal({
   const [results, setResults] = useState<UserSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
   const [invitingId, setInvitingId] = useState<number | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const tmr = globalThis.setTimeout(() => setDebounced(query.trim()), 350);
@@ -79,7 +81,14 @@ export default function AddFriendSearchModal({
       setDebounced('');
       setResults([]);
       setInvitingId(null);
+      setPendingIds(new Set());
+      return;
     }
+    fetchFriendRequests('outgoing')
+      .then(rows => {
+        setPendingIds(new Set(rows.map(r => r.to_user.id)));
+      })
+      .catch(() => {});
   }, [open]);
 
   const handleInvite = async (hit: UserSearchHit) => {
@@ -87,6 +96,7 @@ export default function AddFriendSearchModal({
     setInvitingId(hit.id);
     try {
       await sendFriendRequest({ to_user_id: hit.id });
+      setPendingIds(prev => new Set(prev).add(hit.id));
       onInviteSuccess?.();
     } catch {
       onInviteError?.();
@@ -113,6 +123,20 @@ export default function AddFriendSearchModal({
       <List sx={{ mt: 1 }}>
         {results.map(u => {
           const isSelf = authUser && u.id === authUser.id;
+          const isInviting = invitingId === u.id;
+          const isAlreadyPending = pendingIds.has(u.id);
+
+          let inviteButtonContent: ReactNode;
+          if (isInviting) {
+            inviteButtonContent = (
+              <CircularProgress size={18} color="inherit" />
+            );
+          } else if (isAlreadyPending) {
+            inviteButtonContent = t('publicUserProfile.requestSent');
+          } else {
+            inviteButtonContent = t('friendsPage.invite');
+          }
+
           return (
             <ListItem
               key={u.id}
@@ -139,16 +163,12 @@ export default function AddFriendSearchModal({
                     <Button
                       size="small"
                       variant="contained"
-                      disabled={invitingId === u.id}
+                      disabled={isInviting || isAlreadyPending}
                       onClick={() => {
                         handleInvite(u).catch(() => {});
                       }}
                     >
-                      {invitingId === u.id ? (
-                        <CircularProgress size={18} color="inherit" />
-                      ) : (
-                        t('friendsPage.invite')
-                      )}
+                      {inviteButtonContent}
                     </Button>
                   )}
                 </Box>
