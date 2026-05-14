@@ -800,7 +800,15 @@
     "pwErrorMinLength": "Password must be at least 8 characters.",
     "pwErrorMismatch": "Passwords do not match.",
     "pwErrorWrongOld": "Current password is incorrect.",
-    "pwErrorGeneric": "Error updating password."
+    "pwErrorGeneric": "Error updating password.",
+    "cookiesSection": "Cookies",
+    "analyticsDesc": "Anonymized audience measurement (Sentry)",
+    "personalisationLabel": "Personalisation",
+    "personalisationDesc": "Theme, preferences, recommendations",
+    "cookiesDetail": "Cookie details",
+    "helpSection": "Help",
+    "restartTour": "Restart the tutorial",
+    "restartTourDesc": "Relaunch the onboarding guide"
   },
   "resetPasswordPage": {
     "title": "New password",
@@ -841,5 +849,59 @@
     "success": "Your account has been successfully activated! You can now log in.",
     "error": "The verification link is invalid or has expired.",
     "backToLogin": "Back to login"
+  },
+  "recommendations": {
+    "personalised": "Personalised",
+    "suggestionsTitle": "Games we think you'll love",
+    "recommendedTags": "Recommended because your games have the tags",
+    "noSuggestions": "No suggestions available at the moment.",
+    "exploreCatalogue": "Explore the catalogue"
+  },
+  "cookiesPage": {
+    "back": "Back",
+    "title": "Cookie management",
+    "version": "Version 1.0 – April 2025",
+    "intro": "Ludokan uses cookies and similar technologies to ensure the platform works correctly, analyze its usage and personalize your experience. On your first visit, a banner allows you to accept or decline non-essential categories. You can change your preferences at any time from the settings.",
+    "alwaysActive": "Always active",
+    "consentRequired": "Consent required",
+    "editTitle": "Edit my preferences",
+    "editDesc": "You can change your choices at any time.",
+    "settingsBtn": "Settings",
+    "contact": "For any questions:",
+    "necessary": {
+      "label": "Necessary",
+      "description": "These cookies are essential for the platform to function. They manage your login session and ensure the security of your account. They cannot be disabled.",
+      "example1": "User session",
+      "example2": "CSRF token (security)",
+      "example3": "Language preferences"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "description": "These cookies allow us to measure platform traffic anonymously (pages visited, session duration, errors encountered). They help us improve your experience.",
+      "example1": "Anonymous browsing statistics",
+      "example2": "Error reports (anonymized Sentry)",
+      "example3": "Most visited pages"
+    },
+    "personalisation": {
+      "label": "Personalisation",
+      "description": "These cookies remember your preferences to personalize your experience on Ludokan: theme (light/dark), display preferences, recommendations based on your habits.",
+      "example1": "Light / dark theme",
+      "example2": "Display preferences",
+      "example3": "Personalised recommendations"
+    }
+  },
+  "cookieBanner": {
+    "title": "Cookie management",
+    "intro": "We use cookies to ensure Ludokan works correctly and to improve your experience. You can accept, decline or customize your choices.",
+    "learnMore": "Learn more",
+    "necessary": "Necessary",
+    "necessaryDesc": "Essential for the platform to function",
+    "analyticsDesc": "Anonymized audience measurement",
+    "personalisationLabel": "Personalisation",
+    "personalisationDesc": "Theme, preferences, recommendations",
+    "acceptAll": "Accept all",
+    "refuseAll": "Decline all",
+    "saveChoice": "Save my choices",
+    "customise": "Customise"
   }
 }

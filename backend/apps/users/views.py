@@ -352,6 +352,7 @@ class AdminUserListView(ListAPIView):
     def get_queryset(self):
         qs = User.objects.all().order_by("-created_at")
 
+        search = self.request.query_params.get("search")
         email = self.request.query_params.get("email")
         pseudo = self.request.query_params.get("pseudo")
         is_active = self.request.query_params.get("is_active")
@@ -360,6 +361,8 @@ class AdminUserListView(ListAPIView):
         created_before = self.request.query_params.get("created_before")
         created_after = self.request.query_params.get("created_after")
 
+        if search:
+            qs = qs.filter(Q(email__icontains=search) | Q(pseudo__icontains=search))
         if email:
             qs = qs.filter(email__icontains=email)
         if pseudo:

@@ -19,8 +19,9 @@ import {
   Typography,
 } from '@mui/material';
 import { keyframes } from '@mui/system';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../contexts/useAuth';
 import { useMatchmakingTimer } from '../hooks/useMatchmakingTimer';
 import { usePartyChat } from '../hooks/usePartyChat';
@@ -30,6 +31,53 @@ const pulseRadar = keyframes`
   0% { transform: scale(0.8); opacity: 0.6; }
   100% { transform: scale(2.5); opacity: 0; }
 `;
+
+// Hook pour obtenir les couleurs dynamiques basées sur le thème
+function useThemeColors() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  return useMemo(() => {
+    const common = {
+      accent: '#FF3D3D',
+      isDark,
+    };
+
+    if (isDark) {
+      return {
+        ...common,
+        dialogBg: '#2a2020',
+        cardBg: 'rgba(42,32,32,0.78)',
+        chatBg: 'rgba(32,24,24,0.6)',
+        border: 'rgba(74,48,48,0.6)',
+        borderTop: 'rgba(74,48,48,0.5)',
+        title: '#f5e6e6',
+        text: '#e0d0d0',
+        textSecondary: '#9e7070',
+        inputBg: 'rgba(32,24,24,0.82)',
+        inputBorder: 'rgba(74,48,48,0.6)',
+        messageBg: 'rgba(42,32,32,0.9)',
+        myMessageBg: '#FF3D3D',
+      };
+    }
+
+    return {
+      ...common,
+      dialogBg: '#f8f9fa',
+      cardBg: '#fff',
+      chatBg: '#f5f6f8',
+      border: '#e0e0e0',
+      borderTop: '#eee',
+      title: '#111',
+      text: '#2b2b2b',
+      textSecondary: '#666',
+      inputBg: '#fff',
+      inputBorder: 'rgba(0,0,0,0.23)',
+      messageBg: 'grey.100',
+      myMessageBg: 'primary.main',
+    };
+  }, [isDark]);
+}
 
 interface MatchmakingModalProps {
   readonly open: boolean;
@@ -57,7 +105,9 @@ interface PartyChatViewProps {
   readonly onLeave: () => void;
   readonly currentUserId?: number;
 }
+
 function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
+  const C = useThemeColors();
   const { messages, sendMessage, isConnected } = usePartyChat(
     party.chat_room_id
   );
@@ -109,10 +159,11 @@ function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
           flex: 1,
           overflowY: 'auto',
           p: 2,
-          bgcolor: '#f5f6f8',
+          bgcolor: C.chatBg,
+          backdropFilter: 'blur(10px)',
           borderRadius: 2,
           mb: 2,
-          border: '1px solid #e0e0e0',
+          border: `1px solid ${C.border}`,
           display: 'flex',
           flexDirection: 'column',
           gap: 2,
@@ -191,8 +242,8 @@ function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
                 <Typography
                   variant="body2"
                   sx={{
-                    bgcolor: isMe ? 'primary.main' : 'grey.100',
-                    color: isMe ? '#fff' : 'text.primary',
+                    bgcolor: isMe ? C.myMessageBg : C.messageBg,
+                    color: isMe ? '#fff' : C.text,
                     p: 1.5,
                     borderRadius: 2,
                     borderTopRightRadius: isMe ? 0 : 8,
@@ -246,7 +297,20 @@ function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
               setChatInput('');
             }
           }}
-          sx={{ bgcolor: '#fff', borderRadius: 1 }}
+          sx={{
+            bgcolor: C.inputBg,
+            borderRadius: 1,
+            '& .MuiOutlinedInput-root': {
+              color: C.text,
+              '& fieldset': {
+                borderColor: C.inputBorder,
+              },
+            },
+            '& .MuiInputBase-input::placeholder': {
+              color: C.textSecondary,
+              opacity: 0.7,
+            },
+          }}
         />
         <Button
           variant="contained"
@@ -291,6 +355,7 @@ export default function MatchmakingModal({
   const { t } = useTranslation();
   const elapsedTime = useMatchmakingTimer(startedAt);
   const { user } = useAuth();
+  const C = useThemeColors();
 
   const activeMembers = party?.members?.filter((m: any) => !m.left_at) || [];
 
@@ -331,7 +396,7 @@ export default function MatchmakingModal({
       );
     }
     return (
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" sx={{ color: C.textSecondary }}>
         Rayon actuel : {currentRadius} km
       </Typography>
     );
@@ -344,7 +409,13 @@ export default function MatchmakingModal({
       maxWidth="md"
       fullWidth
       PaperProps={{
-        sx: { borderRadius: 4, overflow: 'hidden', maxWidth: 650 },
+        sx: {
+          borderRadius: 4,
+          overflow: 'hidden',
+          maxWidth: 650,
+          bgcolor: C.dialogBg,
+          backdropFilter: 'blur(20px)',
+        },
       }}
     >
       <Box
@@ -407,7 +478,7 @@ export default function MatchmakingModal({
         </Box>
       </Box>
 
-      <DialogContent sx={{ bgcolor: '#f8f9fa', p: 3 }}>
+      <DialogContent sx={{ bgcolor: C.dialogBg, p: 3 }}>
         {isRadarPhase && (
           <Box
             sx={{
@@ -428,7 +499,7 @@ export default function MatchmakingModal({
               <RadarIcon sx={{ fontSize: 48 }} />
             </Avatar>
 
-            <Typography variant="h6" sx={{ mt: 3 }}>
+            <Typography variant="h6" sx={{ mt: 3, color: C.title }}>
               {t('matchmakingModal.analyzing')}
             </Typography>
             <Box sx={{ height: 24, mt: 1 }}>{renderRadiusMessage()}</Box>
@@ -442,6 +513,7 @@ export default function MatchmakingModal({
               fontWeight="bold"
               gutterBottom
               textAlign="center"
+              sx={{ color: C.title }}
             >
               {party.status === 'open'
                 ? 'Formation du groupe...'
@@ -450,9 +522,8 @@ export default function MatchmakingModal({
 
             <Typography
               variant="subtitle2"
-              color="text.secondary"
               textAlign="center"
-              sx={{ mb: 2, fontWeight: 'bold' }}
+              sx={{ mb: 2, fontWeight: 'bold', color: C.textSecondary }}
             >
               Joueurs : {activeMembers.length} / {party.max_players}
             </Typography>
@@ -462,7 +533,12 @@ export default function MatchmakingModal({
                 <Paper
                   key={member.user_id}
                   elevation={1}
-                  sx={{ mb: 1, borderRadius: 2 }}
+                  sx={{
+                    mb: 1,
+                    borderRadius: 2,
+                    bgcolor: C.cardBg,
+                    backdropFilter: 'blur(10px)',
+                  }}
                 >
                   <ListItem>
                     <ListItemAvatar>
@@ -473,6 +549,7 @@ export default function MatchmakingModal({
                     <ListItemText
                       primary={member.pseudo || `Joueur #${member.user_id}`}
                       secondary={getMemberStatusText(member, party.status)}
+                      primaryTypographyProps={{ color: C.title }}
                       secondaryTypographyProps={{
                         color: getMemberStatusColor(member),
                       }}
@@ -516,7 +593,7 @@ export default function MatchmakingModal({
               {party.status === 'countdown' && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <CircularProgress size={24} />
-                  <Typography fontWeight="bold">
+                  <Typography fontWeight="bold" sx={{ color: C.title }}>
                     Ouverture du chat imminente...
                   </Typography>
                 </Box>
@@ -541,11 +618,14 @@ export default function MatchmakingModal({
           display: 'flex',
           justifyContent: 'center',
           gap: 2,
-          bgcolor: '#f8f9fa',
-          borderTop: '1px solid #eee',
+          bgcolor: C.dialogBg,
+          borderTop: `1px solid ${C.borderTop}`,
         }}
       >
-        <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
+        <Button
+          onClick={onClose}
+          sx={{ fontWeight: 600, color: C.textSecondary }}
+        >
           Réduire la fenêtre
         </Button>
         <Button
