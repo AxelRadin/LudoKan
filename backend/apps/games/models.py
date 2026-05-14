@@ -79,6 +79,7 @@ class Game(models.Model):
     min_age = models.IntegerField(blank=True, null=True)
     rating_avg = models.FloatField(default=0.0)
     popularity_score = models.FloatField(default=0.0)
+    igdb_rating_count = models.IntegerField(default=0)
     # New fields for rating statistics
     average_rating = models.FloatField(default=0.0)
     rating_count = models.IntegerField(default=0)
@@ -97,6 +98,7 @@ class Game(models.Model):
             models.Index(fields=["max_players"], name="games_max_players_idx"),
             # Index pour le tri par popularité (utilisé dans ordering du ViewSet)
             models.Index(fields=["-popularity_score"], name="games_popularity_idx"),
+            models.Index(fields=["-igdb_rating_count"], name="games_rating_count_idx"),
             # Index composite pour filtres combinés courants
             models.Index(fields=["min_age", "min_players"], name="games_age_players_idx"),
         ]

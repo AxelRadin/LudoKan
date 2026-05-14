@@ -11,8 +11,10 @@ from apps.games.services import get_or_create_game_from_igdb
 logger = logging.getLogger(__name__)
 
 
-def _collect_igdb_ids(game_id, igdb_id_param, limit):
+def _collect_igdb_ids(game_id, igdb_id_param, limit, min_screenshots=0):
     """Return list of IGDB ids to backfill (games must have igdb_id set)."""
+    from django.db.models import Count
+
     qs = Game.objects.filter(igdb_id__isnull=False)
 
     if game_id:
@@ -20,8 +22,11 @@ def _collect_igdb_ids(game_id, igdb_id_param, limit):
     if igdb_id_param:
         qs = qs.filter(igdb_id=igdb_id_param)
 
+    if min_screenshots > 0:
+        qs = qs.annotate(sc_count=Count("screenshots", distinct=True)).filter(sc_count__lt=min_screenshots)
+
     if not game_id and not igdb_id_param:
-        qs = qs.order_by("-popularity_score", "id")
+        qs = qs.order_by("id")
 
     if limit and limit > 0:
         qs = qs[:limit]
@@ -50,6 +55,17 @@ class Command(BaseCommand):
             help="Limit the number of games to process.",
         )
         parser.add_argument(
+            "--only-missing",
+            action="store_true",
+            help="Only process games that have fewer than --min-screenshots screenshots.",
+        )
+        parser.add_argument(
+            "--min-screenshots",
+            type=int,
+            default=4,
+            help="Minimum screenshots threshold for --only-missing (default: 4).",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Fetch data and log intent without saving to the database.",
@@ -60,15 +76,18 @@ class Command(BaseCommand):
         igdb_id_param = options["igdb_id"]
         limit = options["limit"]
         dry_run = options["dry_run"]
+        only_missing = options["only_missing"]
+        min_screenshots = options["min_screenshots"] if only_missing else 0
 
-        igdb_ids = _collect_igdb_ids(game_id, igdb_id_param, limit)
+        igdb_ids = _collect_igdb_ids(game_id, igdb_id_param, limit, min_screenshots)
         total_games = len(igdb_ids)
 
         if total_games == 0:
             self.stdout.write(self.style.WARNING("No games found matching criteria."))
             return
 
-        self.stdout.write(f"Preparing to process {total_games} games...")
+        label = f"games with <{min_screenshots} screenshots" if only_missing else "games"
+        self.stdout.write(f"Preparing to process {total_games} {label}...")
 
         chunk_size = 50
         processed_count = 0
@@ -85,6 +104,11 @@ class Command(BaseCommand):
             except Exception as e:
                 logger.exception(f"Failed to query IGDB for chunk {i}-{i+chunk_size}: {e}")
                 self.stdout.write(self.style.ERROR(f"Chunk error: {e}"))
+
+            if (i // chunk_size + 1) % 20 == 0 or i + chunk_size >= total_games:
+                self.stdout.write(
+                    f"  → Progression: {min(i + chunk_size, total_games)}/{total_games} ({success_count} updated, {error_count} errors)"
+                )
 
         self.stdout.write(self.style.SUCCESS(f"\nFinished backfill. Processed: {processed_count}, Success: {success_count}, Errors: {error_count}"))
 

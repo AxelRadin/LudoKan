@@ -28,6 +28,12 @@ function toAbsoluteUrl(url: string | null | undefined): string {
   return url.startsWith('//') ? `https:${url}` : url;
 }
 
+function toCoverBigUrl(url: string): string {
+  return url
+    .replace('/t_thumb/', '/t_cover_big/')
+    .replace('/t_720p/', '/t_cover_big/');
+}
+
 function getScreenshots(game: NormalizedGame): string[] {
   const shots = (game.screenshots ?? [])
     .map(s => toAbsoluteUrl(s.url))
@@ -51,7 +57,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
   const accentColor = isDark ? C.darkAccent : C.accent;
   const inkColor = isDark ? C.darkInk : C.ink;
   const screenshots = getScreenshots(game);
-  const coverUrl = toAbsoluteUrl(game.cover_url);
+  const coverUrl = toCoverBigUrl(toAbsoluteUrl(game.cover_url));
   const genres = game.genres ?? [];
   const screenshotOccurrences = new Map<string, number>();
 
@@ -67,6 +73,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
         flexDirection: { xs: 'column', md: 'row' },
         minHeight: { xs: 'auto', md: 400 },
         borderRadius: '20px',
+        overflow: 'hidden',
         border: `1px solid ${isDark ? C.darkBorder : C.border}`,
         boxShadow: isDark
           ? '0 18px 40px rgba(0,0,0,0.28)'
@@ -112,10 +119,12 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
             alt={game.name}
             sx={{
               position: 'absolute',
-              inset: 0,
-              margin: 'auto',
-              maxHeight: '85%',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              height: '85%',
               maxWidth: '60%',
+              width: 'auto',
               objectFit: 'contain',
               display: 'block',
               borderRadius: '8px',

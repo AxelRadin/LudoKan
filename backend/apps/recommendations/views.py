@@ -10,6 +10,7 @@ from apps.recommendations.utils import get_user_genre_weights
 
 _RECOMMENDATIONS_LIMIT = 10
 _MIN_SCREENSHOTS = 4
+_MIN_IGDB_RATING_COUNT = 50
 
 
 class RecommendationsView(APIView):
@@ -35,6 +36,7 @@ class RecommendationsView(APIView):
             Game.objects.prefetch_related("genres", "platforms", "screenshots")
             .annotate(screenshot_count=Count("screenshots", distinct=True))
             .filter(screenshot_count__gte=_MIN_SCREENSHOTS)
+            .filter(igdb_rating_count__gte=_MIN_IGDB_RATING_COUNT)
             .exclude(id__in=owned_game_ids)
             .filter(genres__id__in=top_genre_ids)
             .distinct()
