@@ -46,7 +46,7 @@ const SteamCallbackPage: React.FC = () => {
       }
     };
 
-    void run();
+    run();
   }, [navigate, location.search, t, setAuthenticated, setUser]);
 
   return (
