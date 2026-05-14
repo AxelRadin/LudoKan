@@ -163,7 +163,7 @@ class IgdbSearchPageView(APIView):
             return Response({"results": enrich_normalized_games(enriched, request.user), "total_count": data["total_count"]})
         except Exception as e:
             if _is_igdb_unavailable(e):
-                return Response([])
+                return Response({"results": [], "total_count": 0})
             return Response({"error": "Erreur search-page", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
