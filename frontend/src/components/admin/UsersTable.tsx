@@ -5,6 +5,7 @@ import {
   IconButton,
   InputAdornment,
   Snackbar,
+  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -28,13 +29,22 @@ export default function UsersTable() {
     message: string;
     severity: 'success' | 'error';
   } | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { users, error, refetch } = useAdminUsers(debouncedSearch);
+  const { users, count, error, refetch } = useAdminUsers(
+    debouncedSearch,
+    page + 1,
+    pageSize
+  );
   const filtered = users;
 
   async function handleSuspend(userId: number, reason: string) {
@@ -202,6 +212,21 @@ export default function UsersTable() {
           ))
         )}
       </Box>
+
+      <TablePagination
+        component="div"
+        count={count}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={pageSize}
+        onRowsPerPageChange={e => {
+          setPageSize(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={[10, 20, 50]}
+        labelRowsPerPage="Par page :"
+        sx={{ mt: 1 }}
+      />
 
       <SuspendUserModal
         user={selectedUser}
