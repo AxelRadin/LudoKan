@@ -1,5 +1,16 @@
 export type AdminRole = 'moderator' | 'admin' | 'superadmin';
 
+export type AdminUser = {
+  id: number;
+  pseudo?: string;
+  username?: string;
+  email: string;
+  is_superuser: boolean;
+  is_active: boolean;
+  roles: string[];
+  created_at?: string;
+};
+
 export type AdminStats = {
   totals: {
     users: number;

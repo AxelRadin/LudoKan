@@ -9,11 +9,11 @@ import React, {
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
+import { useActiveParty } from '../hooks/useActiveParty';
 import i18n from '../i18n';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
 import { joinOrCreateParty } from '../services/party';
 import { useAuth } from './useAuth';
-import { useActiveParty } from '../hooks/useActiveParty';
 
 interface MatchmakingContextType {
   startMatchmaking: (
@@ -79,6 +79,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     useState<Date | null>(null);
   const [currentRadius, setCurrentRadius] = useState<number>(20);
   const [hasNewMatch, setHasNewMatch] = useState(false);
+  const [isExpanding, setIsExpanding] = useState(false);
 
   const [activeGame, setActiveGame] = useState<{
     id: string;
@@ -239,47 +240,48 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
     if (!activeRequestId || party) return;
 
     const intervalId = setInterval(async () => {
-      try {
-        const currentMatches = await apiGet(
-          `/api/matchmaking/matches/?_t=${Date.now()}`
-        );
-        if (Array.isArray(currentMatches)) {
-          setMatches(prevMatches => {
-            if (currentMatches.length > prevMatches.length) {
-              setHasNewMatch(true);
-            }
-            return currentMatches;
-          });
-        }
-      } catch {
-        setActiveRequestId(null);
-        setActiveRequestStartedAt(null);
-      }
-    }, 5000);
+      const now = new Date();
+      const startTime = activeRequestStartedAt || now;
+      const diffSeconds = (now.getTime() - startTime.getTime()) / 1000;
 
-    return () => clearInterval(intervalId);
-  }, [activeRequestId, party]);
+      const newRadius = diffSeconds >= 300 ? 20000 : currentRadius + 50;
 
-  useEffect(() => {
-    if (!activeRequestId || hasNewMatch) return;
-
-    const timeoutId = setTimeout(
-      async () => {
-        const newRadius = currentRadius * 2;
+      if (newRadius !== currentRadius) {
         try {
+          setIsExpanding(true);
           await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
             radius_km: newRadius,
           });
           setCurrentRadius(newRadius);
+
+          setTimeout(() => setIsExpanding(false), 3000);
         } catch (error) {
           console.error("Erreur d'extension du rayon", error);
         }
-      },
-      5 * 60 * 1000
-    );
+      }
 
-    return () => clearTimeout(timeoutId);
-  }, [activeRequestId, currentRadius, hasNewMatch]);
+      if (newRadius >= 20000) clearInterval(intervalId);
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [activeRequestId, party, activeRequestStartedAt, currentRadius]);
+
+  useEffect(() => {
+    if (!activeRequestId || hasNewMatch || party) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const currentMatches = await apiGet('/api/matchmaking/matches/');
+        if (currentMatches && currentMatches.length > 0) {
+          setMatches(currentMatches);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des matchs', error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [activeRequestId, hasNewMatch, party]);
 
   useEffect(() => {
     if (activeRequestId && matches.length > 0 && !party && activeGame?.id) {
@@ -330,6 +332,8 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
         startedAt={activeRequestStartedAt}
         game={activeGame}
         party={party}
+        isExpanding={isExpanding}
+        currentRadius={currentRadius}
         partyActions={{
           markReady,
           markReadyForChat,

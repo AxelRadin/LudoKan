@@ -48,7 +48,8 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "close": "Close"
   },
   "error404": {
     "title": "Error 404",
@@ -155,7 +156,17 @@
     "errorRecaptchaNotConfigured": "reCAPTCHA not configured: set VITE_RECAPTCHA_SITE_KEY (see frontend/.env.example).",
     "errorRecaptcha": "Please validate the reCAPTCHA.",
     "errorGoogle": "Google login unavailable.",
-    "errorFallback": "An error occurred."
+    "errorFallback": "An error occurred.",
+    "forgotPasswordLink": "Forgot password?",
+    "forgotPasswordTitle": "Forgot password",
+    "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
+    "forgotEmailLabel": "Email address",
+    "forgotEnterEmail": "Please enter your email address.",
+    "forgotInvalidEmail": "Invalid email address.",
+    "forgotSendError": "Error sending the reset email.",
+    "forgotSuccessMessage": "A password reset email has been sent to {{email}}. The link expires in 10 minutes. Check your inbox.",
+    "forgotSending": "Sending...",
+    "forgotSend": "Send"
   },
   "matchmakingModal": {
     "searchTitle": "Player search",
@@ -220,6 +231,7 @@
     "submitting": "Signing up...",
     "errorFillFields": "Please fill in all fields.",
     "errorPasswordMatch": "Passwords do not match.",
+    "errorMinLength": "Password must be at least 8 characters.",
     "errorGoogle": "Google login unavailable.",
     "errorFallback": "An error occurred."
   },
@@ -688,6 +700,10 @@
     "default": "Trending games",
     "empty": "No games in this category."
   },
+  "recommendations": {
+    "personalised": "Personalised",
+    "suggestionsTitle": "Suggestions for you"
+  },
   "settings": {
     "title": "Settings",
     "appearanceSection": "Appearance",
@@ -697,7 +713,36 @@
     "policies": "Policies",
     "about": "About",
     "cookies": "Cookies",
-    "version": "Ludokan • v1.0.0"
+    "version": "Ludokan • v1.0.0",
+    "securitySection": "Security",
+    "changePassword": "Change password",
+    "changePasswordDesc": "Update your current password",
+    "changePasswordTitle": "Change password",
+    "pwOldPassword": "Current password",
+    "pwNewPassword": "New password",
+    "pwConfirmPassword": "Confirm new password",
+    "pwSave": "Update",
+    "pwSaving": "Updating...",
+    "pwSuccess": "Password updated successfully",
+    "pwErrorFillFields": "Please fill in all fields.",
+    "pwErrorMinLength": "Password must be at least 8 characters.",
+    "pwErrorMismatch": "Passwords do not match.",
+    "pwErrorWrongOld": "Current password is incorrect.",
+    "pwErrorGeneric": "Error updating password."
+  },
+  "resetPasswordPage": {
+    "title": "New password",
+    "subtitle": "Choose a new password for your LudoKan account.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "submit": "Reset password",
+    "success": "Your password has been reset successfully! You will be redirected to the login page...",
+    "errorFillFields": "Please fill in all fields.",
+    "errorMinLength": "Password must be at least 8 characters.",
+    "errorMismatch": "Passwords do not match.",
+    "errorAllNumeric": "Password cannot be entirely numeric.",
+    "errorInvalidLink": "This reset link is invalid or has expired. Please request a new one.",
+    "errorGeneric": "Error resetting password."
   },
   "politiques": {
     "title": "Policies",
@@ -707,5 +752,22 @@
     "cguTitle": "Terms of Use",
     "cguSubtitle": "Access rules, services, responsibilities, moderation",
     "back": "Back to policies"
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "fair": "Fair",
+    "good": "Good",
+    "strong": "Strong",
+    "ruleMinLength": "At least 8 characters",
+    "ruleHasDigit": "At least 1 number",
+    "ruleHasSpecial": "At least 1 special character",
+    "ruleHasUppercase": "At least 1 uppercase letter"
+  },
+  "verifyEmailPage": {
+    "title": "Account verification",
+    "verifying": "Verifying your email address...",
+    "success": "Your account has been successfully activated! You can now log in.",
+    "error": "The verification link is invalid or has expired.",
+    "backToLogin": "Back to login"
   }
 }

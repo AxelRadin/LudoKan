@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { type ChatMessage, getChatMessages } from '../services/chat';
 
-const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:8000';
+const WS_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -22,7 +22,7 @@ export function usePartyChat(roomId: number | null) {
     setIsLoadingHistory(true);
     try {
       const data = await getChatMessages(roomId, 1);
-      setMessages([...data.results].reverse());
+      setMessages([...data.results]);
     } catch (err) {
       console.error('Erreur historique chat :', err);
     } finally {

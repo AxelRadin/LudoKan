@@ -2,5 +2,6 @@ import { apiGet } from '../services/api';
 import type { NormalizedGame } from '../types/game';
 
 export async function fetchRecommendations(): Promise<NormalizedGame[]> {
-  return apiGet('/api/recommendations/');
+  const data = await apiGet('/api/recommendations/');
+  return Array.isArray(data) ? data : [];
 }

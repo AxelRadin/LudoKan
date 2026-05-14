@@ -28,13 +28,13 @@ export type GameListItem = {
 };
 
 export type GameListProps = {
-  games: GameListItem[];
-  title?: string;
-  showStatus?: boolean;
-  onRemove?: (userGameId: number) => void;
+  readonly games: GameListItem[];
+  readonly title?: string;
+  readonly showStatus?: boolean;
+  readonly onRemove?: (userGameId: number) => void;
   /** Retirer le jeu de la collection affichée (sans supprimer le UserGame). */
-  onDetachFromCollection?: (userGameId: number) => void;
-  detachFromCollectionTitle?: string;
+  readonly onDetachFromCollection?: (userGameId: number) => void;
+  readonly detachFromCollectionTitle?: string;
 };
 
 function isAllDigits(s: string): boolean {
@@ -73,7 +73,7 @@ export default function GameList({
   onRemove,
   onDetachFromCollection,
   detachFromCollectionTitle,
-}: GameListProps) {
+}: Readonly<GameListProps>) {
   const { t } = useTranslation();
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
   const titleParts = title ? parseTrailingCountTitle(title) : null;

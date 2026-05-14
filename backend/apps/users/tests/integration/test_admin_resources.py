@@ -122,6 +122,32 @@ class TestAdminUserListView:
         resp_role = admin_client.get("/api/admin/users/", {"role": UserRole.Role.MODERATOR})
         assert resp_role.status_code == status.HTTP_200_OK
 
+    def test_search_param_filters_by_pseudo_or_email(self, admin_client):
+        User.objects.create_user(
+            email="findme@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="findmepseudo",
+        )
+        User.objects.create_user(
+            email="other@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="otherpseudo",
+        )
+
+        # Recherche par pseudo
+        resp_pseudo = admin_client.get("/api/admin/users/", {"search": "findme"})
+        assert resp_pseudo.status_code == status.HTTP_200_OK
+        pseudos = [u["pseudo"] for u in resp_pseudo.data["results"]]
+        assert "findmepseudo" in pseudos
+        assert "otherpseudo" not in pseudos
+
+        # Recherche par email
+        resp_email = admin_client.get("/api/admin/users/", {"search": "findme@example"})
+        assert resp_email.status_code == status.HTTP_200_OK
+        emails = [u["email"] for u in resp_email.data["results"]]
+        assert "findme@example.com" in emails
+        assert "other@example.com" not in emails
+
     def test_admin_user_list_date_and_boolean_true_false_filters(self, admin_client):
         """
         Couvre les branches is_active=true, is_staff=false, created_before/after.

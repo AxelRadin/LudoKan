@@ -29,7 +29,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { useThemeMode } from '../contexts/useThemeMode';
-import { apiPost } from '../services/api';
+import { apiPatch, apiPost } from '../services/api';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
@@ -51,7 +51,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
   const { t, i18n } = useTranslation();
-  const { darkMode, toggleDarkMode } = useThemeMode();
+  const { darkMode, toggleDarkMode, setDarkMode } = useThemeMode();
 
   const {
     isAuthenticated,
@@ -81,6 +81,11 @@ export const Header: React.FC = () => {
   const handleLangSelect = (code: string) => {
     i18n.changeLanguage(code);
     handleLangMenuClose();
+    if (isAuthenticated) {
+      apiPatch('/api/auth/user/', { language_preference: code }).catch(
+        () => {}
+      );
+    }
   };
 
   const handleLoginOpen = () => {
@@ -103,6 +108,8 @@ export const Header: React.FC = () => {
       console.error('Erreur lors du logout', e);
     } finally {
       setAuthenticated(false);
+      setDarkMode(false);
+      i18n.changeLanguage('fr');
       setDrawerOpen(false);
       navigate('/');
     }

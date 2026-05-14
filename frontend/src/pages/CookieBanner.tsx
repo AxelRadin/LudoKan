@@ -12,36 +12,27 @@ import {
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const COOKIE_KEY = 'ludokan_cookie_consent';
-
-interface CookiePreferences {
-  analytics: boolean;
-  personnalisation: boolean;
-}
-
-const defaultPrefs: CookiePreferences = {
-  analytics: false,
-  personnalisation: false,
-};
+import { saveConsent, useCookieConsent } from '../hooks/useCookieConsent';
 
 const CookieBanner: React.FC = () => {
   const navigate = useNavigate();
+  const { hasChosen } = useCookieConsent();
   const [visible, setVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
-  const [prefs, setPrefs] = useState<CookiePreferences>(defaultPrefs);
+  const [prefs, setPrefs] = useState({
+    analytics: false,
+    personnalisation: false,
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem(COOKIE_KEY);
-    if (!saved) {
-      setVisible(true);
-    }
-  }, []);
+    if (!hasChosen) setVisible(true);
+  }, [hasChosen]);
 
-  const save = (accepted: CookiePreferences) => {
-    localStorage.setItem(
-      COOKIE_KEY,
-      JSON.stringify({ ...accepted, necessary: true })
-    );
+  const save = (accepted: {
+    analytics: boolean;
+    personnalisation: boolean;
+  }) => {
+    saveConsent(accepted);
     setVisible(false);
   };
 

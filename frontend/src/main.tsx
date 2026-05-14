@@ -9,6 +9,7 @@ import ErrorFallback from './components/ErrorFallback';
 import './index.css';
 import 'driver.js/dist/driver.css';
 import { initSentry } from './monitoring/sentry';
+import { getStoredConsent } from './hooks/useCookieConsent';
 import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
@@ -28,13 +29,24 @@ import PolitiquesPage from './pages/PolitiquesPage.tsx';
 import CookiesPage from './pages/CookiesPage.tsx';
 import CookieBanner from './pages/CookieBanner.tsx';
 import AboutPage from './pages/AboutPage.tsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.tsx';
+import VerifyEmailPage from './pages/VerifyEmailPage.tsx';
 import AdminDashboard from './pages/admin/AdminDashboard.tsx';
+import UsersAdmin from './pages/admin/UsersAdmin.tsx';
 import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute.tsx';
 import { Root } from './Root.tsx';
 import { ThemeModeProvider } from './contexts/ThemeContext';
 import { AdminRoot } from './AdminRoot.tsx';
 
-initSentry();
+if (getStoredConsent()?.analytics) {
+  initSentry();
+}
+
+globalThis.addEventListener('cookieconsentchange', (e: Event) => {
+  if ((e as CustomEvent).detail?.analytics) {
+    initSentry();
+  }
+});
 
 const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
   error,
@@ -66,6 +78,8 @@ const router = createBrowserRouter([
       { path: 'cookies', element: <CookiesPage /> },
       { path: 'cookie-banner', element: <CookieBanner /> },
       { path: 'about', element: <AboutPage /> },
+      { path: 'reset-password/:uid/:token', element: <ResetPasswordPage /> },
+      { path: 'verify-email/:key', element: <VerifyEmailPage /> },
       { path: 'auth/google/callback', element: <GoogleCallbackPage /> },
       { path: 'auth/steam/callback', element: <SteamCallbackPage /> },
       { path: 'auth/microsoft/callback', element: <MicrosoftCallbackPage /> },
@@ -80,6 +94,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedAdminRoute>
             <AdminDashboard />
+          </ProtectedAdminRoute>
+        ),
+      },
+      {
+        path: 'users',
+        element: (
+          <ProtectedAdminRoute>
+            <UsersAdmin />
           </ProtectedAdminRoute>
         ),
       },

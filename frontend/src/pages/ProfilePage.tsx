@@ -29,6 +29,8 @@ import { useTranslation } from 'react-i18next';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LibraryPrivacyModal from '../components/LibraryPrivacyModal';
 import {
   CreateCollectionModal,
@@ -51,6 +53,7 @@ import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
 import { useTour } from '../onboarding/useTour';
 import { PROFILE_TOUR_STEPS } from '../onboarding/tourSteps';
 import { useProfileLibraryFilters } from '../hooks/useProfileLibraryFilters';
+import { useThemeColors } from '../hooks/useThemeColors';
 
 const PROFILE_OPTIONAL_STEPS = new Set([0, 1, 2, 3, 4]);
 
@@ -91,33 +94,6 @@ styleEl.textContent = `
   .lib-section  { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.5s both; }
 `;
 document.head.appendChild(styleEl);
-
-// Hook pour obtenir les couleurs dynamiques basées sur le thème
-function useThemeColors() {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
-
-  return useMemo(
-    () => ({
-      pageBg: isDark ? '#1a1010' : '#ffd3d3',
-      shellBg: isDark ? '#2a2020' : '#fff7f7',
-      cardBg: isDark ? 'rgba(42,32,32,0.72)' : 'rgba(255,255,255,0.72)',
-      border: isDark ? '#4a3030' : '#f1c7c7',
-      softBorder: isDark ? 'rgba(74,48,48,0.5)' : 'rgba(241,199,199,0.5)',
-      title: isDark ? '#f5e6e6' : '#0f0f0f',
-      text: isDark ? '#e0d0d0' : '#2b2b2b',
-      muted: isDark ? '#9e7070' : '#6e6e73',
-      light: isDark ? '#b49393' : '#a0a0a8',
-      accent: '#FF3D3D',
-      accentDark: '#b71c1c',
-      accentGlow: isDark ? 'rgba(255,61,61,0.25)' : 'rgba(211,47,47,0.15)',
-      glass: isDark ? 'rgba(42,32,32,0.78)' : 'rgba(255,250,250,0.78)',
-      glassBorder: isDark ? 'rgba(74,48,48,0.9)' : 'rgba(255,255,255,0.9)',
-      dialogBg: isDark ? 'rgba(42,32,32,0.96)' : 'rgba(255,249,249,0.96)',
-    }),
-    [isDark]
-  );
-}
 
 // ... (le reste du code reste identique jusqu'aux types et fonctions utilitaires)
 
@@ -890,6 +866,7 @@ function ProfileEditDialog({
   C,
 }: ProfileEditDialogProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const fieldSx = {
     fontFamily: FONT_BODY,
@@ -1148,46 +1125,69 @@ function ProfileEditDialog({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3.5, pb: 3, pt: 1, gap: 1 }}>
+      <DialogActions
+        sx={{ px: 3.5, pb: 3, pt: 1, justifyContent: 'space-between' }}
+      >
         <Button
-          onClick={onClose}
+          onClick={() => {
+            onClose();
+            navigate('/settings');
+          }}
+          size="small"
+          startIcon={<LockOutlinedIcon sx={{ fontSize: 16 }} />}
+          endIcon={<ChevronRightIcon sx={{ fontSize: 18 }} />}
           sx={{
-            borderRadius: 999,
-            color: C.muted,
-            px: 2.5,
-            py: 0.9,
+            color: C.accent,
+            fontSize: 13,
             fontWeight: 500,
-            fontSize: 14,
             textTransform: 'none',
             fontFamily: FONT_BODY,
-            '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+            '&:hover': { backgroundColor: `${C.accent}10` },
           }}
         >
-          {t('profilePage.cancel')}
+          {t('settings.changePassword')}
         </Button>
-        <Button
-          onClick={() => void onSave()}
-          variant="contained"
-          sx={{
-            borderRadius: 999,
-            px: 3.5,
-            py: 1,
-            fontWeight: 700,
-            fontSize: 14,
-            textTransform: 'none',
-            fontFamily: FONT_BODY,
-            background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
-            boxShadow: `0 4px 18px ${C.accentGlow}`,
-            '&:hover': {
-              background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-              boxShadow: `0 6px 24px ${C.accentGlow}`,
-              transform: 'translateY(-1px)',
-            },
-            transition: 'all 0.18s ease',
-          }}
-        >
-          {t('profilePage.save')}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            onClick={onClose}
+            sx={{
+              borderRadius: 999,
+              color: C.muted,
+              px: 2.5,
+              py: 0.9,
+              fontWeight: 500,
+              fontSize: 14,
+              textTransform: 'none',
+              fontFamily: FONT_BODY,
+              '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+            }}
+          >
+            {t('profilePage.cancel')}
+          </Button>
+          <Button
+            onClick={() => void onSave()}
+            variant="contained"
+            sx={{
+              borderRadius: 999,
+              px: 3.5,
+              py: 1,
+              fontWeight: 700,
+              fontSize: 14,
+              textTransform: 'none',
+              fontFamily: FONT_BODY,
+              background: `linear-gradient(135deg, ${C.accent} 0%, #e53935 100%)`,
+              boxShadow: `0 4px 18px ${C.accentGlow}`,
+              '&:hover': {
+                background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
+                boxShadow: `0 6px 24px ${C.accentGlow}`,
+                transform: 'translateY(-1px)',
+              },
+              transition: 'all 0.18s ease',
+            }}
+          >
+            {t('profilePage.save')}
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );
@@ -1504,6 +1504,24 @@ function useProfilePageCollections(
   return { collections, collectionsLoading, refreshCollections };
 }
 
+function getProfilePageBackground(isDark: boolean, pageBg: string): string {
+  if (isDark) {
+    return `
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+      radial-gradient(ellipse 120% 80% at 15% -10%, rgba(74,48,48,0.6) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 90% 110%, rgba(255,61,61,0.12) 0%, transparent 50%),
+      ${pageBg}
+    `;
+  }
+
+  return `
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
+    radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
+    ${pageBg}
+  `;
+}
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -1635,19 +1653,7 @@ export default function ProfilePage() {
       sx={{
         minHeight: '100vh',
         fontFamily: FONT_BODY,
-        background: isDark
-          ? `
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
-            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(74,48,48,0.6) 0%, transparent 55%),
-            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(255,61,61,0.12) 0%, transparent 50%),
-            ${C.pageBg}
-          `
-          : `
-            url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E),
-            radial-gradient(ellipse 120% 80% at 15% -10%, rgba(255,200,200,0.6) 0%, transparent 55%),
-            radial-gradient(ellipse 80% 60% at 90% 110%, rgba(211,47,47,0.07) 0%, transparent 50%),
-            ${C.pageBg}
-          `,
+        background: getProfilePageBackground(isDark, C.pageBg),
         px: { xs: 2, md: 4, lg: 6 },
         py: { xs: 3, md: 5 },
       }}
