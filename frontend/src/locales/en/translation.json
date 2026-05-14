@@ -769,5 +769,12 @@
     "success": "Your account has been successfully activated! You can now log in.",
     "error": "The verification link is invalid or has expired.",
     "backToLogin": "Back to login"
+  },
+  "recommendations": {
+    "personalised": "Personalised",
+    "suggestionsTitle": "Games we think you'll love",
+    "recommendedTags": "Recommended because your games have the tags",
+    "noSuggestions": "No suggestions available at the moment.",
+    "exploreCatalogue": "Explore the catalogue"
   }
 }

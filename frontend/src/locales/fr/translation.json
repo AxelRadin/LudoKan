@@ -773,5 +773,12 @@
     "success": "Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.",
     "error": "Le lien de vérification est invalide ou a expiré.",
     "backToLogin": "Retour à la connexion"
+  },
+  "recommendations": {
+    "personalised": "Personnalisé",
+    "suggestionsTitle": "Des jeux que vous allez adorer",
+    "recommendedTags": "Recommandé car vos jeux ont les tags",
+    "noSuggestions": "Aucune suggestion disponible pour le moment.",
+    "exploreCatalogue": "Explorer le catalogue"
   }
 }
