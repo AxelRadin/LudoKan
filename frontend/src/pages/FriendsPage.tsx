@@ -7,6 +7,9 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { FRIENDS_TOUR_STEPS } from '../onboarding/tourSteps';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -67,6 +70,20 @@ export default function FriendsPage() {
     },
     [setSearchParams]
   );
+
+  const FRIENDS_OPTIONAL_STEPS = useMemo(() => new Set([0, 1, 2]), []);
+  const { shouldShow, markAsDone } = useOnboarding(TOUR_KEYS.friends);
+  const { startTour } = useTour({
+    steps: FRIENDS_TOUR_STEPS,
+    optionalSteps: FRIENDS_OPTIONAL_STEPS,
+    onDone: markAsDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShow) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShow, startTour]);
 
   const { friendsList, incomingRequests, outgoingRequests, loading, refresh } =
     useFriendsSocial(authUser?.id);
@@ -277,6 +294,7 @@ export default function FriendsPage() {
         }}
       >
         <Tabs
+          data-tour="friends-tabs"
           value={tabIndex}
           onChange={(_, v) => setTabIndex(v)}
           variant="scrollable"
@@ -297,6 +315,7 @@ export default function FriendsPage() {
           <Tab label={t('friendsPage.tabBlocked')} />
         </Tabs>
         <Button
+          data-tour="friends-add"
           variant="contained"
           startIcon={<PersonAddIcon />}
           onClick={() => setAddModalOpen(true)}
@@ -310,7 +329,7 @@ export default function FriendsPage() {
         </Button>
       </Box>
 
-      <Paper elevation={0} sx={paperSx}>
+      <Paper data-tour="friends-list" elevation={0} sx={paperSx}>
         {tabPanelContent}
       </Paper>
 

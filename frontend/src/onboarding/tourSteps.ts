@@ -71,6 +71,26 @@ export const PROFILE_TOUR_STEPS: DriveStep[] = [
   ),
 ];
 
+export const FRIENDS_TOUR_STEPS: DriveStep[] = [
+  createStep(
+    '[data-tour="friends-add"]',
+    '🤝 Ajouter un ami',
+    "Recherche un joueur par pseudo et envoie-lui une demande d'ami pour suivre sa bibliothèque."
+  ),
+  createStep(
+    '[data-tour="friends-tabs"]',
+    '📑 Navigation',
+    "Retrouve ici ta liste d'amis, les demandes reçues et envoyées, et les utilisateurs que tu as bloqués.",
+    'bottom'
+  ),
+  createStep(
+    '[data-tour="friends-list"]',
+    '👥 Tes amis',
+    'Clique sur un ami pour voir son profil et sa bibliothèque de jeux.',
+    'top'
+  ),
+];
+
 export const GAME_TOUR_STEPS: DriveStep[] = [
   createStep(
     '[data-tour="matchmaking-button"]',
