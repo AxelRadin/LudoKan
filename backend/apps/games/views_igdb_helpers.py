@@ -18,7 +18,6 @@ from apps.games.igdb_demographics import filter_games_raw_by_demographics
 from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
 from apps.games.igdb_proxy_constants import (
     FIELDS_GAMES_LIST,
-    FIELDS_GAMES_LIST_WITH_GENRES,
     FIELDS_GAMES_SEARCH,
     FIELDS_IGDB_DEMOGRAPHICS_SUFFIX,
     FIELDS_SEARCH_PAGE,
@@ -200,10 +199,10 @@ def search_page_name_matches(
     limit: int,
     offset: int,
     filters: IgdbFilters,
-) -> list:
+) -> dict:
     needs_post_slice = filters.has_demographics
 
-    def fetch_for_q(q_inner: str) -> list:
+    def fetch_for_q(q_inner: str) -> tuple[list, int]:
         fields = _fields_with_optional_genres_and_demographics(FIELDS_SEARCH_PAGE, bool(filters.genre_ids), needs_post_slice)
         core = f'name ~ *"{q_inner}"* & total_rating_count > 0'
         where_line = merge_igdb_where_predicates(core, filters)
@@ -214,21 +213,31 @@ def search_page_name_matches(
         sort_part = next(gen, "sort total_rating_count desc;")
 
         if needs_post_slice:
-            raw_cap = min(max((offset + limit) * 5, 50), 200)
+            # On augmente à 500 pour avoir une meilleure profondeur en mode démo
+            raw_cap = 500
             name_body = f"{fields} {where_line}; {sort_part} limit {raw_cap}; offset 0;"
         else:
             name_body = f"{fields} {where_line}; {sort_part} limit {limit}; offset {offset};"
 
         arr = igdb_response_as_list(igdb_request("games", name_body))
-        arr = filter_games_raw_by_demographics(igdb_request, arr, filters.min_age, filters.min_players, filters.max_players)
-        if needs_post_slice:
-            arr = arr[offset : offset + limit]
-        return arr
 
-    arr = fetch_for_q(q_esc)
+        if needs_post_slice:
+            full_filtered = filter_games_raw_by_demographics(igdb_request, arr, filters.min_age, filters.min_players, filters.max_players)
+            total_count = len(full_filtered)
+            arr = full_filtered[offset : offset + limit]
+        else:
+            # Mode standard : on demande le count réel à IGDB
+            where_only = where_line.split("sort")[0].strip()
+            count_data = igdb_request("games/count", where_only)
+            total_count = count_data.get("count", 0) if isinstance(count_data, dict) else 0
+
+        return arr, total_count
+
+    arr, total = fetch_for_q(q_esc)
     if not arr and q_norm_esc != q_esc:
-        arr = fetch_for_q(q_norm_esc)
-    return arr
+        arr, total = fetch_for_q(q_norm_esc)
+
+    return {"results": arr, "total_count": total}
 
 
 def search_page_fallback_search(
@@ -236,16 +245,16 @@ def search_page_fallback_search(
     q_esc: str,
     limit: int,
     filters: IgdbFilters,
-) -> list:
+) -> dict:
     fields = _fields_with_optional_genres_and_demographics(FIELDS_SEARCH_PAGE, bool(filters.genre_ids), filters.has_demographics)
     search_body = f'{fields} search "{q_esc}"; limit 50;'
     try:
         search_arr = igdb_response_as_list(igdb_request("games", search_body))
         search_arr = _apply_raw_list_filters(igdb_request, search_arr, filters)
         search_arr.sort(key=lambda x: -(x.get("total_rating_count") or 0))
-        return search_arr[:limit]
+        return {"results": search_arr[:limit], "total_count": min(len(search_arr), 50)}
     except Exception:
-        return []
+        return {"results": [], "total_count": 0}
 
 
 # --- Trending ---
@@ -266,21 +275,10 @@ def trending_fetch_games_array(
 ) -> list:
     use_demo, merged_clause = _trending_use_demo_and_merged_clause(filters)
 
-    if filters.genre_ids and not filters.platform_ids and not use_demo and len(filters.genre_ids) == 1:
-        need = offset + limit
-        query = (
-            f"{FIELDS_GAMES_LIST_WITH_GENRES} "
-            f"where genres = ({filters.genre_ids[0]}) & total_rating_count > 0; "
-            f"sort total_rating_count desc; limit {min(need, 50)};"
-        )
-        raw = igdb_response_as_list(igdb_request("games", query))
-        pure = [g for g in raw if len(g.get("genres") or []) == 1]
-        mixed = [g for g in raw if len(g.get("genres") or []) != 1]
-        return (pure + mixed)[offset : offset + limit]
-
     fields = _fields_with_optional_genres_and_demographics(FIELDS_GAMES_LIST, bool(filters.genre_ids), use_demo)
     if use_demo:
-        raw_cap = min(max((offset + limit) * 5, 50), 200)
+        # On augmente raw_cap pour permettre une navigation plus profonde en mode démographique
+        raw_cap = min(max((offset + limit) * 5, 100), 1000)
         query = f"{fields} {merged_clause} limit {raw_cap}; offset 0;"
         raw = igdb_response_as_list(igdb_request("games", query))
         raw = filter_games_raw_by_demographics(igdb_request, raw, filters.min_age, filters.min_players, filters.max_players)
@@ -296,10 +294,13 @@ def trending_fetch_total_count(igdb_request: IgdbRequestFn, filters: IgdbFilters
         where_part = merged_clause.split("sort")[0].strip()
         if use_demo:
             fields = _fields_with_optional_genres_and_demographics(FIELDS_GAMES_LIST, bool(filters.genre_ids), True)
-            raw = igdb_response_as_list(igdb_request("games", f"{fields} {where_part} limit 200;"))
+            # On augmente la limite à 500 pour permettre plus de pages en mode démo
+            raw = igdb_response_as_list(igdb_request("games", f"{fields} {where_part} limit 500;"))
             return len(filter_games_raw_by_demographics(igdb_request, raw, filters.min_age, filters.min_players, filters.max_players))
-        raw = igdb_response_as_list(igdb_request("games", f"fields id; {where_part} limit 500;"))
-        return len(raw)
+
+        # Mode standard : on utilise le endpoint count d'IGDB pour la précision
+        count_data = igdb_request("games/count", where_part)
+        return count_data.get("count", 0) if isinstance(count_data, dict) else 0
     except Exception:
         return 0
 

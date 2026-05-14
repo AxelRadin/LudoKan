@@ -155,12 +155,12 @@ class IgdbSearchPageView(APIView):
         q_norm_esc = escape_igdb_string(normalize_query(q))
 
         try:
-            arr = search_page_name_matches(igdb_client.igdb_request, q_esc, q_norm_esc, limit, offset, filters)
-            if not arr and offset == 0:
-                arr = search_page_fallback_search(igdb_client.igdb_request, q_esc, limit, filters)
+            data = search_page_name_matches(igdb_client.igdb_request, q_esc, q_norm_esc, limit, offset, filters)
+            if not data["results"] and offset == 0:
+                data = search_page_fallback_search(igdb_client.igdb_request, q_esc, limit, filters)
 
-            enriched = enrich_with_wikidata_display_name(arr)
-            return Response(enrich_normalized_games(enriched, request.user))
+            enriched = enrich_with_wikidata_display_name(data["results"])
+            return Response({"results": enrich_normalized_games(enriched, request.user), "total_count": data["total_count"]})
         except Exception as e:
             if _is_igdb_unavailable(e):
                 return Response([])

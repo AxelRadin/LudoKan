@@ -272,7 +272,7 @@ export async function searchGamesPage(
   offset = 0,
   filters?: IgdbListFilters,
   sort?: string
-): Promise<IgdbGame[]> {
+): Promise<{ games: IgdbGame[]; totalCount: number }> {
   const params = new URLSearchParams({
     q,
     limit: String(limit),
@@ -280,7 +280,11 @@ export async function searchGamesPage(
   });
   if (sort) params.set('sort', sort);
   appendIgdbListFilters(params, filters);
-  return apiGet(`/api/igdb/search-page/?${params}`);
+  const data = (await apiGet(`/api/igdb/search-page/?${params}`)) as {
+    results: IgdbGame[];
+    total_count: number;
+  };
+  return { games: data.results, totalCount: data.total_count };
 }
 
 export async function translateDescription(text: string): Promise<string> {
