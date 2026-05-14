@@ -1,15 +1,17 @@
-from django.db.models import Count, Q
+import random
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.games.models import Game
+from apps.games.igdb_client import igdb_request
+from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
+from apps.games.models import Genre
 from apps.library.models import UserGame
-from apps.recommendations.serializers import RecommendedGameSerializer
 from apps.recommendations.utils import get_user_genre_weights
 
 _RECOMMENDATIONS_LIMIT = 10
-_MIN_SCREENSHOTS = 4
+_IGDB_FETCH_POOL = 50
 _MIN_IGDB_RATING_COUNT = 50
 
 
@@ -25,32 +27,41 @@ class RecommendationsView(APIView):
         if not genre_weights:
             return Response([])
 
-        owned_game_ids = UserGame.objects.filter(user=user).values_list("game_id", flat=True)
-
-        # Garder uniquement les genres les plus représentés (top 50% du poids max)
+        # Top genres (seuil 50% du poids max)
         max_weight = max(genre_weights.values())
         threshold = max_weight * 0.5
-        top_genre_ids = [gid for gid, w in genre_weights.items() if w >= threshold]
+        top_django_genre_ids = [gid for gid, w in genre_weights.items() if w >= threshold]
 
-        qs = (
-            Game.objects.prefetch_related("genres", "platforms", "screenshots")
-            .annotate(screenshot_count=Count("screenshots", distinct=True))
-            .filter(screenshot_count__gte=_MIN_SCREENSHOTS)
-            .filter(igdb_rating_count__gte=_MIN_IGDB_RATING_COUNT)
-            .exclude(id__in=owned_game_ids)
-            .filter(genres__id__in=top_genre_ids)
-            .distinct()
-        )
+        top_igdb_genre_ids = list(Genre.objects.filter(id__in=top_django_genre_ids).values_list("igdb_id", flat=True))
 
-        # Trier par nombre de genres correspondants aux top genres de l'utilisateur
-        qs = qs.annotate(
-            matching_genres=Count(
-                "genres",
-                filter=Q(genres__id__in=top_genre_ids),
-                distinct=True,
-            )
-        ).order_by("-matching_genres", "id")
+        if not top_igdb_genre_ids:
+            return Response([])
 
-        games = qs[:_RECOMMENDATIONS_LIMIT]
-        serializer = RecommendedGameSerializer(games, many=True, context={"request": request})
-        return Response(serializer.data)
+        # IGDB IDs des jeux déjà dans la bibliothèque (à exclure)
+        owned_igdb_ids = set(UserGame.objects.filter(user=user).values_list("game__igdb_id", flat=True))
+
+        genre_ids_str = ",".join(map(str, top_igdb_genre_ids))
+        query = f"""
+            fields id, name, cover.url, genres.id, genres.name,
+                   screenshots.url, total_rating, total_rating_count, first_release_date;
+            where genres = ({genre_ids_str})
+                & total_rating_count >= {_MIN_IGDB_RATING_COUNT}
+                & version_parent = null
+                & cover != null
+                & screenshots != null;
+            sort total_rating desc;
+            limit {_IGDB_FETCH_POOL};
+        """
+
+        raw_games = igdb_request("games", query)
+        if not isinstance(raw_games, list):
+            return Response([])
+
+        # Exclure les jeux déjà possédés puis mélanger pour varier les suggestions
+        candidates = [g for g in raw_games if g.get("id") not in owned_igdb_ids]
+        random.shuffle(candidates)
+
+        results = [normalize_igdb_game(g) for g in candidates[:_RECOMMENDATIONS_LIMIT]]
+
+        results = enrich_normalized_games(results, user=user)
+        return Response(results)
