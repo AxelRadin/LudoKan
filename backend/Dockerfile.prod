@@ -9,6 +9,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    gettext \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -20,8 +21,14 @@ COPY config/ ./config/
 COPY apps/ ./apps/
 COPY api/ ./api/
 COPY docker/ ./docker/
+COPY templates/ ./templates/
+COPY locale/ ./locale/
 COPY pyproject.toml ./pyproject.toml
 COPY runtime.txt ./runtime.txt
+
+# Build-time only : Django charge settings lors de compilemessages (voir compose build.args).
+ARG SECRET_KEY_FOR_COMPILE=build-only-placeholder-for-compilemessages
+RUN SECRET_KEY="${SECRET_KEY_FOR_COMPILE}" python manage.py compilemessages
 
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
