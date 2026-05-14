@@ -7,7 +7,8 @@
     "logout": "Déconnexion",
     "login": "Connexion",
     "register": "S'inscrire",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "games": "Jeux"
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -49,7 +50,35 @@
     "confirm": "Confirmer",
     "cancel": "Annuler",
     "delete": "Supprimer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "reset": "Réinitialiser",
+    "resetAll": "Tout réinitialiser",
+    "search": "Rechercher...",
+    "sort": "Trier par",
+    "menu": "Menu"
+  },
+  "games": {
+    "title": "Explorer les jeux",
+    "subtitle": "Découvrez des milliers de titres à travers l'API IGDB.",
+    "empty": "Aucun jeu ne correspond à vos critères.",
+    "sort": {
+      "popularity": "Popularité",
+      "recent": "Récent",
+      "rating": "Mieux notés",
+      "mostRated": "Plus notés",
+      "name": "Nom (A-Z)"
+    },
+    "filters": {
+      "title": "Filtres",
+      "genres": "Genres",
+      "platforms": "Plateformes",
+      "themes": "Thèmes",
+      "gameModes": "Modes de jeu",
+      "minRating": "Note minimale",
+      "minAge": "Âge minimum",
+      "minPlayers": "Joueurs min.",
+      "playerPerspectives": "Perspectives"
+    }
   },
   "error404": {
     "title": "Error 404",
@@ -97,23 +126,67 @@
   },
   "genres": {
     "Action": "Action",
-    "Aventure": "Aventure",
+    "Adventure": "Aventure",
     "RPG": "RPG",
     "FPS": "FPS",
     "TPS": "TPS",
-    "Stratégie": "Stratégie",
+    "Strategy": "Stratégie",
     "Simulation": "Simulation",
     "Puzzle": "Puzzle",
-    "Course": "Course",
+    "Racing": "Course",
     "Sport": "Sport",
     "Hack'n Slash": "Hack'n Slash",
-    "Plateforme": "Plateforme",
-    "Jeu de cartes": "Jeu de cartes"
+    "Platform": "Plateforme",
+    "Card & Board": "Cartes & Plateau"
+  },
+  "platforms": {
+    "PC": "PC",
+    "PS5": "PS5",
+    "PS4": "PS4",
+    "Xbox Series X|S": "Xbox Series X|S",
+    "Xbox One": "Xbox One",
+    "Nintendo Switch": "Nintendo Switch",
+    "iOS": "iOS",
+    "Android": "Android"
+  },
+  "themes": {
+    "Action": "Action",
+    "Horror": "Horreur",
+    "Fantasy": "Fantaisie",
+    "Sci-fi": "Science-fiction",
+    "Open World": "Monde ouvert",
+    "Survival": "Survie",
+    "Stealth": "Infiltration",
+    "Comedy": "Humour",
+    "Sandbox": "Bac à sable",
+    "Historical": "Historique",
+    "Warfare": "Guerre",
+    "Non-fiction": "Non-fiction",
+    "Mystery": "Mystère"
+  },
+  "gameModes": {
+    "Single player": "Solo",
+    "Multiplayer": "Multijoueur",
+    "Co-operative": "Coopératif",
+    "Split screen": "Écran scindé",
+    "MMO": "MMO",
+    "Battle Royale": "Battle Royale"
+  },
+  "perspectives": {
+    "First person": "Première personne",
+    "Third person": "Troisième personne",
+    "Bird's eye / Top-down": "Vue de dessus",
+    "Side view": "Vue de côté",
+    "Virtual Reality": "Réalité Virtuelle"
   },
   "header": {
     "openMenu": "Ouvrir le menu",
     "langFr": "Français 🇫🇷",
-    "langEn": "English 🇬🇧"
+    "langEn": "English 🇬🇧",
+    "lightMode": "Passer au mode clair",
+    "darkMode": "Passer au mode sombre",
+    "changeLanguage": "Changer la langue",
+    "exploreGames": "Explorer les jeux"
   },
   "notifications": {
     "open": "Ouvrir les notifications",
