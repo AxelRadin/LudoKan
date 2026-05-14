@@ -8,8 +8,9 @@ import {
   MenuItem,
   Typography,
 } from '@mui/material';
-import { useState, type ReactNode } from 'react';
+import { useState, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 import { t } from 'i18next';
 
 const RATING_LABELS: Record<number, string> = {
@@ -24,24 +25,78 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-const StarIcon = ({ filled }: { filled: boolean }) => (
+// Hook pour obtenir les couleurs dynamiques basées sur le thème
+function useThemeColors() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  return useMemo(
+    () => ({
+      cardBg: isDark ? 'rgba(42,32,32,0.78)' : '#fff',
+      border: isDark ? 'rgba(74,48,48,0.9)' : 'rgba(0,0,0,0.12)',
+      ownerBorder: isDark ? 'rgba(255,100,100,0.4)' : 'rgb(255, 211, 211)',
+      title: isDark ? '#f5e6e6' : '#111',
+      text: isDark ? '#e0d0d0' : '#555',
+      textLight: isDark ? '#b49393' : '#888',
+      textVeryLight: isDark ? '#9e7070' : '#aaa',
+      muted: isDark ? '#9e7070' : '#666',
+      accent: '#FF3D3D',
+      accentDark: '#b71c1c',
+      avatarBg: isDark ? '#C41A1A' : '#C41A1A',
+      badgeBg: isDark ? 'rgba(255,61,61,0.15)' : '#FDE8E8',
+      badgeText: isDark ? '#ff8a80' : '#A32D2D',
+      badgeBorder: isDark ? 'rgba(255,61,61,0.3)' : '#F09595',
+      starFilled: isDark ? 'rgb(255, 180, 180)' : 'rgb(255, 211, 211)',
+      starEmpty: isDark ? '#9e7070' : '#C0C0C0',
+      hoverBorder: isDark ? '#C41A1A' : '#C41A1A',
+      divider: isDark ? 'rgba(74,48,48,0.5)' : 'rgba(0,0,0,0.12)',
+      dotsBg: isDark ? '#b49393' : '#888',
+      menuBg: isDark ? 'rgba(42,32,32,0.96)' : '#fff',
+      isDark,
+    }),
+    [isDark]
+  );
+}
+
+const StarIcon = ({
+  filled,
+  starFilled,
+  starEmpty,
+}: {
+  filled: boolean;
+  starFilled: string;
+  starEmpty: string;
+}) => (
   <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true">
     <path
       d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32L2.27 7.12l5.34-.78z"
-      fill={filled ? 'rgb(255, 211, 211)' : 'none'}
-      stroke={filled ? 'none' : '#C0C0C0'}
+      fill={filled ? starFilled : 'none'}
+      stroke={filled ? 'none' : starEmpty}
       strokeWidth={filled ? 0 : 1.2}
     />
   </svg>
 );
 
-const StarRating = ({ rating }: { rating: number }) => (
+const StarRating = ({
+  rating,
+  starFilled,
+  starEmpty,
+}: {
+  rating: number;
+  starFilled: string;
+  starEmpty: string;
+}) => (
   <Box
     sx={{ display: 'flex', gap: '3px' }}
     aria-label={`${rating} étoiles sur 5`}
   >
     {Array.from({ length: 5 }, (_, i) => (
-      <StarIcon key={i} filled={i < rating} />
+      <StarIcon
+        key={i}
+        filled={i < rating}
+        starFilled={starFilled}
+        starEmpty={starEmpty}
+      />
     ))}
   </Box>
 );
@@ -75,6 +130,7 @@ export default function ReviewCard({
   onEdit,
   onDelete,
 }: ReviewCardProps) {
+  const C = useThemeColors();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -105,7 +161,7 @@ export default function ReviewCard({
       <Typography
         variant="body2"
         sx={{
-          color: '#555',
+          color: C.text,
           lineHeight: 1.7,
           fontSize: 13,
           textAlign: 'left',
@@ -119,7 +175,7 @@ export default function ReviewCard({
       <Typography
         variant="body2"
         sx={{
-          color: '#888',
+          color: C.textLight,
           fontStyle: 'italic',
           fontSize: 13,
           lineHeight: 1.7,
@@ -137,26 +193,29 @@ export default function ReviewCard({
       onMouseLeave={() => setHovered(false)}
       sx={{
         width: '100%',
-        bgcolor: '#fff',
+        bgcolor: C.cardBg,
+        backdropFilter: 'blur(10px)',
         borderRadius: 3,
         mb: 2,
         ...(isOwner
           ? {
-              border: '1px solid rgb(255, 211, 211)',
+              border: `1px solid ${C.ownerBorder}`,
               animation: 'pulseGlow 3s ease-in-out infinite',
               '@keyframes pulseGlow': {
                 '0%, 100%': {
-                  boxShadow:
-                    '0 0 5px 1px rgba(255,211,211,0.35), 0 0 12px 3px rgba(255,150,150,0.1)',
+                  boxShadow: C.isDark
+                    ? '0 0 5px 1px rgba(255,61,61,0.25), 0 0 12px 3px rgba(255,61,61,0.1)'
+                    : '0 0 5px 1px rgba(255,211,211,0.35), 0 0 12px 3px rgba(255,150,150,0.1)',
                 },
                 '50%': {
-                  boxShadow:
-                    '0 0 9px 3px rgba(255,211,211,0.6), 0 0 22px 6px rgba(255,100,100,0.18)',
+                  boxShadow: C.isDark
+                    ? '0 0 9px 3px rgba(255,61,61,0.45), 0 0 22px 6px rgba(255,61,61,0.15)'
+                    : '0 0 9px 3px rgba(255,211,211,0.6), 0 0 22px 6px rgba(255,100,100,0.18)',
                 },
               },
             }
           : {
-              border: '0.5px solid rgba(0,0,0,0.12)',
+              border: `0.5px solid ${C.border}`,
             }),
       }}
     >
@@ -177,7 +236,7 @@ export default function ReviewCard({
                 width: 40,
                 height: 40,
                 borderRadius: '50%',
-                bgcolor: '#C41A1A',
+                bgcolor: C.avatarBg,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -191,7 +250,6 @@ export default function ReviewCard({
             </Box>
 
             {/* Infos utilisateur */}
-            {/* ✅ Fix : alignItems: 'flex-start' force "6 avis publiés" à coller au bord gauche de la colonne */}
             <Box
               sx={{
                 display: 'flex',
@@ -219,12 +277,12 @@ export default function ReviewCard({
                       fontSize: 15,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
-                      color: '#111',
+                      color: C.title,
                       lineHeight: 1,
                       textDecoration: 'none',
                       '&:hover': {
                         textDecoration: 'underline',
-                        color: '#a32d2d',
+                        color: C.accent,
                       },
                     }}
                   >
@@ -238,7 +296,7 @@ export default function ReviewCard({
                       fontSize: 15,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
-                      color: '#111',
+                      color: C.title,
                       lineHeight: 1,
                     }}
                   >
@@ -253,9 +311,9 @@ export default function ReviewCard({
                       fontSize: 10,
                       fontWeight: 700,
                       letterSpacing: '0.1em',
-                      bgcolor: '#FDE8E8',
-                      color: '#A32D2D',
-                      border: '0.5px solid #F09595',
+                      bgcolor: C.badgeBg,
+                      color: C.badgeText,
+                      border: `0.5px solid ${C.badgeBorder}`,
                       borderRadius: '4px',
                       px: '8px',
                       py: '3px',
@@ -274,7 +332,7 @@ export default function ReviewCard({
               {reviewCount !== null && (
                 <Typography
                   variant="caption"
-                  sx={{ color: '#888', fontSize: 11, lineHeight: 1 }}
+                  sx={{ color: C.textLight, fontSize: 11, lineHeight: 1 }}
                 >
                   {reviewCount} avis publié{reviewCount > 1 ? 's' : ''}
                 </Typography>
@@ -305,7 +363,7 @@ export default function ReviewCard({
                         width: 4,
                         height: 4,
                         borderRadius: '50%',
-                        bgcolor: '#888',
+                        bgcolor: C.dotsBg,
                       }}
                     />
                   ))}
@@ -315,11 +373,27 @@ export default function ReviewCard({
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleCloseMenu}
+                PaperProps={{
+                  sx: {
+                    bgcolor: C.menuBg,
+                    backdropFilter: 'blur(20px)',
+                    borderRadius: '12px',
+                    border: `1px solid ${C.border}`,
+                  },
+                }}
               >
                 <MenuItem
                   onClick={() => {
                     handleCloseMenu();
                     onEdit(review);
+                  }}
+                  sx={{
+                    color: C.title,
+                    '&:hover': {
+                      bgcolor: C.isDark
+                        ? 'rgba(255,255,255,0.05)'
+                        : 'rgba(0,0,0,0.04)',
+                    },
                   }}
                 >
                   <EditOutlinedIcon fontSize="small" sx={{ mr: 1 }} />
@@ -330,7 +404,14 @@ export default function ReviewCard({
                     handleCloseMenu();
                     if (!review.rating_only) onDelete(review.id);
                   }}
-                  sx={{ color: 'error.main' }}
+                  sx={{
+                    color: C.accent,
+                    '&:hover': {
+                      bgcolor: C.isDark
+                        ? 'rgba(255,61,61,0.1)'
+                        : 'rgba(211,47,47,0.08)',
+                    },
+                  }}
                 >
                   <DeleteOutlineIcon fontSize="small" sx={{ mr: 1 }} />
                   Supprimer
@@ -340,21 +421,25 @@ export default function ReviewCard({
           )}
         </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 2, borderColor: C.divider }} />
 
         {/* Notation */}
         {ratingValue && (
           <Box
             sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1.5 }}
           >
-            <StarRating rating={ratingValue} />
+            <StarRating
+              rating={ratingValue}
+              starFilled={C.starFilled}
+              starEmpty={C.starEmpty}
+            />
             <Box
               sx={{
                 fontSize: 12,
                 fontWeight: 700,
                 letterSpacing: '0.06em',
-                bgcolor: 'rgb(255, 211, 211)',
-                color: '#A32D2D',
+                bgcolor: C.badgeBg,
+                color: C.badgeText,
                 borderRadius: '4px',
                 px: '8px',
                 py: '2px',
@@ -365,7 +450,7 @@ export default function ReviewCard({
             </Box>
             <Typography
               variant="caption"
-              sx={{ color: '#666', fontWeight: 500 }}
+              sx={{ color: C.muted, fontWeight: 500 }}
             >
               {RATING_LABELS[ratingValue]}
             </Typography>
@@ -375,7 +460,7 @@ export default function ReviewCard({
         {/* Accent rouge à gauche au hover */}
         <Box
           sx={{
-            borderLeft: `2px solid ${hovered ? '#C41A1A' : 'transparent'}`,
+            borderLeft: `2px solid ${hovered ? C.hoverBorder : 'transparent'}`,
             pl: 1,
             ml: -1,
             transition: 'border-color 0.2s ease',
@@ -388,7 +473,7 @@ export default function ReviewCard({
               sx={{
                 fontWeight: 700,
                 fontSize: 15,
-                color: '#111',
+                color: C.title,
                 mb: 0.5,
                 textAlign: 'left',
               }}
@@ -404,7 +489,7 @@ export default function ReviewCard({
           <Typography
             variant="caption"
             sx={{
-              color: '#aaa',
+              color: C.textVeryLight,
               mt: 1.5,
               display: 'block',
               letterSpacing: '0.03em',
