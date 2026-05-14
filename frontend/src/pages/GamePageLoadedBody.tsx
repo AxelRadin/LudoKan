@@ -525,7 +525,7 @@ export function GamePageLoadedBody({
             currentUserId={logic.currentUserId}
             onReviewChange={review => {
               logic.setUserReview(review);
-              void logic.refreshGame();
+              logic.refreshGame();
             }}
             reviewStarFilter={reviewStarFilter}
             onClearReviewStarFilter={() => setReviewStarFilter(null)}

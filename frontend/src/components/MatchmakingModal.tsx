@@ -264,7 +264,7 @@ function PartyChatView({ party, onLeave, currentUserId }: PartyChatViewProps) {
                   variant="outlined"
                   size="small"
                   onClick={() =>
-                    window.open(`/profile/${msg.user_id}`, '_blank')
+                    globalThis.open(`/profile/${msg.user_id}`, '_blank')
                   }
                   sx={{
                     opacity: 0,
