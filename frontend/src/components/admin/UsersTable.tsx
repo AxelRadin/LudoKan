@@ -1,8 +1,10 @@
 import {
+  Alert,
   Box,
   Chip,
   IconButton,
   InputAdornment,
+  Snackbar,
   TextField,
   Tooltip,
   Typography,
@@ -22,6 +24,10 @@ export default function UsersTable() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -32,13 +38,35 @@ export default function UsersTable() {
   const filtered = users;
 
   async function handleSuspend(userId: number, reason: string) {
-    await apiPost(`/api/admin/users/${userId}/suspend/`, { reason });
-    refetch();
+    try {
+      await apiPost(`/api/admin/users/${userId}/suspend/`, { reason });
+      refetch();
+      setSnackbar({
+        message: 'Le compte a bien été suspendu.',
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({
+        message: 'Erreur lors de la suspension du compte.',
+        severity: 'error',
+      });
+    }
   }
 
   async function handleReactivate(userId: number) {
-    await apiPost(`/api/admin/users/${userId}/reactivate/`, {});
-    refetch();
+    try {
+      await apiPost(`/api/admin/users/${userId}/reactivate/`, {});
+      refetch();
+      setSnackbar({
+        message: 'Le compte a bien été réactivé.',
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({
+        message: 'Erreur lors de la réactivation du compte.',
+        severity: 'error',
+      });
+    }
   }
 
   if (error) return <ErrorAlert message={error} />;
@@ -184,6 +212,17 @@ export default function UsersTable() {
         }}
         onConfirm={handleSuspend}
       />
+
+      <Snackbar
+        open={!!snackbar}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
