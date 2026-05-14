@@ -644,11 +644,7 @@ class TestAdminSuspendUserView:
         ).exists()
 
     def test_suspended_user_cannot_access_protected_endpoint_anymore(self, auth_admin_client_with_tokens, api_client, user):
-        # L'admin suspend l'utilisateur "user"
-        suspend_url = f"/api/admin/users/{user.id}/suspend/"
-        auth_admin_client_with_tokens.post(suspend_url, {"reason": "Test suspension"}, format="json")
-
-        # Le user tente d'accéder à /api/auth/user/ après suspension
+        # Le user se connecte AVANT d'être suspendu
         login_url = "/api/auth/login/"
         login_response = api_client.post(
             login_url,
@@ -656,6 +652,10 @@ class TestAdminSuspendUserView:
             format="json",
         )
         assert login_response.status_code == status.HTTP_200_OK
+
+        # L'admin suspend l'utilisateur "user"
+        suspend_url = f"/api/admin/users/{user.id}/suspend/"
+        auth_admin_client_with_tokens.post(suspend_url, {"reason": "Test suspension"}, format="json")
 
         # Récupérer les cookies JWT et les réinjecter dans le client
         if "access_token" in login_response.cookies:
