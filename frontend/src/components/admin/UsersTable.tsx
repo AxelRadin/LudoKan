@@ -87,7 +87,16 @@ export default function UsersTable() {
         placeholder="Rechercher par pseudo ou email"
         size="small"
         fullWidth
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(0,0,0,0.35)',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(0,0,0,0.6)',
+          },
+        }}
+        inputProps={{ style: { color: '#c0392b' } }}
         value={search}
         onChange={e => setSearch(e.target.value)}
         InputProps={{
@@ -102,7 +111,7 @@ export default function UsersTable() {
       <Box
         sx={{
           bgcolor: '#fff',
-          border: '0.5px solid rgba(0,0,0,0.1)',
+          border: '1px solid rgba(0,0,0,0.3)',
           borderRadius: 3,
           overflow: 'hidden',
         }}
@@ -153,7 +162,10 @@ export default function UsersTable() {
                 bgcolor: user.is_active ? 'transparent' : 'rgba(0,0,0,0.02)',
               }}
             >
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#c0392b' }}
+              >
                 {user.pseudo ?? '—'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#555' }}>
@@ -161,11 +173,19 @@ export default function UsersTable() {
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                 {user.is_superuser && (
-                  <Chip
-                    label="superuser"
-                    size="small"
-                    sx={{ fontSize: 10, bgcolor: '#FDE8E8', color: '#A32D2D' }}
-                  />
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      backgroundColor: '#922b21',
+                      color: '#fff',
+                    }}
+                  >
+                    superadmin
+                  </span>
                 )}
                 {user.roles.map(r => (
                   <Chip key={r} label={r} size="small" sx={{ fontSize: 10 }} />
