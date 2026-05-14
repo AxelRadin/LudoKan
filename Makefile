@@ -3,7 +3,7 @@
 	frontend-format frontend-lint \
 	format lint format-all lint-all \
 	test test-coverage \
-	backend-install backend-migrate backend-makemigrations backend-run \
+	backend-install backend-migrate backend-makemigrations backend-i18n-sync backend-run \
 	frontend-install frontend-run \
 	clean \
 	docker-build docker-up docker-down docker-logs \
@@ -133,6 +133,11 @@ backend-migrate: ## Exécute les migrations Django dans Docker
 backend-makemigrations: ## Crée les migrations Django dans Docker
 	@echo "$(BLUE)🗄️ Création des migrations (docker)...$(NC)"
 	@$(DC) exec -T web python manage.py makemigrations
+
+backend-i18n-sync: ## Met à jour les .po i18n sans diffs parasites
+	@echo "$(BLUE)🌐 Synchronisation des catalogues i18n...$(NC)"
+	@$(DC) exec -T web sh /app/scripts/i18n-sync.sh
+	@echo "$(GREEN)✅ Catalogues i18n synchronisés!$(NC)"
 
 migrate: backend-migrate ## Alias: make migrate
 migrations: backend-makemigrations ## Alias: make migrations
