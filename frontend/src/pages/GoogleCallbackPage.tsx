@@ -44,7 +44,7 @@ const GoogleCallbackPage: React.FC = () => {
       }
     };
 
-    void run();
+    run();
   }, [navigate, setAuthenticated, t]);
 
   return (

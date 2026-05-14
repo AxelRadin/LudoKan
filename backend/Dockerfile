@@ -25,6 +25,7 @@ COPY manage.py ./manage.py
 COPY config/ ./config/
 COPY apps/ ./apps/
 COPY api/ ./api/
+COPY templates/ ./templates/
 COPY docker/ ./docker/
 COPY tests/ ./tests/
 COPY pyproject.toml ./pyproject.toml

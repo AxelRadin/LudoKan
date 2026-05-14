@@ -407,7 +407,7 @@ function useProfilePageModel(): ProfilePageModel {
     try {
       const res = await apiGet('/api/auth/steam/login/');
       if (res.auth_url) {
-        window.open(res.auth_url, '_blank', 'noopener,noreferrer');
+        globalThis.open(res.auth_url, '_blank', 'noopener,noreferrer');
         setSteamBusy(false);
       }
     } catch (err: any) {
@@ -938,7 +938,7 @@ function ProfileEditDialog({
                   component="button"
                   type="button"
                   disabled={avatarBusy}
-                  onClick={() => void onAvatarRemove()}
+                  onClick={() => onAvatarRemove()}
                   aria-label={t('profilePage.avatarRemoveAriaLabel')}
                   sx={{
                     position: 'absolute',
@@ -992,7 +992,7 @@ function ProfileEditDialog({
                   type="file"
                   accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                   disabled={avatarBusy}
-                  onChange={e => void onAvatarChange(e)}
+                  onChange={e => onAvatarChange(e)}
                   style={{
                     ...fileInputOverlaySx,
                     zIndex: 12,
@@ -1165,7 +1165,7 @@ function ProfileEditDialog({
             {t('profilePage.cancel')}
           </Button>
           <Button
-            onClick={() => void onSave()}
+            onClick={() => onSave()}
             variant="contained"
             sx={{
               borderRadius: 999,
