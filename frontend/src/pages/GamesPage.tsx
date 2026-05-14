@@ -152,71 +152,13 @@ export const GamesPage: React.FC = () => {
       }}
     >
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 5, lg: 8 } }}>
-        <Box
-          mb={5}
-          display="flex"
-          flexDirection={{ xs: 'column', md: 'row' }}
-          alignItems={{ md: 'flex-end' }}
-          justifyContent="space-between"
-          gap={3}
-        >
-          <Box>
-            <Typography
-              variant="h3"
-              sx={{ fontWeight: 900, mb: 1, letterSpacing: '-1px' }}
-            >
-              {t('games.title', 'Explorer les jeux')}
-            </Typography>
-          </Box>
-
-          <Box
-            display="flex"
-            gap={2}
-            flexWrap="wrap"
-            width={{ xs: '100%', md: 'auto' }}
+        <Box mb={5}>
+          <Typography
+            variant="h3"
+            sx={{ fontWeight: 900, mb: 1, letterSpacing: '-1px' }}
           >
-            <TextField
-              placeholder={t('common.search', 'Rechercher...')}
-              value={q}
-              onChange={e => updateParam('q', e.target.value)}
-              size="small"
-              sx={{ minWidth: 260, flexGrow: 1 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-                sx: { borderRadius: '12px' },
-              }}
-            />
-
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>{t('common.sort', 'Trier par')}</InputLabel>
-              <Select
-                value={sort}
-                label={t('common.sort', 'Trier par')}
-                onChange={e => updateParam('sort', e.target.value)}
-                sx={{ borderRadius: '12px' }}
-              >
-                <MenuItem value="popularity">
-                  {t('games.sort.popularity', 'Popularité')}
-                </MenuItem>
-                <MenuItem value="recent">
-                  {t('games.sort.recent', 'Récent')}
-                </MenuItem>
-                <MenuItem value="rating">
-                  {t('games.sort.rating', 'Mieux notés')}
-                </MenuItem>
-                <MenuItem value="most_rated">
-                  {t('games.sort.mostRated', 'Plus notés')}
-                </MenuItem>
-                <MenuItem value="name">
-                  {t('games.sort.name', 'Nom (A-Z)')}
-                </MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
+            {t('games.title', 'Explorer les jeux')}
+          </Typography>
         </Box>
 
         <Grid container spacing={4}>
@@ -231,6 +173,50 @@ export const GamesPage: React.FC = () => {
 
           {/* Main Content */}
           <Grid item xs={12} md={9}>
+            <Box mb={4} display="flex" gap={2} flexWrap="wrap" width="100%">
+              <TextField
+                placeholder={t('common.search', 'Rechercher...')}
+                value={q}
+                onChange={e => updateParam('q', e.target.value)}
+                size="small"
+                sx={{ minWidth: 260, flexGrow: 1 }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  sx: { borderRadius: '12px' },
+                }}
+              />
+
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel>{t('common.sort', 'Trier par')}</InputLabel>
+                <Select
+                  value={sort}
+                  label={t('common.sort', 'Trier par')}
+                  onChange={e => updateParam('sort', e.target.value)}
+                  sx={{ borderRadius: '12px' }}
+                >
+                  <MenuItem value="popularity">
+                    {t('games.sort.popularity', 'Popularité')}
+                  </MenuItem>
+                  <MenuItem value="recent">
+                    {t('games.sort.recent', 'Récent')}
+                  </MenuItem>
+                  <MenuItem value="rating">
+                    {t('games.sort.rating', 'Mieux notés')}
+                  </MenuItem>
+                  <MenuItem value="most_rated">
+                    {t('games.sort.mostRated', 'Plus notés')}
+                  </MenuItem>
+                  <MenuItem value="name">
+                    {t('games.sort.name', 'Nom (A-Z)')}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
             {loading ? (
               <Box display="flex" justifyContent="center" py={10}>
                 <CircularProgress size={60} thickness={4} />
