@@ -61,15 +61,7 @@ export default function SearchResultsPage() {
 
     const fetchData = async () => {
       try {
-        if (!selected) {
-          const { games: results, totalCount: total } = await searchGamesPage(
-            query,
-            PAGE_SIZE,
-            offset
-          );
-          setGames(results);
-          setTotalPages(Math.ceil(total / PAGE_SIZE));
-        } else {
+        if (selected) {
           // Pour les franchises et collections, on garde la logique de découverte page par page
           const fetcher =
             selected.type === 'franchise'
@@ -94,6 +86,14 @@ export default function SearchResultsPage() {
             );
           }
           setTotalPages(maxDiscoveredPage.current);
+        } else {
+          const { games: results, totalCount: total } = await searchGamesPage(
+            query,
+            PAGE_SIZE,
+            offset
+          );
+          setGames(results);
+          setTotalPages(Math.ceil(total / PAGE_SIZE));
         }
       } catch {
         setGames([]);
