@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-14 02:07+0200\n"
+"POT-Creation-Date: 1970-01-01 00:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,48 +17,38 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-#: templates/account/email/base_message.html:29
+
 #, python-format
 msgid "© %(site_name)s. All rights reserved."
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:4
 msgid "Confirm your email address"
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:8
 msgid "Account Verification"
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:12
-#: templates/account/email/welcome_message.html:12
 #, python-format
 msgid "Hi %(user_display)s,"
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:15
 #, python-format
 msgid ""
 "Welcome to LudoKan! To finalize your registration on %(site_domain)s, please "
 "confirm your email address by clicking the button below:"
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:18
 msgid "Confirm my email"
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:22
-#: templates/account/email/password_reset_key_message.html:28
 msgid "If the button doesn't work, copy and paste this link into your browser:"
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.html:30
 msgid ""
 "If you did not create an account on LudoKan, you can safely ignore this "
 "email."
 msgstr ""
 
-#: templates/account/email/email_confirmation_message.txt:1
 #, python-format
 msgid ""
 "Hi %(user_display)s,\n"
@@ -77,43 +67,34 @@ msgid ""
 "The LudoKan team"
 msgstr ""
 
-#: templates/account/email/email_confirmation_subject.txt:3
 msgid "Please Confirm Your Email Address"
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:4
 msgid "Reset your password"
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:8
 msgid "Password Reset"
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:11
 msgid "Hi,"
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:14
 msgid ""
 "You have requested to reset your password on LudoKan. Click the button below "
 "to choose a new password:"
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:17
 msgid "Reset my password"
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:23
 msgid "This link expires in 10 minutes."
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.html:36
 msgid ""
 "If you did not request this reset, you can safely ignore this email. Your "
 "password will remain unchanged."
 msgstr ""
 
-#: templates/account/email/password_reset_key_message.txt:1
 #, python-format
 msgid ""
 "Hello,\n"
@@ -133,41 +114,32 @@ msgid ""
 "The LudoKan team"
 msgstr ""
 
-#: templates/account/email/password_reset_key_subject.txt:1
 #, python-format
 msgid "%(site_name)s – Reset your password"
 msgstr ""
 
-#: templates/account/email/welcome_message.html:4
-#: templates/account/email/welcome_subject.txt:1
 msgid "Welcome to LudoKan!"
 msgstr ""
 
-#: templates/account/email/welcome_message.html:8
 msgid "Welcome"
 msgstr ""
 
-#: templates/account/email/welcome_message.html:15
 msgid ""
 "Your account has been successfully verified! We are thrilled to have you in "
 "the LudoKan community."
 msgstr ""
 
-#: templates/account/email/welcome_message.html:18
 msgid ""
 "You can now start exploring games, tracking your library, and connecting "
 "with other players."
 msgstr ""
 
-#: templates/account/email/welcome_message.html:21
 msgid "Go to LudoKan"
 msgstr ""
 
-#: templates/account/email/welcome_message.html:25
 msgid "See you soon on LudoKan!"
 msgstr ""
 
-#: templates/account/email/welcome_message.txt:1
 #, python-format
 msgid ""
 "Hi %(user_display)s,\n"
