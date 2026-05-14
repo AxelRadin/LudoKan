@@ -374,11 +374,12 @@ export function RecommendedGamesSection() {
               const gameKey = game.django_id
                 ? `django-${game.django_id}`
                 : `igdb-${game.igdb_id}`;
-              const dotColor = isActive
-                ? accentColor
-                : isDark
-                  ? 'rgba(255,255,255,0.2)'
-                  : 'rgba(0,0,0,0.15)';
+              let dotColor = isDark
+                ? 'rgba(255,255,255,0.2)'
+                : 'rgba(0,0,0,0.15)';
+              if (isActive) {
+                dotColor = accentColor;
+              }
 
               return (
                 <Box
