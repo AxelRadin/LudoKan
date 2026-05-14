@@ -60,15 +60,6 @@ export const GamesPage: React.FC = () => {
     theme: getFilterArray('theme'),
     game_mode: getFilterArray('game_mode'),
     player_perspective: getFilterArray('player_perspective'),
-    min_age: searchParams.get('min_age')
-      ? Number(searchParams.get('min_age'))
-      : undefined,
-    min_players: searchParams.get('min_players')
-      ? Number(searchParams.get('min_players'))
-      : undefined,
-    min_rating: searchParams.get('min_rating')
-      ? Number(searchParams.get('min_rating'))
-      : undefined,
   };
 
   const filtersJson = JSON.stringify(filters);
@@ -138,18 +129,6 @@ export const GamesPage: React.FC = () => {
     setListParam('game_mode', newFilters.game_mode);
     setListParam('player_perspective', newFilters.player_perspective);
 
-    if (newFilters.min_age)
-      newParams.set('min_age', String(newFilters.min_age));
-    else newParams.delete('min_age');
-
-    if (newFilters.min_players)
-      newParams.set('min_players', String(newFilters.min_players));
-    else newParams.delete('min_players');
-
-    if (newFilters.min_rating)
-      newParams.set('min_rating', String(newFilters.min_rating));
-    else newParams.delete('min_rating');
-
     newParams.set('page', '1');
     setSearchParams(newParams);
   };
@@ -172,7 +151,7 @@ export const GamesPage: React.FC = () => {
         ...bleedUnderHeader(theme),
       }}
     >
-      <Container maxWidth="xl">
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 5, lg: 8 } }}>
         <Box
           mb={5}
           display="flex"
