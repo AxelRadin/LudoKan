@@ -3,7 +3,7 @@
 	frontend-format frontend-lint \
 	format lint format-all lint-all \
 	test test-coverage \
-	backend-install backend-migrate backend-makemigrations backend-run \
+	backend-install backend-migrate backend-makemigrations backend-i18n-sync backend-lock backend-lock-check backend-run \
 	frontend-install frontend-run \
 	clean \
 	docker-build docker-up docker-down docker-logs \
@@ -133,6 +133,25 @@ backend-migrate: ## Exécute les migrations Django dans Docker
 backend-makemigrations: ## Crée les migrations Django dans Docker
 	@echo "$(BLUE)🗄️ Création des migrations (docker)...$(NC)"
 	@$(DC) exec -T web python manage.py makemigrations
+
+backend-i18n-sync: ## Met à jour les .po i18n sans diffs parasites
+	@echo "$(BLUE)🌐 Synchronisation des catalogues i18n...$(NC)"
+	@$(DC) exec -T web sh /app/scripts/i18n-sync.sh
+	@echo "$(GREEN)✅ Catalogues i18n synchronisés!$(NC)"
+
+backend-lock: ## Régénère backend/requirements.lock avec Python 3.11
+	@echo "$(BLUE)🔒 Génération du lock Python (requirements.lock)...$(NC)"
+	@docker run --rm \
+		-v "$(PWD)/backend:/app" \
+		-w /app \
+		python:3.11-slim-bookworm \
+		bash -lc "python -m pip install --quiet pip-tools==7.5.3 && python -m piptools compile --output-file requirements.lock requirements.txt"
+	@echo "$(GREEN)✅ requirements.lock mis à jour.$(NC)"
+
+backend-lock-check: ## Vérifie que requirements.lock est aligné avec requirements.txt
+	@$(MAKE) backend-lock
+	@git diff --exit-code -- backend/requirements.lock
+	@echo "$(GREEN)✅ requirements.lock est à jour.$(NC)"
 
 migrate: backend-migrate ## Alias: make migrate
 migrations: backend-makemigrations ## Alias: make migrations

@@ -84,7 +84,7 @@ class TestWelcomeEmailSignals:
         adapter.send_mail.assert_called_once_with(
             "account/email/welcome",
             email_address.email,
-            {"user": user},
+            {"user": user, "request": request},
         )
 
     def test_send_welcome_email_on_social_signup_when_verified(self):
@@ -110,7 +110,7 @@ class TestWelcomeEmailSignals:
         adapter.send_mail.assert_called_once_with(
             "account/email/welcome",
             user.email,
-            {"user": user},
+            {"user": user, "request": request},
         )
 
     def test_send_welcome_email_on_social_signup_skips_without_verified_address(self):
