@@ -97,6 +97,40 @@ class AdminSuspendUserView(APIView):
         )
 
 
+class AdminReactivateUserView(APIView):
+    """
+    Endpoint admin pour réactiver un utilisateur suspendu.
+
+    POST /api/admin/users/{id}/reactivate/
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "suspend_user"
+
+    def post(self, request, pk: int):
+        actor: User = request.user
+        target: User = get_object_or_404(User, pk=pk)
+
+        active_suspensions = UserSuspension.objects.filter(user=target, is_active=True)
+        if not active_suspensions.exists():
+            return Response(
+                {"detail": "Cet utilisateur n'est pas suspendu."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        active_suspensions.update(is_active=False)
+
+        log_admin_action(
+            admin_user=actor,
+            action_type="user.reactivate",
+            target_type="user",
+            target_id=target.pk,
+            description=f"Réactivation du compte de {target.pseudo or target.email}",
+        )
+
+        return Response({"detail": "Compte réactivé avec succès."}, status=status.HTTP_200_OK)
+
+
 class AdminUserSuspensionListView(APIView):
     """
     Endpoint admin pour lister les suspensions d'un utilisateur.
