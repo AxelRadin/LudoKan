@@ -9,11 +9,11 @@ import React, {
 import ConfirmCancelMatchmakingModal from '../components/ConfirmCancelMatchmakingModal';
 import FloatingMatchmakingWidget from '../components/FloatingMatchmakingWidget';
 import MatchmakingModal from '../components/MatchmakingModal';
+import { useActiveParty } from '../hooks/useActiveParty';
 import i18n from '../i18n';
 import { apiDelete, apiGet, apiPatch, apiPost } from '../services/api';
 import { joinOrCreateParty } from '../services/party';
 import { useAuth } from './useAuth';
-import { useActiveParty } from '../hooks/useActiveParty';
 
 interface MatchmakingContextType {
   startMatchmaking: (
@@ -276,6 +276,7 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
           setMatches(currentMatches);
         }
       } catch (error) {
+        console.error('Erreur lors de la récupération des matchs', error);
       }
     }, 3000);
 
