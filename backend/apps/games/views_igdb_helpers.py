@@ -43,12 +43,38 @@ def _has_demographic_filters(
 def _genre_platform_where_extra_clauses(
     genre_ids: list[int],
     platform_ids: list[int],
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> list[str]:
     extras: list[str] = []
     if genre_ids:
         extras.append("(" + " | ".join(f"genres = ({g})" for g in genre_ids) + ")")
     if platform_ids:
         extras.append("(" + " | ".join(f"platforms = ({p})" for p in platform_ids) + ")")
+    if theme_ids:
+        extras.append("(" + " | ".join(f"themes = ({t})" for t in theme_ids) + ")")
+    if game_mode_ids:
+        extras.append("(" + " | ".join(f"game_modes = ({m})" for m in game_mode_ids) + ")")
+    if player_perspective_ids:
+        extras.append("(" + " | ".join(f"player_perspectives = ({pp})" for pp in player_perspective_ids) + ")")
+    if min_rating is not None:
+        extras.append(f"total_rating >= {min_rating}")
+
+    import datetime
+
+    if release_year_min is not None:
+        dt = datetime.datetime(release_year_min, 1, 1, tzinfo=datetime.timezone.utc)
+        ts = int(dt.timestamp())
+        extras.append(f"first_release_date >= {ts}")
+    if release_year_max is not None:
+        dt = datetime.datetime(release_year_max, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
+        ts = int(dt.timestamp())
+        extras.append(f"first_release_date <= {ts}")
+
     return extras
 
 
@@ -69,9 +95,24 @@ def merge_igdb_where_predicates(
     base_predicate: str,
     genre_ids: list[int],
     platform_ids: list[int],
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> str:
     """Clause `where` sans point-virgule final (à suffixer par `; sort ...`)."""
-    extras = _genre_platform_where_extra_clauses(genre_ids, platform_ids)
+    extras = _genre_platform_where_extra_clauses(
+        genre_ids,
+        platform_ids,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
     parts = extras + [base_predicate.strip()]
     return "where " + " & ".join(parts)
 
@@ -146,6 +187,12 @@ def search_page_name_matches(
     min_age: int | None = None,
     min_players: int | None = None,
     max_players: int | None = None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> list:
     genre_ids, platform_ids, use_demo = _normalize_optional_genre_platform(genre_ids, platform_ids, min_age, min_players, max_players)
     needs_post_slice = use_demo
@@ -153,7 +200,17 @@ def search_page_name_matches(
     def fetch_for_q(q_inner: str) -> list:
         fields = _search_page_fields(genre_ids, use_demo)
         core = f'name ~ *"{q_inner}"* & total_rating_count > 0'
-        where_line = merge_igdb_where_predicates(core, genre_ids, platform_ids)
+        where_line = merge_igdb_where_predicates(
+            core,
+            genre_ids,
+            platform_ids,
+            theme_ids=theme_ids,
+            game_mode_ids=game_mode_ids,
+            player_perspective_ids=player_perspective_ids,
+            min_rating=min_rating,
+            release_year_min=release_year_min,
+            release_year_max=release_year_max,
+        )
         if needs_post_slice:
             raw_cap = min(max((offset + limit) * 5, 50), 200)
             name_body = f"{fields} {where_line}; sort total_rating_count desc; limit {raw_cap}; offset 0;"
@@ -230,10 +287,25 @@ def parse_optional_int_query(value) -> int | None:
         return None
 
 
+def parse_optional_float_query(value) -> float | None:
+    if value is None or (isinstance(value, str) and not str(value).strip()):
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def merge_trending_where_with_filters(
     sort_clause: str,
     genre_ids: list[int],
     platform_ids: list[int],
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> str:
     """
     Injecte des clauses genre / platform dans la partie `where` d'une clause IGDB
@@ -245,7 +317,16 @@ def merge_trending_where_with_filters(
     if not head.lower().startswith("where"):
         return sort_clause
     base_cond = head[5:].strip()
-    extras = _genre_platform_where_extra_clauses(genre_ids, platform_ids)
+    extras = _genre_platform_where_extra_clauses(
+        genre_ids,
+        platform_ids,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
     cond = " & ".join(extras + [base_cond]) if extras else base_cond
     return f"where {cond}; {tail}"
 
@@ -264,10 +345,26 @@ def _trending_use_demo_and_merged_clause(
     min_age: int | None,
     min_players: int | None,
     max_players: int | None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> tuple[bool, str]:
     use_demo = _has_demographic_filters(min_age, min_players, max_players)
     sort_clause = TRENDING_SORTS.get(sort, "where total_rating_count > 0; sort total_rating_count desc;")
-    merged_clause = merge_trending_where_with_filters(sort_clause, genre_ids, platform_ids)
+    merged_clause = merge_trending_where_with_filters(
+        sort_clause,
+        genre_ids,
+        platform_ids,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
     return use_demo, merged_clause
 
 
@@ -281,8 +378,27 @@ def trending_fetch_games_array(
     min_age: int | None = None,
     min_players: int | None = None,
     max_players: int | None = None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> list:
-    use_demo, merged_clause = _trending_use_demo_and_merged_clause(sort, genre_ids, platform_ids, min_age, min_players, max_players)
+    use_demo, merged_clause = _trending_use_demo_and_merged_clause(
+        sort,
+        genre_ids,
+        platform_ids,
+        min_age,
+        min_players,
+        max_players,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
 
     # Cas historique : un seul genre, pas de plateforme, pas de filtre numérique → tri pure/mixed
     if len(genre_ids) == 1 and not platform_ids and not use_demo:
@@ -318,9 +434,28 @@ def trending_fetch_total_count(
     min_age: int | None = None,
     min_players: int | None = None,
     max_players: int | None = None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> int:
     try:
-        use_demo, merged_clause = _trending_use_demo_and_merged_clause(sort, genre_ids, platform_ids, min_age, min_players, max_players)
+        use_demo, merged_clause = _trending_use_demo_and_merged_clause(
+            sort,
+            genre_ids,
+            platform_ids,
+            min_age,
+            min_players,
+            max_players,
+            theme_ids=theme_ids,
+            game_mode_ids=game_mode_ids,
+            player_perspective_ids=player_perspective_ids,
+            min_rating=min_rating,
+            release_year_min=release_year_min,
+            release_year_max=release_year_max,
+        )
         where_part = merged_clause.split("sort")[0].strip()
 
         if use_demo:

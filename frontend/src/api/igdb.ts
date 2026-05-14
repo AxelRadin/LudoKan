@@ -83,9 +83,15 @@ export async function fetchIgdbGames(): Promise<IgdbGame[]> {
 export type IgdbListFilters = {
   genre?: number[];
   platform?: number[];
+  theme?: number[];
+  game_mode?: number[];
+  player_perspective?: number[];
   min_age?: number;
   min_players?: number;
   max_players?: number;
+  min_rating?: number;
+  release_year_min?: number;
+  release_year_max?: number;
 };
 
 function appendIgdbListFilters(
@@ -97,11 +103,26 @@ function appendIgdbListFilters(
     params.set('genre', filters.genre.map(String).join(','));
   if (filters.platform?.length)
     params.set('platform', filters.platform.map(String).join(','));
+  if (filters.theme?.length)
+    params.set('theme', filters.theme.map(String).join(','));
+  if (filters.game_mode?.length)
+    params.set('game_mode', filters.game_mode.map(String).join(','));
+  if (filters.player_perspective?.length)
+    params.set(
+      'player_perspective',
+      filters.player_perspective.map(String).join(',')
+    );
   if (filters.min_age != null) params.set('min_age', String(filters.min_age));
   if (filters.min_players != null)
     params.set('min_players', String(filters.min_players));
   if (filters.max_players != null)
     params.set('max_players', String(filters.max_players));
+  if (filters.min_rating != null)
+    params.set('min_rating', String(filters.min_rating));
+  if (filters.release_year_min != null)
+    params.set('release_year_min', String(filters.release_year_min));
+  if (filters.release_year_max != null)
+    params.set('release_year_max', String(filters.release_year_max));
 }
 
 function normalizePositionalGenre(genre?: number | number[]): number[] {

@@ -7,7 +7,8 @@
     "logout": "Déconnexion",
     "login": "Connexion",
     "register": "S'inscrire",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "games": "Jeux"
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -49,7 +50,30 @@
     "confirm": "Confirmer",
     "cancel": "Annuler",
     "delete": "Supprimer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "reset": "Réinitialiser",
+    "resetAll": "Tout réinitialiser"
+  },
+  "games": {
+    "title": "Explorer les jeux",
+    "subtitle": "Découvrez des milliers de titres à travers l'API IGDB.",
+    "empty": "Aucun jeu ne correspond à vos critères.",
+    "sort": {
+      "popularity": "Popularité",
+      "recent": "Récent",
+      "rating": "Mieux notés",
+      "mostRated": "Plus notés"
+    },
+    "filters": {
+      "title": "Filtres",
+      "genres": "Genres",
+      "platforms": "Plateformes",
+      "themes": "Thèmes",
+      "gameModes": "Modes de jeu",
+      "minRating": "Note minimale",
+      "minAge": "Âge minimum",
+      "minPlayers": "Joueurs min."
+    }
   },
   "error404": {
     "title": "Error 404",

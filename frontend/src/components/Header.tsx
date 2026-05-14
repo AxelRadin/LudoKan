@@ -7,6 +7,7 @@ import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import SettingsIcon from '@mui/icons-material/Settings';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import ExploreIcon from '@mui/icons-material/Explore';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -204,6 +205,14 @@ export const Header: React.FC = () => {
     <>
       {themeToggleButton}
       {langDropdown}
+      <Button
+        color="inherit"
+        onClick={() => navigate('/games')}
+        startIcon={<ExploreIcon />}
+        sx={{ fontWeight: 700 }}
+      >
+        {t('nav.games', 'Jeux')}
+      </Button>
       {isAuthenticated ? (
         <>
           <NotificationIcon />
@@ -370,6 +379,19 @@ export const Header: React.FC = () => {
       )}
 
       <Divider sx={{ my: 1 }} />
+
+      <Button
+        variant="outlined"
+        fullWidth
+        onClick={() => {
+          setDrawerOpen(false);
+          navigate('/games');
+        }}
+        startIcon={<ExploreIcon />}
+        sx={{ mb: 1 }}
+      >
+        {t('nav.games', 'Jeux')}
+      </Button>
 
       {/* Theme toggle dans le drawer mobile */}
       <Box

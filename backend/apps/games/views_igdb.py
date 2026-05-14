@@ -24,6 +24,7 @@ from apps.games.views_igdb_helpers import (
     igdb_search_non_suggest_results,
     igdb_search_suggest_results,
     parse_igdb_id_list_param,
+    parse_optional_float_query,
     parse_optional_int_query,
     search_page_fallback_search,
     search_page_name_matches,
@@ -88,13 +89,22 @@ class IgdbTrendingView(APIView):
         min_age = parse_optional_int_query(request.query_params.get("min_age"))
         min_players = parse_optional_int_query(request.query_params.get("min_players"))
         max_players = parse_optional_int_query(request.query_params.get("max_players"))
+        theme_ids = parse_igdb_id_list_param(request.query_params.get("theme"))
+        game_mode_ids = parse_igdb_id_list_param(request.query_params.get("game_mode"))
+        player_perspective_ids = parse_igdb_id_list_param(request.query_params.get("player_perspective"))
+        min_rating = parse_optional_float_query(request.query_params.get("min_rating"))
+        release_year_min = parse_optional_int_query(request.query_params.get("release_year_min"))
+        release_year_max = parse_optional_int_query(request.query_params.get("release_year_max"))
+
         enrich = request.query_params.get("enrich", "1") != "0"
 
         cache_key = (
             f"igdb:trending:{sort}:{limit}:{offset}:"
             f"g:{','.join(map(str, genre_ids))}:p:{','.join(map(str, platform_ids))}:"
-            f"a:{min_age if min_age is not None else ''}:n:{min_players if min_players is not None else ''}:"
-            f"x:{max_players if max_players is not None else ''}:{enrich}"
+            f"a:{min_age or ''}:n:{min_players or ''}:x:{max_players or ''}:"
+            f"t:{','.join(map(str, theme_ids))}:m:{','.join(map(str, game_mode_ids))}:"
+            f"pp:{','.join(map(str, player_perspective_ids))}:r:{min_rating or ''}:"
+            f"rymin:{release_year_min or ''}:rymax:{release_year_max or ''}:{enrich}"
         )
         cached = cache.get(cache_key)
         if cached is not None:
@@ -111,6 +121,12 @@ class IgdbTrendingView(APIView):
                 min_age,
                 min_players,
                 max_players,
+                theme_ids=theme_ids,
+                game_mode_ids=game_mode_ids,
+                player_perspective_ids=player_perspective_ids,
+                min_rating=min_rating,
+                release_year_min=release_year_min,
+                release_year_max=release_year_max,
             )
             enriched = trending_enrich_for_response(arr, enrich, enrich_with_wikidata_display_name, request.user)
             total_count = trending_fetch_total_count(
@@ -121,6 +137,12 @@ class IgdbTrendingView(APIView):
                 min_age,
                 min_players,
                 max_players,
+                theme_ids=theme_ids,
+                game_mode_ids=game_mode_ids,
+                player_perspective_ids=player_perspective_ids,
+                min_rating=min_rating,
+                release_year_min=release_year_min,
+                release_year_max=release_year_max,
             )
             response_data = {"results": enriched, "total_count": total_count}
             cache.set(cache_key, response_data, TRENDING_CACHE_TTL)
@@ -155,6 +177,12 @@ class IgdbSearchView(APIView):
         min_age = parse_optional_int_query(request.query_params.get("min_age"))
         min_players = parse_optional_int_query(request.query_params.get("min_players"))
         max_players = parse_optional_int_query(request.query_params.get("max_players"))
+        theme_ids = parse_igdb_id_list_param(request.query_params.get("theme"))
+        game_mode_ids = parse_igdb_id_list_param(request.query_params.get("game_mode"))
+        player_perspective_ids = parse_igdb_id_list_param(request.query_params.get("player_perspective"))
+        min_rating = parse_optional_float_query(request.query_params.get("min_rating"))
+        release_year_min = parse_optional_int_query(request.query_params.get("release_year_min"))
+        release_year_max = parse_optional_int_query(request.query_params.get("release_year_max"))
 
         q_esc = escape_igdb_string(q)
         q_norm = normalize_query(q)
@@ -172,6 +200,12 @@ class IgdbSearchView(APIView):
                     min_age,
                     min_players,
                     max_players,
+                    theme_ids=theme_ids,
+                    game_mode_ids=game_mode_ids,
+                    player_perspective_ids=player_perspective_ids,
+                    min_rating=min_rating,
+                    release_year_min=release_year_min,
+                    release_year_max=release_year_max,
                 )
             else:
                 arr = igdb_search_non_suggest_results(
@@ -344,6 +378,13 @@ class IgdbSearchPageView(APIView):
         min_age = parse_optional_int_query(request.query_params.get("min_age"))
         min_players = parse_optional_int_query(request.query_params.get("min_players"))
         max_players = parse_optional_int_query(request.query_params.get("max_players"))
+        theme_ids = parse_igdb_id_list_param(request.query_params.get("theme"))
+        game_mode_ids = parse_igdb_id_list_param(request.query_params.get("game_mode"))
+        player_perspective_ids = parse_igdb_id_list_param(request.query_params.get("player_perspective"))
+        min_rating = parse_optional_float_query(request.query_params.get("min_rating"))
+        release_year_min = parse_optional_int_query(request.query_params.get("release_year_min"))
+        release_year_max = parse_optional_int_query(request.query_params.get("release_year_max"))
+
         q_esc = escape_igdb_string(q)
         q_norm_esc = escape_igdb_string(normalize_query(q))
 
@@ -359,6 +400,12 @@ class IgdbSearchPageView(APIView):
                 min_age,
                 min_players,
                 max_players,
+                theme_ids=theme_ids,
+                game_mode_ids=game_mode_ids,
+                player_perspective_ids=player_perspective_ids,
+                min_rating=min_rating,
+                release_year_min=release_year_min,
+                release_year_max=release_year_max,
             )
             if not arr and offset == 0:
                 arr = search_page_fallback_search(

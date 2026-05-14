@@ -12,6 +12,7 @@ import { initSentry } from './monitoring/sentry';
 import { getStoredConsent } from './hooks/useCookieConsent';
 import GamePage from './pages/GamePage.tsx';
 import HomePage from './pages/HomePage.tsx';
+import GamesPage from './pages/GamesPage.tsx';
 import ProfilePage from './pages/ProfilePage.tsx';
 import UserPublicProfilePage from './pages/UserPublicProfilePage.tsx';
 import FriendsPage from './pages/FriendsPage.tsx';
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
     children: [
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
+      { path: 'games', element: <GamesPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'friends', element: <FriendsPage /> },
       { path: 'u/:pseudo', element: <UserPublicProfilePage /> },
