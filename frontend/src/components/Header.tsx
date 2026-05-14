@@ -81,7 +81,7 @@ const LanguageDropdown: React.FC<{
   };
 
   return (
-    <Box>
+    <>
       <Tooltip title={t('header.changeLanguage', 'Changer de langue')}>
         <IconButton
           color="inherit"
@@ -138,7 +138,7 @@ const LanguageDropdown: React.FC<{
           </MenuItem>
         ))}
       </Menu>
-    </Box>
+    </>
   );
 };
 
@@ -217,7 +217,7 @@ const UserMenu: React.FC<{ user: any; onLogout: () => void }> = ({
           {getInitials(user?.pseudo || user?.username)}
         </Avatar>
         <Typography variant="body2" sx={{ fontWeight: 800, color: 'inherit' }}>
-          {t('common.menu')}
+          {t('common.menu', 'Menu')}
         </Typography>
       </Button>
 
@@ -333,44 +333,59 @@ export const Header: React.FC = () => {
             sx={{
               justifyContent: 'space-between',
               py: 1,
-              px: { xs: 2, md: 4 },
+              px: { xs: 2, md: 3 },
               minHeight: 64,
             }}
           >
+            {/* Colonne Gauche : Logo */}
             <Box
-              onClick={() => {
-                navigate('/');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
               sx={{
+                flex: { md: 1 },
                 display: 'flex',
-                alignItems: 'center',
-                gap: 1.2,
-                cursor: 'pointer',
+                justifyContent: 'flex-start',
               }}
             >
               <Box
-                component="img"
-                src="/logo.png"
-                sx={{ height: 44, width: 44, borderRadius: '50%' }}
-              />
-              <Typography
+                onClick={() => {
+                  navigate('/');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
                 sx={{
-                  fontWeight: 800,
-                  fontSize: 20,
-                  fontFamily: "'Outfit', sans-serif",
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.2,
+                  cursor: 'pointer',
                 }}
               >
-                Ludokan
-              </Typography>
+                <Box
+                  component="img"
+                  src="/logo.png"
+                  sx={{ height: 44, width: 44, borderRadius: '50%' }}
+                />
+                {!isMobile && (
+                  <Typography
+                    sx={{
+                      fontWeight: 800,
+                      fontSize: 20,
+                      fontFamily: "'Outfit', sans-serif",
+                    }}
+                  >
+                    Ludokan
+                  </Typography>
+                )}
+              </Box>
             </Box>
 
-            {isMobile ? (
-              <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
-                <MenuIcon />
-              </IconButton>
-            ) : (
-              <Box display="flex" alignItems="center" gap={2}>
+            {/* Colonne Centre : Recherche + Jeux (Desktop uniquement) */}
+            {!isMobile && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  flexShrink: 0,
+                }}
+              >
                 <SearchBar />
                 <Tooltip title={t('header.exploreGames')}>
                   <Button
@@ -382,28 +397,50 @@ export const Header: React.FC = () => {
                     {t('nav.games')}
                   </Button>
                 </Tooltip>
-                <ThemeToggle />
-                <LanguageDropdown isAuthenticated={isAuthenticated} />
-                {isAuthenticated ? (
-                  <>
-                    <NotificationIcon />
-                    <UserMenu user={user} onLogout={handleLogout} />
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      color="inherit"
-                      onClick={() => handleAuthOpen('login')}
-                    >
-                      {t('nav.login')}
-                    </Button>
-                    <SecondaryButton onClick={() => handleAuthOpen('register')}>
-                      {t('nav.register')}
-                    </SecondaryButton>
-                  </>
-                )}
               </Box>
             )}
+
+            {/* Colonne Droite : Actions */}
+            <Box
+              sx={{
+                flex: { md: 1 },
+                display: 'flex',
+                justifyContent: 'flex-end',
+                alignItems: 'center',
+                gap: 1.5,
+              }}
+            >
+              {isMobile ? (
+                <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
+                  <MenuIcon />
+                </IconButton>
+              ) : (
+                <>
+                  <ThemeToggle />
+                  <LanguageDropdown isAuthenticated={isAuthenticated} />
+                  {isAuthenticated ? (
+                    <>
+                      <NotificationIcon />
+                      <UserMenu user={user} onLogout={handleLogout} />
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        color="inherit"
+                        onClick={() => handleAuthOpen('login')}
+                      >
+                        {t('nav.login')}
+                      </Button>
+                      <SecondaryButton
+                        onClick={() => handleAuthOpen('register')}
+                      >
+                        {t('nav.register')}
+                      </SecondaryButton>
+                    </>
+                  )}
+                </>
+              )}
+            </Box>
           </Toolbar>
         </AppBar>
       </Box>

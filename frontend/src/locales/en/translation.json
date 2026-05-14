@@ -54,7 +54,8 @@
     "reset": "Reset",
     "resetAll": "Reset all",
     "search": "Search",
-    "sort": "Sort by"
+    "sort": "Sort by",
+    "menu": "Menu"
   },
   "games": {
     "title": "Explore Games",

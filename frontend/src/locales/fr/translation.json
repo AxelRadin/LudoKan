@@ -54,7 +54,8 @@
     "reset": "Réinitialiser",
     "resetAll": "Tout réinitialiser",
     "search": "Recherche",
-    "sort": "Trier par"
+    "sort": "Trier par",
+    "menu": "Menu"
   },
   "games": {
     "title": "Explorer les jeux",
