@@ -991,9 +991,9 @@ class TestIgdbProxyCoverageHelpers:
         assert "genres" in _fields_with_optional_genres_and_demographics("f1;", True, False)
 
     def test_trending_fetch_total_count_exception_coverage(self, monkeypatch):
-        from apps.games.views_igdb_helpers import trending_fetch_total_count
+        from apps.games.views_igdb_helpers import IgdbFilters, trending_fetch_total_count
 
-        assert trending_fetch_total_count(lambda *a, **k: 1 / 0, [], [], "popularity") == 0
+        assert trending_fetch_total_count(lambda *a, **k: 1 / 0, IgdbFilters()) == 0
 
     def test_igdb_setup_fields_rating_force_coverage(self, api_client, monkeypatch):
         calls = []

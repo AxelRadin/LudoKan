@@ -32,6 +32,31 @@ interface GamesFilterSidebarProps {
   onReset: () => void;
 }
 
+const SectionTitle: React.FC<{ title: string; icon?: React.ReactNode }> = ({
+  title,
+  icon,
+}) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  return (
+    <Box display="flex" alignItems="center" gap={1}>
+      {icon}
+      <Typography
+        variant="subtitle2"
+        sx={{
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.5px',
+          fontSize: '0.75rem',
+          color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+        }}
+      >
+        {title}
+      </Typography>
+    </Box>
+  );
+};
+
 export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
   filters,
   onFiltersChange,
@@ -58,30 +83,6 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
     if (val != null) return acc + 1;
     return acc;
   }, 0);
-
-  const SectionTitle = ({
-    title,
-    icon,
-  }: {
-    title: string;
-    icon?: React.ReactNode;
-  }) => (
-    <Box display="flex" alignItems="center" gap={1}>
-      {icon}
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: 700,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          fontSize: '0.75rem',
-          color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
-        }}
-      >
-        {title}
-      </Typography>
-    </Box>
-  );
 
   return (
     <Box

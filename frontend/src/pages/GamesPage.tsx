@@ -47,7 +47,7 @@ export const GamesPage: React.FC = () => {
   // Read params from URL
   const q = searchParams.get('q') || '';
   const sort = searchParams.get('sort') || 'popularity';
-  const page = parseInt(searchParams.get('page') || '1', 10);
+  const page = Number.parseInt(searchParams.get('page') || '1', 10);
 
   const getFilterArray = (key: string): number[] => {
     const val = searchParams.get(key);
