@@ -32,6 +32,10 @@ from apps.games.views_igdb_helpers import (
     trending_fetch_total_count,
 )
 
+logger = logging.getLogger(__name__)
+
+ERROR_INVALID_GAME_ID = "Invalid game id"
+
 
 def _clamp_limit(limit_raw, min_val=1, max_val=50):
     try:
@@ -96,7 +100,7 @@ class IgdbTrendingView(APIView):
             cache.set(cache_key, res, TRENDING_CACHE_TTL)
             return Response(res)
         except Exception as e:
-            logging.getLogger(__name__).exception("IGDB trending error: %s", e)
+            logger.exception("IGDB trending error: %s", e)
             if _is_igdb_unavailable(e):
                 return Response({"results": [], "total_count": 0})
             return Response({"error": "Erreur IGDB trending", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -172,7 +176,7 @@ class IgdbGameDetailView(APIView):
         try:
             val_id = int(id)
         except (ValueError, TypeError):
-            return Response({"error": "Invalid game id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": ERROR_INVALID_GAME_ID}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             query = f"{FIELDS_GAME_DETAIL} where id = {val_id}; limit 1;"
@@ -196,7 +200,7 @@ class IgdbCollectionGamesView(APIView):
         try:
             val_id = int(id)
         except (ValueError, TypeError):
-            return Response({"error": "Invalid game id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": ERROR_INVALID_GAME_ID}, status=status.HTTP_400_BAD_REQUEST)
 
         limit = _clamp_limit(request.query_params.get("limit"), 1, 200)
         offset = _clamp_offset(request.query_params.get("offset"))
@@ -225,7 +229,7 @@ class IgdbFranchiseGamesView(APIView):
         try:
             val_id = int(id)
         except (ValueError, TypeError):
-            return Response({"error": "Invalid game id"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": ERROR_INVALID_GAME_ID}, status=status.HTTP_400_BAD_REQUEST)
 
         limit = _clamp_limit(request.query_params.get("limit"), 1, 200)
         offset = _clamp_offset(request.query_params.get("offset"))

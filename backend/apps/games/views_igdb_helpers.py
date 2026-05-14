@@ -485,14 +485,12 @@ def split_sentences_for_translate(text: str) -> list[str]:
     return [p for p in res if p.strip()] or [text]
 
 
-def translate_request_body_to_french(text: str) -> str:
-    if not text:
-        return ""
-    text = text[:MAX_TRANSLATE_TEXT_LEN]
+def _chunk_text_for_translation(text: str, max_chunk_size: int = 480) -> list[str]:
+    """Découpe le texte en morceaux exploitables par l'API de traduction."""
     sentences = split_sentences_for_translate(text)
     chunks, current = [], ""
     for s in sentences:
-        if len(current + s) > 480:
+        if len(current + s) > max_chunk_size:
             if current:
                 chunks.append(current)
             current = s
@@ -501,24 +499,32 @@ def translate_request_body_to_french(text: str) -> str:
     if current:
         chunks.append(current)
     if not chunks and text:
-        chunks = [text[:480]]
+        chunks = [text[:max_chunk_size]]
+    return chunks
 
-    res = []
-    for chunk in chunks:
-        try:
-            url = f"{MYMEMORY_URL}?{urlencode({'q': chunk, 'langpair': 'en|fr'})}"
-            r = requests.get(url, headers={"User-Agent": "LudoKan/1.0"}, timeout=10)
-            if r.ok:
-                data = r.json()
-                trans = (data or {}).get("responseData", {}).get("translatedText")
-                if isinstance(trans, str) and trans.strip():
-                    res.append(str(trans).replace("q=", "").strip())
-                else:
-                    res.append(chunk)
-            else:
-                res.append(chunk)
-        except Exception:
-            res.append(chunk)
+
+def _fetch_single_translation_chunk(chunk: str) -> str:
+    """Appelle l'API MyMemory pour traduire un seul morceau de texte."""
+    try:
+        url = f"{MYMEMORY_URL}?{urlencode({'q': chunk, 'langpair': 'en|fr'})}"
+        r = requests.get(url, headers={"User-Agent": "LudoKan/1.0"}, timeout=10)
+        if not r.ok:
+            return chunk
+        data = r.json()
+        trans = (data or {}).get("responseData", {}).get("translatedText")
+        if isinstance(trans, str) and trans.strip():
+            return str(trans).replace("q=", "").strip()
+        return chunk
+    except Exception:
+        return chunk
+
+
+def translate_request_body_to_french(text: str) -> str:
+    if not text:
+        return ""
+    text = text[:MAX_TRANSLATE_TEXT_LEN]
+    chunks = _chunk_text_for_translation(text)
+    res = [_fetch_single_translation_chunk(c) for c in chunks]
     return " ".join(res).strip()
 
 
