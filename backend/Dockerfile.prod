@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bookworm AS lock-builder
+FROM python:3.11-slim AS lock-builder
 
 WORKDIR /lock
 ENV PIP_NO_CACHE_DIR=1
@@ -8,7 +8,7 @@ RUN python -m pip install --upgrade "pip==25.1.1" pip-tools
 COPY requirements.txt .
 RUN python -m piptools compile --output-file requirements.lock requirements.txt
 
-FROM python:3.11-slim-bookworm
+FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
