@@ -66,7 +66,7 @@ const SettingsPage: React.FC = () => {
         {t('settings.title')}
       </Typography>
 
-      {/* Section Apparence */}
+      {/* Apparence */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
         {t('settings.appearanceSection')}
       </Typography>
@@ -95,9 +95,9 @@ const SettingsPage: React.FC = () => {
         </List>
       </Box>
 
-      {/* Section Cookies */}
+      {/* Cookies */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
-        Cookies
+        {t('settings.cookiesSection')}
       </Typography>
 
       <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
@@ -112,7 +112,7 @@ const SettingsPage: React.FC = () => {
             </ListItemIcon>
             <ListItemText
               primary="Analytics"
-              secondary="Mesure d'audience anonymisée (Sentry)"
+              secondary={t('settings.analyticsDesc')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ListItemSecondaryAction>
@@ -142,8 +142,8 @@ const SettingsPage: React.FC = () => {
               <TuneIcon />
             </ListItemIcon>
             <ListItemText
-              primary="Personnalisation"
-              secondary="Thème, préférences, recommandations"
+              primary={t('settings.personalisationLabel')}
+              secondary={t('settings.personalisationDesc')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ListItemSecondaryAction>
@@ -174,7 +174,7 @@ const SettingsPage: React.FC = () => {
             </ListItemIcon>
             <ListItemText
               primary={t('settings.cookies')}
-              secondary="Détail des cookies utilisés"
+              secondary={t('settings.cookiesDetail')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -182,9 +182,9 @@ const SettingsPage: React.FC = () => {
         </List>
       </Box>
 
-      {/* Section Aide */}
+      {/* Aide */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
-        Aide
+        {t('settings.helpSection')}
       </Typography>
 
       <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
@@ -197,8 +197,8 @@ const SettingsPage: React.FC = () => {
               <SchoolOutlinedIcon />
             </ListItemIcon>
             <ListItemText
-              primary="Revoir le didacticiel"
-              secondary="Relance le guide de prise en main"
+              primary={t('settings.restartTour')}
+              secondary={t('settings.restartTourDesc')}
               primaryTypographyProps={{ fontWeight: 500 }}
             />
             <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
@@ -206,7 +206,7 @@ const SettingsPage: React.FC = () => {
         </List>
       </Box>
 
-      {/* Section Informations */}
+      {/* Informations */}
       <Typography variant="overline" sx={settingsSectionHeadingSx}>
         {t('settings.infoSection')}
       </Typography>
