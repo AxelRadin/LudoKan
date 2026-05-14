@@ -1,3 +1,13 @@
+FROM python:3.11-slim-bookworm AS lock-builder
+
+WORKDIR /lock
+ENV PIP_NO_CACHE_DIR=1
+
+RUN python -m pip install --upgrade "pip==25.1.1" pip-tools
+
+COPY requirements.txt .
+RUN python -m piptools compile --output-file requirements.lock requirements.txt
+
 FROM python:3.11-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -6,15 +16,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends curl gettext \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY --from=lock-builder /lock/requirements.lock ./requirements.lock
+
 RUN python -m pip install --upgrade "pip==25.1.1" \
-    && python -m pip install --only-binary :all: --no-binary dj-rest-auth,ms-cv --requirement requirements.txt
+    && python -m pip install --only-binary :all: --no-binary dj-rest-auth,ms-cv,py-ubjson --requirement requirements.lock
 
 COPY manage.py ./manage.py
 COPY config/ ./config/
