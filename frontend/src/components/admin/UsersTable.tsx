@@ -1,8 +1,11 @@
 import {
+  Alert,
   Box,
   Chip,
   IconButton,
   InputAdornment,
+  Snackbar,
+  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -22,26 +25,58 @@ export default function UsersTable() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    severity: 'success' | 'error';
+  } | null>(null);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { users, error, refetch } = useAdminUsers(debouncedSearch);
+  const { users, count, error, refetch } = useAdminUsers(
+    debouncedSearch,
+    page + 1,
+    pageSize
+  );
   const filtered = users;
 
   async function handleSuspend(userId: number, reason: string) {
-    await apiPost(`/api/admin/users/${userId}/suspend/`, { reason });
-    refetch();
+    try {
+      await apiPost(`/api/admin/users/${userId}/suspend/`, { reason });
+      refetch();
+      setSnackbar({
+        message: 'Le compte a bien été suspendu.',
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({
+        message: 'Erreur lors de la suspension du compte.',
+        severity: 'error',
+      });
+    }
   }
 
   async function handleReactivate(userId: number) {
-    await apiPost(`/api/admin/users/${userId}/suspend/`, {
-      reason: 'Réactivation du compte',
-      end_date: new Date().toISOString(),
-    });
-    refetch();
+    try {
+      await apiPost(`/api/admin/users/${userId}/reactivate/`, {});
+      refetch();
+      setSnackbar({
+        message: 'Le compte a bien été réactivé.',
+        severity: 'success',
+      });
+    } catch {
+      setSnackbar({
+        message: 'Erreur lors de la réactivation du compte.',
+        severity: 'error',
+      });
+    }
   }
 
   if (error) return <ErrorAlert message={error} />;
@@ -52,7 +87,16 @@ export default function UsersTable() {
         placeholder="Rechercher par pseudo ou email"
         size="small"
         fullWidth
-        sx={{ mb: 3 }}
+        sx={{
+          mb: 3,
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(0,0,0,0.35)',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: 'rgba(0,0,0,0.6)',
+          },
+        }}
+        inputProps={{ style: { color: '#c0392b' } }}
         value={search}
         onChange={e => setSearch(e.target.value)}
         InputProps={{
@@ -67,7 +111,7 @@ export default function UsersTable() {
       <Box
         sx={{
           bgcolor: '#fff',
-          border: '0.5px solid rgba(0,0,0,0.1)',
+          border: '1px solid rgba(0,0,0,0.3)',
           borderRadius: 3,
           overflow: 'hidden',
         }}
@@ -114,9 +158,14 @@ export default function UsersTable() {
                 alignItems: 'center',
                 borderBottom: '1px solid rgba(0,0,0,0.04)',
                 '&:last-child': { borderBottom: 'none' },
+                opacity: user.is_active ? 1 : 0.45,
+                bgcolor: user.is_active ? 'transparent' : 'rgba(0,0,0,0.02)',
               }}
             >
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, color: '#c0392b' }}
+              >
                 {user.pseudo ?? '—'}
               </Typography>
               <Typography variant="body2" sx={{ color: '#555' }}>
@@ -124,11 +173,19 @@ export default function UsersTable() {
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                 {user.is_superuser && (
-                  <Chip
-                    label="superuser"
-                    size="small"
-                    sx={{ fontSize: 10, bgcolor: '#FDE8E8', color: '#A32D2D' }}
-                  />
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      backgroundColor: '#922b21',
+                      color: '#fff',
+                    }}
+                  >
+                    superadmin
+                  </span>
                 )}
                 {user.roles.map(r => (
                   <Chip key={r} label={r} size="small" sx={{ fontSize: 10 }} />
@@ -176,6 +233,21 @@ export default function UsersTable() {
         )}
       </Box>
 
+      <TablePagination
+        component="div"
+        count={count}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={pageSize}
+        onRowsPerPageChange={e => {
+          setPageSize(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={[10, 20, 50]}
+        labelRowsPerPage="Par page :"
+        sx={{ mt: 1 }}
+      />
+
       <SuspendUserModal
         user={selectedUser}
         open={modalOpen}
@@ -185,6 +257,17 @@ export default function UsersTable() {
         }}
         onConfirm={handleSuspend}
       />
+
+      <Snackbar
+        open={!!snackbar}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)}>
+          {snackbar?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

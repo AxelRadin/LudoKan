@@ -273,6 +273,75 @@ class TestAdminActionListView:
 
 
 @pytest.mark.django_db
+class TestAdminReactivateUserView:
+    def test_admin_can_reactivate_suspended_user(self, admin_client):
+        target = User.objects.create_user(
+            email="suspended@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="suspendeduser",
+        )
+        from apps.users.models import UserSuspension
+
+        UserSuspension.objects.create(
+            user=target,
+            reason="Test suspension",
+            is_active=True,
+        )
+
+        url = f"/api/admin/users/{target.id}/reactivate/"
+        response = admin_client.post(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert not UserSuspension.objects.filter(user=target, is_active=True).exists()
+
+    def test_reactivate_logs_admin_action(self, admin_client):
+        target = User.objects.create_user(
+            email="suspended2@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="suspendeduser2",
+        )
+        from apps.users.models import UserSuspension
+
+        UserSuspension.objects.create(
+            user=target,
+            reason="Test suspension",
+            is_active=True,
+        )
+
+        admin_client.post(f"/api/admin/users/{target.id}/reactivate/")
+
+        assert AdminAction.objects.filter(
+            action_type="user.reactivate",
+            target_type="user",
+            target_id=target.id,
+        ).exists()
+
+    def test_reactivate_returns_400_if_user_not_suspended(self, admin_client):
+        target = User.objects.create_user(
+            email="active@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="activeuser",
+        )
+
+        url = f"/api/admin/users/{target.id}/reactivate/"
+        response = admin_client.post(url)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_non_admin_cannot_reactivate_user(self, authenticated_client):
+        target = User.objects.create_user(
+            email="target-reactivate@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="targetreactivate",
+        )
+
+        url = f"/api/admin/users/{target.id}/reactivate/"
+        response = authenticated_client.post(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
 class TestAdminSuspendUserView:
     def test_admin_suspend_user_creates_admin_action(self, admin_client):
         # Créer une cible à suspendre

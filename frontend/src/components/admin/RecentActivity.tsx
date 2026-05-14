@@ -35,7 +35,8 @@ function renderRecentActivity(data: AdminStats | null, loading: boolean) {
             {activity.action}
           </Typography>
           <Typography variant="caption" sx={{ color: '#888', fontSize: 11 }}>
-            {activity.user}
+            {activity.actor ?? '—'}
+            {activity.target ? ` → ${activity.target}` : ''}
           </Typography>
         </Box>
       </Box>

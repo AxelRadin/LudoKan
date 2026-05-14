@@ -32,7 +32,8 @@ export type AdminStats = {
   recent_activity: {
     id: number;
     action: string;
-    user: string;
-    created_at: string;
+    actor: string | null;
+    target: string | null;
+    time: string;
   }[];
 };
