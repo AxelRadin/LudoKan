@@ -1,14 +1,4 @@
-FROM python:3.11-slim AS lock-builder
-
-WORKDIR /lock
-ENV PIP_NO_CACHE_DIR=1
-
-RUN python -m pip install --upgrade "pip==25.1.1" "pip-tools==7.5.3" # NOSONAR
-
-COPY requirements.txt .
-RUN python -m piptools compile --output-file requirements.lock requirements.txt
-
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -21,13 +11,14 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl gettext \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=lock-builder /lock/requirements.lock ./requirements.lock
+COPY requirements.txt .
+COPY requirements.lock .
 
 RUN python -m pip install --upgrade "pip==25.1.1" \
     && python -m pip install \
         --only-binary :all: \
         --no-binary dj-rest-auth,ms-cv,py-ubjson \
-        --requirement requirements.lock # NOSONAR (résolution déjà figée via lock-builder)
+        --requirement requirements.lock
 
 COPY manage.py ./manage.py
 COPY config/ ./config/
