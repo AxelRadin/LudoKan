@@ -8,6 +8,7 @@ import {
 import { t } from 'i18next';
 import type { ReviewItem } from '../../hooks/useReviews';
 import ReviewCard from './ReviewCard';
+import ReviewsLoadMoreButton from './ReviewsLoadMoreButton';
 
 type ReviewsListProps = Readonly<{
   otherReviews: ReviewItem[];
@@ -130,37 +131,12 @@ export default function ReviewsList({
             />
           ))}
           {hasNext && (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 1,
-                mt: 2,
-              }}
-            >
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={onLoadMore}
-                disabled={isLoadingMore}
-                sx={{ textTransform: 'none' }}
-              >
-                {isLoadingMore ? (
-                  <>
-                    <CircularProgress size={16} sx={{ mr: 1 }} />
-                    {t('gamePageBody.reviewsLoadingMore')}
-                  </>
-                ) : (
-                  t('gamePageBody.reviewsLoadMore')
-                )}
-              </Button>
-              {loadMoreError && (
-                <Typography variant="caption" color="error">
-                  {loadMoreError}
-                </Typography>
-              )}
-            </Box>
+            <ReviewsLoadMoreButton
+              onClick={onLoadMore}
+              isLoadingMore={isLoadingMore}
+              loadMoreError={loadMoreError}
+              sx={{ mt: 2 }}
+            />
           )}
         </>
       )}

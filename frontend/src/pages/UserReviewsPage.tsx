@@ -23,6 +23,7 @@ import PageLayout from '../components/PageLayout';
 import ReviewCard from '../components/reviews/ReviewCard';
 import ReviewForm from '../components/reviews/ReviewForm';
 import UserReviewsFiltersBar from '../components/reviews/UserReviewsFiltersBar';
+import ReviewsLoadMoreButton from '../components/reviews/ReviewsLoadMoreButton';
 
 const FONT_DISPLAY = "'Playfair Display', Georgia, serif";
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -199,37 +200,12 @@ export default function UserReviewsPage() {
           </Box>
         ))}
         {hasNext ? (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 1,
-              pt: 1,
-            }}
-          >
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={loadMorePage}
-              disabled={isLoadingMore}
-              sx={{ textTransform: 'none' }}
-            >
-              {isLoadingMore ? (
-                <>
-                  <CircularProgress size={16} sx={{ mr: 1 }} />
-                  {t('gamePageBody.reviewsLoadingMore')}
-                </>
-              ) : (
-                t('gamePageBody.reviewsLoadMore')
-              )}
-            </Button>
-            {loadMoreError ? (
-              <Typography variant="caption" color="error">
-                {loadMoreError}
-              </Typography>
-            ) : null}
-          </Box>
+          <ReviewsLoadMoreButton
+            onClick={loadMorePage}
+            isLoadingMore={isLoadingMore}
+            loadMoreError={loadMoreError}
+            sx={{ pt: 1 }}
+          />
         ) : null}
       </Box>
     );
