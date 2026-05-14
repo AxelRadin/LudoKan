@@ -241,53 +241,49 @@ export const Header: React.FC = () => {
       {isAuthenticated ? (
         <>
           <NotificationIcon />
-          <Tooltip title={t('header.menu', 'Menu')}>
-            <Button
-              color="inherit"
-              onClick={handleProfileMenuOpen}
-              endIcon={
-                <KeyboardArrowDownIcon
-                  sx={{
-                    transition: 'transform 0.2s',
-                    transform: profileAnchor
-                      ? 'rotate(180deg)'
-                      : 'rotate(0deg)',
-                  }}
-                />
-              }
+          <Button
+            color="inherit"
+            onClick={handleProfileMenuOpen}
+            endIcon={
+              <KeyboardArrowDownIcon
+                sx={{
+                  transition: 'transform 0.2s',
+                  transform: profileAnchor ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}
+              />
+            }
+            sx={{
+              background: darkMode
+                ? 'rgba(255,255,255,0.05)'
+                : 'rgba(0,0,0,0.03)',
+              borderRadius: '16px',
+              px: 1.5,
+              py: 0.75,
+              fontWeight: 700,
+              textTransform: 'none',
+              gap: 1,
+            }}
+          >
+            <Avatar
+              src={undefined} // On pourra ajouter user?.photo_url plus tard
               sx={{
-                background: darkMode
-                  ? 'rgba(255,255,255,0.05)'
-                  : 'rgba(0,0,0,0.03)',
-                borderRadius: '16px',
-                px: 1.5,
-                py: 0.75,
-                fontWeight: 700,
-                textTransform: 'none',
-                gap: 1,
+                width: 28,
+                height: 28,
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                bgcolor: darkMode ? 'primary.dark' : 'primary.main',
+                color: '#fff',
               }}
             >
-              <Avatar
-                src={undefined} // On pourra ajouter user?.photo_url plus tard
-                sx={{
-                  width: 28,
-                  height: 28,
-                  fontSize: '0.75rem',
-                  fontWeight: 800,
-                  bgcolor: darkMode ? 'primary.dark' : 'primary.main',
-                  color: '#fff',
-                }}
-              >
-                {getInitials(user?.pseudo || user?.username)}
-              </Avatar>
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 800, color: 'inherit' }}
-              >
-                {t('common.menu', 'Menu')}
-              </Typography>
-            </Button>
-          </Tooltip>
+              {getInitials(user?.pseudo || user?.username)}
+            </Avatar>
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 800, color: 'inherit' }}
+            >
+              {t('common.menu', 'Menu')}
+            </Typography>
+          </Button>
 
           <Menu
             anchorEl={profileAnchor}

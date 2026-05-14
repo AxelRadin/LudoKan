@@ -138,7 +138,11 @@
   "header": {
     "openMenu": "Ouvrir le menu",
     "langFr": "Français 🇫🇷",
-    "langEn": "English 🇬🇧"
+    "langEn": "English 🇬🇧",
+    "lightMode": "Passer au mode clair",
+    "darkMode": "Passer au mode sombre",
+    "changeLanguage": "Changer la langue",
+    "exploreGames": "Explorer les jeux"
   },
   "notifications": {
     "open": "Ouvrir les notifications",
