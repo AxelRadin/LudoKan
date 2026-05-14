@@ -303,19 +303,9 @@ export function RecommendedGamesSection() {
         <Typography
           sx={{
             fontFamily: F,
-            fontWeight: 700,
-            fontSize: { xs: 18, md: 22 },
-            color: inkColor,
-          }}
-        >
-          Tes suggestions t'attendent 🎮
-        </Typography>
-        <Typography
-          sx={{
-            fontFamily: F,
             fontSize: 15,
             color: inkColor,
-            opacity: 0.55,
+            opacity: 0.6,
             maxWidth: 420,
           }}
         >
