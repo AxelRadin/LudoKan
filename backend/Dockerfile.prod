@@ -9,9 +9,7 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends \
-    curl \
-    gettext \
+    && apt-get install -y --no-install-recommends curl gettext \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -30,9 +28,8 @@ COPY runtime.txt ./runtime.txt
 
 # Build-time only : Django charge settings lors de compilemessages.
 # Un placeholder direct est utilisé pour éviter l'alerte de sécurité SonarQube liée à l'utilisation de ARG pour un secret.
-RUN SECRET_KEY="build-only-placeholder-for-compilemessages" python manage.py compilemessages
-
-RUN useradd --create-home --shell /bin/bash app && \
+RUN SECRET_KEY="build-only-placeholder-for-compilemessages" python manage.py compilemessages \
+    && useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 
 COPY docker/entrypoint.prod.sh /entrypoint.prod.sh

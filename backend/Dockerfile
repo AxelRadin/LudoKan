@@ -8,7 +8,7 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends gcc libpq-dev gettext \
+    && apt-get install -y --no-install-recommends gcc gettext libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

@@ -8,9 +8,9 @@ function djangoAcceptLanguage(): string {
     (typeof i18n.resolvedLanguage === 'string' && i18n.resolvedLanguage) ||
     '';
   const fromStorage =
-    typeof localStorage !== 'undefined'
-      ? localStorage.getItem('i18nextLng') || ''
-      : '';
+    typeof localStorage === 'undefined'
+      ? ''
+      : localStorage.getItem('i18nextLng') || '';
   const raw = fromI18n || fromStorage || 'en';
   const base = raw.split(/[-_]/)[0]?.toLowerCase() || 'en';
   if (base === 'fr') return 'fr';
