@@ -37,25 +37,46 @@ function useThemeColors() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
-  return useMemo(
-    () => ({
-      dialogBg: isDark ? '#2a2020' : '#f8f9fa',
-      cardBg: isDark ? 'rgba(42,32,32,0.78)' : '#fff',
-      chatBg: isDark ? 'rgba(32,24,24,0.6)' : '#f5f6f8',
-      border: isDark ? 'rgba(74,48,48,0.6)' : '#e0e0e0',
-      borderTop: isDark ? 'rgba(74,48,48,0.5)' : '#eee',
-      title: isDark ? '#f5e6e6' : '#111',
-      text: isDark ? '#e0d0d0' : '#2b2b2b',
-      textSecondary: isDark ? '#9e7070' : '#666',
-      inputBg: isDark ? 'rgba(32,24,24,0.82)' : '#fff',
-      inputBorder: isDark ? 'rgba(74,48,48,0.6)' : 'rgba(0,0,0,0.23)',
-      messageBg: isDark ? 'rgba(42,32,32,0.9)' : 'grey.100',
-      myMessageBg: isDark ? '#FF3D3D' : 'primary.main',
+  return useMemo(() => {
+    const common = {
       accent: '#FF3D3D',
       isDark,
-    }),
-    [isDark]
-  );
+    };
+
+    if (isDark) {
+      return {
+        ...common,
+        dialogBg: '#2a2020',
+        cardBg: 'rgba(42,32,32,0.78)',
+        chatBg: 'rgba(32,24,24,0.6)',
+        border: 'rgba(74,48,48,0.6)',
+        borderTop: 'rgba(74,48,48,0.5)',
+        title: '#f5e6e6',
+        text: '#e0d0d0',
+        textSecondary: '#9e7070',
+        inputBg: 'rgba(32,24,24,0.82)',
+        inputBorder: 'rgba(74,48,48,0.6)',
+        messageBg: 'rgba(42,32,32,0.9)',
+        myMessageBg: '#FF3D3D',
+      };
+    }
+
+    return {
+      ...common,
+      dialogBg: '#f8f9fa',
+      cardBg: '#fff',
+      chatBg: '#f5f6f8',
+      border: '#e0e0e0',
+      borderTop: '#eee',
+      title: '#111',
+      text: '#2b2b2b',
+      textSecondary: '#666',
+      inputBg: '#fff',
+      inputBorder: 'rgba(0,0,0,0.23)',
+      messageBg: 'grey.100',
+      myMessageBg: 'primary.main',
+    };
+  }, [isDark]);
 }
 
 interface MatchmakingModalProps {

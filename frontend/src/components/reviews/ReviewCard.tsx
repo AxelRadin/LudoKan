@@ -30,32 +30,57 @@ function useThemeColors() {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
-  return useMemo(
-    () => ({
-      cardBg: isDark ? 'rgba(42,32,32,0.78)' : '#fff',
-      border: isDark ? 'rgba(74,48,48,0.9)' : 'rgba(0,0,0,0.12)',
-      ownerBorder: isDark ? 'rgba(255,100,100,0.4)' : 'rgb(255, 211, 211)',
-      title: isDark ? '#f5e6e6' : '#111',
-      text: isDark ? '#e0d0d0' : '#555',
-      textLight: isDark ? '#b49393' : '#888',
-      textVeryLight: isDark ? '#9e7070' : '#aaa',
-      muted: isDark ? '#9e7070' : '#666',
+  return useMemo(() => {
+    const common = {
       accent: '#FF3D3D',
       accentDark: '#b71c1c',
-      avatarBg: isDark ? '#C41A1A' : '#C41A1A',
-      badgeBg: isDark ? 'rgba(255,61,61,0.15)' : '#FDE8E8',
-      badgeText: isDark ? '#ff8a80' : '#A32D2D',
-      badgeBorder: isDark ? 'rgba(255,61,61,0.3)' : '#F09595',
-      starFilled: isDark ? 'rgb(255, 180, 180)' : 'rgb(255, 211, 211)',
-      starEmpty: isDark ? '#9e7070' : '#C0C0C0',
-      hoverBorder: isDark ? '#C41A1A' : '#C41A1A',
-      divider: isDark ? 'rgba(74,48,48,0.5)' : 'rgba(0,0,0,0.12)',
-      dotsBg: isDark ? '#b49393' : '#888',
-      menuBg: isDark ? 'rgba(42,32,32,0.96)' : '#fff',
+      avatarBg: '#C41A1A',
+      hoverBorder: '#C41A1A',
       isDark,
-    }),
-    [isDark]
-  );
+    };
+
+    if (isDark) {
+      return {
+        ...common,
+        cardBg: 'rgba(42,32,32,0.78)',
+        border: 'rgba(74,48,48,0.9)',
+        ownerBorder: 'rgba(255,100,100,0.4)',
+        title: '#f5e6e6',
+        text: '#e0d0d0',
+        textLight: '#b49393',
+        textVeryLight: '#9e7070',
+        muted: '#9e7070',
+        badgeBg: 'rgba(255,61,61,0.15)',
+        badgeText: '#ff8a80',
+        badgeBorder: 'rgba(255,61,61,0.3)',
+        starFilled: 'rgb(255, 180, 180)',
+        starEmpty: '#9e7070',
+        divider: 'rgba(74,48,48,0.5)',
+        dotsBg: '#b49393',
+        menuBg: 'rgba(42,32,32,0.96)',
+      };
+    }
+
+    return {
+      ...common,
+      cardBg: '#fff',
+      border: 'rgba(0,0,0,0.12)',
+      ownerBorder: 'rgb(255, 211, 211)',
+      title: '#111',
+      text: '#555',
+      textLight: '#888',
+      textVeryLight: '#aaa',
+      muted: '#666',
+      badgeBg: '#FDE8E8',
+      badgeText: '#A32D2D',
+      badgeBorder: '#F09595',
+      starFilled: 'rgb(255, 211, 211)',
+      starEmpty: '#C0C0C0',
+      divider: 'rgba(0,0,0,0.12)',
+      dotsBg: '#888',
+      menuBg: '#fff',
+    };
+  }, [isDark]);
 }
 
 const StarIcon = ({
