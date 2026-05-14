@@ -8,10 +8,13 @@ from apps.users.models import CustomUser
 
 
 class LudokanAccountAdapter(DefaultAccountAdapter):
-    """Injecte frontend_url et applique la langue de la requête pour les e-mails allauth."""
+    """Injecte frontend_url, applique la langue de la requête pour les e-mails allauth, et force les URLs SPA."""
+
+    def _frontend_base(self) -> str:
+        return getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
 
     def send_mail(self, template_prefix, email, context):
-        context["frontend_url"] = getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+        context["frontend_url"] = self._frontend_base()
         request = context.get("request")
         if request is not None:
             try:
@@ -21,6 +24,24 @@ class LudokanAccountAdapter(DefaultAccountAdapter):
             with translation.override(lang):
                 return super().send_mail(template_prefix, email, context)
         return super().send_mail(template_prefix, email, context)
+
+    def get_email_confirmation_url(self, request, emailconfirmation):
+        """
+        allauth 65+ n'utilise le domaine du frontend (HEADLESS_*) que si allauth.headless
+        est installé ; sinon l'URL absolue reprend le host du backend. On force le SPA.
+        """
+        return f"{self._frontend_base()}/verify-email/{emailconfirmation.key}"
+
+    def get_reset_password_from_key_url(self, key):
+        """
+        Lien direct vers le SPA (uid/token). La clé opaque allauth est « uid-temp_token »
+        (premier tiret = séparateur, comme la route allauth account_reset_password_from_key).
+        """
+        base = self._frontend_base()
+        if "-" in key:
+            uid, token = key.split("-", 1)
+            return f"{base}/reset-password/{uid}/{token}"
+        return super().get_reset_password_from_key_url(key)
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

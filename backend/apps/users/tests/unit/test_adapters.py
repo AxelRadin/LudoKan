@@ -253,3 +253,17 @@ class TestLudokanAccountAdapter:
             adapter.send_mail("prefix", "test@example.com", {})
 
         mock_super.assert_called_once()
+
+    def test_get_email_confirmation_url_uses_frontend_base(self, settings):
+        settings.FRONTEND_BASE_URL = "https://spa.example.com/"
+        adapter = LudokanAccountAdapter()
+        emailconfirmation = MagicMock()
+        emailconfirmation.key = "signed-key-abc"
+        url = adapter.get_email_confirmation_url(None, emailconfirmation)
+        assert url == "https://spa.example.com/verify-email/signed-key-abc"
+
+    def test_get_reset_password_from_key_url_splits_opaque_key(self, settings):
+        settings.FRONTEND_BASE_URL = "https://spa.example.com"
+        adapter = LudokanAccountAdapter()
+        url = adapter.get_reset_password_from_key_url("uidb64part-token-with-dashes")
+        assert url == "https://spa.example.com/reset-password/uidb64part/token-with-dashes"

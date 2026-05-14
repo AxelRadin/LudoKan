@@ -12,7 +12,8 @@
   {% blocktrans %}Hi {{ user_display }},{% endblocktrans %}
 </p>
 <p style="margin:0 0 20px;color:#e8e6f0;font-size:15px;line-height:1.6;">
-  {% blocktrans with site_domain=current_site.domain %}Welcome to LudoKan! To finalize your registration on {{ site_domain }}, please confirm your email address by clicking the button below:{% endblocktrans %}
+  {% blocktrans %}Welcome to LudoKan! To finalize your registration on{% endblocktrans %}
+  <a href="{{ frontend_url }}" style="color:#FF8C42;text-decoration:underline;font-weight:600;">{{ current_site.name }}</a>{% blocktrans %}, please confirm your email address by clicking the button below:{% endblocktrans %}
 </p>
 
 {% trans "Confirm my email" as cta_confirm_label %}

@@ -769,6 +769,9 @@
   },
   "verifyEmailPage": {
     "title": "Vérification de votre compte",
+    "intro": "Pour activer votre compte, confirmez votre adresse e-mail.",
+    "confirmHint": "Évitez les ouvertures automatiques par certains webmails : utilisez le bouton ci-dessous uniquement lorsque vous êtes prêt à confirmer.",
+    "confirm": "Confirmer mon adresse e-mail",
     "verifying": "Vérification de votre adresse e-mail en cours...",
     "success": "Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.",
     "error": "Le lien de vérification est invalide ou a expiré.",

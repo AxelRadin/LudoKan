@@ -765,6 +765,9 @@
   },
   "verifyEmailPage": {
     "title": "Account verification",
+    "intro": "To activate your account, confirm your email address.",
+    "confirmHint": "Some email clients prefetch links; use the button below only when you are ready to confirm.",
+    "confirm": "Confirm my email address",
     "verifying": "Verifying your email address...",
     "success": "Your account has been successfully activated! You can now log in.",
     "error": "The verification link is invalid or has expired.",
