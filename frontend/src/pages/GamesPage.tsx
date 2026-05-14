@@ -163,7 +163,7 @@ export const GamesPage: React.FC = () => {
 
         <Grid container spacing={4}>
           {/* Sidebar Desktop */}
-          <Grid item md={3} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Grid size={{ md: 3 }} sx={{ display: { xs: 'none', md: 'block' } }}>
             <GamesFilterSidebar
               filters={filters}
               onFiltersChange={handleFiltersChange}
@@ -172,7 +172,7 @@ export const GamesPage: React.FC = () => {
           </Grid>
 
           {/* Main Content */}
-          <Grid item xs={12} md={9}>
+          <Grid size={{ xs: 12, md: 9 }}>
             <Box mb={4} display="flex" gap={2} flexWrap="wrap" width="100%">
               <TextField
                 placeholder={t('common.search', 'Rechercher...')}
