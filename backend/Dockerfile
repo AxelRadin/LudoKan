@@ -8,7 +8,7 @@ WORKDIR /app
 
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends gcc libpq-dev \
+    && apt-get install -y --no-install-recommends gcc gettext libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -40,7 +40,8 @@ RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN sed -i 's/\r//' /entrypoint.sh && chmod +x /entrypoint.sh
+RUN sed -i 's/\r//' /entrypoint.sh && chmod +x /entrypoint.sh \
+    && sed -i 's/\r//' /app/docker/entrypoint.celery.sh && chmod +x /app/docker/entrypoint.celery.sh
 
 USER app
 

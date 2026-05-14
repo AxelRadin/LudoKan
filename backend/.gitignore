@@ -112,6 +112,9 @@ media/
 # Static files (CSS, JS)
 staticfiles/
 
+# Mo files
+locale/**/LC_MESSAGES/*.mo
+
 # IDE
 .vscode/
 .idea/
