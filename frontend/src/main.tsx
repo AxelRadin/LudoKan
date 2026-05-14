@@ -23,6 +23,7 @@ import CookieBanner from './pages/CookieBanner.tsx';
 import HomePage from './pages/HomePage.tsx';
 
 // Lazy Loading (Optimisation du bundle)
+const GamesPage = lazy(() => import('./pages/GamesPage.tsx'));
 const GamePage = lazy(() => import('./pages/GamePage.tsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.tsx'));
 const UserPublicProfilePage = lazy(
@@ -89,6 +90,14 @@ const router = createBrowserRouter([
       { path: '', element: <HomePage /> },
       { path: 'home', element: <HomePage /> },
       { path: 'cookie-banner', element: <CookieBanner /> },
+      {
+        path: 'games',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <GamesPage />
+          </Suspense>
+        ),
+      },
       {
         path: 'profile',
         element: (
