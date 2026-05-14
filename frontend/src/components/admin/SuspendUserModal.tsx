@@ -10,12 +10,12 @@ import {
 import { useState } from 'react';
 import type { AdminUser } from '../../types/admin';
 
-type Props = {
+type Props = Readonly<{
   user: AdminUser | null;
   open: boolean;
   onClose: () => void;
   onConfirm: (userId: number, reason: string) => void;
-};
+}>;
 
 export default function SuspendUserModal({
   user,
