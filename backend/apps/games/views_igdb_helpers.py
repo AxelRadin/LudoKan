@@ -182,7 +182,6 @@ def search_page_name_matches(
         fields = _fields_with_optional_genres_and_demographics(FIELDS_SEARCH_PAGE, bool(filters.genre_ids), needs_post_slice)
         core = f'name ~ *"{q_inner}"* & total_rating_count > 0'
         where_line = merge_igdb_where_predicates(core, filters)
-        from apps.games.igdb_proxy_constants import TRENDING_SORTS
 
         sort_clause = TRENDING_SORTS.get(filters.sort, TRENDING_SORTS["popularity"])
         parts = sort_clause.split(";")
