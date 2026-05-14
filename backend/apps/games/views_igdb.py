@@ -218,6 +218,12 @@ class IgdbSearchView(APIView):
                     min_age,
                     min_players,
                     max_players,
+                    theme_ids=theme_ids,
+                    game_mode_ids=game_mode_ids,
+                    player_perspective_ids=player_perspective_ids,
+                    min_rating=min_rating,
+                    release_year_min=release_year_min,
+                    release_year_max=release_year_max,
                 )
 
             enriched = enrich_with_wikidata_display_name(arr)

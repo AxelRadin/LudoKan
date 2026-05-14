@@ -7,6 +7,7 @@ mockent `apps.games.views_igdb.igdb_client` restent valides.
 
 from __future__ import annotations
 
+import datetime
 from typing import Any, Callable
 from urllib.parse import urlencode
 
@@ -63,8 +64,6 @@ def _genre_platform_where_extra_clauses(
         extras.append("(" + " | ".join(f"player_perspectives = ({pp})" for pp in player_perspective_ids) + ")")
     if min_rating is not None:
         extras.append(f"total_rating >= {min_rating}")
-
-    import datetime
 
     if release_year_min is not None:
         dt = datetime.datetime(release_year_min, 1, 1, tzinfo=datetime.timezone.utc)
@@ -215,15 +214,9 @@ def search_page_name_matches(
         from apps.games.igdb_proxy_constants import TRENDING_SORTS
 
         sort_clause = TRENDING_SORTS.get(sort_key, TRENDING_SORTS["popularity"])
-        if "sort" in sort_clause:
-            # On ne garde que la partie après le dernier ';' si il y a un 'where'
-            sort_part = sort_clause.split(";")[-2].strip() + ";" if ";" in sort_clause else sort_clause
-            if not sort_part.startswith("sort"):
-                # Si le split n'a pas donné que le sort, on cherche le mot clef
-                parts = sort_clause.split(";")
-                sort_part = next((p.strip() + ";" for p in parts if p.strip().startswith("sort")), "sort total_rating_count desc;")
-        else:
-            sort_part = "sort total_rating_count desc;"
+        parts = sort_clause.split(";")
+        gen = (p.strip() + ";" for p in parts if p.strip().startswith("sort"))
+        sort_part = next(gen, "sort total_rating_count desc;")
 
         if needs_post_slice:
             raw_cap = min(max((offset + limit) * 5, 50), 200)
@@ -522,8 +515,39 @@ def _apply_raw_list_filters(
     min_age: int | None,
     min_players: int | None,
     max_players: int | None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> list:
     out = filter_raw_games_by_genre_platform_ids(games, genre_ids, platform_ids)
+
+    # Filtrage manuel pour les nouveaux champs (nécessaire pour les résultats de 'search' qui n'ont pas de where)
+    if theme_ids:
+        out = [g for g in out if _ids_from_igdb_relation(g, "themes").intersection(theme_ids)]
+    if game_mode_ids:
+        out = [g for g in out if _ids_from_igdb_relation(g, "game_modes").intersection(game_mode_ids)]
+    if player_perspective_ids:
+        out = [g for g in out if _ids_from_igdb_relation(g, "player_perspectives").intersection(player_perspective_ids)]
+    if min_rating is not None:
+        out = [g for g in out if (g.get("total_rating") or 0) >= min_rating]
+    if release_year_min is not None:
+        out = [
+            g
+            for g in out
+            if g.get("first_release_date")
+            and datetime.datetime.fromtimestamp(g["first_release_date"], tz=datetime.timezone.utc).year >= release_year_min
+        ]
+    if release_year_max is not None:
+        out = [
+            g
+            for g in out
+            if g.get("first_release_date")
+            and datetime.datetime.fromtimestamp(g["first_release_date"], tz=datetime.timezone.utc).year <= release_year_max
+        ]
+
     return filter_games_raw_by_demographics(igdb_request, out, min_age, min_players, max_players)
 
 
@@ -557,10 +581,29 @@ def _igdb_search_games_list_query_setup(
     min_players: int | None,
     max_players: int | None,
     limit: int,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> tuple[list[int], list[int], int, str]:
     g, p, use_demo = _normalize_optional_genre_platform(genre_ids, platform_ids, min_age, min_players, max_players)
-    fetch_limit = max(limit * 4, 50) if (use_demo or g or p) else limit
+    fetch_limit = (
+        max(limit * 4, 50)
+        if (use_demo or g or p or theme_ids or game_mode_ids or player_perspective_ids or min_rating or release_year_min or release_year_max)
+        else limit
+    )
+
+    # On force l'inclusion des champs nécessaires au filtrage manuel
     fields = _search_games_fields_for_list(g, use_demo)
+    if theme_ids and "themes.id" not in fields:
+        fields = fields.rstrip(";") + ",themes.id;"
+    if game_mode_ids and "game_modes.id" not in fields:
+        fields = fields.rstrip(";") + ",game_modes.id;"
+    if player_perspective_ids and "player_perspectives.id" not in fields:
+        fields = fields.rstrip(";") + ",player_perspectives.id;"
+
     return g, p, fetch_limit, fields
 
 
@@ -574,12 +617,39 @@ def igdb_search_suggest_results(
     min_age: int | None = None,
     min_players: int | None = None,
     max_players: int | None = None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> list:
     genre_ids, platform_ids, fetch_limit, fields = _igdb_search_games_list_query_setup(
-        genre_ids, platform_ids, min_age, min_players, max_players, limit
+        genre_ids,
+        platform_ids,
+        min_age,
+        min_players,
+        max_players,
+        limit,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
     )
     core = f'name ~ *"{q_esc}"* & total_rating_count > 0'
-    where_line = merge_igdb_where_predicates(core, genre_ids, platform_ids)
+    where_line = merge_igdb_where_predicates(
+        core,
+        genre_ids,
+        platform_ids,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
     name_query = f"{fields} {where_line}; sort total_rating_count desc; limit {fetch_limit};"
     search_query = f'{fields} search "{q_esc}"; limit 50;'
     name_results: list = []
@@ -595,7 +665,21 @@ def igdb_search_suggest_results(
     name_results = igdb_response_as_list(name_results)
     search_results = igdb_response_as_list(search_results)
     merged = _merge_unique_games_by_id(name_results, search_results)
-    merged = _apply_raw_list_filters(igdb_request, merged, genre_ids, platform_ids, min_age, min_players, max_players)
+    merged = _apply_raw_list_filters(
+        igdb_request,
+        merged,
+        genre_ids,
+        platform_ids,
+        min_age,
+        min_players,
+        max_players,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
     arr = _top_rated_games(merged, limit)
     if not arr and q_norm_esc != q_esc:
         # Comportement historique : un seul appel IGDB (search normalisé), pour garder 3 requêtes max
@@ -603,7 +687,21 @@ def igdb_search_suggest_results(
         fallback_query = f'{fields} search "{q_norm_esc}"; limit 50;'
         try:
             fallback = igdb_response_as_list(igdb_request("games", fallback_query))
-            merged2 = _apply_raw_list_filters(igdb_request, fallback, genre_ids, platform_ids, min_age, min_players, max_players)
+            merged2 = _apply_raw_list_filters(
+                igdb_request,
+                fallback,
+                genre_ids,
+                platform_ids,
+                min_age,
+                min_players,
+                max_players,
+                theme_ids=theme_ids,
+                game_mode_ids=game_mode_ids,
+                player_perspective_ids=player_perspective_ids,
+                min_rating=min_rating,
+                release_year_min=release_year_min,
+                release_year_max=release_year_max,
+            )
             arr = _top_rated_games(merged2, limit)
         except Exception:
             pass
@@ -620,16 +718,47 @@ def igdb_search_non_suggest_results(
     min_age: int | None = None,
     min_players: int | None = None,
     max_players: int | None = None,
+    theme_ids: list[int] | None = None,
+    game_mode_ids: list[int] | None = None,
+    player_perspective_ids: list[int] | None = None,
+    min_rating: float | None = None,
+    release_year_min: int | None = None,
+    release_year_max: int | None = None,
 ) -> list:
     genre_ids, platform_ids, fetch_limit, fields = _igdb_search_games_list_query_setup(
-        genre_ids, platform_ids, min_age, min_players, max_players, limit
+        genre_ids,
+        platform_ids,
+        min_age,
+        min_players,
+        max_players,
+        limit,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
     )
     query = f'{fields} search "{q_esc}"; limit {fetch_limit};'
     arr = igdb_response_as_list(igdb_request("games", query))
     if not arr and q_norm_esc != q_esc:
         query = f'{fields} search "{q_norm_esc}"; limit {fetch_limit};'
         arr = igdb_response_as_list(igdb_request("games", query))
-    arr = _apply_raw_list_filters(igdb_request, arr, genre_ids, platform_ids, min_age, min_players, max_players)
+    arr = _apply_raw_list_filters(
+        igdb_request,
+        arr,
+        genre_ids,
+        platform_ids,
+        min_age,
+        min_players,
+        max_players,
+        theme_ids=theme_ids,
+        game_mode_ids=game_mode_ids,
+        player_perspective_ids=player_perspective_ids,
+        min_rating=min_rating,
+        release_year_min=release_year_min,
+        release_year_max=release_year_max,
+    )
     return arr[:limit]
 
 
