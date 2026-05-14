@@ -48,12 +48,19 @@ class TestAdminStatsView:
             target_id=42,
             description="Suppression de review",
         )
-        action2 = AdminAction.objects.create(
+        AdminAction.objects.create(
             admin_user=admin_user,
             action_type="user.suspend",
             target_type="user",
-            target_id=7,
+            target_id=admin_user.id,
             description="Suspension utilisateur",
+        )
+        AdminAction.objects.create(
+            admin_user=admin_user,
+            action_type="system.maintenance",
+            target_type="",
+            target_id=None,
+            description="System maintenance action",
         )
 
         url = "/api/admin/stats/"
@@ -85,10 +92,15 @@ class TestAdminStatsView:
 
         # La première entrée doit correspondre à la dernière action créée (timestamp DESC)
         first = recent_activity[0]
-        assert first["action"] == "user_suspend"
+        assert first["action"] == "system_maintenance"
         assert first["actor"] == admin_user.pseudo
-        assert first["target"] == f"user#{action2.target_id}"
-        assert "time" in first
+        assert first["target"] is None
+
+        # La seconde correspond à la suspension de l'admin
+        second = recent_activity[1]
+        assert second["action"] == "user_suspend"
+        assert second["actor"] == admin_user.pseudo
+        assert second["target"] == admin_user.pseudo
 
         # Une autre entrée doit correspondre à la suppression de review
         found_review_action = any(
