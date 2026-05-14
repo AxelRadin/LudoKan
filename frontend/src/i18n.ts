@@ -13,6 +13,15 @@ try {
     fallbackLng: 'fr',
     interpolation: { escapeValue: false },
   });
+  const persistLng = (lng: string) => {
+    try {
+      localStorage.setItem('i18nextLng', lng);
+    } catch {
+      /* ignore */
+    }
+  };
+  i18n.on('languageChanged', persistLng);
+  persistLng(i18n.language);
 } catch (err: unknown) {
   console.error('i18n init failed', err);
 }

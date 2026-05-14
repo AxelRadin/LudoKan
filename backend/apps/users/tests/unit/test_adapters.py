@@ -5,7 +5,7 @@ from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.models import SocialAccount, SocialLogin
 from allauth.socialaccount.signals import social_account_added
 
-from apps.users.adapters import SocialAccountAdapter
+from apps.users.adapters import LudokanAccountAdapter, SocialAccountAdapter
 from apps.users.models import CustomUser, XboxProfile
 
 
@@ -203,3 +203,53 @@ class TestSaveUser:
 
         db_app = SocialApp.objects.get(provider="google", client_id="no-name-client")
         assert db_app.name == "Google"
+
+
+class TestLudokanAccountAdapter:
+    """Unit tests for LudokanAccountAdapter.send_mail."""
+
+    def test_send_mail_with_request_applies_language(self):
+        """When request is present and get_language_from_request succeeds, send_mail uses its language."""
+        adapter = LudokanAccountAdapter()
+        mock_request = MagicMock()
+
+        with (
+            patch("apps.users.adapters.get_language_from_request", return_value="fr") as mock_get_lang,
+            patch("apps.users.adapters.translation.override") as mock_override,
+            patch.object(adapter.__class__.__bases__[0], "send_mail"),
+        ):
+            mock_override.return_value.__enter__ = MagicMock(return_value=None)
+            mock_override.return_value.__exit__ = MagicMock(return_value=False)
+            adapter.send_mail("prefix", "test@example.com", {"request": mock_request})
+
+        mock_get_lang.assert_called_once_with(mock_request)
+        mock_override.assert_called_once_with("fr")
+
+    def test_send_mail_falls_back_to_language_code_on_exception(self):
+        """When get_language_from_request raises, send_mail falls back to LANGUAGE_CODE."""
+        adapter = LudokanAccountAdapter()
+        mock_request = MagicMock()
+
+        with (
+            patch("apps.users.adapters.get_language_from_request", side_effect=Exception("lang error")),
+            patch("apps.users.adapters.translation.override") as mock_override,
+            patch("apps.users.adapters.django_settings") as mock_settings,
+            patch.object(adapter.__class__.__bases__[0], "send_mail"),
+        ):
+            mock_settings.LANGUAGE_CODE = "en"
+            mock_settings.FRONTEND_BASE_URL = "http://localhost:5173"
+            mock_override.return_value.__enter__ = MagicMock(return_value=None)
+            mock_override.return_value.__exit__ = MagicMock(return_value=False)
+            adapter.send_mail("prefix", "test@example.com", {"request": mock_request})
+
+        # Fallback language (LANGUAGE_CODE = "en") should be used
+        mock_override.assert_called_once_with("en")
+
+    def test_send_mail_without_request_calls_super_directly(self):
+        """When no request is in context, send_mail calls super directly."""
+        adapter = LudokanAccountAdapter()
+
+        with patch.object(adapter.__class__.__bases__[0], "send_mail") as mock_super:
+            adapter.send_mail("prefix", "test@example.com", {})
+
+        mock_super.assert_called_once()
