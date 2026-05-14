@@ -24,6 +24,8 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Tooltip,
+  Avatar,
 } from '@mui/material';
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -63,7 +65,18 @@ export const Header: React.FC = () => {
     setPendingAction,
     authMode,
     setAuthMode,
+    user,
   } = useAuth();
+
+  const getInitials = (name?: string) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
   const [isDrawerOpen, setDrawerOpen] = useState(false);
@@ -123,21 +136,28 @@ export const Header: React.FC = () => {
   const handleProfileMenuClose = () => setProfileAnchor(null);
 
   const langDropdown = (
-    <>
-      <IconButton
-        color="inherit"
-        onClick={handleLangMenuOpen}
-        sx={{ gap: 0.5 }}
-      >
-        <img
-          src={currentLang.flag}
-          alt={currentLang.code}
-          style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }}
-        />
-        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-          {currentLang.code.toUpperCase()}
-        </Typography>
-      </IconButton>
+    <Box>
+      <Tooltip title={t('header.changeLanguage', 'Changer de langue')}>
+        <IconButton
+          color="inherit"
+          onClick={handleLangMenuOpen}
+          sx={{ gap: 0.5 }}
+        >
+          <img
+            src={currentLang.flag}
+            alt={currentLang.code}
+            style={{
+              width: 20,
+              height: 14,
+              objectFit: 'cover',
+              borderRadius: 2,
+            }}
+          />
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+            {currentLang.code.toUpperCase()}
+          </Typography>
+        </IconButton>
+      </Tooltip>
       <Menu
         anchorEl={langMenuAnchor}
         open={Boolean(langMenuAnchor)}
@@ -180,25 +200,38 @@ export const Header: React.FC = () => {
           </MenuItem>
         ))}
       </Menu>
-    </>
+    </Box>
   );
 
   const themeToggleButton = (
-    <IconButton
-      color="inherit"
-      onClick={toggleDarkMode}
-      sx={{
-        transition: 'transform 0.3s ease',
-        '&:hover': { transform: 'rotate(20deg)' },
-      }}
-      aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
+    <Tooltip
+      title={
+        darkMode
+          ? t('header.lightMode', 'Mode clair')
+          : t('header.darkMode', 'Mode sombre')
+      }
     >
-      {darkMode ? (
-        <LightModeIcon sx={{ color: '#FDB813' }} />
-      ) : (
-        <DarkModeIcon sx={{ color: '#5B21B6' }} />
-      )}
-    </IconButton>
+      <IconButton
+        onClick={toggleDarkMode}
+        sx={{
+          background: darkMode
+            ? 'rgba(255,255,255,0.05)'
+            : 'rgba(91, 33, 182, 0.05)',
+          '&:hover': {
+            background: darkMode
+              ? 'rgba(255,255,255,0.1)'
+              : 'rgba(91, 33, 182, 0.1)',
+          },
+          ...rippleSx,
+        }}
+      >
+        {darkMode ? (
+          <LightModeIcon sx={{ color: '#FBBF24' }} />
+        ) : (
+          <DarkModeIcon sx={{ color: '#5B21B6' }} />
+        )}
+      </IconButton>
+    </Tooltip>
   );
 
   const desktopActions = (
@@ -208,20 +241,53 @@ export const Header: React.FC = () => {
       {isAuthenticated ? (
         <>
           <NotificationIcon />
-          <Button
-            color="inherit"
-            onClick={handleProfileMenuOpen}
-            endIcon={
-              <KeyboardArrowDownIcon
+          <Tooltip title={t('header.menu', 'Menu')}>
+            <Button
+              color="inherit"
+              onClick={handleProfileMenuOpen}
+              endIcon={
+                <KeyboardArrowDownIcon
+                  sx={{
+                    transition: 'transform 0.2s',
+                    transform: profileAnchor
+                      ? 'rotate(180deg)'
+                      : 'rotate(0deg)',
+                  }}
+                />
+              }
+              sx={{
+                background: darkMode
+                  ? 'rgba(255,255,255,0.05)'
+                  : 'rgba(0,0,0,0.03)',
+                borderRadius: '16px',
+                px: 1.5,
+                py: 0.75,
+                fontWeight: 700,
+                textTransform: 'none',
+                gap: 1,
+              }}
+            >
+              <Avatar
+                src={undefined} // On pourra ajouter user?.photo_url plus tard
                 sx={{
-                  transition: 'transform 0.2s',
-                  transform: profileAnchor ? 'rotate(180deg)' : 'rotate(0deg)',
+                  width: 28,
+                  height: 28,
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  bgcolor: darkMode ? 'primary.dark' : 'primary.main',
+                  color: '#fff',
                 }}
-              />
-            }
-          >
-            {t('nav.profile')}
-          </Button>
+              >
+                {getInitials(user?.pseudo || user?.username)}
+              </Avatar>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 800, color: 'inherit' }}
+              >
+                {t('common.menu', 'Menu')}
+              </Typography>
+            </Button>
+          </Tooltip>
 
           <Menu
             anchorEl={profileAnchor}
@@ -499,23 +565,27 @@ export const Header: React.FC = () => {
                   data-tour="search"
                 >
                   <SearchBar />
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate('/games')}
-                    startIcon={<ExploreIcon />}
-                    sx={{
-                      fontWeight: 800,
-                      borderRadius: '12px',
-                      px: 2,
-                      '&:hover': {
-                        background: darkMode
-                          ? 'rgba(255,255,255,0.05)'
-                          : 'rgba(0,0,0,0.04)',
-                      },
-                    }}
+                  <Tooltip
+                    title={t('header.exploreGames', 'Explorer les jeux')}
                   >
-                    {t('nav.games', 'Jeux')}
-                  </Button>
+                    <Button
+                      color="inherit"
+                      onClick={() => navigate('/games')}
+                      startIcon={<ExploreIcon />}
+                      sx={{
+                        fontWeight: 800,
+                        borderRadius: '12px',
+                        px: 2,
+                        '&:hover': {
+                          background: darkMode
+                            ? 'rgba(255,255,255,0.05)'
+                            : 'rgba(0,0,0,0.04)',
+                        },
+                      }}
+                    >
+                      {t('nav.games', 'Jeux')}
+                    </Button>
+                  </Tooltip>
                 </Box>
                 <Box display="flex" alignItems="center" gap={2}>
                   {desktopActions}
