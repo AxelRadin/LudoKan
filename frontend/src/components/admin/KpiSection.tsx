@@ -45,6 +45,13 @@ export default function KpiSection({ data, loading }: Props) {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <KpiCard
+              title="Nouveaux utilisateurs (7j)"
+              value={data.totals.users_new_last_7_days}
+              icon={<PersonAddIcon fontSize="small" />}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <KpiCard
               title="Jeux publiés"
               value={data.totals.games}
               icon={<GamesIcon fontSize="small" />}
@@ -63,13 +70,6 @@ export default function KpiSection({ data, loading }: Props) {
               title="Tickets"
               value={data.totals.tickets}
               icon={<ConfirmationNumberIcon fontSize="small" />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <KpiCard
-              title="Nouveaux utilisateurs (7j)"
-              value={data.totals.users_new_last_7_days}
-              icon={<PersonAddIcon fontSize="small" />}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
