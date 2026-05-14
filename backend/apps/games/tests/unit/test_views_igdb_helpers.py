@@ -114,6 +114,12 @@ def test_merge_igdb_where_predicates_base_only_no_extras():
     assert out == "where total_rating_count > 0;"
 
 
+def test_merge_igdb_where_predicates_sort_only():
+    f = IgdbFilters()
+    out = merge_igdb_where_predicates("sort name asc", f)
+    assert out == "sort name asc;"
+
+
 def test_merge_trending_where_returns_unchanged_if_head_not_where():
     bad = "invalid clause; sort total_rating_count desc;"
     out = merge_trending_where_with_filters(bad, [1], [2])
