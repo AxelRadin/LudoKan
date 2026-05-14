@@ -75,6 +75,8 @@ class AdminSuspendUserView(APIView):
             reason=serializer.validated_data["reason"],
             end_date=serializer.validated_data.get("end_date"),
         )
+        target.is_active = False
+        target.save(update_fields=["is_active"])
 
         # Logguer l'action admin
         log_admin_action(
@@ -119,6 +121,8 @@ class AdminReactivateUserView(APIView):
             )
 
         active_suspensions.update(is_active=False)
+        target.is_active = True
+        target.save(update_fields=["is_active"])
 
         log_admin_action(
             admin_user=actor,
