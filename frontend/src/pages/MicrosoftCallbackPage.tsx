@@ -48,7 +48,7 @@ const MicrosoftCallbackPage: React.FC = () => {
       }
     };
 
-    void run();
+    run();
   }, [navigate, setAuthenticated, setUser, t]);
 
   return (

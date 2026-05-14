@@ -1,17 +1,15 @@
 import CloseIcon from '@mui/icons-material/Close';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import ExploreIcon from '@mui/icons-material/Explore';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import SettingsIcon from '@mui/icons-material/Settings';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Toolbar from '@mui/material/Toolbar';
 import {
+  Avatar,
   Button,
   Dialog,
   Divider,
@@ -20,13 +18,18 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Toolbar from '@mui/material/Toolbar';
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 import { useThemeMode } from '../contexts/useThemeMode';
 import { apiPatch, apiPost } from '../services/api';
@@ -46,41 +49,30 @@ const LANGUAGES = [
   { code: 'en', label: 'English', flag: 'https://flagcdn.com/w40/gb.png' },
 ];
 
-export const Header: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isProfilePage = location.pathname === '/profile';
+const getInitials = (name?: string) => {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+// --- Sub-components to reduce Cognitive Complexity ---
+
+const LanguageDropdown: React.FC<{
+  isAuthenticated: boolean;
+}> = ({ isAuthenticated }) => {
   const { t, i18n } = useTranslation();
-  const { darkMode, toggleDarkMode, setDarkMode } = useThemeMode();
-
-  const {
-    isAuthenticated,
-    setAuthenticated,
-    isAuthModalOpen,
-    setAuthModalOpen,
-    pendingAction,
-    setPendingAction,
-    authMode,
-    setAuthMode,
-  } = useAuth();
-
-  const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
-  const [isDrawerOpen, setDrawerOpen] = useState(false);
-  const [langMenuAnchor, setLangMenuAnchor] = useState<null | HTMLElement>(
-    null
-  );
-  const muiTheme = useTheme();
-  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+  const [anchor, setAnchor] = useState<null | HTMLElement>(null);
 
   const currentLang =
     LANGUAGES.find(l => l.code === i18n.language) ?? LANGUAGES[0];
 
-  const handleLangMenuOpen = (e: React.MouseEvent<HTMLElement>) =>
-    setLangMenuAnchor(e.currentTarget);
-  const handleLangMenuClose = () => setLangMenuAnchor(null);
-  const handleLangSelect = (code: string) => {
+  const handleSelect = (code: string) => {
     i18n.changeLanguage(code);
-    handleLangMenuClose();
+    setAnchor(null);
     if (isAuthenticated) {
       apiPatch('/api/auth/user/', { language_preference: code }).catch(
         () => {}
@@ -88,74 +80,41 @@ export const Header: React.FC = () => {
     }
   };
 
-  const handleLoginOpen = () => {
-    setAuthMode('login');
-    setAuthModalOpen(true);
-    setDrawerOpen(false);
-  };
-  const handleRegisterOpen = () => {
-    setAuthMode('register');
-    setAuthModalOpen(true);
-    setDrawerOpen(false);
-  };
-  const handleAuthClose = () => setAuthModalOpen(false);
-
-  const handleLogout = async () => {
-    setProfileAnchor(null);
-    try {
-      await apiPost('/api/auth/logout/', {});
-    } catch (e) {
-      console.error('Erreur lors du logout', e);
-    } finally {
-      setAuthenticated(false);
-      setDarkMode(false);
-      i18n.changeLanguage('fr');
-      setDrawerOpen(false);
-      navigate('/');
-    }
-  };
-
-  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setProfileAnchor(event.currentTarget);
-  };
-
-  const handleProfileMenuClose = () => setProfileAnchor(null);
-
-  const langDropdown = (
+  return (
     <>
-      <IconButton
-        color="inherit"
-        onClick={handleLangMenuOpen}
-        sx={{ gap: 0.5 }}
-      >
-        <img
-          src={currentLang.flag}
-          alt={currentLang.code}
-          style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }}
-        />
-        <Typography variant="caption" sx={{ fontWeight: 600 }}>
-          {currentLang.code.toUpperCase()}
-        </Typography>
-      </IconButton>
+      <Tooltip title={t('header.changeLanguage', 'Changer de langue')}>
+        <IconButton
+          color="inherit"
+          onClick={e => setAnchor(e.currentTarget)}
+          sx={{ gap: 0.5 }}
+        >
+          <img
+            src={currentLang.flag}
+            alt={currentLang.code}
+            style={{
+              width: 20,
+              height: 14,
+              objectFit: 'cover',
+              borderRadius: 2,
+            }}
+          />
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+            {currentLang.code.toUpperCase()}
+          </Typography>
+        </IconButton>
+      </Tooltip>
       <Menu
-        anchorEl={langMenuAnchor}
-        open={Boolean(langMenuAnchor)}
-        onClose={handleLangMenuClose}
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         transformOrigin={{ vertical: 'top', horizontal: 'center' }}
-        PaperProps={{
-          sx: {
-            borderRadius: '12px',
-            minWidth: 150,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-            mt: 0.5,
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: '12px', minWidth: 150, mt: 0.5 } }}
       >
         {LANGUAGES.map(lang => (
           <MenuItem
             key={lang.code}
-            onClick={() => handleLangSelect(lang.code)}
+            onClick={() => handleSelect(lang.code)}
             selected={i18n.language === lang.code}
             sx={{
               fontWeight: i18n.language === lang.code ? 700 : 400,
@@ -181,216 +140,288 @@ export const Header: React.FC = () => {
       </Menu>
     </>
   );
+};
 
-  const themeToggleButton = (
-    <IconButton
-      color="inherit"
-      onClick={toggleDarkMode}
-      sx={{
-        transition: 'transform 0.3s ease',
-        '&:hover': { transform: 'rotate(20deg)' },
-      }}
-      aria-label={darkMode ? 'Activer le mode clair' : 'Activer le mode sombre'}
-    >
-      {darkMode ? (
-        <LightModeIcon sx={{ color: '#FDB813' }} />
-      ) : (
-        <DarkModeIcon sx={{ color: '#5B21B6' }} />
-      )}
-    </IconButton>
-  );
-
-  const desktopActions = (
-    <>
-      {themeToggleButton}
-      {langDropdown}
-      {isAuthenticated ? (
-        <>
-          <NotificationIcon />
-          <Button
-            color="inherit"
-            onClick={handleProfileMenuOpen}
-            endIcon={
-              <KeyboardArrowDownIcon
-                sx={{
-                  transition: 'transform 0.2s',
-                  transform: profileAnchor ? 'rotate(180deg)' : 'rotate(0deg)',
-                }}
-              />
-            }
-          >
-            {t('nav.profile')}
-          </Button>
-
-          <Menu
-            anchorEl={profileAnchor}
-            open={Boolean(profileAnchor)}
-            onClose={handleProfileMenuClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            slotProps={{
-              paper: {
-                elevation: 3,
-                sx: {
-                  mt: 1,
-                  minWidth: 180,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                },
-              },
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                handleProfileMenuClose();
-                navigate('/profile');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <ListItemIcon>
-                <PersonIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('nav.profile')}</ListItemText>
-            </MenuItem>
-
-            <MenuItem
-              onClick={() => {
-                handleProfileMenuClose();
-                navigate('/friends');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <ListItemIcon>
-                <PersonSearchIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('nav.friends')}</ListItemText>
-            </MenuItem>
-
-            <MenuItem
-              onClick={() => {
-                handleProfileMenuClose();
-                navigate('/settings');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <ListItemIcon>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>{t('nav.settings')}</ListItemText>
-            </MenuItem>
-
-            <Divider />
-
-            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-              <ListItemIcon>
-                <LogoutIcon fontSize="small" sx={{ color: 'error.main' }} />
-              </ListItemIcon>
-              <ListItemText>{t('nav.logout')}</ListItemText>
-            </MenuItem>
-          </Menu>
-        </>
-      ) : (
-        <>
-          <Button color="inherit" onClick={handleLoginOpen}>
-            {t('nav.login')}
-          </Button>
-          <SecondaryButton onClick={handleRegisterOpen}>
-            {t('nav.register')}
-          </SecondaryButton>
-        </>
-      )}
-    </>
-  );
-
-  const mobileActions = (
-    <Box display="flex" flexDirection="column" gap={2} mt={3}>
-      {isAuthenticated ? (
-        <>
-          <NotificationIcon mobile />
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={() => {
-              setDrawerOpen(false);
-              navigate(isProfilePage ? '/' : '/profile');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            {isProfilePage ? t('nav.home') : t('nav.profile')}
-          </Button>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={() => {
-              setDrawerOpen(false);
-              navigate('/friends');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            {t('nav.friends')}
-          </Button>
-
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={() => {
-              setDrawerOpen(false);
-              navigate('/settings');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          >
-            {t('nav.settings')}
-          </Button>
-
-          <Button
-            variant="contained"
-            color="error"
-            fullWidth
-            onClick={handleLogout}
-          >
-            {t('nav.logout')}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Button variant="outlined" fullWidth onClick={handleLoginOpen}>
-            {t('nav.login')}
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={handleRegisterOpen}
-          >
-            {t('nav.register')}
-          </Button>
-        </>
-      )}
-
-      <Divider sx={{ my: 1 }} />
-
-      {/* Theme toggle dans le drawer mobile */}
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        px={1}
+const ThemeToggle: React.FC = () => {
+  const { t } = useTranslation();
+  const { darkMode, toggleDarkMode } = useThemeMode();
+  return (
+    <Tooltip title={darkMode ? t('header.lightMode') : t('header.darkMode')}>
+      <IconButton
+        onClick={toggleDarkMode}
+        sx={{
+          background: darkMode
+            ? 'rgba(255,255,255,0.05)'
+            : 'rgba(91, 33, 182, 0.05)',
+          ...rippleSx,
+        }}
       >
-        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-          {darkMode ? 'Mode sombre' : 'Mode clair'}
-        </Typography>
-        {themeToggleButton}
-      </Box>
-
-      {langDropdown}
-    </Box>
+        {darkMode ? (
+          <LightModeIcon sx={{ color: '#FBBF24' }} />
+        ) : (
+          <DarkModeIcon sx={{ color: '#5B21B6' }} />
+        )}
+      </IconButton>
+    </Tooltip>
   );
+};
+
+const UserMenu: React.FC<{ user: any; onLogout: () => void }> = ({
+  user,
+  onLogout,
+}) => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { darkMode } = useThemeMode();
+  const [anchor, setAnchor] = useState<null | HTMLElement>(null);
+
+  const handleNav = (path: string) => {
+    setAnchor(null);
+    navigate(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <>
-      {/* Wrapper pour créer l'effet arrondi */}
+      <Button
+        color="inherit"
+        onClick={e => setAnchor(e.currentTarget)}
+        endIcon={
+          <KeyboardArrowDownIcon
+            sx={{
+              transition: 'transform 0.2s',
+              transform: anchor ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        }
+        sx={{
+          background: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+          borderRadius: '16px',
+          px: 1.5,
+          py: 0.75,
+          fontWeight: 700,
+          textTransform: 'none',
+          gap: 1,
+        }}
+      >
+        <Avatar
+          sx={{
+            width: 28,
+            height: 28,
+            fontSize: '0.75rem',
+            fontWeight: 800,
+            bgcolor: darkMode ? 'primary.dark' : 'primary.main',
+            color: '#fff',
+          }}
+        >
+          {getInitials(user?.pseudo || user?.username)}
+        </Avatar>
+        <Typography variant="body2" sx={{ fontWeight: 800, color: 'inherit' }}>
+          {t('common.menu', 'Menu')}
+        </Typography>
+      </Button>
+
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{
+          paper: {
+            elevation: 3,
+            sx: { mt: 1, minWidth: 180, borderRadius: 2 },
+          },
+        }}
+      >
+        <MenuItem onClick={() => handleNav('/profile')}>
+          <ListItemIcon>
+            <PersonIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('nav.profile', 'Profil')}</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleNav('/friends')}>
+          <ListItemIcon>
+            <PersonSearchIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('nav.friends', 'Amis')}</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={() => handleNav('/settings')}>
+          <ListItemIcon>
+            <SettingsIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>{t('nav.settings', 'Paramètres')}</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={onLogout} sx={{ color: 'error.main' }}>
+          <ListItemIcon>
+            <LogoutIcon fontSize="small" sx={{ color: 'error.main' }} />
+          </ListItemIcon>
+          <ListItemText>{t('nav.logout', 'Déconnexion')}</ListItemText>
+        </MenuItem>
+      </Menu>
+    </>
+  );
+};
+
+// --- Header Sections to reduce Cognitive Complexity ---
+
+const LogoSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
+  const navigate = useNavigate();
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'flex-start',
+      }}
+    >
+      <Box
+        onClick={() => {
+          navigate('/');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.2,
+          cursor: 'pointer',
+        }}
+      >
+        <Box
+          component="img"
+          src="/logo.png"
+          sx={{ height: 44, width: 44, borderRadius: '50%' }}
+        />
+        {!isMobile && (
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: 20,
+              fontFamily: "'Outfit', sans-serif",
+            }}
+          >
+            Ludokan
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+const SearchSection: React.FC = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        flexShrink: 0,
+      }}
+    >
+      <SearchBar />
+      <Tooltip title={t('header.exploreGames', 'Explorer les jeux')}>
+        <Button
+          color="inherit"
+          onClick={() => navigate('/games')}
+          startIcon={<ExploreIcon />}
+          sx={{ fontWeight: 800, borderRadius: '12px', px: 2 }}
+        >
+          {t('nav.games', 'Jeux')}
+        </Button>
+      </Tooltip>
+    </Box>
+  );
+};
+
+interface DesktopActionsProps {
+  isAuthenticated: boolean;
+  user: any;
+  handleLogout: () => void;
+  handleAuthOpen: (mode: 'login' | 'register') => void;
+}
+
+const DesktopActions: React.FC<DesktopActionsProps> = ({
+  isAuthenticated,
+  user,
+  handleLogout,
+  handleAuthOpen,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 1.5,
+      }}
+    >
+      <ThemeToggle />
+      <LanguageDropdown isAuthenticated={isAuthenticated} />
+      {isAuthenticated ? (
+        <>
+          <NotificationIcon />
+          <UserMenu user={user} onLogout={handleLogout} />
+        </>
+      ) : (
+        <>
+          <Button color="inherit" onClick={() => handleAuthOpen('login')}>
+            {t('nav.login', 'Connexion')}
+          </Button>
+          <SecondaryButton onClick={() => handleAuthOpen('register')}>
+            {t('nav.register', "S'inscrire")}
+          </SecondaryButton>
+        </>
+      )}
+    </Box>
+  );
+};
+
+export const Header: React.FC = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { darkMode, setDarkMode } = useThemeMode();
+  const {
+    isAuthenticated,
+    setAuthenticated,
+    isAuthModalOpen,
+    setAuthModalOpen,
+    pendingAction,
+    setPendingAction,
+    authMode,
+    setAuthMode,
+    user,
+  } = useAuth();
+
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+
+  const handleLogout = async () => {
+    try {
+      await apiPost('/api/auth/logout/', {});
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAuthenticated(false);
+      setDarkMode(false);
+      setDrawerOpen(false);
+      navigate('/');
+    }
+  };
+
+  const handleAuthOpen = (mode: 'login' | 'register') => {
+    setAuthMode(mode);
+    setAuthModalOpen(true);
+    setDrawerOpen(false);
+  };
+
+  return (
+    <>
       <Box
         sx={{
           position: 'fixed',
@@ -399,7 +430,7 @@ export const Header: React.FC = () => {
           right: 0,
           zIndex: 1100,
           px: { xs: 0.5, md: 1 },
-          pt: { xs: 0.5, md: 0.5 },
+          pt: 0.5,
         }}
       >
         <AppBar
@@ -408,9 +439,6 @@ export const Header: React.FC = () => {
           elevation={0}
           sx={{
             borderRadius: { xs: '20px', md: '24px' },
-            boxShadow: darkMode
-              ? '0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)'
-              : '0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05)',
             backdropFilter: 'blur(20px)',
             background: darkMode
               ? 'rgba(26,16,16,0.85)'
@@ -422,102 +450,123 @@ export const Header: React.FC = () => {
             sx={{
               justifyContent: 'space-between',
               py: 1,
-              px: { xs: 2, md: 4 },
+              px: { xs: 2, md: 3 },
               minHeight: 64,
-              width: '100%',
-              boxSizing: 'border-box',
             }}
           >
-            <Box
-              onClick={() => {
-                navigate('/');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.2,
-                cursor: 'pointer',
-              }}
-            >
-              <Box
-                component="img"
-                src="/logo.png"
-                alt="Ludokan"
-                sx={{
-                  height: 44,
-                  width: 44,
-                  objectFit: 'contain',
-                  borderRadius: '50%',
-                  display: 'block',
-                }}
-              />
-              <Typography
-                sx={{
-                  fontWeight: 800,
-                  fontSize: 20,
-                  letterSpacing: '-0.5px',
-                  color: 'inherit',
-                  userSelect: 'none',
-                  fontFamily: "'Outfit', sans-serif",
-                }}
-              >
-                Ludokan
-              </Typography>
-            </Box>
+            <LogoSection isMobile={isMobile} />
+
+            {!isMobile && <SearchSection />}
 
             {isMobile ? (
-              <IconButton
-                color="inherit"
-                edge="end"
-                onClick={() => setDrawerOpen(true)}
-                aria-label={t('header.openMenu')}
-                sx={rippleSx}
+              <Box
+                sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}
               >
-                <MenuIcon />
-              </IconButton>
+                <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
+                  <MenuIcon />
+                </IconButton>
+              </Box>
             ) : (
-              <>
-                <Box data-tour="search">
-                  <SearchBar />
-                </Box>
-                <Box display="flex" alignItems="center" gap={2}>
-                  {desktopActions}
-                </Box>
-              </>
+              <DesktopActions
+                isAuthenticated={isAuthenticated}
+                user={user}
+                handleLogout={handleLogout}
+                handleAuthOpen={handleAuthOpen}
+              />
             )}
           </Toolbar>
         </AppBar>
       </Box>
 
-      {/* Spacer MINIMAL */}
       <Box sx={{ height: { xs: 66, md: 68 } }} />
 
+      {/* MOBILE DRAWER */}
       <Drawer
         anchor="right"
         open={isDrawerOpen}
         onClose={() => setDrawerOpen(false)}
-        PaperProps={{
-          sx: { width: '80%', maxWidth: 360, p: 3, boxSizing: 'border-box' },
-        }}
+        PaperProps={{ sx: { width: '80%', maxWidth: 360, p: 3 } }}
       >
         <Box display="flex" justifyContent="flex-end" mb={2}>
           <IconButton onClick={() => setDrawerOpen(false)}>
             <CloseIcon />
           </IconButton>
         </Box>
-
-        <Box>
-          <Box mb={4}>
-            <SearchBar />
+        <SearchBar />
+        <Box display="flex" flexDirection="column" gap={2} mt={3}>
+          {isAuthenticated ? (
+            <>
+              <NotificationIcon mobile />
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  navigate('/profile');
+                }}
+              >
+                {t('nav.profile', 'Profil')}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setDrawerOpen(false);
+                  navigate('/friends');
+                }}
+              >
+                {t('nav.friends', 'Amis')}
+              </Button>
+              <Button variant="contained" color="error" onClick={handleLogout}>
+                {t('nav.logout', 'Déconnexion')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                variant="outlined"
+                onClick={() => handleAuthOpen('login')}
+              >
+                {t('nav.login', 'Connexion')}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => handleAuthOpen('register')}
+              >
+                {t('nav.register', "S'inscrire")}
+              </Button>
+            </>
+          )}
+          <Divider sx={{ my: 1 }} />
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setDrawerOpen(false);
+              navigate('/games');
+            }}
+            startIcon={<ExploreIcon />}
+          >
+            {t('nav.games', 'Jeux')}
+          </Button>
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            px={1}
+          >
+            <Typography variant="body2">
+              {darkMode
+                ? t('header.darkMode', 'Mode sombre')
+                : t('header.lightMode', 'Mode clair')}
+            </Typography>
+            <ThemeToggle />
           </Box>
-          {mobileActions}
+          <LanguageDropdown isAuthenticated={isAuthenticated} />
         </Box>
       </Drawer>
 
-      <Dialog open={isAuthModalOpen} onClose={handleAuthClose} keepMounted>
+      {/* AUTH DIALOG */}
+      <Dialog open={isAuthModalOpen} onClose={() => setAuthModalOpen(false)}>
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
-          <IconButton onClick={handleAuthClose}>
+          <IconButton onClick={() => setAuthModalOpen(false)}>
             <CloseIcon />
           </IconButton>
         </Box>
@@ -527,10 +576,8 @@ export const Header: React.FC = () => {
             onLoginSuccess={() => {
               setAuthenticated(true);
               setAuthModalOpen(false);
-              if (pendingAction) {
-                pendingAction();
-                setPendingAction(null);
-              }
+              pendingAction?.();
+              setPendingAction(null);
             }}
           />
         ) : (

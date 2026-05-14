@@ -45,6 +45,7 @@ export const GamesGrid: React.FC<GamesGridProps> = ({
           sm: 'repeat(3, 1fr)',
           md: 'repeat(4, 1fr)',
           lg: 'repeat(6, 1fr)',
+          xl: 'repeat(8, 1fr)',
         },
         gap: 2,
       }}

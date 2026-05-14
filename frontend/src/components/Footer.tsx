@@ -21,7 +21,7 @@ const Footer = () => {
   const handleSearch = () => {
     navigate('/');
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      globalThis.scrollTo({ top: 0, behavior: 'smooth' });
       const searchBar = document.querySelector(
         'input[type="text"], input[placeholder*="echerch"]'
       ) as HTMLInputElement;
@@ -31,12 +31,12 @@ const Footer = () => {
 
   const handleHome = () => {
     navigate('/');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAbout = () => {
     navigate('/about');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const socialLinks = [

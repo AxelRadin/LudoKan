@@ -28,6 +28,7 @@ TRENDING_SORTS = {
     "rating": "where total_rating_count > 50 & total_rating != null; sort total_rating desc;",
     "recent": f"where first_release_date < {NOW} & first_release_date > 0 & total_rating_count > 0; sort first_release_date desc;",
     "most_rated": "where total_rating_count > 100 & total_rating != null; sort total_rating_count desc;",
+    "name": "sort name asc;",
 }
 
 MYMEMORY_URL = "https://api.mymemory.translated.net/get"

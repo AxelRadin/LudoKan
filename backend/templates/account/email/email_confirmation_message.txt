@@ -1,8 +1,8 @@
-{% load account i18n %}{% user_display user as user_display %}{% blocktrans with site_domain=current_site.domain %}Hi {{ user_display }},
+{% load account i18n %}{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_url=frontend_url activate_url=activate_url %}Hi {{ user_display }},
 
 Welcome to LudoKan!
 
-To finalize your registration on {{ site_domain }}, please confirm your email address by clicking the following link:
+To finalize your registration on {{ site_name }} ({{ site_url }}), please confirm your email address by clicking the following link:
 
 {{ activate_url }}
 

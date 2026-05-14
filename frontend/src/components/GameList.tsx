@@ -149,6 +149,7 @@ export default function GameList({
                     component="img"
                     image={getGameImage(game)}
                     alt={game.name}
+                    loading="lazy"
                     sx={{
                       width: '100%',
                       height: 180,

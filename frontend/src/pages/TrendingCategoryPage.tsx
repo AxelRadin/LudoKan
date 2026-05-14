@@ -105,7 +105,7 @@ export default function TrendingCategoryPage() {
             page={page}
             onChange={(_, value) => {
               setPage(value);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             color="primary"
             siblingCount={1}
