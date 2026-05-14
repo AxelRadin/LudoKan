@@ -44,6 +44,7 @@ interface FeaturedGameProps {
 }
 
 function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
@@ -92,7 +93,6 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
           bgcolor: '#111',
         }}
       >
-        {/* Fond flouté */}
         {coverUrl && (
           <Box
             sx={{
@@ -106,7 +106,6 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
             }}
           />
         )}
-        {/* Cover centrée */}
         {coverUrl && (
           <Box
             component="img"
@@ -125,7 +124,6 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
             }}
           />
         )}
-        {/* Gradient bas + titre */}
         <Box
           sx={{
             position: 'absolute',
@@ -174,7 +172,6 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
           {game.name}
         </Typography>
 
-        {/* Screenshots 2x2 */}
         <Box
           sx={{
             display: 'grid',
@@ -219,7 +216,6 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
           })}
         </Box>
 
-        {/* Mention genre sous les screenshots */}
         {genres.length > 0 && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
             <Typography
@@ -232,7 +228,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
                 textTransform: 'uppercase',
               }}
             >
-              Recommandé car vos jeux ont les tags
+              {t('recommendations.recommendedTags')}
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
               {genres.map(g => (
@@ -296,7 +292,7 @@ export function RecommendedGamesSection() {
         sx={{ pl: '18px', display: 'flex', flexDirection: 'column', gap: 2 }}
       >
         <Typography sx={{ fontFamily: F, color: inkColor, opacity: 0.6 }}>
-          Aucune suggestion disponible pour le moment.
+          {t('recommendations.noSuggestions')}
         </Typography>
         <Button
           href="/search"
@@ -313,7 +309,7 @@ export function RecommendedGamesSection() {
             },
           }}
         >
-          Explorer le catalogue
+          {t('recommendations.exploreCatalogue')}
         </Button>
       </Box>
     );
@@ -322,7 +318,6 @@ export function RecommendedGamesSection() {
       <Box sx={{ position: 'relative' }}>
         {current && <FeaturedGame game={current} />}
 
-        {/* Flèches */}
         {games.length > 1 && (
           <>
             <IconButton
@@ -370,26 +365,20 @@ export function RecommendedGamesSection() {
           </>
         )}
 
-        {/* Dots de pagination */}
         {games.length > 1 && (
           <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: 0.75,
-              mt: 2,
-            }}
+            sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mt: 2 }}
           >
             {games.map((game, i) => {
               const isActive = i === index;
               const gameKey = game.django_id
                 ? `django-${game.django_id}`
                 : `igdb-${game.igdb_id}`;
-              let dotColor = accentColor;
-              if (!isActive) {
-                dotColor = isDark
-                  ? 'rgba(255,255,255,0.2)'
-                  : 'rgba(0,0,0,0.15)';
+              let dotColor = isDark
+                ? 'rgba(255,255,255,0.2)'
+                : 'rgba(0,0,0,0.15)';
+              if (isActive) {
+                dotColor = accentColor;
               }
 
               return (
@@ -415,7 +404,6 @@ export function RecommendedGamesSection() {
 
   return (
     <Box data-tour="suggestions" sx={{ mb: 6 }}>
-      {/* Header */}
       <Box sx={{ mb: 3, pl: '18px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
           <Box
@@ -454,7 +442,6 @@ export function RecommendedGamesSection() {
         </Typography>
       </Box>
 
-      {/* Contenu */}
       {content}
     </Box>
   );

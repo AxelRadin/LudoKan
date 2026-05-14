@@ -11,50 +11,48 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { useTranslation } from 'react-i18next';
 import { LegalIconFrame } from '../components/legal/LegalIconFrame';
 
-const categories = [
-  {
-    label: 'Nécessaires',
-    color: 'success' as const,
-    required: true,
-    description:
-      'Ces cookies sont indispensables au fonctionnement de la plateforme. Ils gèrent votre session de connexion et assurent la sécurité de votre compte. Ils ne peuvent pas être désactivés.',
-    examples: [
-      'Session utilisateur',
-      'Jeton CSRF (sécurité)',
-      'Préférences de langue',
-    ],
-  },
-  {
-    label: 'Analytics',
-    color: 'info' as const,
-    required: false,
-    description:
-      "Ces cookies nous permettent de mesurer l'audience de la plateforme de manière anonymisée (pages visitées, durée de session, erreurs rencontrées). Ils nous aident à améliorer votre expérience.",
-    examples: [
-      'Statistiques de navigation anonymes',
-      "Rapports d'erreurs (Sentry anonymisé)",
-      'Pages les plus visitées',
-    ],
-  },
-  {
-    label: 'Personnalisation',
-    color: 'warning' as const,
-    required: false,
-    description:
-      "Ces cookies mémorisent vos préférences afin de personnaliser votre expérience sur Ludokan : thème (clair/sombre), préférences d'affichage, recommandations basées sur vos habitudes.",
-    examples: [
-      'Thème clair / sombre',
-      "Préférences d'affichage",
-      'Recommandations personnalisées',
-    ],
-  },
-];
-
 const CookiesPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const categories = [
+    {
+      label: t('cookiesPage.necessary.label'),
+      color: 'success' as const,
+      required: true,
+      description: t('cookiesPage.necessary.description'),
+      examples: [
+        t('cookiesPage.necessary.example1'),
+        t('cookiesPage.necessary.example2'),
+        t('cookiesPage.necessary.example3'),
+      ],
+    },
+    {
+      label: t('cookiesPage.analytics.label'),
+      color: 'info' as const,
+      required: false,
+      description: t('cookiesPage.analytics.description'),
+      examples: [
+        t('cookiesPage.analytics.example1'),
+        t('cookiesPage.analytics.example2'),
+        t('cookiesPage.analytics.example3'),
+      ],
+    },
+    {
+      label: t('cookiesPage.personalisation.label'),
+      color: 'warning' as const,
+      required: false,
+      description: t('cookiesPage.personalisation.description'),
+      examples: [
+        t('cookiesPage.personalisation.example1'),
+        t('cookiesPage.personalisation.example2'),
+        t('cookiesPage.personalisation.example3'),
+      ],
+    },
+  ];
 
   return (
     <Container maxWidth="md" sx={{ pt: 12, pb: 8 }}>
@@ -63,10 +61,9 @@ const CookiesPage: React.FC = () => {
         onClick={() => navigate(-1)}
         sx={{ mb: 3, color: 'text.secondary', textTransform: 'none' }}
       >
-        Retour
+        {t('cookiesPage.back')}
       </Button>
 
-      {/* En-tête */}
       <Box display="flex" alignItems="center" gap={2} mb={1}>
         <LegalIconFrame>
           <CookieOutlinedIcon sx={{ color: 'primary.main' }} />
@@ -76,7 +73,7 @@ const CookiesPage: React.FC = () => {
           fontWeight={600}
           sx={{ color: 'secondary.main' }}
         >
-          Gestion des cookies
+          {t('cookiesPage.title')}
         </Typography>
       </Box>
       <Typography
@@ -85,7 +82,7 @@ const CookiesPage: React.FC = () => {
         display="block"
         mb={4}
       >
-        Version 1.0 – Avril 2025
+        {t('cookiesPage.version')}
       </Typography>
 
       <Typography
@@ -93,15 +90,9 @@ const CookiesPage: React.FC = () => {
         color="text.secondary"
         sx={{ mb: 4, lineHeight: 1.8, textAlign: 'justify' }}
       >
-        Ludokan utilise des cookies et technologies similaires pour assurer le
-        bon fonctionnement de la plateforme, analyser son utilisation et
-        personnaliser votre expérience. Lors de votre première visite, un
-        bandeau vous permet d'accepter ou de refuser les catégories non
-        essentielles. Vous pouvez modifier vos préférences à tout moment depuis
-        les paramètres.
+        {t('cookiesPage.intro')}
       </Typography>
 
-      {/* Catégories */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {categories.map((cat, i) => (
           <React.Fragment key={cat.label}>
@@ -116,14 +107,14 @@ const CookiesPage: React.FC = () => {
                 </Typography>
                 {cat.required ? (
                   <Chip
-                    label="Toujours actifs"
+                    label={t('cookiesPage.alwaysActive')}
                     size="small"
                     color="success"
                     variant="outlined"
                   />
                 ) : (
                   <Chip
-                    label="Soumis à consentement"
+                    label={t('cookiesPage.consentRequired')}
                     size="small"
                     color="default"
                     variant="outlined"
@@ -157,7 +148,6 @@ const CookiesPage: React.FC = () => {
         ))}
       </Box>
 
-      {/* Modifier les préférences */}
       <Box
         sx={{
           mt: 5,
@@ -175,10 +165,10 @@ const CookiesPage: React.FC = () => {
       >
         <Box>
           <Typography fontWeight={600} sx={{ color: 'secondary.main' }}>
-            Modifier mes préférences
+            {t('cookiesPage.editTitle')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Vous pouvez changer vos choix à tout moment.
+            {t('cookiesPage.editDesc')}
           </Typography>
         </Box>
         <Button
@@ -188,7 +178,7 @@ const CookiesPage: React.FC = () => {
           onClick={() => navigate('/settings')}
           sx={{ textTransform: 'none', borderRadius: 2 }}
         >
-          Paramètres
+          {t('cookiesPage.settingsBtn')}
         </Button>
       </Box>
 
@@ -198,7 +188,7 @@ const CookiesPage: React.FC = () => {
         textAlign="center"
         sx={{ mt: 5, color: 'text.disabled' }}
       >
-        Pour toute question :{' '}
+        {t('cookiesPage.contact')}{' '}
         <Box component="span" sx={{ color: 'primary.main' }}>
           dpo@ludokan.fr
         </Box>
