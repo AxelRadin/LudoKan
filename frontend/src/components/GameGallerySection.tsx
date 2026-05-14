@@ -27,6 +27,7 @@ export default function GameGallerySection({
 
   return (
     <Box
+      data-tour="game-gallery"
       className="gp-c5"
       sx={{ ...card(noHov), p: { xs: '20px', md: '26px 30px' }, mb: 2 }}
     >

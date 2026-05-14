@@ -63,9 +63,8 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
-        height: { xs: 'auto', md: 400 },
+        minHeight: { xs: 'auto', md: 400 },
         borderRadius: '20px',
-        overflow: 'hidden',
         border: `1px solid ${isDark ? C.darkBorder : C.border}`,
         boxShadow: isDark
           ? '0 18px 40px rgba(0,0,0,0.28)'
@@ -86,7 +85,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
         sx={{
           position: 'relative',
           flex: { xs: 'none', md: '0 0 50%' },
-          height: { xs: 240, md: '100%' },
+          minHeight: { xs: 240, md: 400 },
           overflow: 'hidden',
           bgcolor: '#111',
         }}
