@@ -1,0 +1,67 @@
+name: i18n Sync
+
+on:
+  pull_request:
+    branches: ["main", "staging"]
+    paths:
+      - "backend/**"
+      - ".github/workflows/i18n-sync.yml"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-po-files:
+    name: Sync .po files
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      SECRET_KEY: i18n-sync-ci-placeholder
+      DEBUG: "True"
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install gettext
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gettext
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Sync i18n .po files
+        working-directory: ./backend
+        run: |
+          chmod +x ./scripts/i18n-sync.sh
+          ./scripts/i18n-sync.sh
+
+      - name: Detect locale changes
+        id: locale-diff
+        run: |
+          if git diff --quiet -- backend/locale; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit updated .po files
+        if: steps.locale-diff.outputs.changed == 'true' && github.event_name == 'pull_request'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(i18n): synchronize translation catalogs"
+          file_pattern: backend/locale/**/*.po
