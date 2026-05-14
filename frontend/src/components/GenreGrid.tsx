@@ -200,6 +200,7 @@ export const GenreGrid: React.FC<GenreGridProps> = ({ onGenreClick }) => {
                   image={genre.image}
                   alt={t(`genres.${genre.name}`)}
                   className="genre-image"
+                  loading="lazy"
                   sx={{
                     width: '75%',
                     height: 80,

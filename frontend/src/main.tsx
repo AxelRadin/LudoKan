@@ -1,24 +1,28 @@
 import { StyledEngineProvider } from '@mui/material/styles';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 import 'driver.js/dist/driver.css';
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+
 import { AdminRoot } from './AdminRoot.tsx';
+import { Root } from './Root.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import { PageLoader } from './components/PageLoader';
+
 import { ThemeModeProvider } from './contexts/ThemeContext';
 import { getStoredConsent } from './hooks/useCookieConsent';
 import './i18n';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
-import { Root } from './Root.tsx';
 
+// Pages chargées statiquement (instantanées)
 import CookieBanner from './pages/CookieBanner.tsx';
 import HomePage from './pages/HomePage.tsx';
 
-// Lazy Loading
+// Lazy Loading (Optimisation du bundle)
 const GamePage = lazy(() => import('./pages/GamePage.tsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.tsx'));
 const UserPublicProfilePage = lazy(
@@ -65,6 +69,17 @@ const errorFallback: Sentry.ErrorBoundaryProps['fallback'] = ({
   error,
   resetError,
 }) => <ErrorFallback error={error} resetError={resetError} />;
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const router = createBrowserRouter([
   {
@@ -278,7 +293,9 @@ createRoot(document.getElementById('root')!).render(
     <StyledEngineProvider injectFirst>
       <ThemeModeProvider>
         <Sentry.ErrorBoundary fallback={errorFallback}>
-          <RouterProvider router={router} />
+          <QueryClientProvider client={queryClient}>
+            <RouterProvider router={router} />
+          </QueryClientProvider>
         </Sentry.ErrorBoundary>
       </ThemeModeProvider>
     </StyledEngineProvider>
