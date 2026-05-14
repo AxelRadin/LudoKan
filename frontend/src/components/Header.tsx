@@ -1,16 +1,12 @@
 import CloseIcon from '@mui/icons-material/Close';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
 import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import SettingsIcon from '@mui/icons-material/Settings';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Toolbar from '@mui/material/Toolbar';
 import {
   Button,
   Dialog,
@@ -24,9 +20,13 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Toolbar from '@mui/material/Toolbar';
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 import { useThemeMode } from '../contexts/useThemeMode';
 import { apiPatch, apiPost } from '../services/api';
@@ -83,7 +83,7 @@ export const Header: React.FC = () => {
     handleLangMenuClose();
     if (isAuthenticated) {
       apiPatch('/api/auth/user/', { language_preference: code }).catch(
-        () => {}
+        () => { }
       );
     }
   };
@@ -515,7 +515,7 @@ export const Header: React.FC = () => {
         </Box>
       </Drawer>
 
-      <Dialog open={isAuthModalOpen} onClose={handleAuthClose} keepMounted>
+      <Dialog open={isAuthModalOpen} onClose={handleAuthClose}>
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
           <IconButton onClick={handleAuthClose}>
             <CloseIcon />
