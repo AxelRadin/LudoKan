@@ -27,7 +27,7 @@ export function AuthFlowPageLayout(props: AuthFlowPageLayoutProps) {
           <img
             src="/logo.png"
             alt="LudoKan"
-            style={{ height: 56, marginBottom: 16 }}
+            style={{ height: 56, width: 56, marginBottom: 16 }}
           />
           <Typography
             variant="h4"
