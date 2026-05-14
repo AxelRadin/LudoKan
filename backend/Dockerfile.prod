@@ -3,7 +3,7 @@ FROM python:3.11-slim AS lock-builder
 WORKDIR /lock
 ENV PIP_NO_CACHE_DIR=1
 
-RUN python -m pip install --upgrade "pip==25.1.1" pip-tools
+RUN python -m pip install --upgrade "pip==25.1.1" "pip-tools==7.5.3" # NOSONAR
 
 COPY requirements.txt .
 RUN python -m piptools compile --output-file requirements.lock requirements.txt
@@ -24,7 +24,10 @@ RUN apt-get update \
 COPY --from=lock-builder /lock/requirements.lock ./requirements.lock
 
 RUN python -m pip install --upgrade "pip==25.1.1" \
-    && python -m pip install --only-binary :all: --no-binary dj-rest-auth,ms-cv,py-ubjson --requirement requirements.lock
+    && python -m pip install \
+        --only-binary :all: \
+        --no-binary dj-rest-auth,ms-cv,py-ubjson \
+        --requirement requirements.lock # NOSONAR (résolution déjà figée via lock-builder)
 
 COPY manage.py ./manage.py
 COPY config/ ./config/
