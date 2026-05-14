@@ -430,7 +430,7 @@ class TestIgdbProxySearchPage:
         )
         response = api_client.get("/api/igdb/search-page/", {"q": "x"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data == []
+        assert response.data == {"results": [], "total_count": 0}
 
 
 @pytest.mark.django_db
@@ -697,7 +697,7 @@ class TestIgdbProxySearchPageExtra:
         )
         response = api_client.get("/api/igdb/search-page/", {"q": "café"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data[0]["igdb_id"] == 3
+        assert response.data["results"][0]["igdb_id"] == 3
 
     def test_search_body_inner_exception(self, api_client, mock_enrich, monkeypatch):
         def mock_igdb(ep, q):
@@ -713,7 +713,7 @@ class TestIgdbProxySearchPageExtra:
         )
         response = api_client.get("/api/igdb/search-page/", {"q": "foo", "offset": "0"})
         assert response.status_code == status.HTTP_200_OK
-        assert response.data == []
+        assert response.data == {"results": [], "total_count": 0}
 
     def test_outer_exception_500(self, api_client, monkeypatch):
         monkeypatch.setattr(

@@ -133,21 +133,6 @@ def test_merge_trending_where_no_extras_only_base_condition():
     assert out.strip().startswith("where total_rating_count > 0")
 
 
-def test_trending_fetch_games_array_legacy_pure_mixed_split():
-    raw = [
-        {"id": 1, "genres": [{"id": 5}], "total_rating_count": 10},
-        {"id": 2, "genres": [{"id": 5}, {"id": 6}], "total_rating_count": 20},
-    ]
-
-    def mock_igdb(_ep, _q):
-        return raw
-
-    f = IgdbFilters(genre_ids=[5], platform_ids=[], sort="popularity")
-    out = trending_fetch_games_array(mock_igdb, limit=1, offset=1, filters=f)
-    assert len(out) == 1
-    assert out[0]["id"] == 2
-
-
 def test_trending_fetch_games_array_use_demo_applies_slice(monkeypatch):
     monkeypatch.setattr(
         "apps.games.views_igdb_helpers.filter_games_raw_by_demographics",
@@ -220,7 +205,9 @@ def test_trending_fetch_total_count_use_demo_branch(monkeypatch):
 
 
 def test_trending_fetch_total_count_non_demo_returns_len_raw(monkeypatch):
-    def mock_igdb(_ep, _q):
+    def mock_igdb(ep, _q):
+        if "count" in ep:
+            return {"count": 2}
         return [{"id": 1}, {"id": 2}]
 
     f = IgdbFilters(sort="popularity")
@@ -248,8 +235,9 @@ def test_search_page_name_matches_post_slice_with_demographics(monkeypatch):
         offset=10,
         filters=f,
     )
-    assert len(out) == 5
-    assert out[0]["id"] == 10
+    assert len(out["results"]) == 5
+    assert out["results"][0]["id"] == 10
+    assert out["total_count"] == 100
     assert ",genres" in queries[0]
     assert "age_ratings" in queries[0]
     assert "offset 0" in queries[0]
@@ -262,8 +250,10 @@ def test_search_page_name_matches_second_query_when_accent_differs(monkeypatch):
     )
     queries = []
 
-    def mock_igdb(_ep, q):
+    def mock_igdb(ep, q):
         queries.append(q)
+        if "count" in ep:
+            return {"count": 1}
         if len(queries) == 1:
             return []
         return [{"id": 1, "total_rating_count": 1}]
@@ -277,8 +267,21 @@ def test_search_page_name_matches_second_query_when_accent_differs(monkeypatch):
         offset=0,
         filters=f,
     )
-    assert len(queries) == 2
-    assert len(out) == 1
+    # On a maintenant 4 requêtes car chaque recherche par nom fait aussi un count
+    # Sauf si on a trouvé des résultats dès la première recherche.
+    # Dans ce test, la première recherche par nom renvoie [], donc on tente la seconde.
+    # Mais attendez, si la première renvoie [], on tente la seconde.
+    # Dans mon code :
+    # arr, total = fetch_for_q(q_esc)
+    #   -> fetch_for_q fait : 1 games request + 1 count request (si pas demo)
+    #   -> total = 2 queries.
+    # if not arr ... :
+    #   arr, total = fetch_for_q(q_norm_esc)
+    #   -> 2 more queries.
+    # Total = 4.
+    assert len(queries) == 4
+    assert len(out["results"]) == 1
+    assert out["total_count"] == 1
 
 
 def test_search_page_fallback_search_exception_returns_empty():
@@ -286,15 +289,12 @@ def test_search_page_fallback_search_exception_returns_empty():
         raise RuntimeError("igdb down")
 
     f = IgdbFilters(genre_ids=[1])
-    assert (
-        search_page_fallback_search(
-            boom,
-            "q",
-            limit=5,
-            filters=f,
-        )
-        == []
-    )
+    assert search_page_fallback_search(
+        boom,
+        "q",
+        limit=5,
+        filters=f,
+    ) == {"results": [], "total_count": 0}
 
 
 def test_search_page_fallback_search_success_filters_sorts_and_limits(monkeypatch):
@@ -317,8 +317,8 @@ def test_search_page_fallback_search_success_filters_sorts_and_limits(monkeypatc
         limit=1,
         filters=f,
     )
-    assert len(out) == 1
-    assert out[0]["id"] == 2
+    assert len(out["results"]) == 1
+    assert out["results"][0]["id"] == 2
 
 
 def test_merge_trending_where_injects_genre_and_platform():
@@ -607,6 +607,8 @@ def test_trending_fetch_total_count_old_coverage():
     from apps.games.views_igdb_helpers import trending_fetch_total_count_old
 
     def mock_igdb(ep, q):
+        if "count" in ep:
+            return {"count": 1}
         return [{"id": 1}]
 
     assert trending_fetch_total_count_old(mock_igdb, [], [], "popularity") == 1

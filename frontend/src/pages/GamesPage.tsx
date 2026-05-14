@@ -71,7 +71,7 @@ export const GamesPage: React.FC = () => {
       const activeFilters = JSON.parse(filtersJson);
 
       if (q.trim()) {
-        const results = await searchGamesPage(
+        const { games: results, totalCount: total } = await searchGamesPage(
           q,
           PAGE_SIZE,
           offset,
@@ -79,7 +79,7 @@ export const GamesPage: React.FC = () => {
           sort
         );
         setGames(results);
-        setTotalCount(results.length > 0 ? 1000 : 0);
+        setTotalCount(total);
       } else {
         const { games: results, totalCount: total } =
           await fetchTrendingGamesWithCount(
@@ -137,7 +137,7 @@ export const GamesPage: React.FC = () => {
     setSearchParams({ sort });
   };
 
-  const totalPages = Math.min(Math.ceil(totalCount / PAGE_SIZE), 20); // Limit to 20 pages for IGDB performance
+  const totalPages = Math.min(Math.ceil(totalCount / PAGE_SIZE), 200); // Augmenté à 200 pages (soit ~4800 jeux, limite de sécurité IGDB)
 
   return (
     <Box
