@@ -49,7 +49,6 @@ class IgdbFilters:
 
     @classmethod
     def from_request(cls, request) -> IgdbFilters:
-        from apps.games.views_igdb_helpers import parse_igdb_id_list_param, parse_optional_float_query, parse_optional_int_query
 
         p = request.query_params
         return cls(
@@ -216,8 +215,8 @@ def search_page_fallback_search(
     search_body = f'{fields} search "{q_esc}"; limit 50;'
     try:
         search_arr = igdb_response_as_list(igdb_request("games", search_body))
-        search_arr = filter_raw_games_by_genre_platform_ids(search_arr, filters.genre_ids, filters.platform_ids)
-        search_arr = filter_games_raw_by_demographics(igdb_request, search_arr, filters.min_age, filters.min_players, filters.max_players)
+        search_arr = _apply_raw_list_filters(igdb_request, search_arr, filters)
+        search_arr.sort(key=lambda x: -(x.get("total_rating_count") or 0))
         return search_arr[:limit]
     except Exception:
         return []

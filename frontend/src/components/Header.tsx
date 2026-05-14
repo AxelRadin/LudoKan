@@ -238,29 +238,146 @@ const UserMenu: React.FC<{ user: any; onLogout: () => void }> = ({
           <ListItemIcon>
             <PersonIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('nav.profile')}</ListItemText>
+          <ListItemText>{t('nav.profile', 'Profil')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleNav('/friends')}>
           <ListItemIcon>
             <PersonSearchIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('nav.friends')}</ListItemText>
+          <ListItemText>{t('nav.friends', 'Amis')}</ListItemText>
         </MenuItem>
         <MenuItem onClick={() => handleNav('/settings')}>
           <ListItemIcon>
             <SettingsIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>{t('nav.settings')}</ListItemText>
+          <ListItemText>{t('nav.settings', 'Paramètres')}</ListItemText>
         </MenuItem>
         <Divider />
         <MenuItem onClick={onLogout} sx={{ color: 'error.main' }}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" sx={{ color: 'error.main' }} />
           </ListItemIcon>
-          <ListItemText>{t('nav.logout')}</ListItemText>
+          <ListItemText>{t('nav.logout', 'Déconnexion')}</ListItemText>
         </MenuItem>
       </Menu>
     </>
+  );
+};
+
+// --- Header Sections to reduce Cognitive Complexity ---
+
+const LogoSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
+  const navigate = useNavigate();
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'flex-start',
+      }}
+    >
+      <Box
+        onClick={() => {
+          navigate('/');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.2,
+          cursor: 'pointer',
+        }}
+      >
+        <Box
+          component="img"
+          src="/logo.png"
+          sx={{ height: 44, width: 44, borderRadius: '50%' }}
+        />
+        {!isMobile && (
+          <Typography
+            sx={{
+              fontWeight: 800,
+              fontSize: 20,
+              fontFamily: "'Outfit', sans-serif",
+            }}
+          >
+            Ludokan
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+const SearchSection: React.FC = () => {
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        flexShrink: 0,
+      }}
+    >
+      <SearchBar />
+      <Tooltip title={t('header.exploreGames', 'Explorer les jeux')}>
+        <Button
+          color="inherit"
+          onClick={() => navigate('/games')}
+          startIcon={<ExploreIcon />}
+          sx={{ fontWeight: 800, borderRadius: '12px', px: 2 }}
+        >
+          {t('nav.games', 'Jeux')}
+        </Button>
+      </Tooltip>
+    </Box>
+  );
+};
+
+interface DesktopActionsProps {
+  isAuthenticated: boolean;
+  user: any;
+  handleLogout: () => void;
+  handleAuthOpen: (mode: 'login' | 'register') => void;
+}
+
+const DesktopActions: React.FC<DesktopActionsProps> = ({
+  isAuthenticated,
+  user,
+  handleLogout,
+  handleAuthOpen,
+}) => {
+  const { t } = useTranslation();
+  return (
+    <Box
+      sx={{
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
+        gap: 1.5,
+      }}
+    >
+      <ThemeToggle />
+      <LanguageDropdown isAuthenticated={isAuthenticated} />
+      {isAuthenticated ? (
+        <>
+          <NotificationIcon />
+          <UserMenu user={user} onLogout={handleLogout} />
+        </>
+      ) : (
+        <>
+          <Button color="inherit" onClick={() => handleAuthOpen('login')}>
+            {t('nav.login', 'Connexion')}
+          </Button>
+          <SecondaryButton onClick={() => handleAuthOpen('register')}>
+            {t('nav.register', "S'inscrire")}
+          </SecondaryButton>
+        </>
+      )}
+    </Box>
   );
 };
 
@@ -337,116 +454,33 @@ export const Header: React.FC = () => {
               minHeight: 64,
             }}
           >
-            {/* Colonne Gauche : Logo */}
-            <Box
-              sx={{
-                flex: { md: 1 },
-                display: 'flex',
-                justifyContent: 'flex-start',
-              }}
-            >
-              <Box
-                onClick={() => {
-                  navigate('/');
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.2,
-                  cursor: 'pointer',
-                }}
-              >
-                <Box
-                  component="img"
-                  src="/logo.png"
-                  sx={{ height: 44, width: 44, borderRadius: '50%' }}
-                />
-                {!isMobile && (
-                  <Typography
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: 20,
-                      fontFamily: "'Outfit', sans-serif",
-                    }}
-                  >
-                    Ludokan
-                  </Typography>
-                )}
-              </Box>
-            </Box>
+            <LogoSection isMobile={isMobile} />
 
-            {/* Colonne Centre : Recherche + Jeux (Desktop uniquement) */}
-            {!isMobile && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  flexShrink: 0,
-                }}
-              >
-                <SearchBar />
-                <Tooltip title={t('header.exploreGames')}>
-                  <Button
-                    color="inherit"
-                    onClick={() => navigate('/games')}
-                    startIcon={<ExploreIcon />}
-                    sx={{ fontWeight: 800, borderRadius: '12px', px: 2 }}
-                  >
-                    {t('nav.games')}
-                  </Button>
-                </Tooltip>
-              </Box>
-            )}
+            {!isMobile && <SearchSection />}
 
-            {/* Colonne Droite : Actions */}
-            <Box
-              sx={{
-                flex: { md: 1 },
-                display: 'flex',
-                justifyContent: 'flex-end',
-                alignItems: 'center',
-                gap: 1.5,
-              }}
-            >
-              {isMobile ? (
+            {isMobile ? (
+              <Box
+                sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}
+              >
                 <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
                   <MenuIcon />
                 </IconButton>
-              ) : (
-                <>
-                  <ThemeToggle />
-                  <LanguageDropdown isAuthenticated={isAuthenticated} />
-                  {isAuthenticated ? (
-                    <>
-                      <NotificationIcon />
-                      <UserMenu user={user} onLogout={handleLogout} />
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        color="inherit"
-                        onClick={() => handleAuthOpen('login')}
-                      >
-                        {t('nav.login')}
-                      </Button>
-                      <SecondaryButton
-                        onClick={() => handleAuthOpen('register')}
-                      >
-                        {t('nav.register')}
-                      </SecondaryButton>
-                    </>
-                  )}
-                </>
-              )}
-            </Box>
+              </Box>
+            ) : (
+              <DesktopActions
+                isAuthenticated={isAuthenticated}
+                user={user}
+                handleLogout={handleLogout}
+                handleAuthOpen={handleAuthOpen}
+              />
+            )}
           </Toolbar>
         </AppBar>
       </Box>
 
       <Box sx={{ height: { xs: 66, md: 68 } }} />
 
+      {/* MOBILE DRAWER */}
       <Drawer
         anchor="right"
         open={isDrawerOpen}
@@ -470,7 +504,7 @@ export const Header: React.FC = () => {
                   navigate('/profile');
                 }}
               >
-                {t('nav.profile')}
+                {t('nav.profile', 'Profil')}
               </Button>
               <Button
                 variant="outlined"
@@ -479,10 +513,10 @@ export const Header: React.FC = () => {
                   navigate('/friends');
                 }}
               >
-                {t('nav.friends')}
+                {t('nav.friends', 'Amis')}
               </Button>
               <Button variant="contained" color="error" onClick={handleLogout}>
-                {t('nav.logout')}
+                {t('nav.logout', 'Déconnexion')}
               </Button>
             </>
           ) : (
@@ -491,13 +525,13 @@ export const Header: React.FC = () => {
                 variant="outlined"
                 onClick={() => handleAuthOpen('login')}
               >
-                {t('nav.login')}
+                {t('nav.login', 'Connexion')}
               </Button>
               <Button
                 variant="contained"
                 onClick={() => handleAuthOpen('register')}
               >
-                {t('nav.register')}
+                {t('nav.register', "S'inscrire")}
               </Button>
             </>
           )}
@@ -510,7 +544,7 @@ export const Header: React.FC = () => {
             }}
             startIcon={<ExploreIcon />}
           >
-            {t('nav.games')}
+            {t('nav.games', 'Jeux')}
           </Button>
           <Box
             display="flex"
@@ -519,7 +553,9 @@ export const Header: React.FC = () => {
             px={1}
           >
             <Typography variant="body2">
-              {darkMode ? 'Mode sombre' : 'Mode clair'}
+              {darkMode
+                ? t('header.darkMode', 'Mode sombre')
+                : t('header.lightMode', 'Mode clair')}
             </Typography>
             <ThemeToggle />
           </Box>
@@ -527,6 +563,7 @@ export const Header: React.FC = () => {
         </Box>
       </Drawer>
 
+      {/* AUTH DIALOG */}
       <Dialog open={isAuthModalOpen} onClose={() => setAuthModalOpen(false)}>
         <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
           <IconButton onClick={() => setAuthModalOpen(false)}>
