@@ -82,7 +82,7 @@ def test_support_ticket_str(user):
         subject="Very long subject for a bug report that will be truncated",
         body="This is a test body.",
     )
-    assert str(t) == f"#{t.pk} Very long subject for a bug report th"
+    assert str(t) == f"#{t.pk} Very long subject for a bug report that "
 
 
 @pytest.mark.django_db
@@ -94,7 +94,7 @@ def test_support_ticket_validations(authenticated_api_client):
     }
     r = authenticated_api_client.post("/api/support/tickets/", payload, format="json")
     assert r.status_code == status.HTTP_400_BAD_REQUEST
-    assert "subject" in r.data
+    assert "subject" in r.data["errors"]
 
     payload2 = {
         "category": "bug",
@@ -103,7 +103,7 @@ def test_support_ticket_validations(authenticated_api_client):
     }
     r2 = authenticated_api_client.post("/api/support/tickets/", payload2, format="json")
     assert r2.status_code == status.HTTP_400_BAD_REQUEST
-    assert "body" in r2.data
+    assert "body" in r2.data["errors"]
 
 
 @pytest.mark.django_db
@@ -131,7 +131,7 @@ def test_admin_update_ticket_invalid_status(user, django_user_model):
         format="json",
     )
     assert r.status_code == status.HTTP_400_BAD_REQUEST
-    assert "status" in r.data
+    assert r.data["errors"]["status"][0] == "Statut invalide."
 
 
 @pytest.mark.django_db
