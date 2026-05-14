@@ -238,10 +238,18 @@ class AdminStatsView(APIView):
         # Activité récente (20 dernières actions admin, triées par timestamp décroissant)
         recent_actions = AdminAction.objects.select_related("admin_user").order_by("-timestamp")[:20]
 
+        target_user_ids = [a.target_id for a in recent_actions if a.target_type == "user" and a.target_id is not None]
+        target_users = {u.pk: u.pseudo or u.email for u in User.objects.filter(pk__in=target_user_ids)}
+
         recent_activity = []
         for action in recent_actions:
             actor = action.admin_user.pseudo if action.admin_user else None
-            target = f"{action.target_type}#{action.target_id}" if action.target_type and action.target_id is not None else None
+            if action.target_type == "user" and action.target_id in target_users:
+                target = target_users[action.target_id]
+            elif action.target_type and action.target_id is not None:
+                target = f"{action.target_type}#{action.target_id}"
+            else:
+                target = None
 
             action_name = action.action_type.replace(".", "_") if action.action_type else None
 
