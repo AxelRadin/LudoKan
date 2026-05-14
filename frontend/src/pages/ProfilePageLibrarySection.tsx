@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import type { GameListItem, GameListProps } from '../components/GameList';
 import GameList from '../components/GameList';
 import LibraryFilters from '../components/LibraryFilters';
@@ -21,7 +22,7 @@ import type {
 
 type ProfilePageLibrarySectionProps = Readonly<{
   glassCard: Record<string, unknown>;
-  /** Ombre au repos (même valeur que `glassCard.boxShadow`) pour désactiver l’effet hover sur ce bloc. */
+  /** Ombre au repos (même valeur que `glassCard.boxShadow`) pour désactiver l'effet hover sur ce bloc. */
   paperRestingBoxShadow: string;
   accent: string;
   titleColor: string;
@@ -51,7 +52,7 @@ type ProfilePageLibrarySectionProps = Readonly<{
     Pick<GameListProps, 'onDetachFromCollection' | 'detachFromCollectionTitle'>
   >;
   gamesLoading: boolean;
-  /** Masque création / gestion de collections (profil d’un autre utilisateur). */
+  /** Masque création / gestion de collections (profil d'un autre utilisateur). */
   readOnly?: boolean;
 }>;
 
@@ -90,6 +91,8 @@ export default function ProfilePageLibrarySection({
   readOnly = false,
 }: ProfilePageLibrarySectionProps) {
   const { t } = useTranslation();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
   const libraryLists =
     libraryFilter === 'ALL' ? (
@@ -104,24 +107,51 @@ export default function ProfilePageLibrarySection({
           { games: gamesEnvie, label: t('profilePage.statusWishlist') },
           { games: gamesAbandonnes, label: t('profilePage.statusAbandoned') },
         ].map(({ games, label }) => (
-          <GameList
-            key={label}
-            games={games}
-            title={`${label} (${games.length})`}
-            showStatus={false}
-            onRemove={removeGame}
-            {...gameListCollectionProps}
-          />
+          <Box key={label} sx={{ mb: 3 }}>
+            <Typography
+              sx={{
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 700,
+                fontSize: 20,
+                color: accent,
+                letterSpacing: -0.3,
+                mb: 2.5,
+              }}
+            >
+              {label} ({games.length})
+            </Typography>
+            <GameList
+              games={games}
+              title=""
+              showStatus={false}
+              onRemove={removeGame}
+              {...gameListCollectionProps}
+            />
+          </Box>
         ))}
       </>
     ) : (
-      <GameList
-        games={gamesForLibraryFilter}
-        title={`${singleFilterTitle} (${gamesForLibraryFilter.length})`}
-        showStatus={false}
-        onRemove={removeGame}
-        {...gameListCollectionProps}
-      />
+      <Box>
+        <Typography
+          sx={{
+            fontFamily: FONT_DISPLAY,
+            fontWeight: 700,
+            fontSize: 20,
+            color: accent,
+            letterSpacing: -0.3,
+            mb: 2.5,
+          }}
+        >
+          {singleFilterTitle} ({gamesForLibraryFilter.length})
+        </Typography>
+        <GameList
+          games={gamesForLibraryFilter}
+          title=""
+          showStatus={false}
+          onRemove={removeGame}
+          {...gameListCollectionProps}
+        />
+      </Box>
     );
 
   return (
@@ -206,7 +236,7 @@ export default function ProfilePageLibrarySection({
                   setLibrarySectionMenuAnchor(e.currentTarget)
                 }
                 size="small"
-                sx={{ color: '#2e7d32' }}
+                sx={{ color: isDark ? '#81c784' : '#2e7d32' }}
               >
                 <MoreVertIcon />
               </IconButton>
@@ -287,7 +317,7 @@ export default function ProfilePageLibrarySection({
               mb: 3,
             }}
           />
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
             {libraryLists}
           </Box>
         </>
