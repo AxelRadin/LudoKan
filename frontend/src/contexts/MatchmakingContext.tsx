@@ -267,48 +267,6 @@ export function MatchmakingProvider({ children }: MatchmakingProviderProps) {
   }, [activeRequestId, party, activeRequestStartedAt, currentRadius]);
 
   useEffect(() => {
-    if (!activeRequestId || hasNewMatch || party) return;
-
-    const expansionInterval = setInterval(async () => {
-      const now = new Date();
-      const startTime = activeRequestStartedAt || now;
-      const diffSeconds = (now.getTime() - startTime.getTime()) / 1000;
-
-      let newRadius = currentRadius;
-
-      if (diffSeconds >= 300) {
-        newRadius = 20000;
-      } else {
-        newRadius = currentRadius + 50;
-      }
-
-      if (newRadius !== currentRadius) {
-        try {
-          setIsExpanding(true);
-          await apiPatch(`/api/matchmaking/requests/${activeRequestId}/`, {
-            radius_km: newRadius,
-          });
-          setCurrentRadius(newRadius);
-
-          setTimeout(() => setIsExpanding(false), 3000);
-        } catch (error) {
-          console.error("Erreur d'extension du rayon", error);
-        }
-      }
-
-      if (newRadius >= 20000) clearInterval(expansionInterval);
-    }, 30000);
-
-    return () => clearInterval(expansionInterval);
-  }, [
-    activeRequestId,
-    currentRadius,
-    hasNewMatch,
-    party,
-    activeRequestStartedAt,
-  ]);
-
-  useEffect(() => {
     if (activeRequestId && matches.length > 0 && !party && activeGame?.id) {
       const transitionToParty = async () => {
         try {
