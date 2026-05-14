@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import i18n from '../i18n';
 import { apiGet } from '../services/api';
+import { withDerivedPermissions } from '../utils/adminPermissions';
 import { AuthContext, type AuthUser } from './AuthContextDef';
 import { ThemeContext } from './themeContextValue';
 
@@ -20,7 +21,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     let cancelled = false;
     const checkAuth = async () => {
       try {
-        const me = (await apiGet('/api/me')) as AuthUser;
+        const me = withDerivedPermissions(
+          (await apiGet('/api/me')) as AuthUser
+        );
         if (!cancelled) {
           setAuthenticated(true);
           setUser(me);
@@ -48,9 +51,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     apiGet('/api/me')
       .then(me => {
         if (!cancelled) {
-          setUser(me as AuthUser);
-          setDarkMode((me as AuthUser).theme_preference === 'dark');
-          i18n.changeLanguage((me as AuthUser).language_preference || 'fr');
+          const authUser = withDerivedPermissions(me as AuthUser);
+          setUser(authUser);
+          setDarkMode(authUser.theme_preference === 'dark');
+          i18n.changeLanguage(authUser.language_preference || 'fr');
         }
       })
       .catch(() => {});

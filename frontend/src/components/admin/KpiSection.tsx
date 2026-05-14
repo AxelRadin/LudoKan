@@ -26,7 +26,7 @@ export default function KpiSection({ data, loading }: Props) {
           fontSize: 14,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: '#888',
+          color: 'text.secondary',
         }}
       >
         Vue globale

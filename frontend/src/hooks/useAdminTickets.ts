@@ -4,7 +4,8 @@ import { apiGet } from '../services/api';
 export type AdminTicket = {
   id: number;
   game_name: string;
-  submitted_by: string;
+  user_pseudo?: string | null;
+  user_email?: string | null;
   status: string;
   created_at: string;
 };

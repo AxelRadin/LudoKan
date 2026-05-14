@@ -11,7 +11,10 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: '#222' }}>
+      <Typography
+        variant="h5"
+        sx={{ fontWeight: 700, mb: 4, color: 'text.primary' }}
+      >
         Dashboard
       </Typography>
 

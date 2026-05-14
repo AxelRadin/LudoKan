@@ -4,25 +4,27 @@ import * as Sentry from '@sentry/react';
 import 'driver.js/dist/driver.css';
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import {
+  Navigate,
+  createBrowserRouter,
+  RouterProvider,
+} from 'react-router-dom';
 
 import { AdminRoot } from './AdminRoot.tsx';
 import { Root } from './Root.tsx';
 import BackendConnector from './components/BackendConnector.tsx';
 import ErrorFallback from './components/ErrorFallback';
 import { PageLoader } from './components/PageLoader';
-
+import PermissionGuard from './components/admin/PermissionGuard.tsx';
 import { ThemeModeProvider } from './contexts/ThemeContext';
 import { getStoredConsent } from './hooks/useCookieConsent';
 import './i18n';
 import './index.css';
 import { initSentry } from './monitoring/sentry';
 
-// Pages chargées statiquement (instantanées)
 import CookieBanner from './pages/CookieBanner.tsx';
 import HomePage from './pages/HomePage.tsx';
 
-// Lazy Loading (Optimisation du bundle)
 const GamesPage = lazy(() => import('./pages/GamesPage.tsx'));
 const GamePage = lazy(() => import('./pages/GamePage.tsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.tsx'));
@@ -52,6 +54,9 @@ const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage.tsx'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.tsx'));
 const UsersAdmin = lazy(() => import('./pages/admin/UsersAdmin.tsx'));
+const AdminTickets = lazy(() => import('./pages/admin/AdminTickets.tsx'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports.tsx'));
+const AdminNotFound = lazy(() => import('./pages/admin/AdminNotFound.tsx'));
 const ProtectedAdminRoute = lazy(
   () => import('./components/admin/ProtectedAdminRoute.tsx')
 );
@@ -274,11 +279,17 @@ const router = createBrowserRouter([
     element: <AdminRoot />,
     children: [
       {
+        index: true,
+        element: <Navigate to="/admin/dashboard" replace />,
+      },
+      {
         path: 'dashboard',
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProtectedAdminRoute>
-              <AdminDashboard />
+              <PermissionGuard permission="dashboard.view">
+                <AdminDashboard />
+              </PermissionGuard>
             </ProtectedAdminRoute>
           </Suspense>
         ),
@@ -288,7 +299,43 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ProtectedAdminRoute>
-              <UsersAdmin />
+              <PermissionGuard permission="user.view">
+                <UsersAdmin />
+              </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'tickets',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <PermissionGuard permission="ticket_read">
+                <AdminTickets />
+              </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'reports',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <PermissionGuard permission="report_read">
+                <AdminReports />
+              </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: '*',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <AdminNotFound />
             </ProtectedAdminRoute>
           </Suspense>
         ),

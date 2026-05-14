@@ -13,8 +13,9 @@ export default function KpiCard({ title, value, icon, sub, loading }: Props) {
   return (
     <Box
       sx={{
-        bgcolor: '#fff',
-        border: '0.5px solid rgba(0,0,0,0.1)',
+        bgcolor: 'background.paper',
+        border: 1,
+        borderColor: 'divider',
         borderRadius: 3,
         p: 3,
         height: '100%',
@@ -36,19 +37,19 @@ export default function KpiCard({ title, value, icon, sub, loading }: Props) {
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#aaa',
+            color: 'text.secondary',
           }}
         >
           {title}
         </Typography>
-        {icon && <Box sx={{ color: '#C41A1A', opacity: 0.7 }}>{icon}</Box>}
+        {icon && <Box sx={{ color: 'error.main', opacity: 0.75 }}>{icon}</Box>}
       </Box>
       {loading ? (
         <Skeleton variant="text" width={60} height={40} />
       ) : (
         <Typography
           variant="h4"
-          sx={{ fontWeight: 700, fontSize: 28, color: '#111' }}
+          sx={{ fontWeight: 700, fontSize: 28, color: 'text.primary' }}
         >
           {value}
         </Typography>
@@ -56,7 +57,12 @@ export default function KpiCard({ title, value, icon, sub, loading }: Props) {
       {sub && (
         <Typography
           variant="caption"
-          sx={{ color: '#888', fontSize: 11, mt: 0.5, display: 'block' }}
+          sx={{
+            color: 'text.secondary',
+            fontSize: 11,
+            mt: 0.5,
+            display: 'block',
+          }}
         >
           {sub}
         </Typography>
