@@ -26,9 +26,9 @@ COPY locale/ ./locale/
 COPY pyproject.toml ./pyproject.toml
 COPY runtime.txt ./runtime.txt
 
-# Build-time only : Django charge settings lors de compilemessages (voir compose build.args).
-ARG SECRET_KEY_FOR_COMPILE=build-only-placeholder-for-compilemessages
-RUN SECRET_KEY="${SECRET_KEY_FOR_COMPILE}" python manage.py compilemessages
+# Build-time only : Django charge settings lors de compilemessages.
+# Un placeholder direct est utilisé pour éviter l'alerte de sécurité SonarQube liée à l'utilisation de ARG pour un secret.
+RUN SECRET_KEY="build-only-placeholder-for-compilemessages" python manage.py compilemessages
 
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
