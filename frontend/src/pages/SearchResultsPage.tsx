@@ -58,28 +58,22 @@ export default function SearchResultsPage() {
     if (!query) return;
     const offset = (page - 1) * PAGE_SIZE;
     setLoading(true);
-    setGames([]);
 
-    const getFetcher = (off: number): Promise<IgdbGame[]> => {
-      if (!selected) return searchGamesPage(query, PAGE_SIZE, off);
-      if (selected.type === 'franchise')
-        return fetchFranchiseGames(selected.id, PAGE_SIZE, off);
-      return fetchCollectionGames(selected.id, PAGE_SIZE, off);
-    };
+    const fetchData = async () => {
+      try {
+        if (selected) {
+          // Pour les franchises et collections, on garde la logique de découverte page par page
+          const fetcher =
+            selected.type === 'franchise'
+              ? fetchFranchiseGames
+              : fetchCollectionGames;
 
-    const fetchCurrent = getFetcher(offset);
-    const fetchNext = getFetcher(offset + PAGE_SIZE);
+          const [current, next] = await Promise.all([
+            fetcher(selected.id, PAGE_SIZE, offset),
+            fetcher(selected.id, PAGE_SIZE, offset + PAGE_SIZE),
+          ]);
 
-    Promise.all([fetchCurrent, fetchNext])
-      .then(([current, next]) => {
-        const data =
-          current.length === 0 && selected
-            ? searchGamesPage(query, PAGE_SIZE, offset).then(d => d)
-            : Promise.resolve(current);
-
-        return data.then(finalData => {
-          setGames(finalData);
-
+          setGames(current);
           if (next.length > 0) {
             maxDiscoveredPage.current = Math.max(
               maxDiscoveredPage.current,
@@ -91,12 +85,24 @@ export default function SearchResultsPage() {
               page
             );
           }
-
           setTotalPages(maxDiscoveredPage.current);
-        });
-      })
-      .catch(() => setGames([]))
-      .finally(() => setLoading(false));
+        } else {
+          const { games: results, totalCount: total } = await searchGamesPage(
+            query,
+            PAGE_SIZE,
+            offset
+          );
+          setGames(results);
+          setTotalPages(Math.ceil(total / PAGE_SIZE));
+        }
+      } catch {
+        setGames([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [selected, page, query]);
 
   const handleSelect = (f: FranchiseResult) => {
