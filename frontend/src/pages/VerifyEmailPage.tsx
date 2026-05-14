@@ -32,13 +32,12 @@ const VerifyEmailPage: React.FC = () => {
     }
   }, [key, t]);
 
-  const subtitle = loading
-    ? t('verifyEmailPage.verifying')
-    : success
-      ? undefined
-      : key
-        ? t('verifyEmailPage.intro')
-        : undefined;
+  let subtitle: string | undefined;
+  if (loading) {
+    subtitle = t('verifyEmailPage.verifying');
+  } else if (!success && key) {
+    subtitle = t('verifyEmailPage.intro');
+  }
 
   return (
     <AuthFlowPageLayout title={t('verifyEmailPage.title')} subtitle={subtitle}>
