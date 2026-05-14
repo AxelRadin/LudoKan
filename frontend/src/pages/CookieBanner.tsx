@@ -11,10 +11,11 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { useTranslation } from 'react-i18next';
 import { saveConsent, useCookieConsent } from '../hooks/useCookieConsent';
 
 const CookieBanner: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { hasChosen } = useCookieConsent();
   const [visible, setVisible] = useState(false);
@@ -60,11 +61,10 @@ const CookieBanner: React.FC = () => {
         borderColor: 'divider',
       }}
     >
-      {/* En-tête */}
       <Box display="flex" alignItems="center" gap={1.5} mb={1.5}>
         <CookieOutlinedIcon sx={{ color: 'primary.main', fontSize: 22 }} />
         <Typography fontWeight={600} sx={{ color: 'secondary.main' }}>
-          Gestion des cookies
+          {t('cookieBanner.title')}
         </Typography>
       </Box>
 
@@ -73,9 +73,7 @@ const CookieBanner: React.FC = () => {
         color="text.secondary"
         sx={{ mb: 2, lineHeight: 1.7 }}
       >
-        Nous utilisons des cookies pour assurer le bon fonctionnement de Ludokan
-        et améliorer votre expérience. Vous pouvez accepter, refuser ou
-        personnaliser vos choix.{' '}
+        {t('cookieBanner.intro')}{' '}
         <Box
           component="span"
           onClick={() => navigate('/cookies')}
@@ -86,11 +84,10 @@ const CookieBanner: React.FC = () => {
             fontSize: 'inherit',
           }}
         >
-          En savoir plus
+          {t('cookieBanner.learnMore')}
         </Box>
       </Typography>
 
-      {/* Détails personnalisables */}
       <Collapse in={showDetails}>
         <Box
           sx={{
@@ -102,7 +99,6 @@ const CookieBanner: React.FC = () => {
             bgcolor: 'background.default',
           }}
         >
-          {/* Nécessaires — toujours activés */}
           <Box
             display="flex"
             justifyContent="space-between"
@@ -111,10 +107,10 @@ const CookieBanner: React.FC = () => {
           >
             <Box>
               <Typography variant="body2" fontWeight={600}>
-                Nécessaires
+                {t('cookieBanner.necessary')}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Indispensables au fonctionnement
+                {t('cookieBanner.necessaryDesc')}
               </Typography>
             </Box>
             <Switch checked disabled size="small" color="success" />
@@ -122,7 +118,6 @@ const CookieBanner: React.FC = () => {
 
           <Divider sx={{ my: 1.5 }} />
 
-          {/* Analytics */}
           <FormControlLabel
             control={
               <Switch
@@ -140,7 +135,7 @@ const CookieBanner: React.FC = () => {
                   Analytics
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Mesure d'audience anonymisée
+                  {t('cookieBanner.analyticsDesc')}
                 </Typography>
               </Box>
             }
@@ -155,7 +150,6 @@ const CookieBanner: React.FC = () => {
 
           <Divider sx={{ my: 1.5 }} />
 
-          {/* Personnalisation */}
           <FormControlLabel
             control={
               <Switch
@@ -170,10 +164,10 @@ const CookieBanner: React.FC = () => {
             label={
               <Box>
                 <Typography variant="body2" fontWeight={600}>
-                  Personnalisation
+                  {t('cookieBanner.personalisationLabel')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Thème, préférences, recommandations
+                  {t('cookieBanner.personalisationDesc')}
                 </Typography>
               </Box>
             }
@@ -188,7 +182,6 @@ const CookieBanner: React.FC = () => {
         </Box>
       </Collapse>
 
-      {/* Boutons */}
       <Box display="flex" flexDirection="column" gap={1}>
         <Box display="flex" gap={1}>
           <Button
@@ -198,7 +191,7 @@ const CookieBanner: React.FC = () => {
             onClick={handleAcceptAll}
             sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600 }}
           >
-            Tout accepter
+            {t('cookieBanner.acceptAll')}
           </Button>
           <Button
             fullWidth
@@ -211,7 +204,7 @@ const CookieBanner: React.FC = () => {
               color: 'text.secondary',
             }}
           >
-            Tout refuser
+            {t('cookieBanner.refuseAll')}
           </Button>
         </Box>
 
@@ -223,7 +216,7 @@ const CookieBanner: React.FC = () => {
             onClick={handleSaveChoice}
             sx={{ textTransform: 'none', borderRadius: 2 }}
           >
-            Enregistrer mes choix
+            {t('cookieBanner.saveChoice')}
           </Button>
         ) : (
           <Button
@@ -236,7 +229,7 @@ const CookieBanner: React.FC = () => {
               fontSize: 13,
             }}
           >
-            Personnaliser
+            {t('cookieBanner.customise')}
           </Button>
         )}
       </Box>

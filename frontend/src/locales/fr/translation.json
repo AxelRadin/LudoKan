@@ -741,7 +741,15 @@
     "pwErrorMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
     "pwErrorMismatch": "Les mots de passe ne correspondent pas.",
     "pwErrorWrongOld": "L'ancien mot de passe est incorrect.",
-    "pwErrorGeneric": "Erreur lors de la modification du mot de passe."
+    "pwErrorGeneric": "Erreur lors de la modification du mot de passe.",
+    "cookiesSection": "Cookies",
+    "analyticsDesc": "Mesure d'audience anonymisée (Sentry)",
+    "personalisationLabel": "Personnalisation",
+    "personalisationDesc": "Thème, préférences, recommandations",
+    "cookiesDetail": "Détail des cookies utilisés",
+    "helpSection": "Aide",
+    "restartTour": "Revoir le didacticiel",
+    "restartTourDesc": "Relance le guide de prise en main"
   },
   "resetPasswordPage": {
     "title": "Nouveau mot de passe",
@@ -773,5 +781,59 @@
     "success": "Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.",
     "error": "Le lien de vérification est invalide ou a expiré.",
     "backToLogin": "Retour à la connexion"
+  },
+  "recommendations": {
+    "personalised": "Personnalisé",
+    "suggestionsTitle": "Des jeux que vous allez adorer",
+    "recommendedTags": "Recommandé car vos jeux ont les tags",
+    "noSuggestions": "Aucune suggestion disponible pour le moment.",
+    "exploreCatalogue": "Explorer le catalogue"
+  },
+  "cookiesPage": {
+    "back": "Retour",
+    "title": "Gestion des cookies",
+    "version": "Version 1.0 – Avril 2025",
+    "intro": "Ludokan utilise des cookies et technologies similaires pour assurer le bon fonctionnement de la plateforme, analyser son utilisation et personnaliser votre expérience. Lors de votre première visite, un bandeau vous permet d'accepter ou de refuser les catégories non essentielles. Vous pouvez modifier vos préférences à tout moment depuis les paramètres.",
+    "alwaysActive": "Toujours actifs",
+    "consentRequired": "Soumis à consentement",
+    "editTitle": "Modifier mes préférences",
+    "editDesc": "Vous pouvez changer vos choix à tout moment.",
+    "settingsBtn": "Paramètres",
+    "contact": "Pour toute question :",
+    "necessary": {
+      "label": "Nécessaires",
+      "description": "Ces cookies sont indispensables au fonctionnement de la plateforme. Ils gèrent votre session de connexion et assurent la sécurité de votre compte. Ils ne peuvent pas être désactivés.",
+      "example1": "Session utilisateur",
+      "example2": "Jeton CSRF (sécurité)",
+      "example3": "Préférences de langue"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "description": "Ces cookies nous permettent de mesurer l'audience de la plateforme de manière anonymisée (pages visitées, durée de session, erreurs rencontrées). Ils nous aident à améliorer votre expérience.",
+      "example1": "Statistiques de navigation anonymes",
+      "example2": "Rapports d'erreurs (Sentry anonymisé)",
+      "example3": "Pages les plus visitées"
+    },
+    "personalisation": {
+      "label": "Personnalisation",
+      "description": "Ces cookies mémorisent vos préférences afin de personnaliser votre expérience sur Ludokan : thème (clair/sombre), préférences d'affichage, recommandations basées sur vos habitudes.",
+      "example1": "Thème clair / sombre",
+      "example2": "Préférences d'affichage",
+      "example3": "Recommandations personnalisées"
+    }
+  },
+  "cookieBanner": {
+    "title": "Gestion des cookies",
+    "intro": "Nous utilisons des cookies pour assurer le bon fonctionnement de Ludokan et améliorer votre expérience. Vous pouvez accepter, refuser ou personnaliser vos choix.",
+    "learnMore": "En savoir plus",
+    "necessary": "Nécessaires",
+    "necessaryDesc": "Indispensables au fonctionnement",
+    "analyticsDesc": "Mesure d'audience anonymisée",
+    "personalisationLabel": "Personnalisation",
+    "personalisationDesc": "Thème, préférences, recommandations",
+    "acceptAll": "Tout accepter",
+    "refuseAll": "Tout refuser",
+    "saveChoice": "Enregistrer mes choix",
+    "customise": "Personnaliser"
   }
 }
