@@ -37,10 +37,7 @@ export default function UsersTable() {
   }
 
   async function handleReactivate(userId: number) {
-    await apiPost(`/api/admin/users/${userId}/suspend/`, {
-      reason: 'Réactivation du compte',
-      end_date: new Date().toISOString(),
-    });
+    await apiPost(`/api/admin/users/${userId}/reactivate/`, {});
     refetch();
   }
 
