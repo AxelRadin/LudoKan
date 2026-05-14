@@ -8,29 +8,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import { useAuth } from '../../contexts/useAuth';
 import { useSubmitReview } from '../../hooks/useSubmitReview';
-
-const C = {
-  accent: '#d32f2f',
-  accentDark: '#b71c1c',
-  accentSoft: 'rgba(211,47,47,0.08)',
-  accentGlow: 'rgba(211,47,47,0.18)',
-  title: '#0f0f0f',
-  muted: '#6e6e73',
-  light: '#b0b0b8',
-  white88: 'rgba(255,255,255,0.88)',
-  white95: 'rgba(255,255,255,0.95)',
-  inputBg: 'rgba(255,255,255,0.82)',
-  inputBorder: 'rgba(241,199,199,0.55)',
-  badgeBg: 'rgb(255, 211, 211)',
-  badgeText: '#A32D2D',
-  starFilled: 'rgb(255, 180, 180)',
-  starEmpty: '#C0C0C0',
-};
 
 const FD = "'Playfair Display', Georgia, serif";
 const FB = "'DM Sans', system-ui, sans-serif";
@@ -65,53 +48,60 @@ function submitLabel(loading: boolean, existingId?: number): string {
   return existingId ? 'Mettre à jour' : 'Publier';
 }
 
-const sectionLabelSx = {
-  fontSize: 10,
-  fontWeight: 700,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: '#aaa',
-  display: 'block',
-  mb: '6px',
-  fontFamily: FB,
-};
+// Hook pour obtenir les couleurs dynamiques basées sur le thème
+function useThemeColors() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
 
-const fieldSx = {
-  fontFamily: FB,
-  '& .MuiOutlinedInput-root': {
-    borderRadius: '14px',
-    backgroundColor: C.inputBg,
-    backdropFilter: 'blur(12px)',
-    fontFamily: FB,
-    fontSize: 14,
-    '& fieldset': {
-      borderColor: C.inputBorder,
-      borderWidth: '1.25px',
-    },
-    '&:hover fieldset': {
-      borderColor: 'rgba(211,47,47,0.3)',
-    },
-    '&.Mui-focused fieldset': {
-      borderColor: `${C.accent}88`,
-      borderWidth: '1.5px',
-    },
-    '&.Mui-focused': {
-      boxShadow: `0 0 0 3px ${C.accentSoft}`,
-    },
-  },
-  '& .MuiFormHelperText-root': {
-    fontFamily: FB,
-    fontSize: 11.5,
-    ml: 0.5,
-  },
-};
+  return useMemo(
+    () => ({
+      accent: '#FF3D3D',
+      accentDark: '#b71c1c',
+      accentSoft: isDark ? 'rgba(255,61,61,0.12)' : 'rgba(211,47,47,0.08)',
+      accentGlow: isDark ? 'rgba(255,61,61,0.25)' : 'rgba(211,47,47,0.18)',
+      title: isDark ? '#f5e6e6' : '#0f0f0f',
+      text: isDark ? '#e0d0d0' : '#2b2b2b',
+      muted: isDark ? '#9e7070' : '#6e6e73',
+      light: isDark ? '#b49393' : '#b0b0b8',
+      cardBg: isDark ? 'rgba(42,32,32,0.78)' : 'rgba(255,255,255,0.88)',
+      cardBgHover: isDark ? 'rgba(42,32,32,0.88)' : 'rgba(255,255,255,0.95)',
+      glassBorder: isDark ? 'rgba(74,48,48,0.9)' : 'rgba(255,255,255,0.95)',
+      inputBg: isDark ? 'rgba(32,24,24,0.82)' : 'rgba(255,255,255,0.82)',
+      inputBorder: isDark ? 'rgba(74,48,48,0.6)' : 'rgba(241,199,199,0.55)',
+      badgeBg: isDark ? 'rgba(255,61,61,0.15)' : 'rgb(255, 211, 211)',
+      badgeText: isDark ? '#ff8a80' : '#A32D2D',
+      starFilled: isDark ? '#ff8a80' : 'rgb(255, 180, 180)',
+      starEmpty: isDark ? '#9e7070' : '#C0C0C0',
+      buttonOutlinedBg: isDark
+        ? 'rgba(42,32,32,0.42)'
+        : 'rgba(255,255,255,0.42)',
+      buttonOutlinedBgHover: isDark
+        ? 'rgba(42,32,32,0.58)'
+        : 'rgba(255,255,255,0.58)',
+      buttonOutlinedBorder: isDark ? 'rgba(74,48,48,0.4)' : 'rgba(0,0,0,0.14)',
+      buttonOutlinedBorderHover: isDark
+        ? 'rgba(74,48,48,0.7)'
+        : 'rgba(0,0,0,0.28)',
+      isDark,
+    }),
+    [isDark]
+  );
+}
 
-const StarIcon = ({ filled }: { filled: boolean }) => (
+const StarIcon = ({
+  filled,
+  starFilled,
+  starEmpty,
+}: {
+  filled: boolean;
+  starFilled: string;
+  starEmpty: string;
+}) => (
   <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
     <path
       d="M10 1.5l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.77l-4.77 2.44.91-5.32L2.27 7.12l5.34-.78z"
-      fill={filled ? C.starFilled : 'none'}
-      stroke={filled ? 'none' : C.starEmpty}
+      fill={filled ? starFilled : 'none'}
+      stroke={filled ? 'none' : starEmpty}
       strokeWidth={filled ? 0 : 1.2}
     />
   </svg>
@@ -127,6 +117,8 @@ export default function ReviewForm({
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { loading, success, error, submitReview } = useSubmitReview();
+  const C = useThemeColors();
+
   const [showTextFields, setShowTextFields] = useState(
     !!(initialValues?.id || initialValues?.title || initialValues?.content)
   );
@@ -182,6 +174,61 @@ export default function ReviewForm({
     reset,
   ]);
 
+  const sectionLabelSx = useMemo(
+    () => ({
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase',
+      color: C.light,
+      display: 'block',
+      mb: '6px',
+      fontFamily: FB,
+    }),
+    [C.light]
+  );
+
+  const fieldSx = useMemo(
+    () => ({
+      fontFamily: FB,
+      '& .MuiOutlinedInput-root': {
+        borderRadius: '14px',
+        backgroundColor: C.inputBg,
+        backdropFilter: 'blur(12px)',
+        fontFamily: FB,
+        fontSize: 14,
+        color: C.text,
+        '& fieldset': {
+          borderColor: C.inputBorder,
+          borderWidth: '1.25px',
+        },
+        '&:hover fieldset': {
+          borderColor: `${C.accent}50`,
+        },
+        '&.Mui-focused fieldset': {
+          borderColor: `${C.accent}88`,
+          borderWidth: '1.5px',
+        },
+        '&.Mui-focused': {
+          boxShadow: `0 0 0 3px ${C.accentSoft}`,
+        },
+      },
+      '& .MuiInputBase-input': {
+        color: C.text,
+      },
+      '& .MuiInputBase-input::placeholder': {
+        color: C.muted,
+        opacity: 0.7,
+      },
+      '& .MuiFormHelperText-root': {
+        fontFamily: FB,
+        fontSize: 11.5,
+        ml: 0.5,
+      },
+    }),
+    [C]
+  );
+
   async function onSubmit(data: ReviewFormValues) {
     const resolvedGameId = resolveGameId ? await resolveGameId() : gameId;
     if (!resolvedGameId) return;
@@ -205,10 +252,10 @@ export default function ReviewForm({
         sx={{
           px: 2.5,
           py: 2,
-          background: C.white88,
+          background: C.cardBg,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: `1px solid ${C.white95}`,
+          border: `1px solid ${C.glassBorder}`,
           borderRadius: '18px',
           boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
         }}
@@ -226,22 +273,25 @@ export default function ReviewForm({
       onSubmit={handleSubmit(onSubmit)}
       sx={{
         width: '100%',
-        background: C.white88,
+        background: C.cardBg,
         backdropFilter: 'blur(28px) saturate(170%)',
         WebkitBackdropFilter: 'blur(28px) saturate(170%)',
-        border: `1px solid ${C.white95}`,
+        border: `1px solid ${C.glassBorder}`,
         borderRadius: '22px',
-        boxShadow:
-          '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92)',
+        boxShadow: C.isDark
+          ? '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
+          : '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92)',
         overflow: 'hidden',
         '@keyframes softGlow': {
           '0%, 100%': {
-            boxShadow:
-              '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92), 0 0 0 0 rgba(211,47,47,0.0)',
+            boxShadow: C.isDark
+              ? '0 2px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 0 rgba(255,61,61,0.0)'
+              : '0 2px 16px rgba(0,0,0,0.055), inset 0 1px 0 rgba(255,255,255,0.92), 0 0 0 0 rgba(211,47,47,0.0)',
           },
           '50%': {
-            boxShadow:
-              '0 2px 18px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.92), 0 0 0 4px rgba(211,47,47,0.035)',
+            boxShadow: C.isDark
+              ? '0 2px 18px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 0 4px rgba(255,61,61,0.08)'
+              : '0 2px 18px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.92), 0 0 0 4px rgba(211,47,47,0.035)',
           },
         },
         animation: 'softGlow 3.2s ease-in-out infinite',
@@ -286,7 +336,7 @@ export default function ReviewForm({
           sx={{
             height: '1px',
             mb: 2.5,
-            background: `linear-gradient(to right, ${C.accentGlow}, rgba(241,199,199,0.2), transparent)`,
+            background: `linear-gradient(to right, ${C.accentGlow}, ${C.inputBorder}, transparent)`,
             borderRadius: 99,
           }}
         />
@@ -317,7 +367,11 @@ export default function ReviewForm({
                 '&:hover': { transform: 'translateY(-1px) scale(1.03)' },
               }}
             >
-              <StarIcon filled={n <= displayRating} />
+              <StarIcon
+                filled={n <= displayRating}
+                starFilled={C.starFilled}
+                starEmpty={C.starEmpty}
+              />
             </Box>
           ))}
         </Box>
@@ -372,12 +426,12 @@ export default function ReviewForm({
                 fontFamily: FB,
                 fontWeight: 700,
                 fontSize: 13,
-                color: '#222',
-                borderColor: 'rgba(0,0,0,0.14)',
-                background: 'rgba(255,255,255,0.42)',
+                color: C.text,
+                borderColor: C.buttonOutlinedBorder,
+                background: C.buttonOutlinedBg,
                 '&:hover': {
-                  borderColor: 'rgba(0,0,0,0.28)',
-                  background: 'rgba(255,255,255,0.58)',
+                  borderColor: C.buttonOutlinedBorderHover,
+                  background: C.buttonOutlinedBgHover,
                 },
               }}
             >
@@ -446,7 +500,7 @@ export default function ReviewForm({
           </Box>
         )}
 
-        <Divider sx={{ mb: 2, opacity: 0.5 }} />
+        <Divider sx={{ mb: 2, opacity: 0.5, borderColor: C.inputBorder }} />
 
         <Box
           sx={{
@@ -470,7 +524,11 @@ export default function ReviewForm({
                 fontSize: 13.5,
                 textTransform: 'none',
                 fontFamily: FB,
-                '&:hover': { backgroundColor: 'rgba(0,0,0,0.04)' },
+                '&:hover': {
+                  backgroundColor: C.isDark
+                    ? 'rgba(255,255,255,0.05)'
+                    : 'rgba(0,0,0,0.04)',
+                },
               }}
             >
               {t('common.cancel')}
@@ -501,14 +559,16 @@ export default function ReviewForm({
                   textTransform: 'none',
                   fontFamily: FB,
                   background: `linear-gradient(135deg, ${C.accent} 0%, #ef5350 100%)`,
-                  boxShadow: `0 4px 14px rgba(211,47,47,0.32)`,
+                  boxShadow: `0 4px 14px ${C.accentGlow}`,
                   '&:hover': {
                     background: `linear-gradient(135deg, ${C.accentDark} 0%, ${C.accent} 100%)`,
-                    boxShadow: `0 7px 20px rgba(211,47,47,0.38)`,
+                    boxShadow: `0 7px 20px ${C.accentGlow}`,
                     transform: 'translateY(-1px)',
                   },
                   '&:disabled': {
-                    background: 'rgba(0,0,0,0.08)',
+                    background: C.isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(0,0,0,0.08)',
                     boxShadow: 'none',
                     cursor: 'not-allowed',
                     pointerEvents: 'auto',
