@@ -4,12 +4,12 @@ import en from './locales/en/translation.json';
 import fr from './locales/fr/translation.json';
 
 try {
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(globalThis.location.search);
   const langParam = urlParams.get('lang');
   const storedLang =
-    typeof localStorage !== 'undefined'
-      ? localStorage.getItem('i18nextLng')
-      : null;
+    typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem('i18nextLng');
   const lng = langParam || storedLang || 'fr';
 
   await i18n.use(initReactI18next).init({

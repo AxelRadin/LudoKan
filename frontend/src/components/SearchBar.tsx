@@ -276,7 +276,7 @@ const GameSearchBar: React.FC = () => {
       }
     };
 
-    void run();
+    run();
 
     return () => {
       cancelled = true;

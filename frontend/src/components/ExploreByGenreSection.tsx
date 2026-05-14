@@ -81,7 +81,7 @@ const ExploreByGenreSection = () => {
 
   const handleGenreClick = (genreId: number, genreName: string) => {
     navigate(`/trending/genre/${genreId}`, { state: { genreName } });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

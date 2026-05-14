@@ -122,7 +122,7 @@ export function useHomeTrending(options: UseHomeTrendingOptions = {}) {
     const { signal } = controller;
 
     TRENDING_SORTS.forEach(sort => {
-      void fetchTrendingSection(sort, signal, setSections);
+      fetchTrendingSection(sort, signal, setSections);
     });
 
     return () => controller.abort();
@@ -140,7 +140,7 @@ export function useHomeTrending(options: UseHomeTrendingOptions = {}) {
     }
     setGenreSection({ games: [], loading: true });
     const controller = new AbortController();
-    void loadGenrePopularitySection(
+    loadGenrePopularitySection(
       selectedGenre.id,
       controller.signal,
       setGenreSection

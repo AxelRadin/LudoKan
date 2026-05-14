@@ -245,7 +245,7 @@ export const Header: React.FC = () => {
               onClick={() => {
                 handleProfileMenuClose();
                 navigate('/profile');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                globalThis.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
               <ListItemIcon>
@@ -258,7 +258,7 @@ export const Header: React.FC = () => {
               onClick={() => {
                 handleProfileMenuClose();
                 navigate('/friends');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                globalThis.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
               <ListItemIcon>
@@ -271,7 +271,7 @@ export const Header: React.FC = () => {
               onClick={() => {
                 handleProfileMenuClose();
                 navigate('/settings');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                globalThis.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
               <ListItemIcon>
@@ -314,7 +314,7 @@ export const Header: React.FC = () => {
             onClick={() => {
               setDrawerOpen(false);
               navigate(isProfilePage ? '/' : '/profile');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
             {isProfilePage ? t('nav.home') : t('nav.profile')}
@@ -326,7 +326,7 @@ export const Header: React.FC = () => {
             onClick={() => {
               setDrawerOpen(false);
               navigate('/friends');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
             {t('nav.friends')}
@@ -338,7 +338,7 @@ export const Header: React.FC = () => {
             onClick={() => {
               setDrawerOpen(false);
               navigate('/settings');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           >
             {t('nav.settings')}
@@ -431,7 +431,7 @@ export const Header: React.FC = () => {
             <Box
               onClick={() => {
                 navigate('/');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                globalThis.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               sx={{
                 display: 'flex',

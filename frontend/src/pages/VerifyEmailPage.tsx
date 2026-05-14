@@ -32,19 +32,16 @@ const VerifyEmailPage: React.FC = () => {
     }
   }, [key, t]);
 
+  const subtitle = loading
+    ? t('verifyEmailPage.verifying')
+    : success
+      ? undefined
+      : key
+        ? t('verifyEmailPage.intro')
+        : undefined;
+
   return (
-    <AuthFlowPageLayout
-      title={t('verifyEmailPage.title')}
-      subtitle={
-        loading
-          ? t('verifyEmailPage.verifying')
-          : success
-            ? undefined
-            : key
-              ? t('verifyEmailPage.intro')
-              : undefined
-      }
-    >
+    <AuthFlowPageLayout title={t('verifyEmailPage.title')} subtitle={subtitle}>
       <Box sx={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
         {loading && <CircularProgress />}
         {success && (
@@ -80,7 +77,7 @@ const VerifyEmailPage: React.FC = () => {
             </Typography>
             <PrimaryButton
               sx={{ height: 48, fontSize: 16 }}
-              onClick={() => void verify()}
+              onClick={() => verify()}
             >
               {t('verifyEmailPage.confirm')}
             </PrimaryButton>
