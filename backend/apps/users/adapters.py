@@ -17,7 +17,10 @@ class LudokanAccountAdapter(DefaultAccountAdapter):
         request = context.get("request")
         lang = None
         if request is not None:
-            lang = translation.get_language_from_request(request)
+            try:
+                lang = translation.get_language_from_request(request)
+            except Exception:
+                lang = None
         if not lang:
             lang = translation.get_language() or django_settings.LANGUAGE_CODE
 

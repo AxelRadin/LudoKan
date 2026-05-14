@@ -214,7 +214,7 @@ class TestLudokanAccountAdapter:
         mock_request = MagicMock()
 
         with (
-            patch("apps.users.adapters.get_language_from_request", return_value="fr") as mock_get_lang,
+            patch("apps.users.adapters.translation.get_language_from_request", return_value="fr") as mock_get_lang,
             patch("apps.users.adapters.translation.override") as mock_override,
             patch.object(adapter.__class__.__bases__[0], "send_mail"),
         ):
@@ -231,7 +231,8 @@ class TestLudokanAccountAdapter:
         mock_request = MagicMock()
 
         with (
-            patch("apps.users.adapters.get_language_from_request", side_effect=Exception("lang error")),
+            patch("apps.users.adapters.translation.get_language_from_request", side_effect=Exception("lang error")),
+            patch("apps.users.adapters.translation.get_language", return_value=None),
             patch("apps.users.adapters.translation.override") as mock_override,
             patch("apps.users.adapters.django_settings") as mock_settings,
             patch.object(adapter.__class__.__bases__[0], "send_mail"),
@@ -260,10 +261,27 @@ class TestLudokanAccountAdapter:
         emailconfirmation = MagicMock()
         emailconfirmation.key = "signed-key-abc"
         url = adapter.get_email_confirmation_url(None, emailconfirmation)
-        assert url == "https://spa.example.com/verify-email/signed-key-abc"
+        assert url.startswith("https://spa.example.com/verify-email/signed-key-abc")
+        assert "lang=" in url
 
     def test_get_reset_password_from_key_url_splits_opaque_key(self, settings):
         settings.FRONTEND_BASE_URL = "https://spa.example.com"
         adapter = LudokanAccountAdapter()
         url = adapter.get_reset_password_from_key_url("uidb64part-token-with-dashes")
-        assert url == "https://spa.example.com/reset-password/uidb64part/token-with-dashes"
+        assert url.startswith("https://spa.example.com/reset-password/uidb64part/token-with-dashes")
+        assert "lang=" in url
+
+    def test_get_reset_password_from_key_url_without_dash_calls_super(self):
+        """When key has no dash, fallback to super().get_reset_password_from_key_url."""
+        adapter = LudokanAccountAdapter()
+        with patch("apps.users.adapters.DefaultAccountAdapter.get_reset_password_from_key_url", return_value="/default-reset/key") as mock_super:
+            url = adapter.get_reset_password_from_key_url("nodashkey")
+            assert "/default-reset/key" in url
+            mock_super.assert_called_once_with("nodashkey")
+
+    def test_get_reset_password_from_key_url_with_existing_query_params(self):
+        """When the base URL already has query params, use '&' as separator for lang."""
+        adapter = LudokanAccountAdapter()
+        with patch("apps.users.adapters.DefaultAccountAdapter.get_reset_password_from_key_url", return_value="/reset?token=123"):
+            url = adapter.get_reset_password_from_key_url("nodashkey")
+            assert "/reset?token=123&lang=" in url
