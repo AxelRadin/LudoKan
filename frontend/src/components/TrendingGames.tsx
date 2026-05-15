@@ -1,12 +1,11 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Card, IconButton, Skeleton } from '@mui/material';
+import { Card, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@mui/material/styles';
 import GameCard from './GameCard';
+import { CarouselArrowButton } from './CarouselArrowButton';
 import type { NormalizedGame } from '../types/game';
 
 export interface TrendingGamesProps {
@@ -118,31 +117,6 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     }
   };
 
-  const arrowButtonSx = (side: 'left' | 'right') => ({
-    position: 'absolute',
-    [side]: 8,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    zIndex: 3,
-    width: 42,
-    height: 42,
-    bgcolor: C.arrowBg,
-    backdropFilter: 'blur(12px)',
-    color: C.arrowColor,
-    border: '1px solid',
-    borderColor: C.arrowBorder,
-    boxShadow: C.arrowShadow,
-    transition: 'all 0.2s ease',
-    '&:hover': {
-      bgcolor: C.arrowBgHover,
-      boxShadow: C.arrowShadowHover,
-      transform: 'translateY(-50%) scale(1.05)',
-      color: C.arrowColorHover,
-      borderColor: C.isDark ? 'rgba(255,61,61,0.4)' : C.arrowBorder,
-    },
-    '&:active': { transform: 'translateY(-50%) scale(0.98)' },
-  });
-
   let carouselContent: React.ReactNode;
   if (loading) {
     carouselContent = Array.from({ length: 6 }, (_, idx) => (
@@ -188,13 +162,12 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     <Box position="relative">
       <Box display="flex" alignItems="center" position="relative">
         {canScrollLeft && (
-          <IconButton
-            aria-label={t('trendingGames.prevAriaLabel')}
+          <CarouselArrowButton
+            direction="left"
+            ariaLabel={t('trendingGames.prevAriaLabel')}
             onClick={handleScrollLeft}
-            sx={arrowButtonSx('left')}
-          >
-            <ChevronLeftIcon sx={{ fontSize: 24 }} />
-          </IconButton>
+            sx={{ left: 8, zIndex: 3 }}
+          />
         )}
 
         <Box
@@ -217,13 +190,12 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
         </Box>
 
         {canScrollRight && (
-          <IconButton
-            aria-label={t('trendingGames.nextAriaLabel')}
+          <CarouselArrowButton
+            direction="right"
+            ariaLabel={t('trendingGames.nextAriaLabel')}
             onClick={handleScrollRight}
-            sx={arrowButtonSx('right')}
-          >
-            <ChevronRightIcon sx={{ fontSize: 24 }} />
-          </IconButton>
+            sx={{ right: 8, zIndex: 3 }}
+          />
         )}
       </Box>
     </Box>

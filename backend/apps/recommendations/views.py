@@ -1,4 +1,4 @@
-import random
+import secrets
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -59,7 +59,7 @@ class RecommendationsView(APIView):
 
         # Exclure les jeux déjà possédés puis mélanger pour varier les suggestions
         candidates = [g for g in raw_games if g.get("id") not in owned_igdb_ids]
-        random.shuffle(candidates)
+        secrets.SystemRandom().shuffle(candidates)
 
         results = [normalize_igdb_game(g) for g in candidates[:_RECOMMENDATIONS_LIMIT]]
 
