@@ -363,3 +363,17 @@ class TestAdminStatsCoverageHelpers:
         d = date(2023, 1, 1)
         assert _admin_stats_insight_as_date(d) == d
         assert _admin_stats_insight_as_date("string") == "string"
+
+    def test_admin_stats_insight_window_coverage(self):
+        """Couvre les branches de _admin_stats_insight_window -> lignes 386-387."""
+        from datetime import datetime
+
+        from apps.users.views import _admin_stats_insight_window
+
+        # Test avec aware now
+        aware_now = timezone.now()
+        _admin_stats_insight_window(aware_now, 30)
+
+        # Test avec naive now (couvre 386-387)
+        naive_now = datetime.now()
+        _admin_stats_insight_window(naive_now, 30)
