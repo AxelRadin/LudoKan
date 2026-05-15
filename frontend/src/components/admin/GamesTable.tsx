@@ -1,19 +1,16 @@
 import {
   Box,
-  CircularProgress,
   InputAdornment,
   MenuItem,
-  TablePagination,
   TextField,
   Typography,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdminGames } from '../../hooks/useAdminGames';
-import ErrorAlert from './ErrorAlert';
-import LoadingSkeleton from './LoadingSkeleton';
+import { useAdminTableState } from '../../hooks/useAdminTableState';
+import AdminTableContainer from './AdminTableContainer';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tous les statuts' },
@@ -29,32 +26,23 @@ const STATUS_OPTIONS = [
 
 export default function GamesTable() {
   const navigate = useNavigate();
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(0);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+  const {
+    filters,
+    draftFilters,
+    setDraftFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+  } = useAdminTableState({ search: '', status: '' }, 300);
 
   const { games, count, loading, error } = useAdminGames(
-    debouncedSearch,
+    filters.search,
     page + 1,
     pageSize,
-    status
+    filters.status
   );
-
-  useEffect(() => {
-    setPage(0);
-  }, [status]);
-
-  if (error) return <ErrorAlert message={error} />;
 
   const gridCols = {
     xs: 'minmax(0,1fr) 40px',
@@ -68,109 +56,61 @@ export default function GamesTable() {
     width: '100%',
   } as const;
 
-  const tableContent = (() => {
-    if (loading) {
-      return (
-        <Box sx={{ p: 3 }}>
-          <LoadingSkeleton variant="table" count={6} />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <CircularProgress size={28} />
-          </Box>
-        </Box>
-      );
-    }
-    if (games.length === 0) {
-      return (
-        <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-          Aucun jeu trouvé.
-        </Typography>
-      );
-    }
-    return games.map(g => (
-      <Box
-        key={g.id}
-        component="button"
-        type="button"
-        onClick={() => navigate(`/admin/games/${g.id}`)}
+  const header = (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: gridCols,
+        columnGap: 1,
+        px: { xs: 2, sm: 3 },
+        py: 1.5,
+        bgcolor: 'action.hover',
+        borderBottom: 1,
+        borderColor: 'divider',
+        minWidth: 0,
+      }}
+    >
+      <Typography
+        variant="caption"
         sx={{
-          display: 'grid',
-          gridTemplateColumns: gridCols,
-          columnGap: 1,
-          width: '100%',
-          maxWidth: '100%',
+          fontWeight: 700,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          fontSize: 11,
           minWidth: 0,
-          textAlign: 'left',
-          px: { xs: 2, sm: 3 },
-          py: 2,
-          alignItems: 'center',
-          border: 0,
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'transparent',
-          cursor: 'pointer',
-          color: 'text.primary',
-          '&:last-of-type': { borderBottom: 'none' },
-          '&:hover': { bgcolor: 'action.hover' },
         }}
       >
-        <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: 600, ...cellTextSx }}
-            title={g.name}
-          >
-            {g.name}
-          </Typography>
-          {g.summary ? (
-            <Typography
-              variant="caption"
-              sx={{
-                color: 'text.secondary',
-                display: 'block',
-                mt: 0.25,
-                ...cellTextSx,
-              }}
-              title={g.summary}
-            >
-              {g.summary}
-            </Typography>
-          ) : null}
-        </Box>
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.secondary',
-            display: { xs: 'none', sm: 'block' },
-            minWidth: 0,
-            ...cellTextSx,
-          }}
-          title={g.publisher?.name ?? undefined}
-        >
-          {g.publisher?.name ?? '—'}
-        </Typography>
-        <Typography
-          variant="caption"
-          sx={{
-            color: 'text.secondary',
-            textTransform: 'capitalize',
-            display: { xs: 'none', sm: 'block' },
-            minWidth: 0,
-            ...cellTextSx,
-          }}
-          title={g.status ?? undefined}
-        >
-          {g.status ?? '—'}
-        </Typography>
-        <ChevronRightIcon
-          sx={{
-            color: 'text.secondary',
-            justifySelf: 'end',
-            flexShrink: 0,
-          }}
-        />
-      </Box>
-    ));
-  })();
+        Jeu
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          fontSize: 11,
+          display: { xs: 'none', sm: 'block' },
+          minWidth: 0,
+        }}
+      >
+        Éditeur
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          fontSize: 11,
+          display: { xs: 'none', sm: 'block' },
+          minWidth: 0,
+        }}
+      >
+        Statut
+      </Typography>
+      <span />
+    </Box>
+  );
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', minWidth: 0 }}>
@@ -190,8 +130,10 @@ export default function GamesTable() {
             flex: 1,
             '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
           }}
-          value={search}
-          onChange={e => setSearch(e.target.value)}
+          value={draftFilters.search}
+          onChange={e =>
+            setDraftFilters(prev => ({ ...prev, search: e.target.value }))
+          }
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -204,8 +146,10 @@ export default function GamesTable() {
           select
           label="Statut"
           size="small"
-          value={status}
-          onChange={e => setStatus(e.target.value)}
+          value={draftFilters.status}
+          onChange={e =>
+            setDraftFilters(prev => ({ ...prev, status: e.target.value }))
+          }
           sx={{ minWidth: { sm: 200 } }}
         >
           {STATUS_OPTIONS.map(opt => (
@@ -216,87 +160,104 @@ export default function GamesTable() {
         </TextField>
       </Box>
 
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: 3,
-          overflow: 'hidden',
-          maxWidth: '100%',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: gridCols,
-            columnGap: 1,
-            px: { xs: 2, sm: 3 },
-            py: 1.5,
-            bgcolor: 'action.hover',
-            borderBottom: 1,
-            borderColor: 'divider',
-            minWidth: 0,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              fontSize: 11,
-              minWidth: 0,
-            }}
-          >
-            Jeu
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              fontSize: 11,
-              display: { xs: 'none', sm: 'block' },
-              minWidth: 0,
-            }}
-          >
-            Éditeur
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              fontSize: 11,
-              display: { xs: 'none', sm: 'block' },
-              minWidth: 0,
-            }}
-          >
-            Statut
-          </Typography>
-          <span />
-        </Box>
-
-        {tableContent}
-      </Box>
-
-      <TablePagination
-        component="div"
+      <AdminTableContainer
+        loading={loading}
+        error={error}
         count={count}
         page={page}
-        onPageChange={(_, newPage) => setPage(newPage)}
-        rowsPerPage={pageSize}
-        onRowsPerPageChange={e => {
-          setPageSize(Number.parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
-        labelRowsPerPage="Par page :"
-        sx={{ mt: 1, width: '100%', maxWidth: '100%', overflow: 'auto' }}
-      />
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        emptyMessage="Aucun jeu trouvé."
+        header={header}
+        snackbar={null}
+        onSnackbarClose={() => {}}
+      >
+        {games.map(g => (
+          <Box
+            key={g.id}
+            component="button"
+            type="button"
+            onClick={() => navigate(`/admin/games/${g.id}`)}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: gridCols,
+              columnGap: 1,
+              width: '100%',
+              maxWidth: '100%',
+              minWidth: 0,
+              textAlign: 'left',
+              px: { xs: 2, sm: 3 },
+              py: 2,
+              alignItems: 'center',
+              border: 0,
+              borderBottom: 1,
+              borderColor: 'divider',
+              bgcolor: 'transparent',
+              cursor: 'pointer',
+              color: 'text.primary',
+              '&:last-of-type': { borderBottom: 'none' },
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+          >
+            <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 600, ...cellTextSx }}
+                title={g.name}
+              >
+                {g.name}
+              </Typography>
+              {g.summary ? (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    display: 'block',
+                    mt: 0.25,
+                    ...cellTextSx,
+                  }}
+                  title={g.summary}
+                >
+                  {g.summary}
+                </Typography>
+              ) : null}
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
+                display: { xs: 'none', sm: 'block' },
+                minWidth: 0,
+                ...cellTextSx,
+              }}
+              title={g.publisher?.name ?? undefined}
+            >
+              {g.publisher?.name ?? '—'}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                textTransform: 'capitalize',
+                display: { xs: 'none', sm: 'block' },
+                minWidth: 0,
+                ...cellTextSx,
+              }}
+              title={g.status ?? undefined}
+            >
+              {g.status ?? '—'}
+            </Typography>
+            <ChevronRightIcon
+              sx={{
+                color: 'text.secondary',
+                justifySelf: 'end',
+                flexShrink: 0,
+              }}
+            />
+          </Box>
+        ))}
+      </AdminTableContainer>
     </Box>
   );
 }

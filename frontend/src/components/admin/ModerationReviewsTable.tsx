@@ -1,36 +1,31 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import {
-  Alert,
   Box,
   Button,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
   MenuItem,
-  Snackbar,
-  TablePagination,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/useAuth';
 import {
   defaultAdminReviewsFilters,
   useAdminReviews,
-  type AdminReviewsFilters,
 } from '../../hooks/useAdminReviews';
+import { useAdminTableState } from '../../hooks/useAdminTableState';
 import { apiDelete, apiPatch } from '../../services/api';
 import type { AdminReviewRow } from '../../types/adminReviews';
 import { hasPermission } from '../../utils/adminPermissions';
+import AdminTableContainer from './AdminTableContainer';
 import DeleteGameModal from './DeleteGameModal';
-import ErrorAlert from './ErrorAlert';
 import GameUserMultiAutocompleteFilters from './GameUserMultiAutocompleteFilters';
-import LoadingSkeleton from './LoadingSkeleton';
 
 const hoverCellSx = {
   overflow: 'hidden',
@@ -70,23 +65,18 @@ export default function ModerationReviewsTable() {
   const canEdit = hasPermission(user, 'review_edit');
   const canDelete = hasPermission(user, 'review_delete');
 
-  const [filters, setFilters] = useState<AdminReviewsFilters>(
-    defaultAdminReviewsFilters
-  );
-  const [draftFilters, setDraftFilters] = useState<AdminReviewsFilters>(
-    defaultAdminReviewsFilters
-  );
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-
-  useEffect(() => {
-    const t = setTimeout(() => setFilters(draftFilters), 350);
-    return () => clearTimeout(t);
-  }, [draftFilters]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [filters]);
+  const {
+    filters,
+    draftFilters,
+    setDraftFilters,
+    resetFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    snackbar,
+    setSnackbar,
+  } = useAdminTableState(defaultAdminReviewsFilters);
 
   const { reviews, count, loading, error, refetch } = useAdminReviews(
     filters,
@@ -103,27 +93,18 @@ export default function ModerationReviewsTable() {
   const [deleteRow, setDeleteRow] = useState<AdminReviewRow | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [snackbar, setSnackbar] = useState<{
-    message: string;
-    severity: 'success' | 'error';
-  } | null>(null);
-
   async function handleSaveEdit() {
     if (!editRow) return;
-
     setSaving(true);
-
     try {
       const body: Record<string, unknown> = {
         title: editTitle,
         content: editContent,
       };
-
       if (editStar !== '') {
         const n = Number.parseInt(editStar, 10);
         if (n >= 1 && n <= 5) body.rating_value = n;
       }
-
       await apiPatch(`/api/admin/reviews/${editRow.id}/`, body);
       setSnackbar({ message: 'Avis mis à jour.', severity: 'success' });
       setEditRow(null);
@@ -140,9 +121,7 @@ export default function ModerationReviewsTable() {
 
   async function handleDelete() {
     if (!deleteRow) return;
-
     setDeleting(true);
-
     try {
       await apiDelete(`/api/admin/reviews/${deleteRow.id}/`);
       setSnackbar({ message: 'Avis supprimé.', severity: 'success' });
@@ -158,8 +137,6 @@ export default function ModerationReviewsTable() {
     }
   }
 
-  if (error) return <ErrorAlert message={error} />;
-
   const gridCols = {
     xs: 'minmax(0, 1fr) auto',
     md: `
@@ -171,6 +148,64 @@ export default function ModerationReviewsTable() {
       minmax(88px, 8fr)
     `,
   } as const;
+
+  const header = (
+    <Box
+      sx={{
+        display: { xs: 'none', md: 'grid' },
+        gridTemplateColumns: gridCols.md,
+        columnGap: 1.5,
+        px: 2,
+        py: 1.5,
+        bgcolor: 'action.hover',
+        borderBottom: 1,
+        borderColor: 'divider',
+        minWidth: 0,
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
+      >
+        Avis
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
+      >
+        Jeu
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
+      >
+        Auteur
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
+      >
+        Note
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
+      >
+        Date
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          fontSize: 11,
+          textAlign: 'right',
+        }}
+      >
+        Actions
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', minWidth: 0 }}>
@@ -236,320 +271,207 @@ export default function ModerationReviewsTable() {
         />
 
         <Box sx={{ display: 'flex', alignItems: 'flex-end' }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => {
-              const reset = { ...defaultAdminReviewsFilters };
-              setDraftFilters(reset);
-              setFilters(reset);
-            }}
-          >
+          <Button variant="outlined" size="small" onClick={resetFilters}>
             Réinitialiser filtres
           </Button>
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: 3,
-          overflow: 'hidden',
-          maxWidth: '100%',
-        }}
-      >
-        <Box
-          sx={{
-            display: { xs: 'none', md: 'grid' },
-            gridTemplateColumns: gridCols.md,
-            columnGap: 1.5,
-            px: 2,
-            py: 1.5,
-            bgcolor: 'action.hover',
-            borderBottom: 1,
-            borderColor: 'divider',
-            minWidth: 0,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
-          >
-            Avis
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
-          >
-            Jeu
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
-          >
-            Auteur
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
-          >
-            Note
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
-          >
-            Date
-          </Typography>
-
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              fontSize: 11,
-              textAlign: 'right',
-            }}
-          >
-            Actions
-          </Typography>
-        </Box>
-
-        {(() => {
-          if (loading) {
-            return (
-              <Box sx={{ p: 3 }}>
-                <LoadingSkeleton variant="table" count={6} />
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <CircularProgress size={28} />
-                </Box>
-              </Box>
-            );
-          }
-          if (reviews.length === 0) {
-            return (
-              <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-                Aucun avis trouvé.
-              </Typography>
-            );
-          }
-          return reviews.map(r => (
-            <Box
-              key={r.id}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: gridCols,
-                columnGap: { xs: 1, md: 1.5 },
-                px: 2,
-                py: 1.5,
-                alignItems: { xs: 'flex-start', md: 'center' },
-                borderBottom: 1,
-                borderColor: 'divider',
-                minWidth: 0,
-                '&:last-of-type': { borderBottom: 'none' },
-              }}
-            >
-              <Tooltip
-                title={reviewAvisTooltip(r)}
-                enterDelay={350}
-                placement="top-start"
-              >
-                <Box
-                  sx={{
-                    minWidth: 0,
-                    cursor: 'help',
-                    '&:hover .avis-hover-line': {
-                      textDecoration: 'underline',
-                      textDecorationColor: 'divider',
-                      textUnderlineOffset: 2,
-                    },
-                  }}
-                >
-                  <Typography
-                    className="avis-hover-line"
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      display: '-webkit-box',
-                      ...hoverCellSx,
-                    }}
-                  >
-                    {r.title || '(sans titre)'}
-                  </Typography>
-
-                  <Typography
-                    className="avis-hover-line"
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      display: '-webkit-box',
-                      ...hoverCellSx,
-                    }}
-                  >
-                    {r.content || '—'}
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      display: { xs: 'grid', md: 'none' },
-                      gap: 0.5,
-                      mt: 1,
-                      color: 'text.secondary',
-                    }}
-                  >
-                    <Typography variant="caption">
-                      <strong>Jeu :</strong> {r.game?.name ?? `#${r.game?.id}`}
-                    </Typography>
-
-                    <Typography variant="caption">
-                      <strong>Auteur :</strong> {formatReviewAuthor(r)}
-                    </Typography>
-
-                    <Typography variant="caption">
-                      <strong>Note :</strong>{' '}
-                      {r.rating == null ? '—' : String(r.rating.value)}
-                    </Typography>
-
-                    <Typography variant="caption">
-                      <strong>Date :</strong>{' '}
-                      {new Date(r.date_created).toLocaleString()}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Tooltip>
-
-              <Tooltip
-                title={
-                  r.game?.name ?? (r.game?.id == null ? '' : `#${r.game.id}`)
-                }
-                enterDelay={350}
-                placement="top-start"
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    display: { xs: 'none', md: '-webkit-box' },
-                    ...hoverCellSx,
-                    cursor: 'help',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      textDecorationColor: 'divider',
-                      textUnderlineOffset: 2,
-                    },
-                  }}
-                >
-                  {r.game?.name ?? `#${r.game?.id}`}
-                </Typography>
-              </Tooltip>
-
-              <Tooltip
-                title={formatReviewAuthor(r)}
-                enterDelay={350}
-                placement="top-start"
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    display: { xs: 'none', md: '-webkit-box' },
-                    ...hoverCellSx,
-                    cursor: 'help',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      textDecorationColor: 'divider',
-                      textUnderlineOffset: 2,
-                    },
-                  }}
-                >
-                  {formatReviewAuthor(r)}
-                </Typography>
-              </Tooltip>
-
-              <Typography
-                variant="body2"
-                sx={{ display: { xs: 'none', md: 'block' } }}
-              >
-                {r.rating == null ? '—' : String(r.rating.value)}
-              </Typography>
-
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ display: { xs: 'none', md: 'block' } }}
-              >
-                {new Date(r.date_created).toLocaleString()}
-              </Typography>
-
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  gap: 0.5,
-                }}
-              >
-                {canEdit ? (
-                  <Tooltip title="Modifier">
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setEditRow(r);
-                        setEditTitle(r.title ?? '');
-                        setEditContent(r.content ?? '');
-
-                        const v = r.rating?.value;
-
-                        setEditStar(
-                          v != null &&
-                            v >= 1 &&
-                            v <= 5 &&
-                            Number.isInteger(Number(v))
-                            ? String(v)
-                            : ''
-                        );
-                      }}
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                ) : null}
-
-                {canDelete ? (
-                  <Tooltip title="Supprimer">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => setDeleteRow(r)}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                ) : null}
-              </Box>
-            </Box>
-          ));
-        })()}
-      </Box>
-
-      <TablePagination
-        component="div"
+      <AdminTableContainer
+        loading={loading}
+        error={error}
         count={count}
         page={page}
-        onPageChange={(_, p) => setPage(p)}
-        rowsPerPage={pageSize}
-        onRowsPerPageChange={e => {
-          setPageSize(Number.parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
-        labelRowsPerPage="Par page :"
-        sx={{ mt: 1, width: '100%', maxWidth: '100%', overflow: 'auto' }}
-      />
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        emptyMessage="Aucun avis trouvé."
+        header={header}
+        snackbar={snackbar}
+        onSnackbarClose={() => setSnackbar(null)}
+      >
+        {reviews.map(r => (
+          <Box
+            key={r.id}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: gridCols,
+              columnGap: { xs: 1, md: 1.5 },
+              px: 2,
+              py: 1.5,
+              alignItems: { xs: 'flex-start', md: 'center' },
+              borderBottom: 1,
+              borderColor: 'divider',
+              minWidth: 0,
+              '&:last-of-type': { borderBottom: 'none' },
+            }}
+          >
+            <Tooltip
+              title={reviewAvisTooltip(r)}
+              enterDelay={350}
+              placement="top-start"
+            >
+              <Box
+                sx={{
+                  minWidth: 0,
+                  cursor: 'help',
+                  '&:hover .avis-hover-line': {
+                    textDecoration: 'underline',
+                    textDecorationColor: 'divider',
+                    textUnderlineOffset: 2,
+                  },
+                }}
+              >
+                <Typography
+                  className="avis-hover-line"
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    display: '-webkit-box',
+                    ...hoverCellSx,
+                  }}
+                >
+                  {r.title || '(sans titre)'}
+                </Typography>
+                <Typography
+                  className="avis-hover-line"
+                  variant="caption"
+                  sx={{
+                    color: 'text.secondary',
+                    display: '-webkit-box',
+                    ...hoverCellSx,
+                  }}
+                >
+                  {r.content || '—'}
+                </Typography>
+                <Box
+                  sx={{
+                    display: { xs: 'grid', md: 'none' },
+                    gap: 0.5,
+                    mt: 1,
+                    color: 'text.secondary',
+                  }}
+                >
+                  <Typography variant="caption">
+                    <strong>Jeu :</strong> {r.game?.name ?? `#${r.game?.id}`}
+                  </Typography>
+                  <Typography variant="caption">
+                    <strong>Auteur :</strong> {formatReviewAuthor(r)}
+                  </Typography>
+                  <Typography variant="caption">
+                    <strong>Note :</strong>{' '}
+                    {r.rating == null ? '—' : String(r.rating.value)}
+                  </Typography>
+                  <Typography variant="caption">
+                    <strong>Date :</strong>{' '}
+                    {new Date(r.date_created).toLocaleString()}
+                  </Typography>
+                </Box>
+              </Box>
+            </Tooltip>
+            <Tooltip
+              title={
+                r.game?.name ?? (r.game?.id == null ? '' : `#${r.game.id}`)
+              }
+              enterDelay={350}
+              placement="top-start"
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'text.secondary',
+                  display: { xs: 'none', md: '-webkit-box' },
+                  ...hoverCellSx,
+                  cursor: 'help',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                    textDecorationColor: 'divider',
+                    textUnderlineOffset: 2,
+                  },
+                }}
+              >
+                {r.game?.name ?? `#${r.game?.id}`}
+              </Typography>
+            </Tooltip>
+            <Tooltip
+              title={formatReviewAuthor(r)}
+              enterDelay={350}
+              placement="top-start"
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  display: { xs: 'none', md: '-webkit-box' },
+                  ...hoverCellSx,
+                  cursor: 'help',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                    textDecorationColor: 'divider',
+                    textUnderlineOffset: 2,
+                  },
+                }}
+              >
+                {formatReviewAuthor(r)}
+              </Typography>
+            </Tooltip>
+            <Typography
+              variant="body2"
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            >
+              {r.rating == null ? '—' : String(r.rating.value)}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: { xs: 'none', md: 'block' } }}
+            >
+              {new Date(r.date_created).toLocaleString()}
+            </Typography>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 0.5,
+              }}
+            >
+              {canEdit ? (
+                <Tooltip title="Modifier">
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      setEditRow(r);
+                      setEditTitle(r.title ?? '');
+                      setEditContent(r.content ?? '');
+                      const v = r.rating?.value;
+                      setEditStar(
+                        v != null &&
+                          v >= 1 &&
+                          v <= 5 &&
+                          Number.isInteger(Number(v))
+                          ? String(v)
+                          : ''
+                      );
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+              {canDelete ? (
+                <Tooltip title="Supprimer">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => setDeleteRow(r)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+            </Box>
+          </Box>
+        ))}
+      </AdminTableContainer>
 
       <Dialog
         open={!!editRow}
@@ -558,7 +480,6 @@ export default function ModerationReviewsTable() {
         fullWidth
       >
         <DialogTitle>Modifier l’avis #{editRow?.id ?? ''}</DialogTitle>
-
         <DialogContent
           sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}
         >
@@ -568,19 +489,16 @@ export default function ModerationReviewsTable() {
             onChange={e => setEditTitle(e.target.value)}
             fullWidth
           />
-
           <TextField
             label="Note (1 à 5)"
             type="number"
             value={editStar}
             onChange={e => {
               const raw = e.target.value;
-
               if (raw === '') {
                 setEditStar('');
                 return;
               }
-
               const n = Number.parseInt(raw, 10);
               if (!Number.isNaN(n) && n >= 1 && n <= 5) {
                 setEditStar(String(n));
@@ -590,7 +508,6 @@ export default function ModerationReviewsTable() {
             inputProps={{ min: 1, max: 5, step: 1 }}
             helperText="Laisser vide pour conserver la note actuelle."
           />
-
           <TextField
             label="Contenu"
             value={editContent}
@@ -600,12 +517,10 @@ export default function ModerationReviewsTable() {
             minRows={4}
           />
         </DialogContent>
-
         <DialogActions>
           <Button onClick={() => setEditRow(null)} disabled={saving}>
             Annuler
           </Button>
-
           <Button
             variant="contained"
             onClick={handleSaveEdit}
@@ -629,17 +544,6 @@ export default function ModerationReviewsTable() {
         onClose={() => setDeleteRow(null)}
         onConfirm={handleDelete}
       />
-
-      <Snackbar
-        open={!!snackbar}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)}>
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }

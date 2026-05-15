@@ -1,11 +1,8 @@
 import {
-  Alert,
   Box,
   Chip,
   IconButton,
   InputAdornment,
-  Snackbar,
-  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -13,39 +10,35 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { AdminUser } from '../../types/admin';
 import { apiPost } from '../../services/api';
 import { useAdminUsers } from '../../hooks/useAdminUsers';
+import { useAdminTableState } from '../../hooks/useAdminTableState';
+import AdminTableContainer from './AdminTableContainer';
 import SuspendUserModal from './SuspendUserModal';
-import ErrorAlert from './ErrorAlert';
 
 export default function UsersTable() {
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const {
+    filters: search,
+    draftFilters: draftSearch,
+    setDraftFilters: setSearch,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    snackbar,
+    setSnackbar,
+  } = useAdminTableState('', 300);
+
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState<{
-    message: string;
-    severity: 'success' | 'error';
-  } | null>(null);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(0);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  const { users, count, error, refetch } = useAdminUsers(
-    debouncedSearch,
+  const { users, count, loading, error, refetch } = useAdminUsers(
+    search,
     page + 1,
     pageSize
   );
-  const filtered = users;
 
   async function handleSuspend(userId: number, reason: string) {
     try {
@@ -79,7 +72,39 @@ export default function UsersTable() {
     }
   }
 
-  if (error) return <ErrorAlert message={error} />;
+  const gridCols = {
+    xs: '1fr 1fr 90px 80px 64px',
+    md: '1fr 1fr 120px 100px 80px',
+  };
+
+  const header = (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: gridCols,
+        px: 3,
+        py: 1.5,
+        bgcolor: 'action.hover',
+        borderBottom: 1,
+        borderColor: 'divider',
+      }}
+    >
+      {['Pseudo', 'Email', 'Rôles', 'Statut', 'Actions'].map(h => (
+        <Typography
+          key={h}
+          variant="caption"
+          sx={{
+            fontWeight: 700,
+            color: 'text.secondary',
+            textTransform: 'uppercase',
+            fontSize: 11,
+          }}
+        >
+          {h}
+        </Typography>
+      ))}
+    </Box>
+  );
 
   return (
     <Box>
@@ -97,7 +122,7 @@ export default function UsersTable() {
           },
         }}
         inputProps={{ style: { color: 'inherit' } }}
-        value={search}
+        value={draftSearch}
         onChange={e => setSearch(e.target.value)}
         InputProps={{
           startAdornment: (
@@ -108,159 +133,106 @@ export default function UsersTable() {
         }}
       />
 
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: 3,
-          overflow: 'hidden',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr 1fr 90px 80px 64px',
-              md: '1fr 1fr 120px 100px 80px',
-            },
-            px: 3,
-            py: 1.5,
-            bgcolor: 'action.hover',
-            borderBottom: 1,
-            borderColor: 'divider',
-          }}
-        >
-          {['Pseudo', 'Email', 'Rôles', 'Statut', 'Actions'].map(h => (
-            <Typography
-              key={h}
-              variant="caption"
-              sx={{
-                fontWeight: 700,
-                color: 'text.secondary',
-                textTransform: 'uppercase',
-                fontSize: 11,
-              }}
-            >
-              {h}
-            </Typography>
-          ))}
-        </Box>
-
-        {filtered.length === 0 ? (
-          <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-            Aucun utilisateur trouvé.
-          </Typography>
-        ) : (
-          filtered.map(user => (
-            <Box
-              key={user.id}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: '1fr 1fr 90px 80px 64px',
-                  md: '1fr 1fr 120px 100px 80px',
-                },
-                px: 3,
-                py: 2,
-                alignItems: 'center',
-                borderBottom: 1,
-                borderColor: 'divider',
-                '&:last-child': { borderBottom: 'none' },
-                opacity: user.is_active ? 1 : 0.45,
-                bgcolor: user.is_active ? 'transparent' : 'action.hover',
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: 600, color: 'text.primary' }}
-              >
-                {user.pseudo ?? '—'}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {user.email}
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                {user.is_superuser && (
-                  <Box
-                    component="span"
-                    sx={{
-                      display: 'inline-block',
-                      px: 1,
-                      py: 0.25,
-                      borderRadius: 1,
-                      fontSize: 10,
-                      fontWeight: 600,
-                      bgcolor: 'error.dark',
-                      color: 'common.white',
-                    }}
-                  >
-                    superadmin
-                  </Box>
-                )}
-                {user.roles.map(r => (
-                  <Chip key={r} label={r} size="small" sx={{ fontSize: 10 }} />
-                ))}
-                {!user.is_superuser && user.roles.length === 0 && (
-                  <Typography
-                    variant="caption"
-                    sx={{ color: 'text.secondary' }}
-                  >
-                    user
-                  </Typography>
-                )}
-              </Box>
-              <Chip
-                label={user.is_active ? 'Actif' : 'Suspendu'}
-                size="small"
-                color={user.is_active ? 'success' : 'error'}
-                variant="outlined"
-              />
-              <Box>
-                {user.is_active ? (
-                  <Tooltip title="Suspendre">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setModalOpen(true);
-                      }}
-                    >
-                      <BlockIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                ) : (
-                  <Tooltip title="Réactiver">
-                    <IconButton
-                      size="small"
-                      color="success"
-                      onClick={() => handleReactivate(user.id)}
-                    >
-                      <CheckCircleIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
-            </Box>
-          ))
-        )}
-      </Box>
-
-      <TablePagination
-        component="div"
+      <AdminTableContainer
+        loading={loading}
+        error={error}
         count={count}
         page={page}
-        onPageChange={(_, newPage) => setPage(newPage)}
-        rowsPerPage={pageSize}
-        onRowsPerPageChange={e => {
-          setPageSize(Number.parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
-        labelRowsPerPage="Par page :"
-        sx={{ mt: 1 }}
-      />
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        emptyMessage="Aucun utilisateur trouvé."
+        header={header}
+        snackbar={snackbar}
+        onSnackbarClose={() => setSnackbar(null)}
+      >
+        {users.map(user => (
+          <Box
+            key={user.id}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: gridCols,
+              px: 3,
+              py: 2,
+              alignItems: 'center',
+              borderBottom: 1,
+              borderColor: 'divider',
+              '&:last-child': { borderBottom: 'none' },
+              opacity: user.is_active ? 1 : 0.45,
+              bgcolor: user.is_active ? 'transparent' : 'action.hover',
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ fontWeight: 600, color: 'text.primary' }}
+            >
+              {user.pseudo ?? '—'}
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {user.email}
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+              {user.is_superuser && (
+                <Box
+                  component="span"
+                  sx={{
+                    display: 'inline-block',
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 1,
+                    fontSize: 10,
+                    fontWeight: 600,
+                    bgcolor: 'error.dark',
+                    color: 'common.white',
+                  }}
+                >
+                  superadmin
+                </Box>
+              )}
+              {user.roles.map(r => (
+                <Chip key={r} label={r} size="small" sx={{ fontSize: 10 }} />
+              ))}
+              {!user.is_superuser && user.roles.length === 0 && (
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  user
+                </Typography>
+              )}
+            </Box>
+            <Chip
+              label={user.is_active ? 'Actif' : 'Suspendu'}
+              size="small"
+              color={user.is_active ? 'success' : 'error'}
+              variant="outlined"
+            />
+            <Box>
+              {user.is_active ? (
+                <Tooltip title="Suspendre">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setModalOpen(true);
+                    }}
+                  >
+                    <BlockIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : (
+                <Tooltip title="Réactiver">
+                  <IconButton
+                    size="small"
+                    color="success"
+                    onClick={() => handleReactivate(user.id)}
+                  >
+                    <CheckCircleIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+        ))}
+      </AdminTableContainer>
 
       <SuspendUserModal
         user={selectedUser}
@@ -271,17 +243,6 @@ export default function UsersTable() {
         }}
         onConfirm={handleSuspend}
       />
-
-      <Snackbar
-        open={!!snackbar}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)}>
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }
