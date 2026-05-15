@@ -106,6 +106,31 @@ class TestAdminReviewEndpoints:
         assert resp_multi.data["count"] == 2
         assert {row["id"] for row in resp_multi.data["results"]} == {r1.id, r2.id}
 
+    def test_admin_list_reviews_can_filter_by_created_before(self, admin_client, user, game):
+        import datetime
+
+        from django.utils import timezone
+
+        r1 = Review.objects.create(user=user, game=game, content="Review old")
+        Review.objects.filter(id=r1.id).update(date_created=timezone.now() - datetime.timedelta(days=10))
+
+        url = "/api/admin/reviews/"
+        before = (timezone.now() - datetime.timedelta(days=5)).isoformat()
+
+        resp = admin_client.get(url, {"created_before": before})
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data["count"] == 1
+        assert resp.data["results"][0]["id"] == r1.id
+
+    def test_admin_list_reviews_ignores_invalid_game_ids(self, admin_client, user, game):
+        # Couvre query_params.py: ValueError continue
+        Review.objects.create(user=user, game=game, content="Review valid")
+        url = "/api/admin/reviews/"
+
+        resp = admin_client.get(url, {"game_ids": f"{game.id},abc"})
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data["count"] == 1
+
     def test_non_admin_cannot_list_reviews(self, authenticated_client, user, game):
         Review.objects.create(user=user, game=game, content="Review 1")
 
