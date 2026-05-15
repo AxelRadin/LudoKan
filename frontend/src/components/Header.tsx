@@ -69,7 +69,7 @@ const LanguageDropdown: React.FC<{
     setAnchor(null);
     if (isAuthenticated) {
       apiPatch('/api/auth/user/', { language_preference: code }).catch(
-        () => { }
+        () => {}
       );
     }
   };
