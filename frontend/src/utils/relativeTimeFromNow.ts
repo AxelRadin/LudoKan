@@ -6,11 +6,21 @@ export function relativeTimeFromNow(value: string, lang: string): string {
   const abs = Math.abs(deltaSeconds);
   const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' });
 
-  if (abs < 60) return rtf.format(deltaSeconds, 'second');
-  if (abs < 3600) return rtf.format(Math.round(deltaSeconds / 60), 'minute');
-  if (abs < 86400) return rtf.format(Math.round(deltaSeconds / 3600), 'hour');
-  if (abs < 604800) return rtf.format(Math.round(deltaSeconds / 86400), 'day');
-  return new Date(value).toLocaleDateString(lang, {
+  // Thresholds in seconds: [limit, divisor, unit]
+  const thresholds: Array<[number, number, Intl.RelativeTimeFormatUnit]> = [
+    [60, 1, 'second'],
+    [3600, 60, 'minute'],
+    [86400, 3600, 'hour'],
+    [604800, 86400, 'day'],
+  ];
+
+  for (const [limit, divisor, unit] of thresholds) {
+    if (abs < limit) {
+      return rtf.format(Math.round(deltaSeconds / divisor), unit);
+    }
+  }
+
+  return date.toLocaleDateString(lang, {
     day: 'numeric',
     month: 'short',
   });

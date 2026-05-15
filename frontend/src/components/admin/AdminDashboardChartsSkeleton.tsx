@@ -1,4 +1,5 @@
 import { Box, Grid, Skeleton, Typography } from '@mui/material';
+import AdminChartContainer from './AdminChartContainer';
 
 /**
  * Squelette aligné sur la zone « Tendances » (chargement chunk lazy ou données API).
@@ -23,57 +24,30 @@ export default function AdminDashboardChartsSkeleton() {
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12 }}>
-          <Box
-            sx={{
-              p: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-            }}
+          <AdminChartContainer
+            title="Utilisateurs (14 derniers jours)"
+            description="Nouveaux comptes (création) et connexions distinctes par jour."
           >
-            <Skeleton variant="text" width="42%" height={22} sx={{ mb: 0.5 }} />
-            <Skeleton variant="text" width="78%" height={16} sx={{ mb: 1.5 }} />
             <Skeleton
               variant="rounded"
               height={280}
               sx={{ borderRadius: 1, width: '100%' }}
             />
-          </Box>
+          </AdminChartContainer>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Box
-            sx={{
-              p: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              height: '100%',
-            }}
-          >
-            <Skeleton variant="text" width="55%" height={22} sx={{ mb: 1.5 }} />
+          <AdminChartContainer title="Jeux les plus commentés">
             <Skeleton
               variant="rounded"
               height={260}
               sx={{ borderRadius: 1, width: '100%' }}
             />
-          </Box>
+          </AdminChartContainer>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Box
-            sx={{
-              p: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              height: '100%',
-            }}
-          >
-            <Skeleton variant="text" width="60%" height={22} sx={{ mb: 1.5 }} />
+          <AdminChartContainer title="Répartition par genre (jeux)">
             <Skeleton
               variant="rounded"
               height={260}
@@ -84,7 +58,7 @@ export default function AdminDashboardChartsSkeleton() {
                 display: 'block',
               }}
             />
-          </Box>
+          </AdminChartContainer>
         </Grid>
       </Grid>
     </Box>

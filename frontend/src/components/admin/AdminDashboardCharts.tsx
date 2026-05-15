@@ -4,6 +4,7 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { AdminStats } from '../../types/admin';
+import AdminChartContainer, { EmptyChartMessage } from './AdminChartContainer';
 
 type Props = Readonly<{
   data: AdminStats;
@@ -13,28 +14,6 @@ function shortDateLabel(iso: string): string {
   const parts = iso.split('-');
   if (parts.length === 3) return `${parts[2]}/${parts[1]}`;
   return iso;
-}
-
-function EmptyChartMessage({ text }: Readonly<{ text: string }>) {
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 200,
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 2,
-        bgcolor: 'action.hover',
-        px: 2,
-      }}
-    >
-      <Typography variant="body2" color="text.secondary" textAlign="center">
-        {text}
-      </Typography>
-    </Box>
-  );
 }
 
 export default function AdminDashboardCharts({ data }: Props) {
@@ -72,28 +51,11 @@ export default function AdminDashboardCharts({ data }: Props) {
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12 }}>
-          <Box
-            sx={{
-              p: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              width: '100%',
-              minWidth: 0,
-              overflowX: 'auto',
-            }}
+          <AdminChartContainer
+            title="Utilisateurs (14 derniers jours)"
+            description="Nouveaux comptes (création) et connexions distinctes par jour."
+            sx={{ width: '100%', overflowX: 'auto' }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-              Utilisateurs (14 derniers jours)
-            </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: 'block', mb: 1 }}
-            >
-              Nouveaux comptes (création) et connexions distinctes par jour.
-            </Typography>
             <LineChart
               dataset={usersDaily}
               xAxis={[
@@ -121,24 +83,11 @@ export default function AdminDashboardCharts({ data }: Props) {
               grid={{ horizontal: true, vertical: true }}
               sx={{ minWidth: 480 }}
             />
-          </Box>
+          </AdminChartContainer>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Box
-            sx={{
-              p: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              minWidth: 0,
-              height: '100%',
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-              Jeux les plus commentés
-            </Typography>
+          <AdminChartContainer title="Jeux les plus commentés">
             {gamesTop.length === 0 ? (
               <EmptyChartMessage text="Aucun jeu avec des avis pour l’instant." />
             ) : (
@@ -159,24 +108,11 @@ export default function AdminDashboardCharts({ data }: Props) {
                 grid={{ horizontal: true, vertical: true }}
               />
             )}
-          </Box>
+          </AdminChartContainer>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <Box
-            sx={{
-              p: 2,
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 2,
-              bgcolor: 'background.paper',
-              minWidth: 0,
-              height: '100%',
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-              Répartition par genre (jeux)
-            </Typography>
+          <AdminChartContainer title="Répartition par genre (jeux)">
             {genresShare.length === 0 ? (
               <EmptyChartMessage text="Aucun genre associé à des jeux pour l’instant." />
             ) : (
@@ -200,7 +136,7 @@ export default function AdminDashboardCharts({ data }: Props) {
                 margin={{ top: 8, bottom: 8, left: 8, right: 8 }}
               />
             )}
-          </Box>
+          </AdminChartContainer>
         </Grid>
       </Grid>
     </Box>
