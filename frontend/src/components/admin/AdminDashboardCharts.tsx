@@ -4,11 +4,9 @@ import { PieChart } from '@mui/x-charts/PieChart';
 import { Box, Grid, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import type { AdminStats } from '../../types/admin';
-import LoadingSkeleton from './LoadingSkeleton';
 
 type Props = Readonly<{
-  data: AdminStats | null;
-  loading: boolean;
+  data: AdminStats;
 }>;
 
 function shortDateLabel(iso: string): string {
@@ -39,29 +37,8 @@ function EmptyChartMessage({ text }: Readonly<{ text: string }>) {
   );
 }
 
-export default function AdminDashboardCharts({ data, loading }: Props) {
+export default function AdminDashboardCharts({ data }: Props) {
   const theme = useTheme();
-
-  if (loading || !data) {
-    return (
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 700,
-            mb: 2,
-            fontSize: 14,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'text.secondary',
-          }}
-        >
-          Tendances
-        </Typography>
-        <LoadingSkeleton variant="kpi" count={2} />
-      </Box>
-    );
-  }
 
   const { charts } = data;
   const usersDaily = charts.users_daily ?? [];

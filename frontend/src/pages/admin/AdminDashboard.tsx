@@ -1,11 +1,16 @@
 import { Typography } from '@mui/material';
-import AdminDashboardCharts from '../../components/admin/AdminDashboardCharts';
+import { lazy, Suspense } from 'react';
+import AdminDashboardChartsSkeleton from '../../components/admin/AdminDashboardChartsSkeleton';
 import AdminLayout from '../../components/admin/AdminLayout';
 import EngagementSection from '../../components/admin/EngagementSection';
 import KpiSection from '../../components/admin/KpiSection';
 import QuickActions from '../../components/admin/QuickActions';
 import RecentActivity from '../../components/admin/RecentActivity';
 import { useAdminStats } from '../../hooks/useAdminStats';
+
+const AdminDashboardCharts = lazy(
+  () => import('../../components/admin/AdminDashboardCharts')
+);
 
 export default function AdminDashboard() {
   const { data, loading, error } = useAdminStats();
@@ -21,7 +26,13 @@ export default function AdminDashboard() {
 
       <QuickActions />
       <KpiSection data={data} loading={loading} />
-      <AdminDashboardCharts data={data} loading={loading} />
+      {error ? null : loading || !data ? (
+        <AdminDashboardChartsSkeleton />
+      ) : (
+        <Suspense fallback={<AdminDashboardChartsSkeleton />}>
+          <AdminDashboardCharts data={data} />
+        </Suspense>
+      )}
       <EngagementSection data={data} loading={loading} />
       <RecentActivity data={data} loading={loading} />
 
