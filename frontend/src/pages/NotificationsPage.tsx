@@ -13,7 +13,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import { NOTIFICATIONS_TOUR_STEPS } from '../onboarding/tourSteps';
 import { useTranslation } from 'react-i18next';
 import { fetchAllUnreadNotifications } from '../api/notifications';
 import NotificationList from '../components/notifications/NotificationList';
@@ -32,6 +35,20 @@ export default function NotificationsPage() {
     markAllAsRead,
     loadMoreNotifications,
   } = useNotifications();
+
+  const NOTIF_OPTIONAL_STEPS = useMemo(() => new Set([0, 1, 2]), []);
+  const { shouldShow, markAsDone } = useOnboarding(TOUR_KEYS.notifications);
+  const { startTour } = useTour({
+    steps: NOTIFICATIONS_TOUR_STEPS,
+    optionalSteps: NOTIF_OPTIONAL_STEPS,
+    onDone: markAsDone,
+  });
+
+  useEffect(() => {
+    if (!shouldShow) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [shouldShow, startTour]);
 
   const [filter, setFilter] = useState<FilterMode>('all');
 
@@ -148,6 +165,7 @@ export default function NotificationsPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {/* Toggle All / Non-lus */}
             <ToggleButtonGroup
+              data-tour="notif-filter"
               value={filter}
               exclusive
               onChange={(_, val) => {
@@ -209,7 +227,7 @@ export default function NotificationsPage() {
 
             {/* Tout marquer comme lu */}
             <Tooltip title={t('notifications.markAllRead')}>
-              <span>
+              <span data-tour="notif-mark-all">
                 <IconButton
                   onClick={handleMarkAllAsRead}
                   disabled={unreadCount === 0}
@@ -241,6 +259,7 @@ export default function NotificationsPage() {
 
         {/* Carte principale */}
         <Paper
+          data-tour="notif-list"
           elevation={0}
           sx={{
             borderRadius: 3,

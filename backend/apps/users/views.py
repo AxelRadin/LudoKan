@@ -175,9 +175,6 @@ class AdminStatsView(APIView):
 
     def get(self, request):
         now = timezone.now()
-        day_ago = now - timedelta(days=1)
-        week_ago = now - timedelta(days=7)
-        month_ago = now - timedelta(days=30)
 
         # Cache configurable pour éviter d'impacter les tests (désactivé par défaut).
         cache_timeout = getattr(settings, "ADMIN_STATS_CACHE_TIMEOUT", 0)
@@ -188,6 +185,26 @@ class AdminStatsView(APIView):
             cached_data = cache.get(cache_key)
             if cached_data is not None:
                 return Response(cached_data, status=status.HTTP_200_OK)
+
+        totals, engagement = self._get_stats_aggregates(now)
+        recent_activity = self._get_recent_activity()
+
+        payload = {
+            "totals": totals,
+            "engagement": engagement,
+            "recent_activity": recent_activity,
+        }
+
+        if use_cache:
+            cache.set(cache_key, payload, timeout=cache_timeout)
+
+        return Response(payload, status=status.HTTP_200_OK)
+
+    def _get_stats_aggregates(self, now):
+        """Calcule les agrégations de statistiques pour le dashboard."""
+        day_ago = now - timedelta(days=1)
+        week_ago = now - timedelta(days=7)
+        month_ago = now - timedelta(days=30)
 
         # Totaux globaux pour le dashboard + engagement utilisateurs en une requête
         user_agg = User.objects.aggregate(
@@ -239,7 +256,10 @@ class AdminStatsView(APIView):
             "messages_last_30d": messages_agg["last_30d"],
         }
 
-        # Activité récente (20 dernières actions admin, triées par timestamp décroissant)
+        return totals, engagement
+
+    def _get_recent_activity(self):
+        """Récupère et formate les 20 dernières actions d'administration."""
         recent_actions = AdminAction.objects.select_related("admin_user").order_by("-timestamp")[:20]
 
         target_user_ids = [a.target_id for a in recent_actions if a.target_type == "user" and a.target_id is not None]
@@ -248,12 +268,12 @@ class AdminStatsView(APIView):
         recent_activity = []
         for action in recent_actions:
             actor = action.admin_user.pseudo if action.admin_user else None
+            target = None
+
             if action.target_type == "user" and action.target_id in target_users:
                 target = target_users[action.target_id]
             elif action.target_type and action.target_id is not None:
                 target = f"{action.target_type}#{action.target_id}"
-            else:
-                target = None
 
             action_name = action.action_type.replace(".", "_") if action.action_type else None
 
@@ -266,16 +286,7 @@ class AdminStatsView(APIView):
                 }
             )
 
-        payload = {
-            "totals": totals,
-            "engagement": engagement,
-            "recent_activity": recent_activity,
-        }
-
-        if use_cache:
-            cache.set(cache_key, payload, timeout=cache_timeout)
-
-        return Response(payload, status=status.HTTP_200_OK)
+        return recent_activity
 
 
 def _build_users_report_payload():

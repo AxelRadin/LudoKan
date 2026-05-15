@@ -1,17 +1,15 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/material/styles';
-import { useCallback, useState, type ReactElement } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useRecommendations } from '../hooks/useRecommendations';
 import type { NormalizedGame } from '../types/game';
+import { CarouselArrowButton } from './CarouselArrowButton';
 
 const F = "'Outfit', sans-serif";
 const C = {
@@ -26,6 +24,12 @@ const C = {
 function toAbsoluteUrl(url: string | null | undefined): string {
   if (!url) return '';
   return url.startsWith('//') ? `https:${url}` : url;
+}
+
+function toCoverBigUrl(url: string): string {
+  return url
+    .replace('/t_thumb/', '/t_cover_big/')
+    .replace('/t_720p/', '/t_cover_big/');
 }
 
 function getScreenshots(game: NormalizedGame): string[] {
@@ -51,7 +55,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
   const accentColor = isDark ? C.darkAccent : C.accent;
   const inkColor = isDark ? C.darkInk : C.ink;
   const screenshots = getScreenshots(game);
-  const coverUrl = toAbsoluteUrl(game.cover_url);
+  const coverUrl = toCoverBigUrl(toAbsoluteUrl(game.cover_url));
   const genres = game.genres ?? [];
   const screenshotOccurrences = new Map<string, number>();
 
@@ -65,7 +69,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
       sx={{
         display: 'flex',
         flexDirection: { xs: 'column', md: 'row' },
-        height: { xs: 'auto', md: 400 },
+        minHeight: { xs: 'auto', md: 400 },
         borderRadius: '20px',
         overflow: 'hidden',
         border: `1px solid ${isDark ? C.darkBorder : C.border}`,
@@ -88,7 +92,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
         sx={{
           position: 'relative',
           flex: { xs: 'none', md: '0 0 50%' },
-          height: { xs: 240, md: '100%' },
+          minHeight: { xs: 240, md: 400 },
           overflow: 'hidden',
           bgcolor: '#111',
         }}
@@ -113,10 +117,12 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
             alt={game.name}
             sx={{
               position: 'absolute',
-              inset: 0,
-              margin: 'auto',
-              maxHeight: '85%',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              height: '85%',
               maxWidth: '60%',
+              width: 'auto',
               objectFit: 'contain',
               display: 'block',
               borderRadius: '8px',
@@ -181,14 +187,13 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
           }}
         >
           {screenshots.map(url => {
-            const screenshotOccurrence =
-              (screenshotOccurrences.get(url) ?? 0) + 1;
-            screenshotOccurrences.set(url, screenshotOccurrence);
-            const screenshotKey = `${url || 'fallback'}-${screenshotOccurrence}`;
+            const occurrence = (screenshotOccurrences.get(url) ?? 0) + 1;
+            screenshotOccurrences.set(url, occurrence);
+            const key = `${url || 'fallback'}-${occurrence}`;
 
             return (
               <Box
-                key={screenshotKey}
+                key={key}
                 sx={{
                   borderRadius: '6px',
                   overflow: 'hidden',
@@ -200,7 +205,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
                   <Box
                     component="img"
                     src={url}
-                    alt={`screenshot-${screenshotOccurrence}`}
+                    alt={`screenshot-${occurrence}`}
                     sx={{
                       width: '100%',
                       height: '100%',
@@ -234,7 +239,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
               {genres.map(g => (
                 <Chip
                   key={g.name}
-                  label={g.name}
+                  label={t(`genres.${g.name}`, { defaultValue: g.name })}
                   size="small"
                   sx={{
                     fontFamily: F,
@@ -250,6 +255,131 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
           </Box>
         )}
       </Box>
+    </Box>
+  );
+}
+
+function EmptySuggestions({
+  isDark,
+  inkColor,
+  accentColor,
+}: Readonly<{
+  isDark: boolean;
+  inkColor: string;
+  accentColor: string;
+}>) {
+  const { t } = useTranslation();
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 2,
+        py: 6,
+        px: 3,
+        borderRadius: '20px',
+        border: `1px dashed ${isDark ? 'rgba(239,83,80,0.25)' : 'rgba(198,40,40,0.2)'}`,
+        textAlign: 'center',
+      }}
+    >
+      <Typography
+        sx={{
+          fontFamily: F,
+          fontSize: 15,
+          color: inkColor,
+          opacity: 0.6,
+          maxWidth: 420,
+        }}
+      >
+        {t('recommendations.noSuggestions')}
+      </Typography>
+      <Button
+        href="/games"
+        variant="contained"
+        sx={{
+          mt: 1,
+          fontFamily: F,
+          fontWeight: 700,
+          bgcolor: accentColor,
+          borderRadius: '12px',
+          px: 3,
+          '&:hover': { bgcolor: accentColor, opacity: 0.88 },
+        }}
+      >
+        {t('recommendations.exploreCatalogue')}
+      </Button>
+    </Box>
+  );
+}
+
+function CarouselNavigation({
+  prev,
+  next,
+}: Readonly<{
+  prev: () => void;
+  next: () => void;
+}>) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <CarouselArrowButton
+        direction="left"
+        ariaLabel={t('trendingGames.prevAriaLabel')}
+        onClick={e => {
+          e.stopPropagation();
+          prev();
+        }}
+      />
+      <CarouselArrowButton
+        direction="right"
+        ariaLabel={t('trendingGames.nextAriaLabel')}
+        onClick={e => {
+          e.stopPropagation();
+          next();
+        }}
+      />
+    </>
+  );
+}
+
+function CarouselIndicators({
+  games,
+  index,
+  onChange,
+  accentColor,
+  isDark,
+}: Readonly<{
+  games: NormalizedGame[];
+  index: number;
+  onChange: (i: number) => void;
+  accentColor: string;
+  isDark: boolean;
+}>) {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mt: 2 }}>
+      {games.map((game, i) => {
+        const isActive = i === index;
+        const inactiveColor = isDark
+          ? 'rgba(255,255,255,0.2)'
+          : 'rgba(0,0,0,0.15)';
+        const dotColor = isActive ? accentColor : inactiveColor;
+
+        return (
+          <Box
+            key={game.igdb_id}
+            onClick={() => onChange(i)}
+            sx={{
+              width: isActive ? 20 : 8,
+              height: 8,
+              borderRadius: '4px',
+              bgcolor: dotColor,
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+            }}
+          />
+        );
+      })}
     </Box>
   );
 }
@@ -273,134 +403,49 @@ export function RecommendedGamesSection() {
     [games.length]
   );
 
-  const isEmpty = !loading && games.length === 0;
-  const current = games[index] ?? null;
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <Skeleton
+          variant="rectangular"
+          width="100%"
+          height={380}
+          sx={{ borderRadius: '20px' }}
+        />
+      );
+    }
 
-  let content: ReactElement;
-  if (loading) {
-    content = (
-      <Skeleton
-        variant="rectangular"
-        width="100%"
-        height={380}
-        sx={{ borderRadius: '20px' }}
-      />
-    );
-  } else if (isEmpty) {
-    content = (
-      <Box
-        sx={{ pl: '18px', display: 'flex', flexDirection: 'column', gap: 2 }}
-      >
-        <Typography sx={{ fontFamily: F, color: inkColor, opacity: 0.6 }}>
-          {t('recommendations.noSuggestions')}
-        </Typography>
-        <Button
-          href="/search"
-          variant="outlined"
-          sx={{
-            alignSelf: 'flex-start',
-            fontFamily: F,
-            borderColor: accentColor,
-            color: accentColor,
-            '&:hover': {
-              borderColor: accentColor,
-              bgcolor: 'transparent',
-              opacity: 0.8,
-            },
-          }}
-        >
-          {t('recommendations.exploreCatalogue')}
-        </Button>
-      </Box>
-    );
-  } else {
-    content = (
+    if (games.length === 0) {
+      return (
+        <EmptySuggestions
+          isDark={isDark}
+          inkColor={inkColor}
+          accentColor={accentColor}
+        />
+      );
+    }
+
+    const current = games[index];
+
+    return (
       <Box sx={{ position: 'relative' }}>
         {current && <FeaturedGame game={current} />}
 
         {games.length > 1 && (
           <>
-            <IconButton
-              onClick={e => {
-                e.stopPropagation();
-                prev();
-              }}
-              sx={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 4,
-                bgcolor: 'common.white',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                '&:hover': {
-                  bgcolor: 'common.white',
-                  transform: 'translateY(-50%) scale(1.05)',
-                },
-              }}
-            >
-              <ChevronLeftIcon />
-            </IconButton>
-            <IconButton
-              onClick={e => {
-                e.stopPropagation();
-                next();
-              }}
-              sx={{
-                position: 'absolute',
-                right: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 4,
-                bgcolor: 'common.white',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
-                '&:hover': {
-                  bgcolor: 'common.white',
-                  transform: 'translateY(-50%) scale(1.05)',
-                },
-              }}
-            >
-              <ChevronRightIcon />
-            </IconButton>
+            <CarouselNavigation prev={prev} next={next} />
+            <CarouselIndicators
+              games={games}
+              index={index}
+              onChange={setIndex}
+              accentColor={accentColor}
+              isDark={isDark}
+            />
           </>
-        )}
-
-        {games.length > 1 && (
-          <Box
-            sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mt: 2 }}
-          >
-            {games.map((game, i) => {
-              const isActive = i === index;
-              const gameKey = game.django_id
-                ? `django-${game.django_id}`
-                : `igdb-${game.igdb_id}`;
-              let dotColor = isDark
-                ? 'rgba(255,255,255,0.2)'
-                : 'rgba(0,0,0,0.15)';
-              if (isActive) {
-                dotColor = accentColor;
-              }
-
-              return (
-                <Box
-                  key={gameKey}
-                  onClick={() => setIndex(i)}
-                  sx={{
-                    width: isActive ? 20 : 8,
-                    height: 8,
-                    borderRadius: '4px',
-                    bgcolor: dotColor,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                  }}
-                />
-              );
-            })}
-          </Box>
         )}
       </Box>
     );
-  }
+  };
 
   return (
     <Box data-tour="suggestions" sx={{ mb: 6 }}>
@@ -442,7 +487,7 @@ export function RecommendedGamesSection() {
         </Typography>
       </Box>
 
-      {content}
+      {renderContent()}
     </Box>
   );
 }

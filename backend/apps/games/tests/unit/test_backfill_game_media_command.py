@@ -173,3 +173,26 @@ def test_backfill_igdb_game_no_id(mock_igdb_request, game_with_igdb):
 
     output = out.getvalue()
     assert "Ignoring IGDB ID 123 (No media found)" in output
+
+
+@pytest.mark.django_db
+@patch("apps.games.management.commands.backfill_game_media.igdb_client.igdb_request")
+def test_backfill_only_missing(mock_igdb_request, game_with_igdb):
+    """Test le filtrage par --only-missing (ne traite que les jeux ayant peu de screenshots)."""
+    # On ajoute un screenshot au jeu existant
+    from apps.games.models import GameScreenshot
+
+    GameScreenshot.objects.create(game=game_with_igdb, url="http://example.com/s1.jpg", position=0)
+
+    # Simulation de retour IGDB
+    mock_igdb_request.return_value = [{"id": 123, "screenshots": [{"url": "url"}]}]
+
+    out = StringIO()
+    # On demande au moins 2 screenshots, le jeu en a 1, donc il doit être traité
+    call_command("backfill_game_media", "--only-missing", "--min-screenshots=2", stdout=out)
+    assert "Preparing to process 1 games with <2 screenshots..." in out.getvalue()
+
+    # On demande au moins 1 screenshot, le jeu en a 1, donc il ne doit pas être traité
+    out = StringIO()
+    call_command("backfill_game_media", "--only-missing", "--min-screenshots=1", stdout=out)
+    assert "No games found matching criteria." in out.getvalue()

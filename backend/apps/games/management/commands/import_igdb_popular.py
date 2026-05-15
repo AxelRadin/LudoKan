@@ -30,20 +30,37 @@ class Command(BaseCommand):
             default=2020,
             help="Année minimale de sortie (ex: 2020).",
         )
+        parser.add_argument(
+            "--genre-id",
+            type=int,
+            default=None,
+            help="Filtrer par genre IGDB (ex: 12 pour RPG). Si omis, aucun filtre genre.",
+        )
+        parser.add_argument(
+            "--skip-meta",
+            action="store_true",
+            help="Sauter l'import des genres et plateformes (utile pour les imports successifs).",
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
         limit = min(options["limit"], 500)  # IGDB max 500 par requête
         from_year = options["from_year"]
+        genre_id = options["genre_id"]
+        skip_meta = options["skip_meta"]
 
-        self.stdout.write(self.style.MIGRATE_HEADING(f"Import IGDB : {limit} jeux populaires depuis {from_year}"))
+        label = f"genre IGDB {genre_id}" if genre_id else "tous genres"
+        self.stdout.write(self.style.MIGRATE_HEADING(f"Import IGDB : {limit} jeux populaires depuis {from_year} ({label})"))
 
-        # 1) Importer / mettre à jour tous les genres + plateformes
-        self.import_genres()
-        self.import_platforms()
+        if not skip_meta:
+            # 1) Importer / mettre à jour tous les genres + plateformes
+            self.import_genres()
+            self.import_platforms()
+        else:
+            self.stdout.write("  (--skip-meta : import genres/plateformes ignoré)")
 
         # 2) Importer les jeux + publishers + covers + lier genres/plateformes
-        self.import_games_and_publishers(limit, from_year)
+        self.import_games_and_publishers(limit, from_year, genre_id)
 
     # ------------------------------------------------------------------
     # GENRES
@@ -132,12 +149,12 @@ class Command(BaseCommand):
     # ------------------------------------------------------------------
     # GAMES + PUBLISHERS + M2M + COVERS + STATUS
     # ------------------------------------------------------------------
-    def import_games_and_publishers(self, limit: int, from_year: int):
+    def import_games_and_publishers(self, limit: int, from_year: int, genre_id: int | None = None):
         self.stdout.write("\n=== Étape 3/3 : Import des jeux populaires récents ===")
 
         _, from_ts = self._compute_from_timestamp(from_year)
 
-        query = self._build_games_query(limit, from_ts)
+        query = self._build_games_query(limit, from_ts, genre_id)
 
         self.stdout.write("  → Appel à l'API IGDB /games...")
         games_data = igdb_request("games", query)
@@ -179,9 +196,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  → Récupération des jeux avec first_release_date >= {from_dt.date()} (timestamp {from_ts})")
         return from_dt, from_ts
 
-    def _build_games_query(self, limit: int, from_ts: int) -> str:
+    def _build_games_query(self, limit: int, from_ts: int, genre_id: int | None = None) -> str:
         """Construit la requête IGDB pour récupérer les jeux."""
-        # ⚠️ on n'utilise plus category (déprécié), juste date + version_parent
+        genre_filter = f" & genres = ({genre_id})" if genre_id is not None else ""
         return f"""
             fields
               id,
@@ -191,6 +208,7 @@ class Command(BaseCommand):
               rating,
               aggregated_rating,
               total_rating,
+              total_rating_count,
               game_status,
               age_ratings,
               multiplayer_modes,
@@ -201,7 +219,7 @@ class Command(BaseCommand):
             where
               first_release_date != null &
               first_release_date >= {from_ts} &
-              version_parent = null;
+              version_parent = null{genre_filter};
             sort total_rating desc;
             limit {limit};
         """
@@ -352,6 +370,8 @@ class Command(BaseCommand):
         publisher_obj = self.find_publisher_for_game(game_data, involved_map, publishers_map)
         min_players, max_players = self.compute_player_counts(game_data, mp_by_game)
         min_age = self.compute_min_age(game_data, age_ratings_map)
+        popularity_score = game_data.get("total_rating") or 0.0
+        igdb_rating_count = game_data.get("total_rating_count") or 0
 
         game_obj, is_created = Game.objects.update_or_create(
             igdb_id=igdb_id,
@@ -359,7 +379,8 @@ class Command(BaseCommand):
                 "name": name,
                 "description": summary,
                 "release_date": release_date,
-                # "popularity_score": popularity,
+                "popularity_score": popularity_score,
+                "igdb_rating_count": igdb_rating_count,
                 "status": status_str,
                 "cover_url": cover_url,
                 "min_players": min_players,
@@ -545,8 +566,8 @@ class Command(BaseCommand):
             8: "delisted",
         }
         if value is None:
-            return None
-        return status_map.get(value)
+            return "released"
+        return status_map.get(value, "released")
 
     def fetch_age_ratings(self, ids):
         """Délègue à igdb_demographics ; conserve les logs de progression."""

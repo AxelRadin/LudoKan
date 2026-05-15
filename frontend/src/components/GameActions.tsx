@@ -74,6 +74,7 @@ export default function GameActions({
         >
           <span>
             <SecondaryButton
+              data-tour="matchmaking-button"
               onClick={() => logic.handleSetMatchmaking()}
               disabled={logic.isMatching || isSolo}
             >
@@ -84,6 +85,7 @@ export default function GameActions({
           </span>
         </Tooltip>
         <Button
+          data-tour="add-to-library"
           variant="contained"
           onClick={onAddToCollectionClick}
           sx={redBtnSx}
@@ -128,7 +130,10 @@ export default function GameActions({
       <Sep />
 
       <SectionAccentTitle label={t('gamePageBody.statusLabel')} />
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
+      <Box
+        data-tour="game-status"
+        sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8 }}
+      >
         <StatusChip
           icon={<CheckCircleIcon />}
           label={t('gamePageBody.statusDone')}
