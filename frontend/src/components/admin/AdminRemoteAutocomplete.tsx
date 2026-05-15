@@ -6,34 +6,45 @@ import { useRemotePicks } from '../../hooks/useRemotePicks';
 
 const MIN_SEARCH = 2;
 
-type Props<T extends boolean> = Readonly<{
+interface BaseProps {
   label: string;
   placeholder?: string;
   helperText?: string;
-  value: T extends true ? AdminEntityPick[] : AdminEntityPick | null;
-  onChange: (
-    next: T extends true ? AdminEntityPick[] : AdminEntityPick | null
-  ) => void;
-  multiple?: T;
   searchUrl: (debounced: string) => string | null;
-  mapper: (raw: any) => AdminEntityPick;
+  mapper: (raw: any) => AdminEntityPick | null;
   size?: 'small' | 'medium';
-}>;
+}
+
+interface SingleProps extends BaseProps {
+  multiple?: false;
+  value: AdminEntityPick | null;
+  onChange: (next: AdminEntityPick | null) => void;
+}
+
+interface MultiProps extends BaseProps {
+  multiple: true;
+  value: AdminEntityPick[];
+  onChange: (next: AdminEntityPick[]) => void;
+}
+
+type Props = SingleProps | MultiProps;
 
 /**
  * Generic remote autocomplete for admin panels to reduce duplication.
  */
-export default function AdminRemoteAutocomplete<T extends boolean>({
-  label,
-  placeholder,
-  helperText,
-  value,
-  onChange,
-  multiple,
-  searchUrl,
-  mapper,
-  size = 'small',
-}: Props<T>) {
+export default function AdminRemoteAutocomplete(props: Props) {
+  const {
+    label,
+    placeholder,
+    helperText,
+    value,
+    onChange,
+    multiple,
+    searchUrl,
+    mapper,
+    size = 'small',
+  } = props;
+
   const [input, setInput] = useState('');
   const debounced = useDebouncedValue(input, 300);
 
@@ -46,7 +57,7 @@ export default function AdminRemoteAutocomplete<T extends boolean>({
 
   return (
     <Autocomplete
-      multiple={multiple}
+      multiple={multiple as any}
       options={options}
       value={value as any}
       onChange={(_, v) => onChange(v as any)}
