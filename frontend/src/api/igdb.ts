@@ -79,6 +79,10 @@ export async function fetchIgdbGames(): Promise<IgdbGame[]> {
   return apiGet('/api/igdb/games/');
 }
 
+export async function fetchIgdbPlatforms(): Promise<IgdbPlatform[]> {
+  return apiGet('/api/igdb/platforms/');
+}
+
 /** Filtres optionnels alignés sur `/api/games/` — IDs IGDB pour genre / platform. */
 export type IgdbListFilters = {
   genre?: number[];
