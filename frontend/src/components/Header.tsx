@@ -261,6 +261,7 @@ const LogoSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         <Box
           component="img"
           src="/logo.png"
+          alt="Logo Ludokan"
           sx={{ height: 44, width: 44, borderRadius: '50%' }}
         />
         {!isMobile && (
