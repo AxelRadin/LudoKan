@@ -485,8 +485,9 @@ class TestAdminReviewViews:
         response = AdminReviewListView.as_view()(request)
 
         assert response.status_code == 200
-        assert len(response.data) == 1
-        assert response.data[0]["id"] == review.id
+        assert response.data["count"] == 1
+        assert len(response.data["results"]) == 1
+        assert response.data["results"][0]["id"] == review.id
 
     def test_admin_review_detail_get_patch_delete(self, user, game, monkeypatch, allow_admin_review_permissions):
         review = Review.objects.create(user=user, game=game, content="Avant")

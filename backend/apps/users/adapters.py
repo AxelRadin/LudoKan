@@ -65,6 +65,31 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
     ce qui laissait pseudo vide et provoquait une violation d'unicité en base.
     """
 
+    def list_apps(self, request, provider=None, client_id=None):
+        """
+        allauth 65+ fusionne les SocialApp en base et celles de SOCIALACCOUNT_PROVIDERS.
+
+        Notre save_user() persiste l'app OAuth en base (FK SocialToken). On se retrouve
+        alors avec deux entrées pour le même client_id → get_app() lève MultipleObjectsReturned.
+        On garde une seule app par client_id, en priorisant l'instance persistée (pk).
+        """
+        apps = super().list_apps(request, provider=provider, client_id=client_id)
+        if len(apps) <= 1:
+            return apps
+
+        def _prefer_db(candidates):
+            with_pk = [a for a in candidates if getattr(a, "pk", None)]
+            if with_pk:
+                return with_pk[0]
+            return candidates[0]
+
+        by_client_id = {}
+        for app in apps:
+            cid = (getattr(app, "client_id", None) or "").strip()
+            by_client_id.setdefault(cid, []).append(app)
+
+        return [_prefer_db(group) for group in by_client_id.values()]
+
     def save_user(self, request, sociallogin, form=None):
         # allauth 65+: apps configured via APPS in settings are in-memory objects
         # with no PK. SocialToken has a FK to SocialApp, so Django refuses to save

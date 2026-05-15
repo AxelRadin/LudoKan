@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import ReportIcon from '@mui/icons-material/Report';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
+import RateReviewIcon from '@mui/icons-material/RateReview';
 import {
   Box,
   Drawer,
@@ -16,7 +18,13 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 import { hasPermission } from '../../utils/adminPermissions';
 
-const NAV_ITEMS = [
+const NAV_ITEMS: ReadonlyArray<{
+  label: string;
+  icon: ReactNode;
+  path: string;
+  permission?: string;
+  anyPermissions?: readonly string[];
+}> = [
   {
     label: 'Dashboard',
     icon: <DashboardIcon />,
@@ -34,6 +42,12 @@ const NAV_ITEMS = [
     icon: <SportsEsportsIcon />,
     path: '/admin/games',
     permission: 'game_read',
+  },
+  {
+    label: 'Notes et avis',
+    icon: <RateReviewIcon />,
+    path: '/admin/reviews',
+    anyPermissions: ['review_read', 'rating_read'],
   },
   {
     label: 'Support',
@@ -63,9 +77,12 @@ export default function AdminSidebar({
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user } = useAuth();
-  const visibleItems = NAV_ITEMS.filter(item =>
-    hasPermission(user, item.permission)
-  );
+  const visibleItems = NAV_ITEMS.filter(item => {
+    if (item.anyPermissions?.length) {
+      return item.anyPermissions.some(p => hasPermission(user, p));
+    }
+    return item.permission ? hasPermission(user, item.permission) : false;
+  });
   const content = (
     <Box
       sx={{
@@ -94,8 +111,12 @@ export default function AdminSidebar({
       <List disablePadding>
         {visibleItems.map(item => (
           <ListItemButton
-            key={item.path}
-            selected={pathname === item.path}
+            key={item.path + item.label}
+            selected={
+              pathname === item.path ||
+              (item.path === '/admin/reviews' &&
+                pathname.startsWith('/admin/reviews'))
+            }
             onClick={() => {
               navigate(item.path);
               if (!isDesktop) onClose();
@@ -103,7 +124,12 @@ export default function AdminSidebar({
             sx={{
               px: 3,
               py: 1.5,
-              color: pathname === item.path ? 'common.white' : 'grey.400',
+              color:
+                pathname === item.path ||
+                (item.path === '/admin/reviews' &&
+                  pathname.startsWith('/admin/reviews'))
+                  ? 'common.white'
+                  : 'grey.400',
               '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.08)' },
               '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
             }}

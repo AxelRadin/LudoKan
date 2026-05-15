@@ -331,6 +331,34 @@ class RatingSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class AdminRatingListSerializer(serializers.ModelSerializer):
+    """Liste admin des notes : identifiants + libellés lisibles."""
+
+    user_pseudo = serializers.CharField(source="user.pseudo", read_only=True)
+    game_name = serializers.CharField(source="game.name", read_only=True)
+
+    class Meta:
+        model = Rating
+        fields = [
+            "id",
+            "game",
+            "game_name",
+            "user",
+            "user_pseudo",
+            "rating_type",
+            "value",
+        ]
+        read_only_fields = (
+            "id",
+            "game",
+            "game_name",
+            "user",
+            "user_pseudo",
+            "rating_type",
+            "value",
+        )
+
+
 class IgdbResolveSerializer(serializers.Serializer):
     igdb_id = serializers.IntegerField(required=True)
     name = serializers.CharField(required=False, allow_blank=True)

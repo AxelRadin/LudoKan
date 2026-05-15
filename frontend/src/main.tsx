@@ -59,6 +59,7 @@ const AdminGames = lazy(() => import('./pages/admin/AdminGames.tsx'));
 const AdminGameDetail = lazy(() => import('./pages/admin/AdminGameDetail.tsx'));
 const AdminTickets = lazy(() => import('./pages/admin/AdminTickets.tsx'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports.tsx'));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews.tsx'));
 const AdminNotFound = lazy(() => import('./pages/admin/AdminNotFound.tsx'));
 const ProtectedAdminRoute = lazy(
   () => import('./components/admin/ProtectedAdminRoute.tsx')
@@ -337,6 +338,26 @@ const router = createBrowserRouter([
               <PermissionGuard permission="game_read">
                 <AdminGames />
               </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'reviews',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <AdminReviews />
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'ratings',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <Navigate to="/admin/reviews?tab=notes" replace />
             </ProtectedAdminRoute>
           </Suspense>
         ),

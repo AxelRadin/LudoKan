@@ -205,6 +205,68 @@ class TestSaveUser:
         assert db_app.name == "Google"
 
 
+@pytest.mark.django_db
+class TestSocialAccountAdapterListApps:
+    """list_apps merges DB + settings apps (allauth 65); we dedupe same client_id."""
+
+    def test_dedupes_db_and_settings_app_same_client_id(self):
+        from allauth.socialaccount.models import SocialApp
+
+        db_app = SocialApp.objects.create(
+            provider="google",
+            client_id="dup-client",
+            name="Google",
+            secret="sec",
+        )
+        memory_app = SocialApp(provider="google")
+        memory_app.client_id = "dup-client"
+        memory_app.secret = "sec"
+
+        request = MagicMock()
+        adapter = SocialAccountAdapter(request)
+
+        for pair in ([memory_app, db_app], [db_app, memory_app]):
+            with patch.object(DefaultSocialAccountAdapter, "list_apps", return_value=pair):
+                out = adapter.list_apps(request, provider="google", client_id="dup-client")
+            assert len(out) == 1
+            assert out[0] == db_app
+
+    def test_passthrough_when_super_returns_single_app(self):
+        from allauth.socialaccount.models import SocialApp
+
+        only = SocialApp.objects.create(
+            provider="google",
+            client_id="solo",
+            name="Google",
+            secret="s",
+        )
+        request = MagicMock()
+        adapter = SocialAccountAdapter(request)
+        with patch.object(DefaultSocialAccountAdapter, "list_apps", return_value=[only]):
+            out = adapter.list_apps(request, provider="google")
+        assert out == [only]
+
+    def test_dedupes_settings_apps_no_pk(self):
+        from allauth.socialaccount.models import SocialApp
+
+        memory_app1 = SocialApp(provider="google")
+        memory_app1.client_id = "dup-client"
+        memory_app1.secret = "sec1"
+
+        memory_app2 = SocialApp(provider="google")
+        memory_app2.client_id = "dup-client"
+        memory_app2.secret = "sec2"
+
+        request = MagicMock()
+        adapter = SocialAccountAdapter(request)
+
+        with patch.object(DefaultSocialAccountAdapter, "list_apps", return_value=[memory_app1, memory_app2]):
+            out = adapter.list_apps(request, provider="google", client_id="dup-client")
+
+        assert len(out) == 1
+        assert out[0] == memory_app1
+
+
 class TestLudokanAccountAdapter:
     """Unit tests for LudokanAccountAdapter.send_mail."""
 

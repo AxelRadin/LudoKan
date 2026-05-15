@@ -68,7 +68,8 @@ class TestAdminReviewEndpoints:
         response = admin_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 2
+        assert response.data["count"] == 2
+        assert len(response.data["results"]) == 2
 
     def test_admin_list_reviews_can_filter_by_game_and_user(self, admin_client, user, user2, game):
         # Créer un autre jeu pour tester le filtre ?game=
@@ -88,14 +89,47 @@ class TestAdminReviewEndpoints:
         url = "/api/admin/reviews/"
         resp_game = admin_client.get(url, {"game": game.id})
         assert resp_game.status_code == status.HTTP_200_OK
-        assert len(resp_game.data) == 1
-        assert resp_game.data[0]["id"] == r1.id
+        assert resp_game.data["count"] == 1
+        assert len(resp_game.data["results"]) == 1
+        assert resp_game.data["results"][0]["id"] == r1.id
 
         # Filtre par user
         resp_user = admin_client.get(url, {"user": user2.id})
         assert resp_user.status_code == status.HTTP_200_OK
-        assert len(resp_user.data) == 1
-        assert resp_user.data[0]["id"] == r2.id
+        assert resp_user.data["count"] == 1
+        assert len(resp_user.data["results"]) == 1
+        assert resp_user.data["results"][0]["id"] == r2.id
+
+        # Filtre multi jeux
+        resp_multi = admin_client.get(url, {"game_ids": f"{game.id},{other_game.id}"})
+        assert resp_multi.status_code == status.HTTP_200_OK
+        assert resp_multi.data["count"] == 2
+        assert {row["id"] for row in resp_multi.data["results"]} == {r1.id, r2.id}
+
+    def test_admin_list_reviews_can_filter_by_created_before(self, admin_client, user, game):
+        import datetime
+
+        from django.utils import timezone
+
+        r1 = Review.objects.create(user=user, game=game, content="Review old")
+        Review.objects.filter(id=r1.id).update(date_created=timezone.now() - datetime.timedelta(days=10))
+
+        url = "/api/admin/reviews/"
+        before = (timezone.now() - datetime.timedelta(days=5)).isoformat()
+
+        resp = admin_client.get(url, {"created_before": before})
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data["count"] == 1
+        assert resp.data["results"][0]["id"] == r1.id
+
+    def test_admin_list_reviews_ignores_invalid_game_ids(self, admin_client, user, game):
+        # Couvre query_params.py: ValueError continue
+        Review.objects.create(user=user, game=game, content="Review valid")
+        url = "/api/admin/reviews/"
+
+        resp = admin_client.get(url, {"game_ids": f"{game.id},abc"})
+        assert resp.status_code == status.HTTP_200_OK
+        assert resp.data["count"] == 1
 
     def test_non_admin_cannot_list_reviews(self, authenticated_client, user, game):
         Review.objects.create(user=user, game=game, content="Review 1")
@@ -113,7 +147,8 @@ class TestAdminReviewEndpoints:
         list_url = "/api/admin/reviews/"
         list_response = moderator_client.get(list_url)
         assert list_response.status_code == status.HTTP_200_OK
-        assert len(list_response.data) == 2
+        assert list_response.data["count"] == 2
+        assert len(list_response.data["results"]) == 2
 
         # PATCH interdit
         detail_url = f"/api/admin/reviews/{review.id}/"
@@ -142,6 +177,19 @@ class TestAdminReviewEndpoints:
             target_type="review",
             target_id=review.id,
         ).exists()
+
+    def test_admin_patch_review_rating_value_creates_rating_for_review_author(self, admin_client, user, game):
+        review = Review.objects.create(user=user, game=game, content="Sans note", rating=None)
+
+        url = f"/api/admin/reviews/{review.id}/"
+        response = admin_client.patch(url, {"rating_value": 4}, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        review.refresh_from_db()
+        assert review.rating is not None
+        assert review.rating.user_id == user.id
+        assert review.rating.game_id == game.id
+        assert float(review.rating.value) == 4.0
 
     def test_admin_can_delete_review_and_logs_action(self, admin_client, user, game):
         review = Review.objects.create(user=user, game=game, content="To be deleted")
@@ -192,3 +240,30 @@ class TestAdminReviewEndpoints:
 
         # Le statut exact dépend de DRF, on vérifie juste qu'on n'a pas d'erreur serveur.
         assert response.status_code in {status.HTTP_200_OK, status.HTTP_204_NO_CONTENT, status.HTTP_405_METHOD_NOT_ALLOWED}
+
+    def test_admin_list_reviews_date_filters_and_ordering(self, admin_client, user, user2, game):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        now = timezone.now()
+        r_old = Review.objects.create(user=user2, game=game, content="Old review ok")
+        Review.objects.filter(pk=r_old.pk).update(date_created=now - timedelta(days=10))
+        r_old.refresh_from_db()
+
+        r_new = Review.objects.create(user=user, game=game, content="New review ok")
+        Review.objects.filter(pk=r_new.pk).update(date_created=now - timedelta(days=1))
+        r_new.refresh_from_db()
+
+        url = "/api/admin/reviews/"
+        after = (now - timedelta(days=5)).isoformat()
+        resp = admin_client.get(url, {"created_after": after})
+        assert resp.status_code == status.HTTP_200_OK
+        ids = {row["id"] for row in resp.data["results"]}
+        assert r_new.id in ids
+        assert r_old.id not in ids
+
+        resp_page = admin_client.get(url, {"page_size": 1, "page": 1})
+        assert resp_page.status_code == status.HTTP_200_OK
+        assert resp_page.data["count"] >= 2
+        assert len(resp_page.data["results"]) == 1
