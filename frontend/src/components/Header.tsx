@@ -25,18 +25,19 @@ import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 import { useThemeMode } from '../contexts/useThemeMode';
 import { apiPatch, apiPost } from '../services/api';
-import LoginForm from './LoginForm';
-import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
 import ThemeToggle from './ThemeToggle';
 import NotificationIcon from './notifications/NotificationIcon';
+
+const LoginForm = lazy(() => import('./LoginForm'));
+const RegisterForm = lazy(() => import('./RegisterForm'));
 
 const LANGUAGES = [
   { code: 'fr', label: 'Français', flag: 'https://flagcdn.com/w40/fr.png' },
@@ -261,7 +262,9 @@ const LogoSection: React.FC<{ isMobile: boolean }> = ({ isMobile }) => {
         <Box
           component="img"
           src="/logo.webp"
-          alt="Logo Ludokan"
+          alt="Ludokan"
+          width="44"
+          height="44"
           sx={{ height: 44, width: 44, borderRadius: '50%' }}
         />
         {!isMobile && (
@@ -543,23 +546,33 @@ export const Header: React.FC = () => {
 
       {/* AUTH DIALOG */}
       <Dialog open={isAuthModalOpen} onClose={() => setAuthModalOpen(false)}>
-        <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
-          <IconButton onClick={() => setAuthModalOpen(false)}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        {authMode === 'login' ? (
-          <LoginForm
-            onSwitchToRegister={() => setAuthMode('register')}
-            onLoginSuccess={() => {
-              setAuthenticated(true);
-              setAuthModalOpen(false);
-              pendingAction?.();
-              setPendingAction(null);
-            }}
-          />
-        ) : (
-          <RegisterForm onSwitchToLogin={() => setAuthMode('login')} />
+        {isAuthModalOpen && (
+          <Suspense
+            fallback={
+              <Box p={4} textAlign="center">
+                Chargement...
+              </Box>
+            }
+          >
+            <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
+              <IconButton onClick={() => setAuthModalOpen(false)}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
+            {authMode === 'login' ? (
+              <LoginForm
+                onSwitchToRegister={() => setAuthMode('register')}
+                onLoginSuccess={() => {
+                  setAuthenticated(true);
+                  setAuthModalOpen(false);
+                  pendingAction?.();
+                  setPendingAction(null);
+                }}
+              />
+            ) : (
+              <RegisterForm onSwitchToLogin={() => setAuthMode('login')} />
+            )}
+          </Suspense>
         )}
       </Dialog>
     </>

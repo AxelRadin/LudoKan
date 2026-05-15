@@ -13,10 +13,13 @@ import {
   useTheme,
   IconButton,
   Chip,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import SearchIcon from '@mui/icons-material/Search';
 import { useTranslation } from 'react-i18next';
 import {
   IGDB_GENRES,
@@ -56,7 +59,6 @@ const SectionTitle: React.FC<{ title: string; icon?: React.ReactNode }> = ({
     </Box>
   );
 };
-
 export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
   filters,
   onFiltersChange,
@@ -65,6 +67,7 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const [platformSearch, setPlatformSearch] = React.useState('');
 
   const handleToggleId = (
     field: keyof IgdbListFilters,
@@ -170,27 +173,69 @@ export const GamesFilterSidebar: React.FC<GamesFilterSidebarProps> = ({
             <SectionTitle title={t('games.filters.platforms', 'Plateformes')} />
           </AccordionSummary>
           <AccordionDetails>
-            <FormGroup>
-              {IGDB_PLATFORMS.map(p => (
-                <FormControlLabel
-                  key={p.id}
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={(filters.platform || []).includes(p.id)}
-                      onChange={e =>
-                        handleToggleId('platform', p.id, e.target.checked)
-                      }
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">
-                      {t(`platforms.${p.name}`, p.name)}
-                    </Typography>
-                  }
-                />
-              ))}
-            </FormGroup>
+            <Box sx={{ mb: 1.5 }}>
+              <TextField
+                fullWidth
+                size="small"
+                variant="outlined"
+                placeholder={t('common.search', 'Rechercher...')}
+                value={platformSearch}
+                onChange={e => setPlatformSearch(e.target.value)}
+                autoComplete="off"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ fontSize: '0.9rem', opacity: 0.6 }} />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    background: isDark
+                      ? 'rgba(255,255,255,0.03)'
+                      : 'rgba(0,0,0,0.02)',
+                  },
+                }}
+              />
+            </Box>
+            <Box
+              sx={{
+                maxHeight: '300px',
+                overflowY: 'auto',
+                pr: 1,
+                '&::-webkit-scrollbar': { width: '4px' },
+                '&::-webkit-scrollbar-thumb': {
+                  background: isDark
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'rgba(0,0,0,0.1)',
+                  borderRadius: '4px',
+                },
+              }}
+            >
+              <FormGroup>
+                {IGDB_PLATFORMS.filter(p =>
+                  p.name.toLowerCase().includes(platformSearch.toLowerCase())
+                ).map(p => (
+                  <FormControlLabel
+                    key={p.id}
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={(filters.platform || []).includes(p.id)}
+                        onChange={e =>
+                          handleToggleId('platform', p.id, e.target.checked)
+                        }
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                        {p.name}
+                      </Typography>
+                    }
+                  />
+                ))}
+              </FormGroup>
+            </Box>
           </AccordionDetails>
         </Accordion>
 

@@ -34,3 +34,4 @@ TRENDING_SORTS = {
 MYMEMORY_URL = "https://api.mymemory.translated.net/get"
 MAX_TRANSLATE_TEXT_LEN = 20_000
 TRENDING_CACHE_TTL = 120  # secondes (2 min)
+PLATFORMS_CACHE_TTL = 86400  # 24h
