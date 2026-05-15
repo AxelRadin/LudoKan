@@ -13,6 +13,10 @@ type Props = Readonly<{
   loading?: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  /** Si défini, remplace le titre par défaut « Supprimer le jeu ». */
+  dialogTitle?: string;
+  /** Si défini, remplace le texte d’avertissement par défaut (suppression jeu). */
+  warningText?: string;
 }>;
 
 export default function DeleteGameModal({
@@ -21,7 +25,13 @@ export default function DeleteGameModal({
   loading = false,
   onClose,
   onConfirm,
+  dialogTitle = 'Supprimer le jeu',
+  warningText,
 }: Props) {
+  const body =
+    warningText ??
+    `Confirmer la suppression définitive de « ${gameName} » ? Cette action est irréversible (avis, notes et données liées seront supprimés en cascade).`;
+
   return (
     <Dialog
       open={open}
@@ -29,12 +39,10 @@ export default function DeleteGameModal({
       maxWidth="xs"
       fullWidth
     >
-      <DialogTitle>Supprimer le jeu</DialogTitle>
+      <DialogTitle>{dialogTitle}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary">
-          Confirmer la suppression définitive de « {gameName} » ? Cette action
-          est irréversible (avis, notes et données liées seront supprimés en
-          cascade).
+          {body}
         </Typography>
       </DialogContent>
       <DialogActions>

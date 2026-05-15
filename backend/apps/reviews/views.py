@@ -3,11 +3,13 @@ from urllib.parse import urlencode
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 
+from apps.core.query_params import parse_multi_ids, parse_optional_query_int
 from apps.games.models import Rating
 from apps.library.models import UserGame
 from apps.reviews.models import ContentReport, Review
@@ -20,16 +22,6 @@ from apps.reviews.serializers import (
     build_rating_only_review_entry,
 )
 from apps.users.utils import log_admin_action
-
-
-def _parse_optional_query_int(raw: str | None) -> int | None:
-    """Entier depuis un query param ; None si absent ou non convertible."""
-    if raw is None:
-        return None
-    try:
-        return int(raw)
-    except (TypeError, ValueError):
-        return None
 
 
 def _parse_rating_value_filter(raw: str | None) -> int | None:
@@ -153,11 +145,11 @@ class ReviewViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         params = self.request.query_params
 
-        gid = _parse_optional_query_int(params.get("game"))
+        gid = parse_optional_query_int(params.get("game"))
         if gid is not None:
             queryset = queryset.filter(game_id=gid)
 
-        uid = _parse_optional_query_int(params.get("user"))
+        uid = parse_optional_query_int(params.get("user"))
         if uid is not None:
             queryset = queryset.filter(user_id=uid)
 
@@ -277,11 +269,35 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         return obj.user == request.user
 
 
+class AdminReviewPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+def _admin_review_list_ordering(request) -> str:
+    raw = (request.query_params.get("ordering") or "").strip()
+    allowed = {
+        "date_created": "date_created",
+        "-date_created": "-date_created",
+        "date_modified": "date_modified",
+        "-date_modified": "-date_modified",
+    }
+    return allowed.get(raw, "-date_created")
+
+
 class AdminReviewListView(APIView):
     """
     Endpoint admin pour lister les reviews.
 
     GET /api/admin/reviews
+
+    Query params :
+    - game_ids : ids séparés par des virgules et/ou répétés ; sinon `game` (un id)
+    - user_ids : idem ; sinon `user`
+    - created_after, created_before : borne sur date_created (ISO)
+    - ordering : date_created, -date_created, date_modified, -date_modified
+    - page, page_size : pagination DRF
     """
 
     permission_classes = [CanReadReview]
@@ -289,16 +305,27 @@ class AdminReviewListView(APIView):
     def get(self, request):
         queryset = Review.objects.select_related("user", "game", "rating").all()
 
-        game_id = request.query_params.get("game")
-        if game_id:
-            queryset = queryset.filter(game_id=game_id)
+        game_ids = parse_multi_ids(request, "game_ids", "game")
+        if game_ids:
+            queryset = queryset.filter(game_id__in=game_ids)
 
-        user_id = request.query_params.get("user")
-        if user_id:
-            queryset = queryset.filter(user_id=user_id)
+        user_ids = parse_multi_ids(request, "user_ids", "user")
+        if user_ids:
+            queryset = queryset.filter(user_id__in=user_ids)
 
-        serializer = ReviewReadSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        created_before = request.query_params.get("created_before")
+        created_after = request.query_params.get("created_after")
+        if created_before:
+            queryset = queryset.filter(date_created__lte=created_before)
+        if created_after:
+            queryset = queryset.filter(date_created__gte=created_after)
+
+        queryset = queryset.order_by(_admin_review_list_ordering(request))
+
+        paginator = AdminReviewPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = ReviewReadSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AdminReviewDetailView(APIView):

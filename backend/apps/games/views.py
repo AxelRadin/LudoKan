@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
+from apps.core.query_params import parse_multi_ids
 from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_games_csv, build_games_pdf
 from apps.games import igdb_client
 from apps.games.filters import GameFilter
@@ -27,6 +28,7 @@ from apps.games.permissions import CanDeleteGame, CanDeleteRating, CanEditGame, 
 from apps.games.serializers import (
     AdminGameDetailSerializer,
     AdminGameUpdateSerializer,
+    AdminRatingListSerializer,
     GameDetailSerializer,
     GameReadSerializer,
     GameWriteSerializer,
@@ -534,6 +536,12 @@ class AdminGameDetailView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class AdminRatingPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class AdminRatingListView(APIView):
     """
     Endpoint admin pour lister toutes les notes (ratings).
@@ -546,16 +554,18 @@ class AdminRatingListView(APIView):
     def get(self, request):
         queryset = Rating.objects.select_related("user", "game").all()
 
-        user_id = request.query_params.get("user_id")
-        game_id = request.query_params.get("game_id")
+        game_ids = parse_multi_ids(request, "game_ids", "game_id")
+        if game_ids:
+            queryset = queryset.filter(game_id__in=game_ids)
 
-        if user_id is not None:
-            queryset = queryset.filter(user_id=user_id)
-        if game_id is not None:
-            queryset = queryset.filter(game_id=game_id)
+        user_ids = parse_multi_ids(request, "user_ids", "user_id")
+        if user_ids:
+            queryset = queryset.filter(user_id__in=user_ids)
 
-        serializer = RatingSerializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginator = AdminRatingPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        serializer = AdminRatingListSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class AdminRatingDetailView(APIView):
