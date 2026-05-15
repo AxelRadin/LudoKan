@@ -25,7 +25,7 @@ export function AuthFlowPageLayout(props: AuthFlowPageLayoutProps) {
       >
         <Box sx={{ textAlign: 'center', mb: 1 }}>
           <img
-            src="/logo.png"
+            src="/logo.webp"
             alt="LudoKan"
             style={{ height: 56, width: 56, marginBottom: 16 }}
           />
