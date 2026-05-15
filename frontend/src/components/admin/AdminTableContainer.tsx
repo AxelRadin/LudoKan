@@ -51,6 +51,27 @@ export default function AdminTableContainer({
 }: AdminTableContainerProps) {
   if (error) return <ErrorAlert message={error} />;
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <Box sx={{ p: 3 }}>
+          <LoadingSkeleton variant="table" count={6} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <CircularProgress size={28} />
+          </Box>
+        </Box>
+      );
+    }
+    if (count === 0) {
+      return (
+        <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
+          {emptyMessage}
+        </Typography>
+      );
+    }
+    return children;
+  };
+
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', minWidth: 0 }}>
       <Box
@@ -64,21 +85,7 @@ export default function AdminTableContainer({
         }}
       >
         {header}
-
-        {loading ? (
-          <Box sx={{ p: 3 }}>
-            <LoadingSkeleton variant="table" count={6} />
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={28} />
-            </Box>
-          </Box>
-        ) : count === 0 ? (
-          <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-            {emptyMessage}
-          </Typography>
-        ) : (
-          children
-        )}
+        {renderContent()}
       </Box>
 
       <TablePagination
