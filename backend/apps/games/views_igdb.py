@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from apps.games import igdb_client
 from apps.games.igdb_normalizer import enrich_normalized_games, normalize_igdb_game
-from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL, TRENDING_CACHE_TTL
+from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL, PLATFORMS_CACHE_TTL, TRENDING_CACHE_TTL
 from apps.games.igdb_search import escape_igdb_string, normalize_query
 from apps.games.igdb_wikidata import enrich_with_wikidata_display_name, wikidata_french_label_by_english_title_debug
 from apps.games.views_igdb_helpers import (
@@ -165,6 +165,36 @@ class IgdbSearchPageView(APIView):
             if _is_igdb_unavailable(e):
                 return Response({"results": [], "total_count": 0})
             return Response({"error": "Erreur search-page", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class IgdbPlatformsView(APIView):
+    """GET /api/igdb/platforms/ — Liste complète des plateformes IGDB."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        cache_key = "igdb:platforms:all"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        try:
+            # On récupère toutes les plateformes triées par nom
+            # On limite à 500 pour être sûr d'avoir tout (il y en a ~220)
+            query = "fields name; sort name asc; limit 500;"
+            data = igdb_client.igdb_request("platforms", query)
+            if not isinstance(data, list):
+                return Response([])
+
+            # On filtre les données pour ne garder que id et name
+            platforms = [{"id": p["id"], "name": p["name"]} for p in data if "name" in p]
+            cache.set(cache_key, platforms, PLATFORMS_CACHE_TTL)
+            return Response(platforms)
+        except Exception as e:
+            logger.exception("IGDB platforms error: %s", e)
+            if _is_igdb_unavailable(e):
+                return Response([])
+            return Response({"error": "Erreur IGDB platforms", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class IgdbGameDetailView(APIView):
