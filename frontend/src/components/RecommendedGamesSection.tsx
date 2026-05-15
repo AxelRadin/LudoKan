@@ -242,7 +242,7 @@ function FeaturedGame({ game }: Readonly<FeaturedGameProps>) {
               {genres.map(g => (
                 <Chip
                   key={g.name}
-                  label={g.name}
+                  label={t(`genres.${g.name}`, { defaultValue: g.name })}
                   size="small"
                   sx={{
                     fontFamily: F,
@@ -345,6 +345,7 @@ export function RecommendedGamesSection() {
         {games.length > 1 && (
           <>
             <IconButton
+              aria-label={t('trendingGames.prevAriaLabel')}
               onClick={e => {
                 e.stopPropagation();
                 prev();
@@ -355,17 +356,33 @@ export function RecommendedGamesSection() {
                 top: '50%',
                 transform: 'translateY(-50%)',
                 zIndex: 4,
-                bgcolor: 'common.white',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                width: 42,
+                height: 42,
+                bgcolor: isDark ? 'rgba(42,32,32,0.95)' : 'common.white',
+                backdropFilter: 'blur(12px)',
+                color: isDark ? '#f5e6e6' : 'text.primary',
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(74,48,48,0.6)' : 'grey.200',
+                boxShadow: isDark
+                  ? '0 4px 14px rgba(0,0,0,0.4)'
+                  : '0 4px 14px rgba(0,0,0,0.12)',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  bgcolor: 'common.white',
+                  bgcolor: isDark ? 'rgba(50,30,30,1)' : 'common.white',
+                  boxShadow: isDark
+                    ? '0 6px 18px rgba(255,61,61,0.3)'
+                    : '0 6px 18px rgba(0,0,0,0.18)',
                   transform: 'translateY(-50%) scale(1.05)',
+                  color: isDark ? '#FF3D3D' : 'text.secondary',
+                  borderColor: isDark ? 'rgba(255,61,61,0.4)' : 'grey.200',
                 },
+                '&:active': { transform: 'translateY(-50%) scale(0.98)' },
               }}
             >
-              <ChevronLeftIcon />
+              <ChevronLeftIcon sx={{ fontSize: 24 }} />
             </IconButton>
             <IconButton
+              aria-label={t('trendingGames.nextAriaLabel')}
               onClick={e => {
                 e.stopPropagation();
                 next();
@@ -376,15 +393,30 @@ export function RecommendedGamesSection() {
                 top: '50%',
                 transform: 'translateY(-50%)',
                 zIndex: 4,
-                bgcolor: 'common.white',
-                boxShadow: '0 4px 14px rgba(0,0,0,0.15)',
+                width: 42,
+                height: 42,
+                bgcolor: isDark ? 'rgba(42,32,32,0.95)' : 'common.white',
+                backdropFilter: 'blur(12px)',
+                color: isDark ? '#f5e6e6' : 'text.primary',
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(74,48,48,0.6)' : 'grey.200',
+                boxShadow: isDark
+                  ? '0 4px 14px rgba(0,0,0,0.4)'
+                  : '0 4px 14px rgba(0,0,0,0.12)',
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  bgcolor: 'common.white',
+                  bgcolor: isDark ? 'rgba(50,30,30,1)' : 'common.white',
+                  boxShadow: isDark
+                    ? '0 6px 18px rgba(255,61,61,0.3)'
+                    : '0 6px 18px rgba(0,0,0,0.18)',
                   transform: 'translateY(-50%) scale(1.05)',
+                  color: isDark ? '#FF3D3D' : 'text.secondary',
+                  borderColor: isDark ? 'rgba(255,61,61,0.4)' : 'grey.200',
                 },
+                '&:active': { transform: 'translateY(-50%) scale(0.98)' },
               }}
             >
-              <ChevronRightIcon />
+              <ChevronRightIcon sx={{ fontSize: 24 }} />
             </IconButton>
           </>
         )}
