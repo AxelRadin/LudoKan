@@ -31,6 +31,8 @@ from apps.users.utils import log_admin_action
 
 User = get_user_model()
 
+PERMISSION_DASHBOARD_VIEW = "dashboard.view"
+
 
 class AdminActionPagination(PageNumberPagination):
     page_size = 10
@@ -181,7 +183,7 @@ class AdminStatsView(APIView):
     """
 
     permission_classes = [IsAdminWithPermission]
-    required_permission = "dashboard.view"
+    required_permission = PERMISSION_DASHBOARD_VIEW
 
     def get(self, request):
         now = timezone.now()
@@ -411,7 +413,7 @@ class AdminStatsInsightsView(APIView):
     """
 
     permission_classes = [IsAdminWithPermission]
-    required_permission = "dashboard.view"
+    required_permission = PERMISSION_DASHBOARD_VIEW
 
     def get(self, request):
         now = timezone.now()
@@ -538,7 +540,7 @@ class AdminReportsUsersView(APIView):
     """
 
     permission_classes = [IsAdminWithPermission]
-    required_permission = "dashboard.view"
+    required_permission = PERMISSION_DASHBOARD_VIEW
 
     def get(self, request):
         cache_timeout = getattr(settings, "ADMIN_REPORTS_USERS_CACHE_TIMEOUT", 60)

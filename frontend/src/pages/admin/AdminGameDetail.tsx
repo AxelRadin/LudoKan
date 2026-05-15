@@ -87,20 +87,20 @@ export default function AdminGameDetail() {
           fetchAllPaginated<CatalogItem>('/api/platforms/'),
           fetchAllPaginated<CatalogItem>('/api/publishers/'),
         ]);
-        if (!cancelled) {
-          setGenresCatalog(g);
-          setPlatformsCatalog(p);
-          setPublishersCatalog(pub);
-        }
+        if (cancelled) return;
+        setGenresCatalog(g);
+        setPlatformsCatalog(p);
+        setPublishersCatalog(pub);
       } catch {
-        if (!cancelled) {
-          setSnackbar({
-            message: 'Impossible de charger genres / plateformes / éditeurs.',
-            severity: 'error',
-          });
-        }
+        if (cancelled) return;
+        setSnackbar({
+          message: 'Impossible de charger genres / plateformes / éditeurs.',
+          severity: 'error',
+        });
       } finally {
-        if (!cancelled) setCatalogLoading(false);
+        if (!cancelled) {
+          setCatalogLoading(false);
+        }
       }
     })();
     return () => {
@@ -113,7 +113,9 @@ export default function AdminGameDetail() {
   }, [game]);
 
   async function handleSave() {
-    if (!form || !game) return;
+    if (form == null || game == null) {
+      return;
+    }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
@@ -163,7 +165,9 @@ export default function AdminGameDetail() {
   }
 
   const selectedGenres = useMemo(() => {
-    if (!form) return [];
+    if (form == null) {
+      return [];
+    }
     const byId = new Map(genresCatalog.map(x => [x.id, x]));
     return form.genreIds
       .map(id => byId.get(id))
@@ -171,7 +175,9 @@ export default function AdminGameDetail() {
   }, [form, genresCatalog]);
 
   const selectedPlatforms = useMemo(() => {
-    if (!form) return [];
+    if (form == null) {
+      return [];
+    }
     const byId = new Map(platformsCatalog.map(x => [x.id, x]));
     return form.platformIds
       .map(id => byId.get(id))
@@ -205,7 +211,7 @@ export default function AdminGameDetail() {
     );
   }
 
-  const readOnly = !canEdit || saving || catalogLoading;
+  const readOnly = saving || catalogLoading || canEdit === false;
 
   return (
     <AdminLayout>

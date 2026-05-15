@@ -37,9 +37,6 @@ export default function AdminRemoteAutocomplete(props: Props) {
     label,
     placeholder,
     helperText,
-    value,
-    onChange,
-    multiple,
     searchUrl,
     mapper,
     size = 'small',
@@ -55,41 +52,55 @@ export default function AdminRemoteAutocomplete(props: Props) {
 
   const { options, loading } = useRemotePicks(url, mapper);
 
+  const commonProps = {
+    options,
+    getOptionLabel: (o: AdminEntityPick) => o.label,
+    isOptionEqualToValue: (a: AdminEntityPick, b: AdminEntityPick) =>
+      a.id === b.id,
+    filterOptions: (x: any) => x,
+    inputValue: input,
+    onInputChange: (_: any, v: string, reason: string) => {
+      if (reason === 'reset') return;
+      setInput(v);
+    },
+    loading,
+    renderInput: (params: any) => (
+      <TextField
+        {...params}
+        label={label}
+        size={size}
+        placeholder={placeholder}
+        helperText={helperText}
+        InputProps={{
+          ...params.InputProps,
+          endAdornment: (
+            <>
+              {loading ? <CircularProgress color="inherit" size={16} /> : null}
+              {params.InputProps.endAdornment}
+            </>
+          ),
+        }}
+      />
+    ),
+  };
+
+  if (props.multiple) {
+    return (
+      <Autocomplete
+        {...commonProps}
+        multiple
+        value={props.value}
+        onChange={(_, v) => props.onChange(v)}
+      />
+    );
+  }
+
   return (
     <Autocomplete
-      multiple={multiple as any}
-      options={options}
-      value={value as any}
-      onChange={(_, v) => onChange(v as any)}
-      getOptionLabel={o => o.label}
-      isOptionEqualToValue={(a, b) => a.id === b.id}
-      filterOptions={x => x}
-      inputValue={input}
-      onInputChange={(_, v, reason) => {
-        if (reason === 'reset') return;
-        setInput(v);
-      }}
-      loading={loading}
-      renderInput={params => (
-        <TextField
-          {...params}
-          label={label}
-          size={size}
-          placeholder={placeholder}
-          helperText={helperText}
-          InputProps={{
-            ...params.InputProps,
-            endAdornment: (
-              <>
-                {loading ? (
-                  <CircularProgress color="inherit" size={16} />
-                ) : null}
-                {params.InputProps.endAdornment}
-              </>
-            ),
-          }}
-        />
-      )}
+      {...commonProps}
+      multiple={false}
+      value={props.value}
+      onChange={(_, v) => props.onChange(v)}
     />
   );
 }
