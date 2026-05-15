@@ -1,6 +1,8 @@
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react'; // 👉 Ajout de useEffect
+import { useTranslation } from 'react-i18next'; // 👉 Ajout de useTranslation
 import Header from './components/Header';
 import CookieBanner from './pages/CookieBanner';
 import Footer from './components/Footer';
@@ -10,6 +12,11 @@ import './App.css';
 const App = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language || 'fr';
+  }, [i18n.language]);
 
   return (
     <Box
