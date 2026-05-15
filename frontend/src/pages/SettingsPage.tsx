@@ -64,7 +64,8 @@ function parsePasswordErrors(raw: string, t: (key: string) => string): string {
     const parsed = JSON.parse(raw);
     if (parsed.old_password) return t('settings.pwErrorWrongOld');
 
-    const extractMsg = (field: string | string[]) => Array.isArray(field) ? field.join(' ') : field;
+    const extractMsg = (field: string | string[]) =>
+      Array.isArray(field) ? field.join(' ') : field;
     if (parsed.new_password2) return extractMsg(parsed.new_password2);
     if (parsed.new_password1) return extractMsg(parsed.new_password1);
   } catch {
@@ -77,9 +78,15 @@ function parsePasswordErrors(raw: string, t: (key: string) => string): string {
 }
 
 // --- Reusable UI Components ---
-const SettingsSection: React.FC<{ title: string; children: React.ReactNode; isLast?: boolean }> = ({ title, children, isLast }) => (
+const SettingsSection: React.FC<{
+  title: string;
+  children: React.ReactNode;
+  isLast?: boolean;
+}> = ({ title, children, isLast }) => (
   <>
-    <Typography variant="overline" sx={settingsSectionHeadingSx}>{title}</Typography>
+    <Typography variant="overline" sx={settingsSectionHeadingSx}>
+      {title}
+    </Typography>
     <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: isLast ? 1 : 3 }}>
       <List disablePadding>{children}</List>
     </Box>
@@ -93,10 +100,23 @@ const ToggleListItem: React.FC<{
   checked: boolean;
   onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   activeColor?: string;
-}> = ({ icon, primary, secondary, checked, onChange, activeColor = 'primary.main' }) => (
+}> = ({
+  icon,
+  primary,
+  secondary,
+  checked,
+  onChange,
+  activeColor = 'primary.main',
+}) => (
   <ListItem>
-    <ListItemIcon sx={{ color: checked ? activeColor : 'text.secondary' }}>{icon}</ListItemIcon>
-    <ListItemText primary={primary} secondary={secondary} primaryTypographyProps={{ fontWeight: 500 }} />
+    <ListItemIcon sx={{ color: checked ? activeColor : 'text.secondary' }}>
+      {icon}
+    </ListItemIcon>
+    <ListItemText
+      primary={primary}
+      secondary={secondary}
+      primaryTypographyProps={{ fontWeight: 500 }}
+    />
     <ListItemSecondaryAction>
       <Switch checked={checked} onChange={onChange} color="primary" />
     </ListItemSecondaryAction>
@@ -111,7 +131,11 @@ const ActionListItem: React.FC<{
 }> = ({ icon, primary, secondary, onClick }) => (
   <ListItemButton onClick={onClick} sx={settingsListRowButtonSx}>
     <ListItemIcon sx={{ color: 'text.secondary' }}>{icon}</ListItemIcon>
-    <ListItemText primary={primary} secondary={secondary} primaryTypographyProps={{ fontWeight: 500 }} />
+    <ListItemText
+      primary={primary}
+      secondary={secondary}
+      primaryTypographyProps={{ fontWeight: 500 }}
+    />
     <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
   </ListItemButton>
 );
@@ -129,7 +153,11 @@ const SettingsPage: React.FC = () => {
   const [newPassword2, setNewPassword2] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState<string | null>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', isError: false });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    isError: false,
+  });
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -170,7 +198,11 @@ const SettingsPage: React.FC = () => {
         new_password2: newPassword2,
       });
       handlePwModalClose();
-      setSnackbar({ open: true, message: t('settings.pwSuccess'), isError: false });
+      setSnackbar({
+        open: true,
+        message: t('settings.pwSuccess'),
+        isError: false,
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : '';
       setPwError(parsePasswordErrors(msg, t));
@@ -186,7 +218,11 @@ const SettingsPage: React.FC = () => {
 
   return (
     <Container maxWidth="sm" sx={{ pt: 12, pb: 6 }}>
-      <Typography variant="h5" fontWeight={600} sx={{ mb: 4, color: 'secondary.main' }}>
+      <Typography
+        variant="h5"
+        fontWeight={600}
+        sx={{ mb: 4, color: 'secondary.main' }}
+      >
         {t('settings.title')}
       </Typography>
 
@@ -226,7 +262,9 @@ const SettingsPage: React.FC = () => {
           primary={t('settings.personalisationLabel')}
           secondary={t('settings.personalisationDesc')}
           checked={prefs.personnalisation}
-          onChange={e => updatePrefs({ ...prefs, personnalisation: e.target.checked })}
+          onChange={e =>
+            updatePrefs({ ...prefs, personnalisation: e.target.checked })
+          }
         />
         <Divider variant="inset" component="li" />
         <ActionListItem
@@ -269,7 +307,12 @@ const SettingsPage: React.FC = () => {
         />
       </SettingsSection>
 
-      <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 5, color: 'text.disabled' }}>
+      <Typography
+        variant="caption"
+        display="block"
+        textAlign="center"
+        sx={{ mt: 5, color: 'text.disabled' }}
+      >
         {t('settings.version')}
       </Typography>
 
@@ -309,14 +352,29 @@ const SettingsPage: React.FC = () => {
               value={newPassword2}
               onChange={e => setNewPassword2(e.target.value)}
               error={!!newPassword2 && newPassword1 !== newPassword2}
-              helperText={newPassword2 && newPassword1 !== newPassword2 ? t('settings.pwErrorMismatch') : undefined}
+              helperText={
+                newPassword2 && newPassword1 !== newPassword2
+                  ? t('settings.pwErrorMismatch')
+                  : undefined
+              }
             />
-            {pwError && <Alert severity="error" sx={{ borderRadius: 2 }}>{pwError}</Alert>}
+            {pwError && (
+              <Alert severity="error" sx={{ borderRadius: 2 }}>
+                {pwError}
+              </Alert>
+            )}
           </Box>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handlePwModalClose} sx={{ borderRadius: 2 }}>{t('common.cancel')}</Button>
-          <Button onClick={handleChangePassword} variant="contained" disabled={pwLoading} sx={{ borderRadius: 2 }}>
+          <Button onClick={handlePwModalClose} sx={{ borderRadius: 2 }}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleChangePassword}
+            variant="contained"
+            disabled={pwLoading}
+            sx={{ borderRadius: 2 }}
+          >
             {pwLoading ? t('settings.pwSaving') : t('settings.pwSave')}
           </Button>
         </DialogActions>
