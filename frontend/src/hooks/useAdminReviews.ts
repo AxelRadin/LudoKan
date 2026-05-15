@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AdminEntityPick } from '../types/adminReviews';
 import { apiGet } from '../services/api';
-import type { AdminReviewRow } from '../types/adminReviews';
+import type { AdminEntityPick, AdminReviewRow } from '../types/adminReviews';
 
 export type AdminReviewsFilters = {
   games: AdminEntityPick[];

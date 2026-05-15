@@ -85,12 +85,12 @@ function useRemotePicks(
   return { options, loading };
 }
 
-type Props = {
+type Props = Readonly<{
   gamesValue: AdminEntityPick[];
   onGamesChange: (next: AdminEntityPick[]) => void;
   usersValue: AdminEntityPick[];
   onUsersChange: (next: AdminEntityPick[]) => void;
-};
+}>;
 
 const MIN_SEARCH = 2;
 

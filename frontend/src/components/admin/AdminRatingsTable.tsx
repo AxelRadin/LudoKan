@@ -73,7 +73,7 @@ export default function AdminRatingsTable() {
       await apiDelete(`/api/admin/ratings/${deleteRow.id}/`);
       setSnackbar({ message: 'Note supprimée.', severity: 'success' });
       setDeleteRow(null);
-      await refetch();
+      refetch();
     } catch (e) {
       setSnackbar({
         message: e instanceof Error ? e.message : 'Erreur à la suppression',

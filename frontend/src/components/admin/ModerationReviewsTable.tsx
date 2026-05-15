@@ -45,15 +45,15 @@ function formatReviewAuthor(r: AdminReviewRow): string {
   const pseudo = r.user?.pseudo?.trim();
   const email = r.user?.email?.trim();
   const id = r.user?.id;
-  const p = pseudo || (id != null ? `#${id}` : '—');
+  const p = pseudo || (id == null ? '—' : `#${id}`);
 
   if (email) return `${p} (${email})`;
   return p;
 }
 
 function reviewAvisTooltip(r: AdminReviewRow): string {
-  const t = (r.title && r.title.trim()) || '(sans titre)';
-  const c = (r.content && r.content.trim()) || '—';
+  const t = r.title?.trim() || '(sans titre)';
+  const c = r.content?.trim() || '—';
 
   return `${t}\n\n${c}`;
 }
@@ -120,14 +120,14 @@ export default function ModerationReviewsTable() {
       };
 
       if (editStar !== '') {
-        const n = parseInt(editStar, 10);
+        const n = Number.parseInt(editStar, 10);
         if (n >= 1 && n <= 5) body.rating_value = n;
       }
 
       await apiPatch(`/api/admin/reviews/${editRow.id}/`, body);
       setSnackbar({ message: 'Avis mis à jour.', severity: 'success' });
       setEditRow(null);
-      await refetch();
+      refetch();
     } catch (e) {
       setSnackbar({
         message: e instanceof Error ? e.message : 'Erreur à l’enregistrement',
@@ -147,7 +147,7 @@ export default function ModerationReviewsTable() {
       await apiDelete(`/api/admin/reviews/${deleteRow.id}/`);
       setSnackbar({ message: 'Avis supprimé.', severity: 'success' });
       setDeleteRow(null);
-      await refetch();
+      refetch();
     } catch (e) {
       setSnackbar({
         message: e instanceof Error ? e.message : 'Erreur à la suppression',
@@ -321,19 +321,25 @@ export default function ModerationReviewsTable() {
           </Typography>
         </Box>
 
-        {loading ? (
-          <Box sx={{ p: 3 }}>
-            <LoadingSkeleton variant="table" count={6} />
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={28} />
-            </Box>
-          </Box>
-        ) : reviews.length === 0 ? (
-          <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-            Aucun avis trouvé.
-          </Typography>
-        ) : (
-          reviews.map(r => (
+        {(() => {
+          if (loading) {
+            return (
+              <Box sx={{ p: 3 }}>
+                <LoadingSkeleton variant="table" count={6} />
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <CircularProgress size={28} />
+                </Box>
+              </Box>
+            );
+          }
+          if (reviews.length === 0) {
+            return (
+              <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
+                Aucun avis trouvé.
+              </Typography>
+            );
+          }
+          return reviews.map(r => (
             <Box
               key={r.id}
               sx={{
@@ -407,7 +413,7 @@ export default function ModerationReviewsTable() {
 
                     <Typography variant="caption">
                       <strong>Note :</strong>{' '}
-                      {r.rating != null ? String(r.rating.value) : '—'}
+                      {r.rating == null ? '—' : String(r.rating.value)}
                     </Typography>
 
                     <Typography variant="caption">
@@ -420,7 +426,7 @@ export default function ModerationReviewsTable() {
 
               <Tooltip
                 title={
-                  r.game?.name ?? (r.game?.id != null ? `#${r.game.id}` : '')
+                  r.game?.name ?? (r.game?.id == null ? '' : `#${r.game.id}`)
                 }
                 enterDelay={350}
                 placement="top-start"
@@ -469,7 +475,7 @@ export default function ModerationReviewsTable() {
                 variant="body2"
                 sx={{ display: { xs: 'none', md: 'block' } }}
               >
-                {r.rating != null ? String(r.rating.value) : '—'}
+                {r.rating == null ? '—' : String(r.rating.value)}
               </Typography>
 
               <Typography
@@ -526,8 +532,8 @@ export default function ModerationReviewsTable() {
                 ) : null}
               </Box>
             </Box>
-          ))
-        )}
+          ));
+        })()}
       </Box>
 
       <TablePagination
@@ -537,7 +543,7 @@ export default function ModerationReviewsTable() {
         onPageChange={(_, p) => setPage(p)}
         rowsPerPage={pageSize}
         onRowsPerPageChange={e => {
-          setPageSize(parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
           setPage(0);
         }}
         rowsPerPageOptions={[10, 20, 50]}
@@ -575,7 +581,7 @@ export default function ModerationReviewsTable() {
                 return;
               }
 
-              const n = parseInt(raw, 10);
+              const n = Number.parseInt(raw, 10);
               if (!Number.isNaN(n) && n >= 1 && n <= 5) {
                 setEditStar(String(n));
               }
