@@ -263,11 +263,11 @@ function EmptySuggestions({
   isDark,
   inkColor,
   accentColor,
-}: {
+}: Readonly<{
   isDark: boolean;
   inkColor: string;
   accentColor: string;
-}) {
+}>) {
   const { t } = useTranslation();
   return (
     <Box
@@ -316,10 +316,10 @@ function EmptySuggestions({
 function CarouselNavigation({
   prev,
   next,
-}: {
+}: Readonly<{
   prev: () => void;
   next: () => void;
-}) {
+}>) {
   const { t } = useTranslation();
   return (
     <>
@@ -349,13 +349,13 @@ function CarouselIndicators({
   onChange,
   accentColor,
   isDark,
-}: {
+}: Readonly<{
   count: number;
   index: number;
   onChange: (i: number) => void;
   accentColor: string;
   isDark: boolean;
-}) {
+}>) {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mt: 2 }}>
       {Array.from({ length: count }).map((_, i) => {

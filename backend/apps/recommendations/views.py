@@ -59,6 +59,7 @@ class RecommendationsView(APIView):
 
         # Exclure les jeux déjà possédés puis mélanger pour varier les suggestions
         candidates = [g for g in raw_games if g.get("id") not in owned_igdb_ids]
+        # Use secrets.SystemRandom() for cryptographically secure shuffling to satisfy SonarQube
         secrets.SystemRandom().shuffle(candidates)
 
         results = [normalize_igdb_game(g) for g in candidates[:_RECOMMENDATIONS_LIMIT]]

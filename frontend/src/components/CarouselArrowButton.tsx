@@ -5,10 +5,10 @@ import { useTheme } from '@mui/material/styles';
 import React, { useMemo } from 'react';
 
 interface CarouselArrowButtonProps {
-  direction: 'left' | 'right';
-  onClick: (e: React.MouseEvent) => void;
-  ariaLabel: string;
-  sx?: object;
+  readonly direction: 'left' | 'right';
+  readonly onClick: (e: React.MouseEvent) => void;
+  readonly ariaLabel: string;
+  readonly sx?: object;
 }
 
 export const CarouselArrowButton: React.FC<CarouselArrowButtonProps> = ({
@@ -43,7 +43,7 @@ export const CarouselArrowButton: React.FC<CarouselArrowButtonProps> = ({
       onClick={onClick}
       sx={{
         position: 'absolute',
-        [direction]: direction === 'left' ? 12 : 12, // Default to 12 as per RecommendedGamesSection
+        [direction]: 12, // Default to 12 as per RecommendedGamesSection
         top: '50%',
         transform: 'translateY(-50%)',
         zIndex: 4,
