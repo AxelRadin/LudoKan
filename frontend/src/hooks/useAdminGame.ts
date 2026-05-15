@@ -6,7 +6,7 @@ type UseAdminGameReturn = {
   game: AdminGameDetail | null;
   loading: boolean;
   error: string | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 };
 
 export function useAdminGame(gameId: number | undefined): UseAdminGameReturn {

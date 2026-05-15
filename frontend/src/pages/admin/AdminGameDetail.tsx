@@ -43,9 +43,9 @@ function formFromGame(g: AdminGameDetail) {
     status: g.status,
     cover_url: g.cover_url ?? '',
     release_date: g.release_date ?? '',
-    min_players: g.min_players != null ? String(g.min_players) : '',
-    max_players: g.max_players != null ? String(g.max_players) : '',
-    min_age: g.min_age != null ? String(g.min_age) : '',
+    min_players: g.min_players == null ? '' : String(g.min_players),
+    max_players: g.max_players == null ? '' : String(g.max_players),
+    min_age: g.min_age == null ? '' : String(g.min_age),
     publisherId: g.publisher.id,
     genreIds: g.genres.map(x => x.id),
     platformIds: g.platforms.map(x => x.id),
@@ -178,7 +178,7 @@ export default function AdminGameDetail() {
       .filter(Boolean) as CatalogItem[];
   }, [form, platformsCatalog]);
 
-  if (error && !game) {
+  if (game === null && error) {
     return (
       <AdminLayout>
         <Button
@@ -193,7 +193,7 @@ export default function AdminGameDetail() {
     );
   }
 
-  if (loading && !game) {
+  if (game === null && loading) {
     return (
       <AdminLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -203,7 +203,7 @@ export default function AdminGameDetail() {
     );
   }
 
-  if (!game || !form) {
+  if (game === null || form === null) {
     return (
       <AdminLayout>
         <Typography>Jeu introuvable.</Typography>

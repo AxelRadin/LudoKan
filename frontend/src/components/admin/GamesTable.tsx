@@ -68,6 +68,110 @@ export default function GamesTable() {
     width: '100%',
   } as const;
 
+  const tableContent = (() => {
+    if (loading) {
+      return (
+        <Box sx={{ p: 3 }}>
+          <LoadingSkeleton variant="table" count={6} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <CircularProgress size={28} />
+          </Box>
+        </Box>
+      );
+    }
+    if (games.length === 0) {
+      return (
+        <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
+          Aucun jeu trouvé.
+        </Typography>
+      );
+    }
+    return games.map(g => (
+      <Box
+        key={g.id}
+        component="button"
+        type="button"
+        onClick={() => navigate(`/admin/games/${g.id}`)}
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: gridCols,
+          columnGap: 1,
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          textAlign: 'left',
+          px: { xs: 2, sm: 3 },
+          py: 2,
+          alignItems: 'center',
+          border: 0,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'transparent',
+          cursor: 'pointer',
+          color: 'text.primary',
+          '&:last-of-type': { borderBottom: 'none' },
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 600, ...cellTextSx }}
+            title={g.name}
+          >
+            {g.name}
+          </Typography>
+          {g.summary ? (
+            <Typography
+              variant="caption"
+              sx={{
+                color: 'text.secondary',
+                display: 'block',
+                mt: 0.25,
+                ...cellTextSx,
+              }}
+              title={g.summary}
+            >
+              {g.summary}
+            </Typography>
+          ) : null}
+        </Box>
+        <Typography
+          variant="body2"
+          sx={{
+            color: 'text.secondary',
+            display: { xs: 'none', sm: 'block' },
+            minWidth: 0,
+            ...cellTextSx,
+          }}
+          title={g.publisher?.name ?? undefined}
+        >
+          {g.publisher?.name ?? '—'}
+        </Typography>
+        <Typography
+          variant="caption"
+          sx={{
+            color: 'text.secondary',
+            textTransform: 'capitalize',
+            display: { xs: 'none', sm: 'block' },
+            minWidth: 0,
+            ...cellTextSx,
+          }}
+          title={g.status ?? undefined}
+        >
+          {g.status ?? '—'}
+        </Typography>
+        <ChevronRightIcon
+          sx={{
+            color: 'text.secondary',
+            justifySelf: 'end',
+            flexShrink: 0,
+          }}
+        />
+      </Box>
+    ));
+  })();
+
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', minWidth: 0 }}>
       <Box
@@ -176,103 +280,7 @@ export default function GamesTable() {
           <span />
         </Box>
 
-        {loading ? (
-          <Box sx={{ p: 3 }}>
-            <LoadingSkeleton variant="table" count={6} />
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={28} />
-            </Box>
-          </Box>
-        ) : games.length === 0 ? (
-          <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-            Aucun jeu trouvé.
-          </Typography>
-        ) : (
-          games.map(g => (
-            <Box
-              key={g.id}
-              component="button"
-              type="button"
-              onClick={() => navigate(`/admin/games/${g.id}`)}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: gridCols,
-                columnGap: 1,
-                width: '100%',
-                maxWidth: '100%',
-                minWidth: 0,
-                textAlign: 'left',
-                px: { xs: 2, sm: 3 },
-                py: 2,
-                alignItems: 'center',
-                border: 0,
-                borderBottom: 1,
-                borderColor: 'divider',
-                bgcolor: 'transparent',
-                cursor: 'pointer',
-                color: 'text.primary',
-                '&:last-of-type': { borderBottom: 'none' },
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, ...cellTextSx }}
-                  title={g.name}
-                >
-                  {g.name}
-                </Typography>
-                {g.summary ? (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: 'text.secondary',
-                      display: 'block',
-                      mt: 0.25,
-                      ...cellTextSx,
-                    }}
-                    title={g.summary}
-                  >
-                    {g.summary}
-                  </Typography>
-                ) : null}
-              </Box>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: 'text.secondary',
-                  display: { xs: 'none', sm: 'block' },
-                  minWidth: 0,
-                  ...cellTextSx,
-                }}
-                title={g.publisher?.name ?? undefined}
-              >
-                {g.publisher?.name ?? '—'}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: 'text.secondary',
-                  textTransform: 'capitalize',
-                  display: { xs: 'none', sm: 'block' },
-                  minWidth: 0,
-                  ...cellTextSx,
-                }}
-                title={g.status ?? undefined}
-              >
-                {g.status ?? '—'}
-              </Typography>
-              <ChevronRightIcon
-                sx={{
-                  color: 'text.secondary',
-                  justifySelf: 'end',
-                  flexShrink: 0,
-                }}
-              />
-            </Box>
-          ))
-        )}
+        {tableContent}
       </Box>
 
       <TablePagination
@@ -282,7 +290,7 @@ export default function GamesTable() {
         onPageChange={(_, newPage) => setPage(newPage)}
         rowsPerPage={pageSize}
         onRowsPerPageChange={e => {
-          setPageSize(parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
           setPage(0);
         }}
         rowsPerPageOptions={[10, 20, 50]}
