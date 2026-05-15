@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 import { apiPost } from '../../services/api';
+import ThemeToggle from '../ThemeToggle';
 
 type Props = Readonly<{
   showMenuButton?: boolean;
@@ -98,6 +99,7 @@ export default function AdminHeader({
             <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 14 }}>
               {displayName}
             </Typography>
+            <ThemeToggle sx={{ width: 32, height: 32 }} />
             <IconButton
               size="small"
               onClick={() => setOpen(true)}
