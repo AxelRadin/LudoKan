@@ -344,13 +344,13 @@ function CarouselNavigation({
 }
 
 function CarouselIndicators({
-  count,
+  games,
   index,
   onChange,
   accentColor,
   isDark,
 }: Readonly<{
-  count: number;
+  games: NormalizedGame[];
   index: number;
   onChange: (i: number) => void;
   accentColor: string;
@@ -358,17 +358,16 @@ function CarouselIndicators({
 }>) {
   return (
     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.75, mt: 2 }}>
-      {Array.from({ length: count }).map((_, i) => {
+      {games.map((game, i) => {
         const isActive = i === index;
-        const dotColor = isActive
-          ? accentColor
-          : isDark
-            ? 'rgba(255,255,255,0.2)'
-            : 'rgba(0,0,0,0.15)';
+        const inactiveColor = isDark
+          ? 'rgba(255,255,255,0.2)'
+          : 'rgba(0,0,0,0.15)';
+        const dotColor = isActive ? accentColor : inactiveColor;
 
         return (
           <Box
-            key={i}
+            key={game.igdb_id}
             onClick={() => onChange(i)}
             sx={{
               width: isActive ? 20 : 8,
@@ -436,7 +435,7 @@ export function RecommendedGamesSection() {
           <>
             <CarouselNavigation prev={prev} next={next} />
             <CarouselIndicators
-              count={games.length}
+              games={games}
               index={index}
               onChange={setIndex}
               accentColor={accentColor}
