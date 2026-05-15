@@ -1,28 +1,18 @@
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import {
-  Box,
-  CircularProgress,
-  IconButton,
-  Snackbar,
-  TablePagination,
-  Tooltip,
-  Typography,
-  Alert,
-} from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { useState } from 'react';
 import { useAuth } from '../../contexts/useAuth';
 import {
   defaultAdminRatingsFilters,
   useAdminRatings,
-  type AdminRatingsFilters,
 } from '../../hooks/useAdminRatings';
+import { useAdminTableState } from '../../hooks/useAdminTableState';
 import { apiDelete } from '../../services/api';
 import type { AdminRatingRow } from '../../types/adminReviews';
 import { hasPermission } from '../../utils/adminPermissions';
+import AdminTableContainer from './AdminTableContainer';
 import DeleteGameModal from './DeleteGameModal';
-import ErrorAlert from './ErrorAlert';
 import GameUserMultiAutocompleteFilters from './GameUserMultiAutocompleteFilters';
-import LoadingSkeleton from './LoadingSkeleton';
 
 const cellTextSx = {
   overflow: 'hidden',
@@ -35,23 +25,18 @@ export default function AdminRatingsTable() {
   const { user } = useAuth();
   const canDelete = hasPermission(user, 'rating_delete');
 
-  const [filters, setFilters] = useState<AdminRatingsFilters>(
-    defaultAdminRatingsFilters
-  );
-  const [draftFilters, setDraftFilters] = useState<AdminRatingsFilters>(
-    defaultAdminRatingsFilters
-  );
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-
-  useEffect(() => {
-    const t = setTimeout(() => setFilters(draftFilters), 350);
-    return () => clearTimeout(t);
-  }, [draftFilters]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [filters]);
+  const {
+    filters,
+    draftFilters,
+    setDraftFilters,
+    resetFilters,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    snackbar,
+    setSnackbar,
+  } = useAdminTableState(defaultAdminRatingsFilters);
 
   const { ratings, count, loading, error, refetch } = useAdminRatings(
     filters,
@@ -61,10 +46,6 @@ export default function AdminRatingsTable() {
 
   const [deleteRow, setDeleteRow] = useState<AdminRatingRow | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [snackbar, setSnackbar] = useState<{
-    message: string;
-    severity: 'success' | 'error';
-  } | null>(null);
 
   async function handleDelete() {
     if (!deleteRow) return;
@@ -84,12 +65,79 @@ export default function AdminRatingsTable() {
     }
   }
 
-  if (error) return <ErrorAlert message={error} />;
-
   const gridCols = {
     xs: 'minmax(0,1fr) 48px',
     sm: 'minmax(0,1fr) minmax(0,100px) minmax(0,100px) 80px 56px 48px',
   } as const;
+
+  const header = (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: gridCols,
+        columnGap: 1,
+        px: 2,
+        py: 1.5,
+        bgcolor: 'action.hover',
+        borderBottom: 1,
+        borderColor: 'divider',
+        minWidth: 0,
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
+      >
+        Jeu
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          fontSize: 11,
+          display: { xs: 'none', sm: 'block' },
+        }}
+      >
+        Utilisateur
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          fontSize: 11,
+          display: { xs: 'none', sm: 'block' },
+        }}
+      >
+        Type
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          fontSize: 11,
+          display: { xs: 'none', sm: 'block' },
+        }}
+      >
+        Valeur
+      </Typography>
+      <span />
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 700,
+          color: 'text.secondary',
+          fontSize: 11,
+          textAlign: 'right',
+          display: { xs: 'none', sm: 'block' },
+        }}
+      >
+        Actions
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', minWidth: 0 }}>
@@ -117,11 +165,7 @@ export default function AdminRatingsTable() {
             component="button"
             type="button"
             variant="body2"
-            onClick={() => {
-              const reset = { ...defaultAdminRatingsFilters };
-              setDraftFilters(reset);
-              setFilters(reset);
-            }}
+            onClick={resetFilters}
             sx={{
               border: 0,
               bgcolor: 'transparent',
@@ -135,170 +179,78 @@ export default function AdminRatingsTable() {
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          border: 1,
-          borderColor: 'divider',
-          borderRadius: 3,
-          overflow: 'hidden',
-          maxWidth: '100%',
-        }}
-      >
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: gridCols,
-            columnGap: 1,
-            px: 2,
-            py: 1.5,
-            bgcolor: 'action.hover',
-            borderBottom: 1,
-            borderColor: 'divider',
-            minWidth: 0,
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 11 }}
-          >
-            Jeu
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              fontSize: 11,
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            Utilisateur
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              fontSize: 11,
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            Type
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              fontSize: 11,
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            Valeur
-          </Typography>
-          <span />
-          <Typography
-            variant="caption"
-            sx={{
-              fontWeight: 700,
-              color: 'text.secondary',
-              fontSize: 11,
-              textAlign: 'right',
-              display: { xs: 'none', sm: 'block' },
-            }}
-          >
-            Actions
-          </Typography>
-        </Box>
-
-        {loading ? (
-          <Box sx={{ p: 3 }}>
-            <LoadingSkeleton variant="table" count={5} />
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={28} />
-            </Box>
-          </Box>
-        ) : ratings.length === 0 ? (
-          <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
-            Aucune note trouvée.
-          </Typography>
-        ) : (
-          ratings.map(row => (
-            <Box
-              key={row.id}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: gridCols,
-                columnGap: 1,
-                px: 2,
-                py: 1.5,
-                alignItems: 'center',
-                borderBottom: 1,
-                borderColor: 'divider',
-                minWidth: 0,
-                '&:last-of-type': { borderBottom: 'none' },
-              }}
-            >
-              <Typography
-                variant="body2"
-                sx={{ ...cellTextSx }}
-                title={row.game_name}
-              >
-                {row.game_name}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ display: { xs: 'none', sm: 'block' }, ...cellTextSx }}
-                title={row.user_pseudo}
-              >
-                {row.user_pseudo}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ display: { xs: 'none', sm: 'block' }, ...cellTextSx }}
-              >
-                {row.rating_type}
-              </Typography>
-              <Typography
-                variant="body2"
-                sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 600 }}
-              >
-                {row.value}
-              </Typography>
-              <Box />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                {canDelete ? (
-                  <Tooltip title="Supprimer la note">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => setDeleteRow(row)}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                ) : null}
-              </Box>
-            </Box>
-          ))
-        )}
-      </Box>
-
-      <TablePagination
-        component="div"
+      <AdminTableContainer
+        loading={loading}
+        error={error}
         count={count}
         page={page}
-        onPageChange={(_, p) => setPage(p)}
-        rowsPerPage={pageSize}
-        onRowsPerPageChange={e => {
-          setPageSize(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
-        labelRowsPerPage="Par page :"
-        sx={{ mt: 1, width: '100%', maxWidth: '100%', overflow: 'auto' }}
-      />
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+        emptyMessage="Aucune note trouvée."
+        header={header}
+        snackbar={snackbar}
+        onSnackbarClose={() => setSnackbar(null)}
+      >
+        {ratings.map(row => (
+          <Box
+            key={row.id}
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: gridCols,
+              columnGap: 1,
+              px: 2,
+              py: 1.5,
+              alignItems: 'center',
+              borderBottom: 1,
+              borderColor: 'divider',
+              minWidth: 0,
+              '&:last-of-type': { borderBottom: 'none' },
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ ...cellTextSx }}
+              title={row.game_name}
+            >
+              {row.game_name}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ display: { xs: 'none', sm: 'block' }, ...cellTextSx }}
+              title={row.user_pseudo}
+            >
+              {row.user_pseudo}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ display: { xs: 'none', sm: 'block' }, ...cellTextSx }}
+            >
+              {row.rating_type}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 600 }}
+            >
+              {row.value}
+            </Typography>
+            <Box />
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              {canDelete ? (
+                <Tooltip title="Supprimer la note">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    onClick={() => setDeleteRow(row)}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              ) : null}
+            </Box>
+          </Box>
+        ))}
+      </AdminTableContainer>
 
       <DeleteGameModal
         open={!!deleteRow}
@@ -313,17 +265,6 @@ export default function AdminRatingsTable() {
         onClose={() => setDeleteRow(null)}
         onConfirm={handleDelete}
       />
-
-      <Snackbar
-        open={!!snackbar}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert severity={snackbar?.severity} onClose={() => setSnackbar(null)}>
-          {snackbar?.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
 }
