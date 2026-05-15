@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import ludokanLogo from '../assets/logo.png';
+import ludokanLogo from '../assets/logo.webp';
 
 const styles = {
   page: {

@@ -1,12 +1,12 @@
-import Box from '@mui/material/Box';
-import { Typography, IconButton } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import EmailIcon from '@mui/icons-material/Email';
 import InstagramIcon from '@mui/icons-material/Instagram';
 import YouTubeIcon from '@mui/icons-material/YouTube';
-import EmailIcon from '@mui/icons-material/Email';
+import { IconButton, Typography } from '@mui/material';
+import Box from '@mui/material/Box';
+import { useTheme } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 import { SiTiktok } from 'react-icons/si';
+import { useNavigate } from 'react-router-dom';
 
 const Footer = () => {
   const { t } = useTranslation();
@@ -97,7 +97,7 @@ const Footer = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
           <Box
             component="img"
-            src="/logo.png"
+            src="/logo.webp"
             alt="Ludokan"
             sx={{
               height: 36,

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ludokanLogo from '../assets/logo.png';
+import ludokanLogo from '../assets/logo.webp';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
 type User = {

@@ -41,7 +41,7 @@ const AuthFormContainer: React.FC<AuthFormContainerProps> = ({
     >
       <Box position="absolute" top={24} left={32}>
         <img
-          src="/logo.png"
+          src="/logo.webp"
           alt="Ludokan Logo"
           style={{ height: 50, width: 50 }}
         />
