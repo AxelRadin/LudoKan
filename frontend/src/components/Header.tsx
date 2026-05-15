@@ -1,8 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
 import ExploreIcon from '@mui/icons-material/Explore';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import PersonIcon from '@mui/icons-material/Person';
@@ -37,12 +35,8 @@ import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
 import SearchBar from './SearchBar';
 import SecondaryButton from './SecondaryButton';
+import ThemeToggle from './ThemeToggle';
 import NotificationIcon from './notifications/NotificationIcon';
-
-const rippleSx = {
-  color: 'inherit',
-  '& .MuiTouchRipple-root': { color: '#FF3D3D !important' },
-} as const;
 
 const LANGUAGES = [
   { code: 'fr', label: 'Français', flag: 'https://flagcdn.com/w40/fr.png' },
@@ -139,30 +133,6 @@ const LanguageDropdown: React.FC<{
         ))}
       </Menu>
     </>
-  );
-};
-
-const ThemeToggle: React.FC = () => {
-  const { t } = useTranslation();
-  const { darkMode, toggleDarkMode } = useThemeMode();
-  return (
-    <Tooltip title={darkMode ? t('header.lightMode') : t('header.darkMode')}>
-      <IconButton
-        onClick={toggleDarkMode}
-        sx={{
-          background: darkMode
-            ? 'rgba(255,255,255,0.05)'
-            : 'rgba(91, 33, 182, 0.05)',
-          ...rippleSx,
-        }}
-      >
-        {darkMode ? (
-          <LightModeIcon sx={{ color: '#FBBF24' }} />
-        ) : (
-          <DarkModeIcon sx={{ color: '#5B21B6' }} />
-        )}
-      </IconButton>
-    </Tooltip>
   );
 };
 
@@ -460,8 +430,15 @@ export const Header: React.FC = () => {
 
             {isMobile ? (
               <Box
-                sx={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
               >
+                <ThemeToggle sx={{ width: 36, height: 36 }} />
                 <IconButton color="inherit" onClick={() => setDrawerOpen(true)}>
                   <MenuIcon />
                 </IconButton>

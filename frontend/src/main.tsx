@@ -54,6 +54,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage.tsx'));
 const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage.tsx'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.tsx'));
+const AdminStatsPage = lazy(() => import('./pages/admin/AdminStatsPage.tsx'));
 const AdminActivity = lazy(() => import('./pages/admin/AdminActivity.tsx'));
 const UsersAdmin = lazy(() => import('./pages/admin/UsersAdmin.tsx'));
 const AdminGames = lazy(() => import('./pages/admin/AdminGames.tsx'));
@@ -302,6 +303,18 @@ const router = createBrowserRouter([
             <ProtectedAdminRoute>
               <PermissionGuard permission="dashboard.view">
                 <AdminDashboard />
+              </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'stats',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <PermissionGuard permission="dashboard.view">
+                <AdminStatsPage />
               </PermissionGuard>
             </ProtectedAdminRoute>
           </Suspense>

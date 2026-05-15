@@ -1,8 +1,8 @@
-import RateReviewIcon from '@mui/icons-material/RateReview';
-import { Box, Tab, Tabs, Typography } from '@mui/material';
+import { Tab, Tabs, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../../components/admin/AdminLayout';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import AdminRatingsTable from '../../components/admin/AdminRatingsTable';
 import ModerationReviewsTable from '../../components/admin/ModerationReviewsTable';
 import { useAuth } from '../../contexts/useAuth';
@@ -51,15 +51,8 @@ export default function AdminReviews() {
 
   return (
     <AdminLayout>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-        <RateReviewIcon color="primary" sx={{ fontSize: 32 }} />
-        <Typography
-          variant="h5"
-          sx={{ fontWeight: 700, color: 'text.primary' }}
-        >
-          Notes et avis
-        </Typography>
-      </Box>
+      <AdminPageHeader title="Notes et avis" />
+
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Modération des avis texte et des notes associées aux jeux.
       </Typography>

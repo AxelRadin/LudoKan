@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import ReportIcon from '@mui/icons-material/Report';
@@ -24,12 +25,6 @@ const ACTIONS: ReadonlyArray<{
     permission: 'user.view',
   },
   {
-    label: 'Journal des actions',
-    icon: <HistoryOutlinedIcon fontSize="small" />,
-    path: '/admin/activity',
-    permission: 'admin_action_read',
-  },
-  {
     label: 'Catalogue jeux',
     icon: <SportsEsportsIcon fontSize="small" />,
     path: '/admin/games',
@@ -40,6 +35,18 @@ const ACTIONS: ReadonlyArray<{
     icon: <RateReviewIcon fontSize="small" />,
     path: '/admin/reviews',
     anyPermissions: ['review_read', 'rating_read'],
+  },
+  {
+    label: 'Statistiques détaillées',
+    icon: <BarChartOutlinedIcon fontSize="small" />,
+    path: '/admin/stats',
+    permission: 'dashboard.view',
+  },
+  {
+    label: 'Journal des actions',
+    icon: <HistoryOutlinedIcon fontSize="small" />,
+    path: '/admin/activity',
+    permission: 'admin_action_read',
   },
   {
     label: 'Voir le support',

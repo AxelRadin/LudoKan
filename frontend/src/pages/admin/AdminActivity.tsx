@@ -15,6 +15,7 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AdminLayout from '../../components/admin/AdminLayout';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import LoadingSkeleton from '../../components/admin/LoadingSkeleton';
 import PanelStaffUserAutocomplete from '../../components/admin/PanelStaffUserAutocomplete';
 import {
@@ -50,12 +51,7 @@ export default function AdminActivity() {
 
   return (
     <AdminLayout>
-      <Typography
-        variant="h5"
-        sx={{ fontWeight: 700, mb: 3, color: 'text.primary' }}
-      >
-        Journal des actions admin
-      </Typography>
+      <AdminPageHeader title="Journal des actions admin" />
 
       <Box
         sx={{

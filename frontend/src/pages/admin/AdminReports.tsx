@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import AdminLayout from '../../components/admin/AdminLayout';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import ErrorAlert from '../../components/admin/ErrorAlert';
 import LoadingSkeleton from '../../components/admin/LoadingSkeleton';
 import { useAdminReports } from '../../hooks/useAdminReports';
@@ -19,9 +20,7 @@ export default function AdminReports() {
 
   return (
     <AdminLayout>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        Reports
-      </Typography>
+      <AdminPageHeader title="Reports" />
 
       {loading ? <LoadingSkeleton variant="table" count={8} /> : null}
       {error ? <ErrorAlert message={error} /> : null}

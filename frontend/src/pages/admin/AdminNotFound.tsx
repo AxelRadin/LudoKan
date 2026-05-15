@@ -1,26 +1,16 @@
-import { Button, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { Stack, Typography } from '@mui/material';
 import AdminLayout from '../../components/admin/AdminLayout';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 
 export default function AdminNotFound() {
-  const navigate = useNavigate();
-
   return (
     <AdminLayout>
-      <Stack spacing={2} sx={{ py: 4 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Page admin introuvable
-        </Typography>
+      <AdminPageHeader title="Page admin introuvable" />
+      <Stack spacing={2} sx={{ py: 1 }}>
         <Typography variant="body2" color="text.secondary">
-          La route demandee n&apos;existe pas.
+          La route demandée n&apos;existe pas ou vous n&apos;avez pas les
+          permissions nécessaires pour y accéder.
         </Typography>
-        <Button
-          variant="contained"
-          onClick={() => navigate('/admin/dashboard')}
-          sx={{ width: 'fit-content' }}
-        >
-          Retour au dashboard
-        </Button>
       </Stack>
     </AdminLayout>
   );

@@ -1,3 +1,5 @@
+from datetime import date, datetime
+from datetime import time as dt_time
 from datetime import timedelta
 
 from dj_rest_auth.views import UserDetailsView as DjUserDetailsView
@@ -5,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models import Count, Q
+from django.db.models.functions import TruncDate
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -17,7 +20,7 @@ from rest_framework.views import APIView
 
 from apps.chat.models import Message
 from apps.core.reports_export import MSG_EXPORT_FORBIDDEN, PERMISSION_REPORTS_EXPORT, build_users_csv, build_users_pdf
-from apps.games.models import Game, Rating
+from apps.games.models import Game, Genre, Rating
 from apps.reviews.models import ContentReport, Review
 from apps.reviews.serializers import ContentReportAdminSerializer
 from apps.support.models import SupportTicket
@@ -27,6 +30,8 @@ from apps.users.serializers import AdminActionSerializer, AdminUserListSerialize
 from apps.users.utils import log_admin_action
 
 User = get_user_model()
+
+PERMISSION_DASHBOARD_VIEW = "dashboard.view"
 
 
 class AdminActionPagination(PageNumberPagination):
@@ -178,7 +183,7 @@ class AdminStatsView(APIView):
     """
 
     permission_classes = [IsAdminWithPermission]
-    required_permission = "dashboard.view"
+    required_permission = PERMISSION_DASHBOARD_VIEW
 
     def get(self, request):
         now = timezone.now()
@@ -195,11 +200,13 @@ class AdminStatsView(APIView):
 
         totals, engagement = self._get_stats_aggregates(now)
         recent_activity = self._get_recent_activity()
+        charts = self._get_charts_data(now)
 
         payload = {
             "totals": totals,
             "engagement": engagement,
             "recent_activity": recent_activity,
+            "charts": charts,
         }
 
         if use_cache:
@@ -265,6 +272,68 @@ class AdminStatsView(APIView):
 
         return totals, engagement
 
+    def _get_charts_data(self, now):
+        """Données agrégées pour graphiques dashboard (14 jours, top jeux, genres)."""
+
+        def _as_date(val):
+            if val is None:
+                return None
+            if isinstance(val, datetime):
+                return timezone.localtime(val).date() if timezone.is_aware(val) else val.date()
+            if isinstance(val, date):
+                return val
+            return val
+
+        if timezone.is_aware(now):
+            local_now = timezone.localtime(now)
+            tz = timezone.get_current_timezone()
+            start_date = (local_now - timedelta(days=13)).date()
+            day_start = timezone.make_aware(datetime.combine(start_date, dt_time.min), tz)
+        else:
+            start_date = (now - timedelta(days=13)).date()
+            day_start = datetime.combine(start_date, dt_time.min)
+
+        new_rows = User.objects.filter(created_at__gte=day_start).annotate(day=TruncDate("created_at")).values("day").annotate(count=Count("id"))
+        new_by_day = {_as_date(row["day"]): row["count"] for row in new_rows}
+
+        active_rows = (
+            User.objects.filter(last_login__gte=day_start, last_login__isnull=False)
+            .annotate(day=TruncDate("last_login"))
+            .values("day")
+            .annotate(count=Count("id"))
+        )
+        active_by_day = {_as_date(row["day"]): row["count"] for row in active_rows}
+
+        users_daily = []
+        for i in range(14):
+            d = start_date + timedelta(days=i)
+            users_daily.append(
+                {
+                    "date": d.isoformat(),
+                    "new_users": int(new_by_day.get(d, 0)),
+                    "active_logins": int(active_by_day.get(d, 0)),
+                }
+            )
+
+        top_games_qs = Game.objects.annotate(review_count=Count("reviews")).filter(review_count__gt=0).order_by("-review_count")[:10]
+        games_top = [
+            {
+                "id": g.id,
+                "name": (g.name[:28] + "…") if len(g.name) > 28 else g.name,
+                "reviews": g.review_count,
+            }
+            for g in top_games_qs
+        ]
+
+        top_genres_qs = Genre.objects.annotate(game_count=Count("games")).filter(game_count__gt=0).order_by("-game_count")[:10]
+        genres_share = [{"name": g.name, "count": g.game_count} for g in top_genres_qs]
+
+        return {
+            "users_daily": users_daily,
+            "games_top": games_top,
+            "genres_share": genres_share,
+        }
+
     def _get_recent_activity(self):
         """Récupère et formate les 20 dernières actions d'administration."""
         recent_actions = AdminAction.objects.select_related("admin_user").order_by("-timestamp")[:20]
@@ -295,6 +364,110 @@ class AdminStatsView(APIView):
             )
 
         return recent_activity
+
+
+def _admin_stats_insight_as_date(val):
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return timezone.localtime(val).date() if timezone.is_aware(val) else val.date()
+    if isinstance(val, date):
+        return val
+    return val
+
+
+def _admin_stats_insight_window(now, num_days):
+    """Fenêtre calendaire [start_date, start_date+num_days-1] avec day_start pour filtres ORM."""
+    days_back = num_days - 1
+    if timezone.is_aware(now):
+        local_now = timezone.localtime(now)
+        tz = timezone.get_current_timezone()
+        start_date = (local_now - timedelta(days=days_back)).date()
+        day_start = timezone.make_aware(datetime.combine(start_date, dt_time.min), tz)
+    else:
+        start_date = (now - timedelta(days=days_back)).date()
+        day_start = datetime.combine(start_date, dt_time.min)
+    return start_date, day_start
+
+
+def _admin_stats_daily_series(queryset, date_field, start_date, day_start_dt, num_days):
+    rows = queryset.filter(**{f"{date_field}__gte": day_start_dt}).annotate(_d=TruncDate(date_field)).values("_d").annotate(c=Count("id"))
+    by_d = {}
+    for row in rows:
+        k = _admin_stats_insight_as_date(row["_d"])
+        by_d[k] = row["c"]
+    return [
+        {
+            "date": (start_date + timedelta(days=i)).isoformat(),
+            "count": int(by_d.get(start_date + timedelta(days=i), 0)),
+        }
+        for i in range(num_days)
+    ]
+
+
+class AdminStatsInsightsView(APIView):
+    """
+    Séries temporelles et répartitions pour la page statistiques détaillées (graphiques).
+
+    GET /api/admin/stats/insights/
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = PERMISSION_DASHBOARD_VIEW
+
+    def get(self, request):
+        now = timezone.now()
+
+        # --- 30 jours : avis + notes (séries puis fusion par date)
+        start30, day30 = _admin_stats_insight_window(now, 30)
+        rev_daily = _admin_stats_daily_series(Review.objects.all(), "date_created", start30, day30, 30)
+        rat_daily = _admin_stats_daily_series(Rating.objects.all(), "date_created", start30, day30, 30)
+        reviews_ratings_daily = [
+            {"date": rev_daily[i]["date"], "reviews": rev_daily[i]["count"], "ratings": rat_daily[i]["count"]} for i in range(30)
+        ]
+
+        # --- 14 jours : signalements + messages
+        start14, day14 = _admin_stats_insight_window(now, 14)
+        reports_daily = _admin_stats_daily_series(ContentReport.objects.all(), "created_at", start14, day14, 14)
+        messages_daily = _admin_stats_daily_series(Message.objects.all(), "created_at", start14, day14, 14)
+        reports_messages_daily = [
+            {
+                "date": reports_daily[i]["date"],
+                "reports": reports_daily[i]["count"],
+                "messages": messages_daily[i]["count"],
+            }
+            for i in range(14)
+        ]
+
+        support_by_status = [
+            {
+                "status": row["status"],
+                "label": dict(SupportTicket.Status.choices).get(row["status"], row["status"]),
+                "count": row["count"],
+            }
+            for row in SupportTicket.objects.values("status").annotate(count=Count("id")).order_by("status")
+        ]
+
+        status_field = Game._meta.get_field("status")
+        status_labels = dict(status_field.choices)
+        games_by_status = [
+            {
+                "status": row["status"] or "",
+                "label": status_labels.get(row["status"], row["status"] or "—"),
+                "count": row["count"],
+            }
+            for row in Game.objects.values("status").annotate(count=Count("id")).order_by("-count")
+        ]
+
+        return Response(
+            {
+                "reviews_ratings_daily": reviews_ratings_daily,
+                "reports_messages_daily": reports_messages_daily,
+                "support_by_status": support_by_status,
+                "games_by_status": games_by_status,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 def _build_users_report_payload():
@@ -367,7 +540,7 @@ class AdminReportsUsersView(APIView):
     """
 
     permission_classes = [IsAdminWithPermission]
-    required_permission = "dashboard.view"
+    required_permission = PERMISSION_DASHBOARD_VIEW
 
     def get(self, request):
         cache_timeout = getattr(settings, "ADMIN_REPORTS_USERS_CACHE_TIMEOUT", 60)
