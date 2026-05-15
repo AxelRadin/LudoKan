@@ -159,7 +159,7 @@ export default function AdminActivity() {
                     <TableCell>
                       {row.admin_user_pseudo?.trim() ||
                         row.admin_user_email ||
-                        (row.admin_user != null ? `#${row.admin_user}` : '—')}
+                        (row.admin_user == null ? '—' : `#${row.admin_user}`)}
                     </TableCell>
                     <TableCell>
                       {formatTarget(row.target_type, row.target_id)}
@@ -179,7 +179,7 @@ export default function AdminActivity() {
         onPageChange={(_, newPage) => setPage(newPage)}
         rowsPerPage={pageSize}
         onRowsPerPageChange={e => {
-          setPageSize(parseInt(e.target.value, 10));
+          setPageSize(Number.parseInt(e.target.value, 10));
           setPage(0);
         }}
         rowsPerPageOptions={[10, 20, 50]}

@@ -11,7 +11,7 @@ import ErrorAlert from './ErrorAlert';
 import LoadingSkeleton from './LoadingSkeleton';
 import type { SnackbarState } from '../../hooks/useAdminTableState';
 
-interface AdminTableContainerProps {
+type AdminTableContainerProps = Readonly<{
   loading: boolean;
   error: string | null;
   count: number;
@@ -24,7 +24,7 @@ interface AdminTableContainerProps {
   header?: ReactNode;
   snackbar: SnackbarState | null;
   onSnackbarClose: () => void;
-}
+}>;
 
 /**
  * A shared container for admin tables that handles:
