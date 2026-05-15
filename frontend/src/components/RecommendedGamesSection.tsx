@@ -321,7 +321,7 @@ export function RecommendedGamesSection() {
           {t('recommendations.noSuggestions')}
         </Typography>
         <Button
-          href="/search"
+          href="/games"
           variant="contained"
           sx={{
             mt: 1,
