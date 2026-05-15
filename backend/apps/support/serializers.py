@@ -8,6 +8,7 @@ class SupportTicketCreateSerializer(serializers.ModelSerializer):
         model = SupportTicket
         fields = ("id", "category", "subject", "body", "page_url", "status", "created_at")
         read_only_fields = ("id", "status", "created_at")
+        extra_kwargs = {"category": {"error_messages": {"invalid_choice": "Catégorie invalide."}}}
 
     def validate_subject(self, value: str) -> str:
         v = value.strip()
@@ -77,6 +78,7 @@ class SupportTicketAdminUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupportTicket
         fields = ("status", "internal_note", "assigned_to")
+        extra_kwargs = {"status": {"error_messages": {"invalid_choice": "Statut invalide."}}}
 
     def validate_status(self, value: str) -> str:
         valid = {c.value for c in SupportTicket.Status}
