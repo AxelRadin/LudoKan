@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,6 +27,12 @@ from apps.users.serializers import AdminActionSerializer, AdminUserListSerialize
 from apps.users.utils import log_admin_action
 
 User = get_user_model()
+
+
+class AdminActionPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 50
 
 
 class SuspensionAwareUserDetailsView(DjUserDetailsView):
@@ -279,6 +286,7 @@ class AdminStatsView(APIView):
 
             recent_activity.append(
                 {
+                    "id": action.pk,
                     "action": action_name,
                     "actor": actor,
                     "target": target,
@@ -412,15 +420,20 @@ class AdminUserListView(ListAPIView):
 
     def get_queryset(self):
         qs = User.objects.all().order_by("-created_at")
+        qs = self._apply_filters(qs)
+        return qs.select_related().prefetch_related("roles", "suspensions")
 
-        search = self.request.query_params.get("search")
-        email = self.request.query_params.get("email")
-        pseudo = self.request.query_params.get("pseudo")
-        is_active = self.request.query_params.get("is_active")
-        is_staff = self.request.query_params.get("is_staff")
-        role = self.request.query_params.get("role")
-        created_before = self.request.query_params.get("created_before")
-        created_after = self.request.query_params.get("created_after")
+    def _apply_filters(self, qs):
+        params = self.request.query_params
+        search = params.get("search")
+        email = params.get("email")
+        pseudo = params.get("pseudo")
+        is_active = params.get("is_active")
+        is_staff = params.get("is_staff")
+        role = params.get("role")
+        panel_staff_only = params.get("panel_staff_only")
+        created_before = params.get("created_before")
+        created_after = params.get("created_after")
 
         if search:
             qs = qs.filter(Q(email__icontains=search) | Q(pseudo__icontains=search))
@@ -428,6 +441,26 @@ class AdminUserListView(ListAPIView):
             qs = qs.filter(email__icontains=email)
         if pseudo:
             qs = qs.filter(pseudo__icontains=pseudo)
+
+        qs = self._apply_boolean_filters(qs, is_active, is_staff)
+
+        if role:
+            qs = qs.filter(roles__role=role)
+        if panel_staff_only and str(panel_staff_only).lower() in {"true", "1", "yes"}:
+            qs = qs.filter(
+                roles__role__in=[
+                    UserRole.Role.MODERATOR,
+                    UserRole.Role.ADMIN,
+                    UserRole.Role.SUPERADMIN,
+                ]
+            ).distinct()
+        if created_before:
+            qs = qs.filter(created_at__lte=created_before)
+        if created_after:
+            qs = qs.filter(created_at__gte=created_after)
+        return qs
+
+    def _apply_boolean_filters(self, qs, is_active, is_staff):
         if is_active is not None:
             if is_active.lower() in {"true", "1"}:
                 qs = qs.filter(is_active=True)
@@ -438,14 +471,7 @@ class AdminUserListView(ListAPIView):
                 qs = qs.filter(is_staff=True)
             elif is_staff.lower() in {"false", "0"}:
                 qs = qs.filter(is_staff=False)
-        if role:
-            qs = qs.filter(roles__role=role)
-        if created_before:
-            qs = qs.filter(created_at__lte=created_before)
-        if created_after:
-            qs = qs.filter(created_at__gte=created_after)
-
-        return qs.select_related().prefetch_related("roles", "suspensions")
+        return qs
 
 
 class AdminActionListView(ListAPIView):
@@ -458,6 +484,7 @@ class AdminActionListView(ListAPIView):
     permission_classes = [IsAdminWithPermission]
     required_permission = "admin_action_read"
     serializer_class = AdminActionSerializer
+    pagination_class = AdminActionPagination
 
     def get_queryset(self):
         qs = AdminAction.objects.select_related("admin_user").all().order_by("-timestamp")

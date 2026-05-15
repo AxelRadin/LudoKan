@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import ReportIcon from '@mui/icons-material/Report';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -30,6 +31,12 @@ const NAV_ITEMS: ReadonlyArray<{
     icon: <DashboardIcon />,
     path: '/admin/dashboard',
     permission: 'dashboard.view',
+  },
+  {
+    label: 'Activité admin',
+    icon: <HistoryOutlinedIcon />,
+    path: '/admin/activity',
+    permission: 'admin_action_read',
   },
   {
     label: 'Utilisateurs',
@@ -115,7 +122,9 @@ export default function AdminSidebar({
             selected={
               pathname === item.path ||
               (item.path === '/admin/reviews' &&
-                pathname.startsWith('/admin/reviews'))
+                pathname.startsWith('/admin/reviews')) ||
+              (item.path === '/admin/activity' &&
+                pathname.startsWith('/admin/activity'))
             }
             onClick={() => {
               navigate(item.path);
@@ -127,7 +136,9 @@ export default function AdminSidebar({
               color:
                 pathname === item.path ||
                 (item.path === '/admin/reviews' &&
-                  pathname.startsWith('/admin/reviews'))
+                  pathname.startsWith('/admin/reviews')) ||
+                (item.path === '/admin/activity' &&
+                  pathname.startsWith('/admin/activity'))
                   ? 'common.white'
                   : 'grey.400',
               '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.08)' },

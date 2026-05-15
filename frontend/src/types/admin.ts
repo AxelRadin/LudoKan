@@ -31,9 +31,28 @@ export type AdminStats = {
   };
   recent_activity: {
     id: number;
-    action: string;
+    action: string | null;
     actor: string | null;
     target: string | null;
     time: string;
   }[];
+};
+
+export type AdminActionRow = {
+  id: number;
+  timestamp: string;
+  admin_user: number | null;
+  admin_user_email: string | null;
+  admin_user_pseudo: string | null;
+  action_type: string;
+  target_type: string;
+  target_id: number | null;
+  description: string;
+};
+
+export type AdminActionListResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: AdminActionRow[];
 };

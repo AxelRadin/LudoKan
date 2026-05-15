@@ -93,6 +93,7 @@ class TestAdminStatsView:
 
         # La première entrée doit correspondre à la dernière action créée (timestamp DESC)
         first = recent_activity[0]
+        assert "id" in first
         assert first["action"] == "system_maintenance"
         assert first["actor"] == admin_user.pseudo
         assert first["target"] is None

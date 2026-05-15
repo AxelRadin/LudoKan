@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import PeopleIcon from '@mui/icons-material/People';
 import ReportIcon from '@mui/icons-material/Report';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
@@ -21,6 +22,12 @@ const ACTIONS: ReadonlyArray<{
     icon: <PeopleIcon fontSize="small" />,
     path: '/admin/users',
     permission: 'user.view',
+  },
+  {
+    label: 'Journal des actions',
+    icon: <HistoryOutlinedIcon fontSize="small" />,
+    path: '/admin/activity',
+    permission: 'admin_action_read',
   },
   {
     label: 'Catalogue jeux',
