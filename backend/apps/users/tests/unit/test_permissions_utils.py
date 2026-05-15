@@ -47,6 +47,8 @@ class TestHasPermissionHelper:
 
         assert has_permission(user, "review_read") is True
         assert has_permission(user, "rating_read") is True
+        assert has_permission(user, "game_read") is True
+        assert has_permission(user, "game_edit") is False
         assert has_permission(user, "user.suspend") is False
 
     def test_admin_permissions(self, user):
@@ -57,6 +59,8 @@ class TestHasPermissionHelper:
         assert has_permission(user, "user.view") is True
         assert has_permission(user, "user.suspend") is True
         assert has_permission(user, "user.edit") is True
+        assert has_permission(user, "game_edit") is True
+        assert has_permission(user, "game_delete") is True
         # Permission non déclarée
         assert has_permission(user, "nimporte.quoi") is False
 

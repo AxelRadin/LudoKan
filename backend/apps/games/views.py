@@ -12,6 +12,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiExample, extend_schema, extend_schema_view
 from rest_framework import filters, status
 from rest_framework.generics import ListAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -22,8 +23,10 @@ from apps.games import igdb_client
 from apps.games.filters import GameFilter
 from apps.games.igdb_proxy_constants import FIELDS_GAME_DETAIL
 from apps.games.models import Game, Genre, Platform, Publisher, Rating
-from apps.games.permissions import CanDeleteRating, CanReadGame, CanReadRating
+from apps.games.permissions import CanDeleteGame, CanDeleteRating, CanEditGame, CanReadGame, CanReadRating
 from apps.games.serializers import (
+    AdminGameDetailSerializer,
+    AdminGameUpdateSerializer,
     GameDetailSerializer,
     GameReadSerializer,
     GameWriteSerializer,
@@ -409,6 +412,12 @@ class IgdbResolveView(APIView):
         )
 
 
+class AdminGamePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class AdminGameListView(ListAPIView):
     """
     Endpoint admin pour lister les jeux.
@@ -418,6 +427,7 @@ class AdminGameListView(ListAPIView):
 
     serializer_class = GameReadSerializer
     permission_classes = [CanReadGame]
+    pagination_class = AdminGamePagination
     filter_backends = [filters.OrderingFilter]
     ordering_fields = [
         "release_date",
@@ -462,6 +472,66 @@ class AdminGameListView(ListAPIView):
             qs = qs.filter(created_at__gte=created_after)
 
         return qs
+
+
+class AdminGameDetailView(APIView):
+    """
+    Détail / mise à jour / suppression d'un jeu (panel admin).
+
+    GET /api/admin/games/{id}/
+    PATCH /api/admin/games/{id}/
+    DELETE /api/admin/games/{id}/
+    """
+
+    def get_permissions(self):
+        method = self.request.method.upper()
+        if method == "GET":
+            return [CanReadGame()]
+        if method == "PATCH":
+            return [CanEditGame()]
+        if method == "DELETE":
+            return [CanDeleteGame()]
+        return [CanReadGame()]
+
+    def _game_detail_queryset(self):
+        return Game.objects.select_related("publisher").prefetch_related(
+            "genres",
+            "platforms",
+            "screenshots",
+            "game_videos",
+        )
+
+    def get(self, request, pk):
+        game = get_object_or_404(self._game_detail_queryset(), pk=pk)
+        return Response(AdminGameDetailSerializer(game).data)
+
+    def patch(self, request, pk):
+        game = get_object_or_404(Game, pk=pk)
+        serializer = AdminGameUpdateSerializer(game, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        game = self._game_detail_queryset().get(pk=pk)
+        log_admin_action(
+            admin_user=request.user,
+            action_type="game.update",
+            target_type="game",
+            target_id=game.pk,
+            description=f"Jeu modifié (id={game.pk}) par admin (id={request.user.id})",
+        )
+        return Response(AdminGameDetailSerializer(game).data)
+
+    def delete(self, request, pk):
+        game = get_object_or_404(Game, pk=pk)
+        gid = game.pk
+        log_admin_action(
+            admin_user=request.user,
+            action_type="game.delete",
+            target_type="game",
+            target_id=gid,
+            description=f"Jeu supprimé (id={gid}) par admin (id={request.user.id})",
+        )
+        game.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminRatingListView(APIView):

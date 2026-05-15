@@ -55,6 +55,8 @@ const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage.tsx'));
 
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard.tsx'));
 const UsersAdmin = lazy(() => import('./pages/admin/UsersAdmin.tsx'));
+const AdminGames = lazy(() => import('./pages/admin/AdminGames.tsx'));
+const AdminGameDetail = lazy(() => import('./pages/admin/AdminGameDetail.tsx'));
 const AdminTickets = lazy(() => import('./pages/admin/AdminTickets.tsx'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports.tsx'));
 const AdminNotFound = lazy(() => import('./pages/admin/AdminNotFound.tsx'));
@@ -310,6 +312,30 @@ const router = createBrowserRouter([
             <ProtectedAdminRoute>
               <PermissionGuard permission="user.view">
                 <UsersAdmin />
+              </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'games/:gameId',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <PermissionGuard permission="game_read">
+                <AdminGameDetail />
+              </PermissionGuard>
+            </ProtectedAdminRoute>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'games',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProtectedAdminRoute>
+              <PermissionGuard permission="game_read">
+                <AdminGames />
               </PermissionGuard>
             </ProtectedAdminRoute>
           </Suspense>

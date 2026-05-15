@@ -19,3 +19,15 @@ class CanReadGame(IsAdminWithPermission, BasePermission):
     """Permission admin pour la lecture des jeux."""
 
     required_permission = "game_read"
+
+
+class CanEditGame(IsAdminWithPermission, BasePermission):
+    """Permission admin pour modifier un jeu."""
+
+    required_permission = "game_edit"
+
+
+class CanDeleteGame(IsAdminWithPermission, BasePermission):
+    """Permission admin pour supprimer un jeu."""
+
+    required_permission = "game_delete"

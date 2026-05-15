@@ -1,6 +1,7 @@
 import PeopleIcon from '@mui/icons-material/People';
 import ReportIcon from '@mui/icons-material/Report';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import { Box, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
@@ -12,6 +13,12 @@ const ACTIONS = [
     icon: <PeopleIcon fontSize="small" />,
     path: '/admin/users',
     permission: 'user.view',
+  },
+  {
+    label: 'Catalogue jeux',
+    icon: <SportsEsportsIcon fontSize="small" />,
+    path: '/admin/games',
+    permission: 'game_read',
   },
   {
     label: 'Voir le support',

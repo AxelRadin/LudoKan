@@ -2,6 +2,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import ReportIcon from '@mui/icons-material/Report';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports';
 import {
   Box,
   Drawer,
@@ -27,6 +28,12 @@ const NAV_ITEMS = [
     icon: <PeopleIcon />,
     path: '/admin/users',
     permission: 'user.view',
+  },
+  {
+    label: 'Jeux',
+    icon: <SportsEsportsIcon />,
+    path: '/admin/games',
+    permission: 'game_read',
   },
   {
     label: 'Support',

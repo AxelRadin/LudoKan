@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdminGameDetailView,
     AdminGameListView,
     AdminRatingDetailView,
     AdminRatingListView,
@@ -130,6 +131,7 @@ urlpatterns = [
     path("games/<int:game_id>/stats/", GameStatsView.as_view(), name="game-stats"),
     # Admin (api/admin/...)
     path("admin/games/", AdminGameListView.as_view(), name="admin-game-list"),
+    path("admin/games/<int:pk>/", AdminGameDetailView.as_view(), name="admin-game-detail"),
     path("admin/ratings/", AdminRatingListView.as_view(), name="admin-rating-list"),
     path("admin/ratings/<int:pk>/", AdminRatingDetailView.as_view(), name="admin-rating-detail"),
     path("admin/reports/games/", AdminReportsGamesView.as_view(), name="admin-reports-games"),
