@@ -139,17 +139,23 @@ class TestAdminGameDetailView:
         response = authenticated_client.get(url)
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_admin_can_patch_game(self, admin_client, game, publisher, genre):
+    def test_admin_can_patch_game(self, admin_client, game, publisher, genre, platform):
         url = f"/api/admin/games/{game.id}/"
         response = admin_client.patch(
             url,
-            {"name": "Updated By Admin", "description": "New desc", "genres": [genre.id]},
+            {
+                "name": "Updated By Admin",
+                "description": "New desc",
+                "genres": [genre.id],
+                "platforms": [platform.id],
+            },
             format="json",
         )
         assert response.status_code == status.HTTP_200_OK
         game.refresh_from_db()
         assert game.name == "Updated By Admin"
         assert game.description == "New desc"
+        assert game.platforms.filter(id=platform.id).exists()
 
     def test_moderator_cannot_patch_game(self, moderator_client, game):
         url = f"/api/admin/games/{game.id}/"
@@ -172,3 +178,11 @@ class TestAdminGameDetailView:
         url = f"/api/admin/games/{game.id}/"
         response = moderator_client.delete(url)
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_game_detail_permissions_default(self, admin_client, game):
+        """Covers the default return in get_permissions (line 494)."""
+        url = f"/api/admin/games/{game.id}/"
+        # OPTIONS will trigger the default case in get_permissions
+        response = admin_client.options(url)
+        # OPTIONS usually returns 200 OK with Allow header
+        assert response.status_code == status.HTTP_200_OK
