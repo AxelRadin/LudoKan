@@ -3,8 +3,9 @@ import { apiGet } from '../services/api';
 
 export type AdminReport = {
   id: number;
-  review_excerpt: string;
-  reported_by: string;
+  target_type: string;
+  target_id: number;
+  reporter_label: string;
   created_at: string;
   handled: boolean;
 };
@@ -28,7 +29,24 @@ export function useAdminReports(): UseAdminReportsReturn {
           signal: controller.signal,
         });
         const list = Array.isArray(data) ? data : (data.results ?? []);
-        setReports(list);
+        const normalized = list.map((item: Record<string, unknown>) => {
+          const reporter = item.reporter as
+            | { pseudo?: string; email?: string }
+            | undefined;
+          return {
+            id: Number(item.id),
+            target_type:
+              typeof item.target_type === 'string'
+                ? item.target_type
+                : 'unknown',
+            target_id: Number(item.target_id ?? 0),
+            reporter_label: reporter?.pseudo ?? reporter?.email ?? '—',
+            created_at:
+              typeof item.created_at === 'string' ? item.created_at : '',
+            handled: Boolean(item.handled),
+          } satisfies AdminReport;
+        });
+        setReports(normalized);
       } catch (err: unknown) {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         setError('Erreur lors du chargement des reports');

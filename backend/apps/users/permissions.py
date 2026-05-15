@@ -23,7 +23,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "dashboard.view",
         # Lecture des ressources d'administration
         "game_read",
-        "ticket_read",
+        "support.view",
         "admin_action_read",
     },
     UserRole.Role.ADMIN: {
@@ -51,10 +51,9 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "import_export.review",
         "import_export.rating",
         "game_read",
-        "ticket_read",
+        "support.view",
+        "support.manage",
         "admin_action_read",
-        "ticket.change_status",
-        "ticket.change_data",
         "reports.export",
     },
     # Le superadmin hérite de toutes les permissions via le joker "*".

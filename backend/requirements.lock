@@ -120,8 +120,6 @@ django-cors-headers==4.3.1
     # via -r requirements.txt
 django-filter==23.3
     # via -r requirements.txt
-django-fsm==3.0.1
-    # via -r requirements.txt
 django-import-export==4.4.0
     # via -r requirements.txt
 django-model-utils==5.0.0

@@ -64,8 +64,8 @@ urlpatterns = [
     path("api/social/", include("apps.social.urls")),
     # Chat
     path("api/", include("apps.chat.urls")),
-    # Game Tickets
-    path("api/", include("apps.game_tickets.urls")),
+    # Support (bugs / SAV)
+    path("api/", include("apps.support.urls")),
     # Recommendations
     path("api/", include("apps.recommendations.urls")),
 ]

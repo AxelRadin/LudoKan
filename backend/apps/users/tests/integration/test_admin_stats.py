@@ -8,9 +8,9 @@ from django.utils import timezone
 from rest_framework import status
 
 from apps.chat.models import ChatRoom, Message
-from apps.game_tickets.models import GameTicket
 from apps.games.models import Game, Publisher, Rating
 from apps.reviews.models import Review
+from apps.support.models import SupportTicket
 from apps.users.models import AdminAction
 from apps.users.tests.constants import RECAPTCHA_POST_FIELD, TEST_USER_CREDENTIAL
 
@@ -26,11 +26,12 @@ class TestAdminStatsView:
         publisher = Publisher.objects.create(name="Test Publisher")
         game = Game.objects.create(name="Test Game", publisher=publisher)
 
-        # Ticket lié à un utilisateur
-        GameTicket.objects.create(
+        # Ticket support lié à un utilisateur
+        SupportTicket.objects.create(
             user=admin_user,
-            game_name="Requested Game",
-            description="Test ticket",
+            category=SupportTicket.Category.BUG,
+            subject="Bug test",
+            body="Description suffisamment longue pour le test.",
         )
 
         # Review liée au jeu
@@ -75,7 +76,7 @@ class TestAdminStatsView:
 
         assert totals["users"] == User.objects.count()
         assert totals["games"] == Game.objects.count()
-        assert totals["tickets"] == GameTicket.objects.count()
+        assert totals["support_tickets"] == SupportTicket.objects.count()
         assert totals["reviews"] == Review.objects.count()
 
         engagement = response.data["engagement"]

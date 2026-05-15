@@ -818,7 +818,27 @@
     "cookiesDetail": "Détail des cookies utilisés",
     "helpSection": "Aide",
     "restartTour": "Revoir le didacticiel",
-    "restartTourDesc": "Relance le guide de prise en main"
+    "restartTourDesc": "Relance le guide de prise en main",
+    "supportContact": "Contacter le support",
+    "supportContactDesc": "Signaler un bug ou demander de l'aide"
+  },
+  "supportPage": {
+    "title": "Support",
+    "intro": "Décrivez votre problème. L'équipe vous répondra dès que possible.",
+    "category": "Catégorie",
+    "categoryBug": "Bug / technique",
+    "categoryAccount": "Compte",
+    "categoryOther": "Autre",
+    "subject": "Sujet",
+    "message": "Message",
+    "pageUrl": "URL de la page (optionnel)",
+    "submit": "Envoyer",
+    "history": "Vos demandes",
+    "loading": "Chargement…",
+    "empty": "Aucune demande pour le moment.",
+    "sentOk": "Demande envoyée.",
+    "sentError": "Impossible d'envoyer la demande.",
+    "loadError": "Impossible de charger vos demandes."
   },
   "resetPasswordPage": {
     "title": "Nouveau mot de passe",
