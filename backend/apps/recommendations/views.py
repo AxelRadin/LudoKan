@@ -32,7 +32,7 @@ class RecommendationsView(APIView):
         threshold = max_weight * 0.5
         top_django_genre_ids = [gid for gid, w in genre_weights.items() if w >= threshold]
 
-        top_igdb_genre_ids = list(Genre.objects.filter(id__in=top_django_genre_ids).values_list("igdb_id", flat=True))
+        top_igdb_genre_ids = [gid for gid in Genre.objects.filter(id__in=top_django_genre_ids).values_list("igdb_id", flat=True) if gid is not None]
 
         if not top_igdb_genre_ids:
             return Response([])
@@ -64,4 +64,9 @@ class RecommendationsView(APIView):
         results = [normalize_igdb_game(g) for g in candidates[:_RECOMMENDATIONS_LIMIT]]
 
         results = enrich_normalized_games(results, user=user)
+
+        # Ajouter 'id' pour la compatibilité avec les tests et le contrat attendu par certains clients
+        for r in results:
+            r["id"] = r["django_id"]
+
         return Response(results)

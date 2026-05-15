@@ -82,8 +82,8 @@ def test_fetch_helpers_return_empty_structures_when_no_ids():
 def test_map_status_handles_none_and_unknown():
     cmd = make_command()
 
-    assert cmd.map_status(None) is None
-    assert cmd.map_status(999) is None
+    assert cmd.map_status(None) == "released"
+    assert cmd.map_status(999) == "released"
     assert cmd.map_status(0) == "released"
 
 

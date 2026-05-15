@@ -12,20 +12,35 @@ from apps.library.models import UserGame
 
 @pytest.mark.django_db
 class TestRecommendationsEndpoints:
-    def test_get_recommendations(self, api_client, user, publisher):
+    def test_get_recommendations(self, api_client, user, publisher, monkeypatch):
+        # Mock IGDB request
+        def fake_igdb_request(endpoint, query):
+            return [
+                {
+                    "id": 456,
+                    "name": "Recommended",
+                    "total_rating_count": 100,
+                    "cover": {"url": "//images.igdb.com/cover.jpg"},
+                    "screenshots": [{"url": "//images.igdb.com/shot.jpg"}],
+                    "genres": [{"id": 4, "name": "Action"}],
+                }
+            ]
+
+        monkeypatch.setattr("apps.recommendations.views.igdb_request", fake_igdb_request)
+
         # Authentification
         api_client.force_authenticate(user=user)
 
         # Setup
-        genre = Genre.objects.create(name="Action")
+        genre = Genre.objects.create(name="Action", igdb_id=4)  # 4 = Action on IGDB
 
         # Jeu déjà possédé (ne devrait pas être recommandé)
-        owned_game = Game.objects.create(name="Owned", publisher=publisher, popularity_score=100)
+        owned_game = Game.objects.create(name="Owned", publisher=publisher, popularity_score=100, igdb_id=123)
         owned_game.genres.add(genre)
         UserGame.objects.create(user=user, game=owned_game)
 
         # Jeu recommandé (possède le genre, >= 4 screenshots, non possédé)
-        rec_game = Game.objects.create(name="Recommended", publisher=publisher, popularity_score=50)
+        rec_game = Game.objects.create(name="Recommended", publisher=publisher, popularity_score=50, igdb_id=456)
         rec_game.genres.add(genre)
         for i in range(4):
             GameScreenshot.objects.create(game=rec_game, url=f"http://example.com/shot{i}.jpg", position=i)
