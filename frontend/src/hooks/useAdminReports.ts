@@ -35,10 +35,14 @@ export function useAdminReports(): UseAdminReportsReturn {
             | undefined;
           return {
             id: Number(item.id),
-            target_type: String(item.target_type ?? 'unknown'),
+            target_type:
+              typeof item.target_type === 'string'
+                ? item.target_type
+                : 'unknown',
             target_id: Number(item.target_id ?? 0),
             reporter_label: reporter?.pseudo ?? reporter?.email ?? '—',
-            created_at: String(item.created_at ?? ''),
+            created_at:
+              typeof item.created_at === 'string' ? item.created_at : '',
             handled: Boolean(item.handled),
           } satisfies AdminReport;
         });

@@ -61,7 +61,7 @@ export default function SupportPage() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    void load();
+    load();
   }, [isAuthenticated, load]);
 
   if (isAuthLoading) return null;
@@ -162,13 +162,15 @@ export default function SupportPage() {
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1 }}>
         {t('supportPage.history')}
       </Typography>
-      {loading ? (
+      {loading && (
         <Typography variant="body2">{t('supportPage.loading')}</Typography>
-      ) : rows.length === 0 ? (
+      )}
+      {!loading && rows.length === 0 && (
         <Typography variant="body2" color="text.secondary">
           {t('supportPage.empty')}
         </Typography>
-      ) : (
+      )}
+      {!loading && rows.length > 0 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {rows.map(row => (
             <Box
