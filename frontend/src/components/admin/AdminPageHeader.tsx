@@ -3,7 +3,7 @@ import { Box, Button, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 interface AdminPageHeaderProps {
-  title: string;
+  readonly title: string;
 }
 
 /**

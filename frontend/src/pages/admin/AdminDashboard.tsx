@@ -15,6 +15,16 @@ const AdminDashboardCharts = lazy(
 export default function AdminDashboard() {
   const { data, loading, error } = useAdminStats();
 
+  const renderCharts = () => {
+    if (error) return null;
+    if (loading || !data) return <AdminDashboardChartsSkeleton />;
+    return (
+      <Suspense fallback={<AdminDashboardChartsSkeleton />}>
+        <AdminDashboardCharts data={data} />
+      </Suspense>
+    );
+  };
+
   return (
     <AdminLayout>
       <Box
@@ -37,13 +47,7 @@ export default function AdminDashboard() {
 
       <QuickActions />
       <KpiSection data={data} loading={loading} />
-      {error ? null : loading || !data ? (
-        <AdminDashboardChartsSkeleton />
-      ) : (
-        <Suspense fallback={<AdminDashboardChartsSkeleton />}>
-          <AdminDashboardCharts data={data} />
-        </Suspense>
-      )}
+      {renderCharts()}
       <EngagementSection data={data} loading={loading} />
       <RecentActivity data={data} loading={loading} />
 
