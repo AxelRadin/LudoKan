@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -26,6 +27,12 @@ from apps.users.serializers import AdminActionSerializer, AdminUserListSerialize
 from apps.users.utils import log_admin_action
 
 User = get_user_model()
+
+
+class AdminActionPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 50
 
 
 class SuspensionAwareUserDetailsView(DjUserDetailsView):
@@ -279,6 +286,7 @@ class AdminStatsView(APIView):
 
             recent_activity.append(
                 {
+                    "id": action.pk,
                     "action": action_name,
                     "actor": actor,
                     "target": target,
@@ -419,6 +427,7 @@ class AdminUserListView(ListAPIView):
         is_active = self.request.query_params.get("is_active")
         is_staff = self.request.query_params.get("is_staff")
         role = self.request.query_params.get("role")
+        panel_staff_only = self.request.query_params.get("panel_staff_only")
         created_before = self.request.query_params.get("created_before")
         created_after = self.request.query_params.get("created_after")
 
@@ -440,6 +449,14 @@ class AdminUserListView(ListAPIView):
                 qs = qs.filter(is_staff=False)
         if role:
             qs = qs.filter(roles__role=role)
+        if panel_staff_only and str(panel_staff_only).lower() in {"true", "1", "yes"}:
+            qs = qs.filter(
+                roles__role__in=[
+                    UserRole.Role.MODERATOR,
+                    UserRole.Role.ADMIN,
+                    UserRole.Role.SUPERADMIN,
+                ]
+            ).distinct()
         if created_before:
             qs = qs.filter(created_at__lte=created_before)
         if created_after:
@@ -458,6 +475,7 @@ class AdminActionListView(ListAPIView):
     permission_classes = [IsAdminWithPermission]
     required_permission = "admin_action_read"
     serializer_class = AdminActionSerializer
+    pagination_class = AdminActionPagination
 
     def get_queryset(self):
         qs = AdminAction.objects.select_related("admin_user").all().order_by("-timestamp")

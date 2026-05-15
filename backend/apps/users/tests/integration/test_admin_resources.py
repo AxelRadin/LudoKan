@@ -148,6 +148,25 @@ class TestAdminUserListView:
         assert "findme@example.com" in emails
         assert "other@example.com" not in emails
 
+    def test_panel_staff_only_limits_to_moderator_admin_superadmin(self, admin_client):
+        User.objects.create_user(
+            email="plain@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="plainuser",
+        )
+        mod = User.objects.create_user(
+            email="panelmod@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="panelmoduser",
+        )
+        UserRole.objects.create(user=mod, role=UserRole.Role.MODERATOR)
+
+        resp = admin_client.get("/api/admin/users/", {"search": "user", "panel_staff_only": "1"})
+        assert resp.status_code == status.HTTP_200_OK
+        pseudos = [u["pseudo"] for u in resp.data["results"]]
+        assert "panelmoduser" in pseudos
+        assert "plainuser" not in pseudos
+
     def test_admin_user_list_date_and_boolean_true_false_filters(self, admin_client):
         """
         Couvre les branches is_active=true, is_staff=false, created_before/after.
@@ -270,6 +289,24 @@ class TestAdminActionListView:
             {"before": before, "after": after},
         )
         assert response.status_code == status.HTTP_200_OK
+
+    def test_admin_action_list_page_size_query_param(self, admin_client):
+        admin_user = admin_client.handler._force_user  # type: ignore[attr-defined]
+        for i in range(15):
+            AdminAction.objects.create(
+                admin_user=admin_user,
+                action_type="review.delete",
+                target_type="review",
+                target_id=i,
+                description=f"del {i}",
+            )
+        r10 = admin_client.get("/api/admin/actions/", {"page_size": 10})
+        assert r10.status_code == status.HTTP_200_OK
+        assert len(r10.data["results"]) == min(10, r10.data["count"])
+        r20 = admin_client.get("/api/admin/actions/", {"page_size": 20})
+        assert r20.status_code == status.HTTP_200_OK
+        assert r20.data["count"] >= 15
+        assert len(r20.data["results"]) == min(20, r20.data["count"])
 
 
 @pytest.mark.django_db
