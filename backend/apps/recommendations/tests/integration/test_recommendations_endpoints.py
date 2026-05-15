@@ -8,6 +8,7 @@ from rest_framework import status
 
 from apps.games.models import Game, GameScreenshot, Genre
 from apps.library.models import UserGame
+from apps.recommendations.serializers import RecommendedGameSerializer
 
 
 @pytest.mark.django_db
@@ -63,3 +64,47 @@ class TestRecommendationsEndpoints:
     def test_get_recommendations_unauthenticated(self, api_client):
         response = api_client.get("/api/recommendations/")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_get_recommendations_no_genres(self, api_client, user):
+        """Couvre la ligne 28 : utilisateur sans poids de genres."""
+        api_client.force_authenticate(user=user)
+        response = api_client.get("/api/recommendations/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+    def test_get_recommendations_no_igdb_genres(self, api_client, user, publisher):
+        """Couvre la ligne 42 : utilisateur avec genres locaux mais aucun n'a d'ID IGDB."""
+        api_client.force_authenticate(user=user)
+        # Créer un genre local sans igdb_id
+        genre = Genre.objects.create(name="Local Only", igdb_id=None)
+        game = Game.objects.create(name="Local Game", publisher=publisher, igdb_id=123)
+        game.genres.add(genre)
+        # Créer une entrée en bibliothèque pour générer des poids
+        UserGame.objects.create(user=user, game=game)
+
+        response = api_client.get("/api/recommendations/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+    def test_get_recommendations_api_not_list(self, api_client, user, publisher, monkeypatch):
+        """Couvre la ligne 62 : cas où l'API IGDB ne renvoie pas une liste."""
+        api_client.force_authenticate(user=user)
+
+        # Setup pour avoir des genres avec IGDB IDs
+        genre = Genre.objects.create(name="Action", igdb_id=4)
+        game = Game.objects.create(name="Game", publisher=publisher, igdb_id=456)
+        game.genres.add(genre)
+        UserGame.objects.create(user=user, game=game)
+
+        # Mock renvoyant un dict au lieu d'une liste
+        monkeypatch.setattr("apps.recommendations.views.igdb_request", lambda e, q: {"error": "bad request"})
+
+        response = api_client.get("/api/recommendations/")
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json() == []
+
+    def test_serializer_coverage(self):
+        """Couvre les lignes 1-3 de serializers.py en vérifiant sa définition."""
+        from apps.games.serializers import GameReadSerializer
+
+        assert RecommendedGameSerializer == GameReadSerializer
