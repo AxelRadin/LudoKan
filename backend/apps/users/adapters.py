@@ -2,25 +2,59 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings as django_settings
 from django.utils import translation
-from django.utils.translation import get_language_from_request
 
 from apps.users.models import CustomUser
 
 
 class LudokanAccountAdapter(DefaultAccountAdapter):
-    """Injecte frontend_url et applique la langue de la requête pour les e-mails allauth."""
+    """Injecte frontend_url, applique la langue de la requête pour les e-mails allauth, et force les URLs SPA."""
+
+    def _frontend_base(self) -> str:
+        return getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
 
     def send_mail(self, template_prefix, email, context):
-        context["frontend_url"] = getattr(django_settings, "FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+        context["frontend_url"] = self._frontend_base()
         request = context.get("request")
+        lang = None
         if request is not None:
             try:
-                lang = get_language_from_request(request)
+                lang = translation.get_language_from_request(request)
             except Exception:
-                lang = django_settings.LANGUAGE_CODE
-            with translation.override(lang):
-                return super().send_mail(template_prefix, email, context)
-        return super().send_mail(template_prefix, email, context)
+                lang = None
+        if not lang:
+            lang = translation.get_language() or django_settings.LANGUAGE_CODE
+
+        with translation.override(lang):
+            return super().send_mail(template_prefix, email, context)
+
+    def get_email_confirmation_url(self, request, emailconfirmation):
+        """
+        Force l'URL vers le SPA avec un paramètre de langue optionnel.
+        """
+        lang = translation.get_language()
+        url = f"{self._frontend_base()}/verify-email/{emailconfirmation.key}"
+        if lang:
+            url += f"?lang={lang}"
+        return url
+
+    def get_reset_password_from_key_url(self, key):
+        """
+        Lien direct vers le SPA (uid/token) avec paramètre de langue.
+        """
+        base = self._frontend_base()
+        lang = translation.get_language()
+        url = None
+
+        if "-" in key:
+            uid, token = key.split("-", 1)
+            url = f"{base}/reset-password/{uid}/{token}"
+        else:
+            url = super().get_reset_password_from_key_url(key)
+
+        if url and lang:
+            separator = "&" if "?" in url else "?"
+            url += f"{separator}lang={lang}"
+        return url
 
 
 class SocialAccountAdapter(DefaultSocialAccountAdapter):

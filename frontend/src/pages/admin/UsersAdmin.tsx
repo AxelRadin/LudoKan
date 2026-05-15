@@ -5,7 +5,7 @@ import UsersTable from '../../components/admin/UsersTable';
 export default function UsersAdmin() {
   return (
     <AdminLayout>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 4 }}>
+      <Typography variant="h5" sx={{ fontWeight: 700, mb: 4, color: '#222' }}>
         Gestion des utilisateurs
       </Typography>
       <UsersTable />

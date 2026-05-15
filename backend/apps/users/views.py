@@ -75,6 +75,8 @@ class AdminSuspendUserView(APIView):
             reason=serializer.validated_data["reason"],
             end_date=serializer.validated_data.get("end_date"),
         )
+        target.is_active = False
+        target.save(update_fields=["is_active"])
 
         # Logguer l'action admin
         log_admin_action(
@@ -95,6 +97,42 @@ class AdminSuspendUserView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class AdminReactivateUserView(APIView):
+    """
+    Endpoint admin pour réactiver un utilisateur suspendu.
+
+    POST /api/admin/users/{id}/reactivate/
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "suspend_user"
+
+    def post(self, request, pk: int):
+        actor: User = request.user
+        target: User = get_object_or_404(User, pk=pk)
+
+        active_suspensions = UserSuspension.objects.filter(user=target, is_active=True)
+        if not active_suspensions.exists():
+            return Response(
+                {"detail": "Cet utilisateur n'est pas suspendu."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        active_suspensions.update(is_active=False)
+        target.is_active = True
+        target.save(update_fields=["is_active"])
+
+        log_admin_action(
+            admin_user=actor,
+            action_type="user.reactivate",
+            target_type="user",
+            target_id=target.pk,
+            description=f"Réactivation du compte de {target.pseudo or target.email}",
+        )
+
+        return Response({"detail": "Compte réactivé avec succès."}, status=status.HTTP_200_OK)
 
 
 class AdminUserSuspensionListView(APIView):
@@ -200,10 +238,18 @@ class AdminStatsView(APIView):
         # Activité récente (20 dernières actions admin, triées par timestamp décroissant)
         recent_actions = AdminAction.objects.select_related("admin_user").order_by("-timestamp")[:20]
 
+        target_user_ids = [a.target_id for a in recent_actions if a.target_type == "user" and a.target_id is not None]
+        target_users = {u.pk: u.pseudo or u.email for u in User.objects.filter(pk__in=target_user_ids)}
+
         recent_activity = []
         for action in recent_actions:
             actor = action.admin_user.pseudo if action.admin_user else None
-            target = f"{action.target_type}#{action.target_id}" if action.target_type and action.target_id is not None else None
+            if action.target_type == "user" and action.target_id in target_users:
+                target = target_users[action.target_id]
+            elif action.target_type and action.target_id is not None:
+                target = f"{action.target_type}#{action.target_id}"
+            else:
+                target = None
 
             action_name = action.action_type.replace(".", "_") if action.action_type else None
 

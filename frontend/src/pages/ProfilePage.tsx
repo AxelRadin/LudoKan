@@ -938,9 +938,7 @@ function ProfileEditDialog({
                   component="button"
                   type="button"
                   disabled={avatarBusy}
-                  onClick={() => {
-                    onAvatarRemove();
-                  }}
+                  onClick={() => onAvatarRemove()}
                   aria-label={t('profilePage.avatarRemoveAriaLabel')}
                   sx={{
                     position: 'absolute',
@@ -994,9 +992,7 @@ function ProfileEditDialog({
                   type="file"
                   accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                   disabled={avatarBusy}
-                  onChange={e => {
-                    onAvatarChange(e);
-                  }}
+                  onChange={e => onAvatarChange(e)}
                   style={{
                     ...fileInputOverlaySx,
                     zIndex: 12,
@@ -1169,9 +1165,7 @@ function ProfileEditDialog({
             {t('profilePage.cancel')}
           </Button>
           <Button
-            onClick={() => {
-              onSave();
-            }}
+            onClick={() => onSave()}
             variant="contained"
             sx={{
               borderRadius: 999,

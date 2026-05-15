@@ -79,6 +79,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
         height="200"
         image={game.cover_url ?? ''}
         alt={game.name}
+        loading="lazy"
         sx={{ objectFit: 'cover' }}
       />
 
