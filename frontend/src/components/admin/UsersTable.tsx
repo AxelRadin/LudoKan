@@ -90,13 +90,13 @@ export default function UsersTable() {
         sx={{
           mb: 3,
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'rgba(0,0,0,0.35)',
+            borderColor: 'divider',
           },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: 'rgba(0,0,0,0.6)',
+            borderColor: 'text.secondary',
           },
         }}
-        inputProps={{ style: { color: '#c0392b' } }}
+        inputProps={{ style: { color: 'inherit' } }}
         value={search}
         onChange={e => setSearch(e.target.value)}
         InputProps={{
@@ -110,8 +110,9 @@ export default function UsersTable() {
 
       <Box
         sx={{
-          bgcolor: '#fff',
-          border: '1px solid rgba(0,0,0,0.3)',
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
           borderRadius: 3,
           overflow: 'hidden',
         }}
@@ -119,11 +120,15 @@ export default function UsersTable() {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 120px 100px 80px',
+            gridTemplateColumns: {
+              xs: '1fr 1fr 90px 80px 64px',
+              md: '1fr 1fr 120px 100px 80px',
+            },
             px: 3,
             py: 1.5,
-            bgcolor: '#f5f6fa',
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            bgcolor: 'action.hover',
+            borderBottom: 1,
+            borderColor: 'divider',
           }}
         >
           {['Pseudo', 'Email', 'Rôles', 'Statut', 'Actions'].map(h => (
@@ -132,7 +137,7 @@ export default function UsersTable() {
               variant="caption"
               sx={{
                 fontWeight: 700,
-                color: '#888',
+                color: 'text.secondary',
                 textTransform: 'uppercase',
                 fontSize: 11,
               }}
@@ -143,7 +148,7 @@ export default function UsersTable() {
         </Box>
 
         {filtered.length === 0 ? (
-          <Typography sx={{ p: 3, color: '#888', fontSize: 14 }}>
+          <Typography sx={{ p: 3, color: 'text.secondary', fontSize: 14 }}>
             Aucun utilisateur trouvé.
           </Typography>
         ) : (
@@ -152,46 +157,55 @@ export default function UsersTable() {
               key={user.id}
               sx={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 120px 100px 80px',
+                gridTemplateColumns: {
+                  xs: '1fr 1fr 90px 80px 64px',
+                  md: '1fr 1fr 120px 100px 80px',
+                },
                 px: 3,
                 py: 2,
                 alignItems: 'center',
-                borderBottom: '1px solid rgba(0,0,0,0.04)',
+                borderBottom: 1,
+                borderColor: 'divider',
                 '&:last-child': { borderBottom: 'none' },
                 opacity: user.is_active ? 1 : 0.45,
-                bgcolor: user.is_active ? 'transparent' : 'rgba(0,0,0,0.02)',
+                bgcolor: user.is_active ? 'transparent' : 'action.hover',
               }}
             >
               <Typography
                 variant="body2"
-                sx={{ fontWeight: 600, color: '#c0392b' }}
+                sx={{ fontWeight: 600, color: 'text.primary' }}
               >
                 {user.pseudo ?? '—'}
               </Typography>
-              <Typography variant="body2" sx={{ color: '#555' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 {user.email}
               </Typography>
               <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
                 {user.is_superuser && (
-                  <span
-                    style={{
+                  <Box
+                    component="span"
+                    sx={{
                       display: 'inline-block',
-                      padding: '2px 8px',
-                      borderRadius: 4,
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 1,
                       fontSize: 10,
                       fontWeight: 600,
-                      backgroundColor: '#922b21',
-                      color: '#fff',
+                      bgcolor: 'error.dark',
+                      color: 'common.white',
                     }}
                   >
                     superadmin
-                  </span>
+                  </Box>
                 )}
                 {user.roles.map(r => (
                   <Chip key={r} label={r} size="small" sx={{ fontSize: 10 }} />
                 ))}
                 {!user.is_superuser && user.roles.length === 0 && (
-                  <Typography variant="caption" sx={{ color: '#aaa' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: 'text.secondary' }}
+                  >
                     user
                   </Typography>
                 )}

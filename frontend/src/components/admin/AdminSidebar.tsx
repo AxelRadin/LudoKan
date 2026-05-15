@@ -4,6 +4,7 @@ import ReportIcon from '@mui/icons-material/Report';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import {
   Box,
+  Drawer,
   List,
   ListItemButton,
   ListItemIcon,
@@ -11,60 +12,93 @@ import {
   Typography,
 } from '@mui/material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/useAuth';
+import { hasPermission } from '../../utils/adminPermissions';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin/dashboard' },
-  { label: 'Utilisateurs', icon: <PeopleIcon />, path: '/admin/users' },
   {
-    label: 'Tickets',
+    label: 'Dashboard',
+    icon: <DashboardIcon />,
+    path: '/admin/dashboard',
+    permission: 'dashboard.view',
+  },
+  {
+    label: 'Utilisateurs',
+    icon: <PeopleIcon />,
+    path: '/admin/users',
+    permission: 'user.view',
+  },
+  {
+    label: 'Support',
     icon: <ConfirmationNumberIcon />,
     path: '/admin/tickets',
+    permission: 'support.view',
   },
-  { label: 'Reports', icon: <ReportIcon />, path: '/admin/reports' },
+  {
+    label: 'Reports',
+    icon: <ReportIcon />,
+    path: '/admin/reports',
+    permission: 'report_read',
+  },
 ];
 
-export default function AdminSidebar() {
+type Props = Readonly<{
+  isDesktop: boolean;
+  mobileOpen: boolean;
+  onClose: () => void;
+}>;
+
+export default function AdminSidebar({
+  isDesktop,
+  mobileOpen,
+  onClose,
+}: Props) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-
-  return (
+  const { user } = useAuth();
+  const visibleItems = NAV_ITEMS.filter(item =>
+    hasPermission(user, item.permission)
+  );
+  const content = (
     <Box
       sx={{
-        width: 220,
-        minHeight: '100vh',
-        bgcolor: '#111',
-        color: '#fff',
+        width: 240,
+        minHeight: '100%',
+        bgcolor: 'grey.900',
+        color: 'common.white',
         display: 'flex',
         flexDirection: 'column',
-        py: 3,
-        flexShrink: 0,
+        py: 2.5,
       }}
     >
       <Typography
         sx={{
           px: 3,
-          mb: 3,
+          mb: 2.5,
           fontWeight: 700,
           fontSize: 16,
           letterSpacing: '0.08em',
-          color: '#fff',
+          color: 'common.white',
         }}
       >
         LUDOKAN ADMIN
       </Typography>
 
       <List disablePadding>
-        {NAV_ITEMS.map(item => (
+        {visibleItems.map(item => (
           <ListItemButton
             key={item.path}
             selected={pathname === item.path}
-            onClick={() => navigate(item.path)}
+            onClick={() => {
+              navigate(item.path);
+              if (!isDesktop) onClose();
+            }}
             sx={{
               px: 3,
               py: 1.5,
-              color: pathname === item.path ? '#fff' : 'rgba(255,255,255,0.6)',
+              color: pathname === item.path ? 'common.white' : 'grey.400',
               '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.08)' },
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+              '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' },
             }}
           >
             <ListItemIcon sx={{ color: 'inherit', minWidth: 36 }}>
@@ -78,5 +112,35 @@ export default function AdminSidebar() {
         ))}
       </List>
     </Box>
+  );
+
+  if (isDesktop) {
+    return (
+      <Drawer
+        variant="permanent"
+        open
+        PaperProps={{
+          sx: {
+            position: 'static',
+            width: 240,
+            border: 'none',
+          },
+        }}
+      >
+        {content}
+      </Drawer>
+    );
+  }
+
+  return (
+    <Drawer
+      variant="temporary"
+      open={mobileOpen}
+      onClose={onClose}
+      ModalProps={{ keepMounted: true }}
+      PaperProps={{ sx: { width: 240, border: 'none' } }}
+    >
+      {content}
+    </Drawer>
   );
 }

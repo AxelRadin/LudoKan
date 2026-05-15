@@ -1,4 +1,5 @@
 import LogoutIcon from '@mui/icons-material/Logout';
+import MenuIcon from '@mui/icons-material/Menu';
 import {
   AppBar,
   Box,
@@ -18,7 +19,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
 import { apiPost } from '../../services/api';
 
-export default function AdminHeader() {
+type Props = Readonly<{
+  showMenuButton?: boolean;
+  onOpenMenu?: () => void;
+}>;
+
+export default function AdminHeader({
+  showMenuButton = false,
+  onOpenMenu,
+}: Props) {
   const { user, setAuthenticated, setUser } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -41,28 +50,49 @@ export default function AdminHeader() {
   return (
     <>
       <AppBar
-        position="static"
+        position="sticky"
         elevation={0}
         sx={{
-          bgcolor: '#fff',
-          borderBottom: '1px solid rgba(0,0,0,0.08)',
-          color: '#111',
+          bgcolor: 'background.paper',
+          borderBottom: 1,
+          borderColor: 'divider',
+          color: 'text.primary',
         }}
       >
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="body2" sx={{ color: '#888', fontSize: 13 }}>
-            Espace administrateur
-          </Typography>
+        <Toolbar
+          sx={{
+            justifyContent: 'space-between',
+            minHeight: { xs: 60, md: 64 },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {showMenuButton ? (
+              <IconButton
+                size="small"
+                onClick={onOpenMenu}
+                sx={{ mr: 0.5 }}
+                title="Ouvrir la navigation"
+              >
+                <MenuIcon fontSize="small" />
+              </IconButton>
+            ) : null}
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontSize: 13 }}
+            >
+              Espace administrateur
+            </Typography>
+          </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Chip
               label={topRole.toUpperCase()}
               size="small"
+              color="error"
+              variant="outlined"
               sx={{
                 fontSize: 11,
                 fontWeight: 700,
-                bgcolor: '#FDE8E8',
-                color: '#A32D2D',
               }}
             />
             <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 14 }}>
@@ -83,7 +113,8 @@ export default function AdminHeader() {
         <DialogTitle>Déconnexion</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Voulez-vous vraiment vous déconnecter de l'espace administrateur ?
+            Voulez-vous vraiment vous déconnecter de l&apos;espace
+            administrateur ?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

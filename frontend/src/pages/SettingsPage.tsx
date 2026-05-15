@@ -1,5 +1,6 @@
 import BarChartIcon from '@mui/icons-material/BarChart';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ContactSupportOutlinedIcon from '@mui/icons-material/ContactSupportOutlined';
 import CookieOutlinedIcon from '@mui/icons-material/CookieOutlined';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -313,6 +314,26 @@ const SettingsPage: React.FC = () => {
 
       <Box sx={{ ...settingsListCardBaseSx, mt: 1, mb: 3 }}>
         <List disablePadding>
+          <ListItemButton
+            onClick={() => {
+              navigate('/support');
+              globalThis.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            sx={settingsListRowButtonSx}
+          >
+            <ListItemIcon sx={{ color: 'text.secondary' }}>
+              <ContactSupportOutlinedIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary={t('settings.supportContact')}
+              secondary={t('settings.supportContactDesc')}
+              primaryTypographyProps={{ fontWeight: 500 }}
+            />
+            <ChevronRightIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+          </ListItemButton>
+
+          <Divider variant="inset" component="li" />
+
           <ListItemButton
             onClick={handleRestartTour}
             sx={settingsListRowButtonSx}

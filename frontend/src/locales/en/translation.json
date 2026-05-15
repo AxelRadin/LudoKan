@@ -809,7 +809,27 @@
     "cookiesDetail": "Cookie details",
     "helpSection": "Help",
     "restartTour": "Restart the tutorial",
-    "restartTourDesc": "Relaunch the onboarding guide"
+    "restartTourDesc": "Relaunch the onboarding guide",
+    "supportContact": "Contact support",
+    "supportContactDesc": "Report a bug or get help"
+  },
+  "supportPage": {
+    "title": "Support",
+    "intro": "Describe your issue. We will get back to you as soon as possible.",
+    "category": "Category",
+    "categoryBug": "Bug / technical",
+    "categoryAccount": "Account",
+    "categoryOther": "Other",
+    "subject": "Subject",
+    "message": "Message",
+    "pageUrl": "Page URL (optional)",
+    "submit": "Send",
+    "history": "Your requests",
+    "loading": "Loading…",
+    "empty": "No requests yet.",
+    "sentOk": "Request sent.",
+    "sentError": "Could not send the request.",
+    "loadError": "Could not load your requests."
   },
   "resetPasswordPage": {
     "title": "New password",

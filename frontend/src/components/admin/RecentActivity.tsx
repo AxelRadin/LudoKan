@@ -14,7 +14,10 @@ function renderRecentActivity(data: AdminStats | null, loading: boolean) {
 
   if (data.recent_activity.length === 0) {
     return (
-      <Typography variant="caption" sx={{ color: '#aaa', fontSize: 12 }}>
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', fontSize: 12 }}
+      >
         Aucune activité récente
       </Typography>
     );
@@ -34,7 +37,10 @@ function renderRecentActivity(data: AdminStats | null, loading: boolean) {
           <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 13 }}>
             {activity.action}
           </Typography>
-          <Typography variant="caption" sx={{ color: '#888', fontSize: 11 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', fontSize: 11 }}
+          >
             {activity.actor ?? '—'}
             {activity.target ? ` → ${activity.target}` : ''}
           </Typography>
@@ -51,8 +57,9 @@ export default function RecentActivity({ data, loading }: Props) {
         sx={{
           flex: 1,
           minWidth: 280,
-          bgcolor: '#fff',
-          border: '0.5px solid rgba(0,0,0,0.1)',
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
           borderRadius: 3,
           p: 3,
         }}
@@ -64,7 +71,7 @@ export default function RecentActivity({ data, loading }: Props) {
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#aaa',
+            color: 'text.secondary',
             display: 'block',
             mb: 2,
           }}
@@ -79,8 +86,9 @@ export default function RecentActivity({ data, loading }: Props) {
         sx={{
           flex: 1,
           minWidth: 280,
-          bgcolor: '#fff',
-          border: '0.5px solid rgba(0,0,0,0.1)',
+          bgcolor: 'background.paper',
+          border: 1,
+          borderColor: 'divider',
           borderRadius: 3,
           p: 3,
         }}
@@ -92,7 +100,7 @@ export default function RecentActivity({ data, loading }: Props) {
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#aaa',
+            color: 'text.secondary',
             display: 'block',
             mb: 2,
           }}

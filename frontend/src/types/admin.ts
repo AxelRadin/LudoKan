@@ -16,8 +16,8 @@ export type AdminStats = {
     users: number;
     users_new_last_7_days: number;
     games: number;
-    tickets: number;
-    tickets_pending: number;
+    support_tickets: number;
+    support_tickets_open: number;
     reviews: number;
     reports_unresolved: number;
   };
