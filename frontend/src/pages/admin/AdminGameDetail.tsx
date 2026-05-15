@@ -91,16 +91,14 @@ export default function AdminGameDetail() {
         setGenresCatalog(g);
         setPlatformsCatalog(p);
         setPublishersCatalog(pub);
+        setCatalogLoading(false);
       } catch {
         if (cancelled) return;
         setSnackbar({
           message: 'Impossible de charger genres / plateformes / éditeurs.',
           severity: 'error',
         });
-      } finally {
-        if (!cancelled) {
-          setCatalogLoading(false);
-        }
+        setCatalogLoading(false);
       }
     })();
     return () => {
@@ -125,11 +123,10 @@ export default function AdminGameDetail() {
         status: form.status,
         cover_url: form.cover_url.trim() || null,
         release_date: form.release_date.trim() || null,
-        min_players:
-          form.min_players.trim() === '' ? null : Number(form.min_players),
-        max_players:
-          form.max_players.trim() === '' ? null : Number(form.max_players),
-        min_age: form.min_age.trim() === '' ? null : Number(form.min_age),
+        min_players: form.min_players.trim() ? Number(form.min_players) : null,
+        max_players: form.max_players.trim() ? Number(form.max_players) : null,
+        min_age: form.min_age.trim() ? Number(form.min_age) : null,
+
         publisher: form.publisherId,
         genres: form.genreIds,
         platforms: form.platformIds,
@@ -211,7 +208,7 @@ export default function AdminGameDetail() {
     );
   }
 
-  const readOnly = saving || catalogLoading || canEdit === false;
+  const readOnly = saving || catalogLoading || !canEdit;
 
   return (
     <AdminLayout>
@@ -219,7 +216,7 @@ export default function AdminGameDetail() {
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         ID {game.id}
-        {game.igdb_id != null ? ` · IGDB ${game.igdb_id}` : ''} · Note moyenne{' '}
+        {game.igdb_id && ` · IGDB ${game.igdb_id}`} · Note moyenne{' '}
         {typeof game.average_rating === 'number'
           ? game.average_rating.toFixed(1)
           : '—'}{' '}
