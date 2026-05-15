@@ -9,12 +9,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
-          mui: [
-            '@mui/material',
-            '@mui/icons-material',
-            '@emotion/react',
-            '@emotion/styled',
-          ],
           sentry: ['@sentry/react'],
           vendor: ['@tanstack/react-query', 'i18next', 'react-i18next'],
         },
