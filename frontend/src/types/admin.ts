@@ -49,6 +49,21 @@ export type AdminStats = {
   charts: AdminStatsCharts;
 };
 
+export type AdminStatsInsights = {
+  reviews_ratings_daily: {
+    date: string;
+    reviews: number;
+    ratings: number;
+  }[];
+  reports_messages_daily: {
+    date: string;
+    reports: number;
+    messages: number;
+  }[];
+  support_by_status: { status: string; label: string; count: number }[];
+  games_by_status: { status: string; label: string; count: number }[];
+};
+
 export type AdminActionRow = {
   id: number;
   timestamp: string;

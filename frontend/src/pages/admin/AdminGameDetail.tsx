@@ -1,4 +1,4 @@
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AdminPageHeader from '../../components/admin/AdminPageHeader';
 import {
   Alert,
   Autocomplete,
@@ -181,13 +181,7 @@ export default function AdminGameDetail() {
   if (game === null && error) {
     return (
       <AdminLayout>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/admin/games')}
-          sx={{ mb: 2 }}
-        >
-          Retour à la liste
-        </Button>
+        <AdminPageHeader title="Jeu introuvable" />
         <ErrorAlert message={error} />
       </AdminLayout>
     );
@@ -215,20 +209,8 @@ export default function AdminGameDetail() {
 
   return (
     <AdminLayout>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate('/admin/games')}
-        sx={{ mb: 2 }}
-      >
-        Retour à la liste
-      </Button>
+      <AdminPageHeader title={game.name} />
 
-      <Typography
-        variant="h5"
-        sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}
-      >
-        {game.name}
-      </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         ID {game.id}
         {game.igdb_id != null ? ` · IGDB ${game.igdb_id}` : ''} · Note moyenne{' '}

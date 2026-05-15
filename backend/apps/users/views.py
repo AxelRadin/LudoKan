@@ -364,6 +364,110 @@ class AdminStatsView(APIView):
         return recent_activity
 
 
+def _admin_stats_insight_as_date(val):
+    if val is None:
+        return None
+    if isinstance(val, datetime):
+        return timezone.localtime(val).date() if timezone.is_aware(val) else val.date()
+    if isinstance(val, date):
+        return val
+    return val
+
+
+def _admin_stats_insight_window(now, num_days):
+    """Fenêtre calendaire [start_date, start_date+num_days-1] avec day_start pour filtres ORM."""
+    days_back = num_days - 1
+    if timezone.is_aware(now):
+        local_now = timezone.localtime(now)
+        tz = timezone.get_current_timezone()
+        start_date = (local_now - timedelta(days=days_back)).date()
+        day_start = timezone.make_aware(datetime.combine(start_date, dt_time.min), tz)
+    else:
+        start_date = (now - timedelta(days=days_back)).date()
+        day_start = datetime.combine(start_date, dt_time.min)
+    return start_date, day_start
+
+
+def _admin_stats_daily_series(queryset, date_field, start_date, day_start_dt, num_days):
+    rows = queryset.filter(**{f"{date_field}__gte": day_start_dt}).annotate(_d=TruncDate(date_field)).values("_d").annotate(c=Count("id"))
+    by_d = {}
+    for row in rows:
+        k = _admin_stats_insight_as_date(row["_d"])
+        by_d[k] = row["c"]
+    return [
+        {
+            "date": (start_date + timedelta(days=i)).isoformat(),
+            "count": int(by_d.get(start_date + timedelta(days=i), 0)),
+        }
+        for i in range(num_days)
+    ]
+
+
+class AdminStatsInsightsView(APIView):
+    """
+    Séries temporelles et répartitions pour la page statistiques détaillées (graphiques).
+
+    GET /api/admin/stats/insights/
+    """
+
+    permission_classes = [IsAdminWithPermission]
+    required_permission = "dashboard.view"
+
+    def get(self, request):
+        now = timezone.now()
+
+        # --- 30 jours : avis + notes (séries puis fusion par date)
+        start30, day30 = _admin_stats_insight_window(now, 30)
+        rev_daily = _admin_stats_daily_series(Review.objects.all(), "date_created", start30, day30, 30)
+        rat_daily = _admin_stats_daily_series(Rating.objects.all(), "date_created", start30, day30, 30)
+        reviews_ratings_daily = [
+            {"date": rev_daily[i]["date"], "reviews": rev_daily[i]["count"], "ratings": rat_daily[i]["count"]} for i in range(30)
+        ]
+
+        # --- 14 jours : signalements + messages
+        start14, day14 = _admin_stats_insight_window(now, 14)
+        reports_daily = _admin_stats_daily_series(ContentReport.objects.all(), "created_at", start14, day14, 14)
+        messages_daily = _admin_stats_daily_series(Message.objects.all(), "created_at", start14, day14, 14)
+        reports_messages_daily = [
+            {
+                "date": reports_daily[i]["date"],
+                "reports": reports_daily[i]["count"],
+                "messages": messages_daily[i]["count"],
+            }
+            for i in range(14)
+        ]
+
+        support_by_status = [
+            {
+                "status": row["status"],
+                "label": dict(SupportTicket.Status.choices).get(row["status"], row["status"]),
+                "count": row["count"],
+            }
+            for row in SupportTicket.objects.values("status").annotate(count=Count("id")).order_by("status")
+        ]
+
+        status_field = Game._meta.get_field("status")
+        status_labels = dict(status_field.choices)
+        games_by_status = [
+            {
+                "status": row["status"] or "",
+                "label": status_labels.get(row["status"], row["status"] or "—"),
+                "count": row["count"],
+            }
+            for row in Game.objects.values("status").annotate(count=Count("id")).order_by("-count")
+        ]
+
+        return Response(
+            {
+                "reviews_ratings_daily": reviews_ratings_daily,
+                "reports_messages_daily": reports_messages_daily,
+                "support_by_status": support_by_status,
+                "games_by_status": games_by_status,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 def _build_users_report_payload():
     """Construit le payload du rapport utilisateurs (réduit complexité cognitive de get())."""
     now = timezone.now()

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
 import PeopleIcon from '@mui/icons-material/People';
@@ -30,6 +31,12 @@ const NAV_ITEMS: ReadonlyArray<{
     label: 'Dashboard',
     icon: <DashboardIcon />,
     path: '/admin/dashboard',
+    permission: 'dashboard.view',
+  },
+  {
+    label: 'Statistiques',
+    icon: <BarChartOutlinedIcon />,
+    path: '/admin/stats',
     permission: 'dashboard.view',
   },
   {
@@ -124,7 +131,9 @@ export default function AdminSidebar({
               (item.path === '/admin/reviews' &&
                 pathname.startsWith('/admin/reviews')) ||
               (item.path === '/admin/activity' &&
-                pathname.startsWith('/admin/activity'))
+                pathname.startsWith('/admin/activity')) ||
+              (item.path === '/admin/stats' &&
+                pathname.startsWith('/admin/stats'))
             }
             onClick={() => {
               navigate(item.path);
@@ -138,7 +147,9 @@ export default function AdminSidebar({
                 (item.path === '/admin/reviews' &&
                   pathname.startsWith('/admin/reviews')) ||
                 (item.path === '/admin/activity' &&
-                  pathname.startsWith('/admin/activity'))
+                  pathname.startsWith('/admin/activity')) ||
+                (item.path === '/admin/stats' &&
+                  pathname.startsWith('/admin/stats'))
                   ? 'common.white'
                   : 'grey.400',
               '&.Mui-selected': { bgcolor: 'rgba(255,255,255,0.08)' },

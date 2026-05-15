@@ -1,4 +1,4 @@
-import { Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { lazy, Suspense } from 'react';
 import AdminDashboardChartsSkeleton from '../../components/admin/AdminDashboardChartsSkeleton';
 import AdminLayout from '../../components/admin/AdminLayout';
@@ -17,12 +17,23 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <Typography
-        variant="h5"
-        sx={{ fontWeight: 700, mb: 4, color: 'text.primary' }}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2,
+          mb: 4,
+        }}
       >
-        Dashboard
-      </Typography>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 700, color: 'text.primary' }}
+        >
+          Dashboard
+        </Typography>
+      </Box>
 
       <QuickActions />
       <KpiSection data={data} loading={loading} />
