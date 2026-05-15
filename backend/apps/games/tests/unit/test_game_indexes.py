@@ -21,7 +21,7 @@ class TestGameDatabaseIndexes:
         """Le modèle Game doit avoir des index définis dans Meta.indexes"""
         assert hasattr(Game._meta, "indexes")
         indexes = Game._meta.indexes
-        assert len(indexes) == 5, "Game should have exactly 5 custom indexes"
+        assert len(indexes) == 6, "Game should have exactly 6 custom indexes"
 
         # Vérifier les noms des index
         index_names = {idx.name for idx in indexes}
@@ -30,6 +30,7 @@ class TestGameDatabaseIndexes:
             "games_min_players_idx",
             "games_max_players_idx",
             "games_popularity_idx",
+            "games_rating_count_idx",
             "games_age_players_idx",
         }
         assert index_names == expected_names, f"Expected {expected_names}, got {index_names}"
@@ -92,6 +93,22 @@ class TestGameDatabaseIndexes:
         # Vérifier que l'index est DESC
         assert "desc" in indexdef.lower(), "Index should be DESC for popularity_score"
 
+    def test_rating_count_index_exists_in_database(self):
+        """L'index sur igdb_rating_count (DESC) doit être créé dans PostgreSQL"""
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT indexname, indexdef
+                FROM pg_indexes
+                WHERE tablename = 'games_game' AND indexname = 'games_rating_count_idx';
+                """)
+            result = cursor.fetchone()
+
+        assert result is not None, "Index games_rating_count_idx not found in database"
+        indexname, indexdef = result
+        assert "igdb_rating_count" in indexdef.lower(), "Index should be on igdb_rating_count field"
+        # Vérifier que l'index est DESC
+        assert "desc" in indexdef.lower(), "Index should be DESC for igdb_rating_count"
+
     def test_composite_age_players_index_exists_in_database(self):
         """L'index composite sur (min_age, min_players) doit être créé"""
         with connection.cursor() as cursor:
@@ -119,7 +136,7 @@ class TestGameDatabaseIndexes:
                 """)
             results = cursor.fetchall()
 
-        assert len(results) == 5, f"Expected 5 custom indexes, found {len(results)}"
+        assert len(results) == 6, f"Expected 6 custom indexes, found {len(results)}"
 
         for indexname, indexdef in results:
             # B-tree est le type par défaut (USING btree)
@@ -208,6 +225,14 @@ class TestGameIndexConfiguration:
 
         assert popularity_idx is not None, "games_popularity_idx not found in model"
         assert popularity_idx.fields == ["-popularity_score"], "Index should be on -popularity_score (DESC)"
+
+    def test_rating_count_index_configuration(self):
+        """L'index igdb_rating_count doit être configuré en DESC"""
+        indexes = Game._meta.indexes
+        rating_count_idx = next((idx for idx in indexes if idx.name == "games_rating_count_idx"), None)
+
+        assert rating_count_idx is not None, "games_rating_count_idx not found in model"
+        assert rating_count_idx.fields == ["-igdb_rating_count"], "Index should be on -igdb_rating_count (DESC)"
 
     def test_composite_index_configuration(self):
         """L'index composite doit inclure min_age et min_players dans cet ordre"""

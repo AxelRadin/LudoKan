@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
-import warnings
 from datetime import timedelta
 from pathlib import Path
 
@@ -83,9 +82,8 @@ INSTALLED_APPS = [
     "apps.reviews",
     "apps.realtime",
     "apps.matchmaking",
-    "apps.game_tickets",
+    "apps.support",
     "apps.chat",
-    "django_fsm",
     "api",
 ]
 
@@ -100,6 +98,7 @@ MIDDLEWARE = [
     "apps.users.middleware.IgnoreInvalidJWTMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -128,11 +127,15 @@ ACCOUNT_EMAIL_VERIFICATION = config("ACCOUNT_EMAIL_VERIFICATION", default="manda
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 
+# Le lien de réinitialisation de mot de passe expire après 10 minutes
+PASSWORD_RESET_TIMEOUT = 600
+
 SITE_ID = 1
 
 SOCIALACCOUNT_STORE_TOKENS = True
 
 SOCIALACCOUNT_ADAPTER = "apps.users.adapters.SocialAccountAdapter"
+ACCOUNT_ADAPTER = "apps.users.adapters.LudokanAccountAdapter"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -299,6 +302,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
+# Supported languages
+LANGUAGES = [
+    ("en", "English"),
+    ("fr", "Français"),
+]
+
+LOCALE_PATHS = [
+    BASE_DIR / "locale",
+]
 
 TIME_ZONE = config("TIME_ZONE", default="Europe/Paris")
 
@@ -448,6 +460,7 @@ EMAIL_ALLOWLIST = [e.strip() for e in config("EMAIL_ALLOWLIST", default="").spli
 SITE_ID = config("SITE_ID", default=1, cast=int)
 SITE_DOMAIN = config("SITE_DOMAIN", default="ludokan-local.fr")
 SITE_NAME = config("SITE_NAME", default="Ludokane Local")
+FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:5173")
 
 # -------------------------------------------------------------------
 # Logging centralisé -> system_logs
@@ -511,9 +524,6 @@ if SENTRY_DSN:
         send_default_pii=True,
     )
 
-# Réduire le bruit : avertissement django-fsm / viewflow (en fin de fichier pour Ruff E402)
-warnings.filterwarnings("ignore", category=UserWarning, module="django_fsm")
-
 # -------------------------------------------------------------------
 # Steam API & Provider Config
 # -------------------------------------------------------------------
@@ -568,7 +578,15 @@ SOCIALACCOUNT_PROVIDERS = {
         ],
     },
     "microsoft": {
-        "TENANT": "common",  # "common", "organizations", or "consumers"
-        "SCOPE": ["user.read", "openid", "profile", "offline_access", "XboxLive.signin"],
+        "SCOPE": ["User.Read", "openid", "profile", "offline_access"],
+        "AUTH_PARAMS": {"access_type": "offline"},
+        "METHOD": "oauth2",
+        "APPS": [
+            {
+                "client_id": MICROSOFT_CLIENT_ID,
+                "secret": MICROSOFT_CLIENT_SECRET,
+                "key": "",
+            }
+        ],
     },
 }

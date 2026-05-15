@@ -6,7 +6,10 @@ export type AuthUser = {
   username?: string;
   email?: string;
   roles: string[];
+  permissions?: string[];
   is_superuser: boolean;
+  theme_preference?: string;
+  language_preference?: string;
 };
 
 export type AuthContextType = {

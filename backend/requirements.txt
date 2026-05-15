@@ -58,8 +58,5 @@ sentry-sdk[django]==2.20.0
 setuptools==81.0.0
 jaraco.context==6.1.2  # GHSA-58pv-8j8x-9vj2 (site-packages; keep explicit)
 
-# transitions for state tickets
-django-fsm==3.0.1
-
 # Export PDF des rapports (BACK-021E)
 reportlab==4.4.3

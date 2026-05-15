@@ -26,7 +26,7 @@ export default function KpiSection({ data, loading }: Props) {
           fontSize: 14,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: '#888',
+          color: 'text.secondary',
         }}
       >
         Vue globale
@@ -41,6 +41,13 @@ export default function KpiSection({ data, loading }: Props) {
               value={data.totals.users}
               icon={<PeopleIcon fontSize="small" />}
               sub={`${data.engagement.active_week} actifs cette semaine`}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <KpiCard
+              title="Nouveaux utilisateurs (7j)"
+              value={data.totals.users_new_last_7_days}
+              icon={<PersonAddIcon fontSize="small" />}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -60,22 +67,15 @@ export default function KpiSection({ data, loading }: Props) {
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <KpiCard
-              title="Tickets"
-              value={data.totals.tickets}
+              title="Support"
+              value={data.totals.support_tickets}
               icon={<ConfirmationNumberIcon fontSize="small" />}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <KpiCard
-              title="Nouveaux utilisateurs (7j)"
-              value={data.totals.users_new_last_7_days}
-              icon={<PersonAddIcon fontSize="small" />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <KpiCard
-              title="Tickets en attente"
-              value={data.totals.tickets_pending}
+              title="Support ouverts"
+              value={data.totals.support_tickets_open}
               icon={<PendingActionsIcon fontSize="small" />}
             />
           </Grid>

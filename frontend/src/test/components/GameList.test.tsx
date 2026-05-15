@@ -119,7 +119,7 @@ describe('GameList', () => {
         />
       </MemoryRouter>
     );
-    expect(screen.getByText('15h')).toBeInTheDocument();
+    expect(screen.getByText('15h00')).toBeInTheDocument();
   });
 
   // --- Interaction Tests ---

@@ -29,6 +29,13 @@ python manage.py migrate --noinput
 echo "🌐 Synchronisation du site..."
 python manage.py sync_site
 
+
+
+if [[ "${AUTO_COMPILE_MESSAGES:-false}" = "true" ]]; then
+  echo "🌐 Compilation des catalogues gettext (.po → .mo)..."
+  python manage.py compilemessages || true
+fi
+
 # Lancer le serveur ASGI (Daphne) pour supporter HTTP + WebSockets.
 # On pointe sur config.asgi:application, qui contient ProtocolTypeRouter.
 

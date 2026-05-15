@@ -38,9 +38,8 @@ def get_errors_payload(response):
 class TestRegistrationView:
     """Tests pour l'endpoint d'inscription"""
 
-    @patch("apps.users.serializers.send_welcome_email.delay")
-    def test_register_success_with_all_fields(self, mock_welcome_delay, api_client):
-        """Test inscription réussie avec tous les champs"""
+    def test_register_success_with_all_fields(self, api_client):
+        """Test inscription avec tous les champs optionnels"""
         url = "/api/auth/registration/"
         data = {
             "email": "newuser@example.com",
@@ -61,10 +60,8 @@ class TestRegistrationView:
         user = CustomUser.objects.get(email=data["email"])
         assert user.pseudo == data["pseudo"]
         assert user.first_name == data["first_name"]
-        mock_welcome_delay.assert_called_once_with(data["email"], data["pseudo"])
 
-    @patch("apps.users.serializers.send_welcome_email.delay")
-    def test_register_success_minimal_fields(self, mock_welcome_delay, api_client):
+    def test_register_success_minimal_fields(self, api_client):
         """Test inscription avec champs minimaux (email + passwords)"""
         url = "/api/auth/registration/"
         data = {
@@ -79,7 +76,6 @@ class TestRegistrationView:
         # Vérifier que le pseudo a été généré automatiquement
         assert user.pseudo != ""
         assert user.pseudo is not None
-        mock_welcome_delay.assert_called_once_with(data["email"], user.pseudo)
 
     def test_register_duplicate_email(self, api_client, user):
         """Test inscription avec email déjà utilisé"""
@@ -647,31 +643,37 @@ class TestAdminSuspendUserView:
             target_id=user.id,
         ).exists()
 
-    def test_suspended_user_cannot_access_protected_endpoint_anymore(self, auth_admin_client_with_tokens, api_client, user):
-        # L'admin suspend l'utilisateur "user"
-        suspend_url = f"/api/admin/users/{user.id}/suspend/"
-        auth_admin_client_with_tokens.post(suspend_url, {"reason": "Test suspension"}, format="json")
+    def test_suspended_user_cannot_access_protected_endpoint_anymore(self, auth_admin_client_with_tokens, user):
+        # Créer un client séparé pour l'utilisateur pour ne pas écraser les cookies de l'admin
+        from rest_framework.test import APIClient
 
-        # Le user tente d'accéder à /api/auth/user/ après suspension
+        user_client = APIClient()
+
+        # Le user se connecte AVANT d'être suspendu
         login_url = "/api/auth/login/"
-        login_response = api_client.post(
+        login_response = user_client.post(
             login_url,
             {"email": user.email, "password": TEST_USER_CREDENTIAL, **RECAPTCHA_POST_FIELD},
             format="json",
         )
         assert login_response.status_code == status.HTTP_200_OK
 
+        # L'admin suspend l'utilisateur "user"
+        suspend_url = f"/api/admin/users/{user.id}/suspend/"
+        suspend_response = auth_admin_client_with_tokens.post(suspend_url, {"reason": "Test suspension"}, format="json")
+        assert suspend_response.status_code == status.HTTP_201_CREATED, f"Suspend failed: {suspend_response.data}"
+
         # Récupérer les cookies JWT et les réinjecter dans le client
         if "access_token" in login_response.cookies:
-            api_client.cookies["access_token"] = login_response.cookies["access_token"].value
+            user_client.cookies["access_token"] = login_response.cookies["access_token"].value
         if "refresh_token" in login_response.cookies:
-            api_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
+            user_client.cookies["refresh_token"] = login_response.cookies["refresh_token"].value
 
         me_url = "/api/auth/user/"
-        me_response = api_client.get(me_url)
+        me_response = user_client.get(me_url)
 
-        # L'utilisateur est authentifié mais suspendu -> 403 Forbidden
-        assert me_response.status_code == status.HTTP_403_FORBIDDEN
+        # L'utilisateur est suspendu (is_active=False) -> 401 Unauthorized par JWTAuthentication
+        assert me_response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_cannot_suspend_self(self, auth_admin_client_with_tokens, admin_user):
         url = f"/api/admin/users/{admin_user.id}/suspend/"

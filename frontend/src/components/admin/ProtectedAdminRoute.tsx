@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth';
-
-const ADMIN_ROLES = new Set(['moderator', 'admin', 'superadmin']);
+import { ADMIN_ROLES } from '../../utils/adminPermissions';
 
 type Props = Readonly<{
   children: ReactNode;

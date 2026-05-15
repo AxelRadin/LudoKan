@@ -14,6 +14,7 @@ import { addGameToLibrary, resolveGameIdIfNeeded } from '../api/igdb';
 import { useAuth } from '../contexts/useAuth';
 import type { NormalizedGame } from '../types/game';
 import { renderAddToLibraryIcon } from '../utils/renderAddToLibraryIcon';
+import { formatPlaytime } from '../utils/timeUtils';
 
 interface GameCardProps {
   game: NormalizedGame;
@@ -78,6 +79,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
         height="200"
         image={game.cover_url ?? ''}
         alt={game.name}
+        loading="lazy"
         sx={{ objectFit: 'cover' }}
       />
 
@@ -136,7 +138,7 @@ export const GameCard: React.FC<GameCardProps> = ({ game }) => {
                   variant="caption"
                   sx={{ fontWeight: 600, fontSize: '0.7rem' }}
                 >
-                  {game.user_library.playtime_forever}h
+                  {formatPlaytime(game.user_library.playtime_forever)}
                 </Typography>
               )}
           </Box>

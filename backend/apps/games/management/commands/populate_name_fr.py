@@ -82,7 +82,7 @@ def _merge_french_bindings(bindings: list, out: dict[str, str | None]) -> None:
 
 
 def fetch_french_names(names_en: list[str]) -> dict[str, str | None]:
-    result: dict[str, str | None] = {n: None for n in names_en}
+    result: dict[str, str | None] = dict.fromkeys(names_en)
 
     for i in range(0, len(names_en), CHUNK_SIZE):
         chunk = names_en[i : i + CHUNK_SIZE]

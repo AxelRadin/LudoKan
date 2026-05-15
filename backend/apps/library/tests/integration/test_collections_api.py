@@ -2,6 +2,7 @@ import pytest
 from rest_framework import status
 
 from apps.library.models import UserGame, UserLibrary
+from apps.library.services_collections import MA_LUDOTHEQUE_NAME
 
 
 def _unwrap_list(response):
@@ -115,3 +116,35 @@ class TestCollectionsAPI:
         col_id = r_col.data["id"]
         r = jwt_authenticated_client.delete(f"{self.url}{col_id}/entries/999999/")
         assert r.status_code == 404
+
+    def test_library_privacy_get_patch(self, jwt_authenticated_client, user):
+        r = jwt_authenticated_client.get("/api/me/library-privacy/")
+        assert r.status_code == 200
+        assert "is_visible_on_profile" in r.data
+        assert "is_visible_to_friends" in r.data
+
+        r2 = jwt_authenticated_client.patch(
+            "/api/me/library-privacy/",
+            {"is_visible_on_profile": True, "is_visible_to_friends": False},
+            format="json",
+        )
+        assert r2.status_code == 200
+        assert r2.data["is_visible_on_profile"] is True
+        assert r2.data["is_visible_to_friends"] is False
+
+        lib = UserLibrary.objects.get(user=user, system_key=UserLibrary.SystemKey.MA_LUDOTHEQUE)
+        assert lib.is_visible_on_profile is True
+        assert lib.is_visible_to_friends is False
+
+    def test_public_collections_exclude_ma_ludotheque(self, jwt_authenticated_client, api_client, user, game):
+        jwt_authenticated_client.post("/api/me/games/", {"game_id": game.id, "status": "EN_COURS"}, format="json")
+        lib = UserLibrary.objects.get(user=user, system_key=UserLibrary.SystemKey.MA_LUDOTHEQUE)
+        lib.is_visible_on_profile = True
+        lib.is_visible_to_friends = True
+        lib.save(update_fields=["is_visible_on_profile", "is_visible_to_friends"])
+
+        r_pub = api_client.get(f"/api/users/{user.pseudo}/collections/")
+        assert r_pub.status_code == 200
+        pub_rows = _unwrap_list(r_pub)
+        names = {row["name"] for row in pub_rows}
+        assert MA_LUDOTHEQUE_NAME not in names

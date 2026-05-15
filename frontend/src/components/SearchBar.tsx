@@ -276,7 +276,7 @@ const GameSearchBar: React.FC = () => {
       }
     };
 
-    void run();
+    run();
 
     return () => {
       cancelled = true;
@@ -296,6 +296,117 @@ const GameSearchBar: React.FC = () => {
   }, []);
 
   const allResults = useFuzzyGames(gamePool, query);
+  const hasNoResults = allResults.length === 0;
+
+  let dropdownResultsContent: React.ReactNode;
+  if (loading) {
+    dropdownResultsContent = (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          py: 3,
+          flexShrink: 0,
+        }}
+      >
+        <CircularProgress size={24} sx={{ color: '#FF3D3D' }} />
+      </Box>
+    );
+  } else if (hasNoResults) {
+    dropdownResultsContent = (
+      <Box sx={{ px: 2, py: 1, flexShrink: 0 }}>
+        <Typography variant="body2" color="text.secondary">
+          {t('searchBar.noResults')}
+        </Typography>
+      </Box>
+    );
+  } else {
+    dropdownResultsContent = (
+      <List
+        ref={listRef}
+        dense
+        sx={{ flex: 1, minHeight: 0, overflowY: 'auto', py: 0 }}
+      >
+        {allResults.map(({ item: game, nameIndices }, index) => {
+          const releaseYear = game.release_date
+            ? new Date(game.release_date).getFullYear()
+            : null;
+          const isActive = index === activeIndex;
+          return (
+            <React.Fragment key={`${game.source}-${game.igdb_id}`}>
+              <ListItem disablePadding data-index={index}>
+                <ListItemButton
+                  onClick={() => handlePickGame(game)}
+                  selected={isActive}
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 61, 61, 0.06)',
+                    },
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Avatar
+                      variant="rounded"
+                      src={game.cover_url ?? undefined}
+                      alt={game.name}
+                      sx={{
+                        width: 40,
+                        height: 54,
+                        mr: 1.5,
+                        borderRadius: '6px',
+                        bgcolor: 'rgba(0,0,0,0.1)',
+                      }}
+                    >
+                      {game.name[0]}
+                    </Avatar>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Typography variant="body2" fontWeight={600}>
+                        <HighlightedText
+                          text={game.name}
+                          indices={nameIndices}
+                        />
+                        {releaseYear && (
+                          <Typography
+                            component="span"
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ ml: 1 }}
+                          >
+                            {releaseYear}
+                          </Typography>
+                        )}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color:
+                            game.source === 'local'
+                              ? '#FF3D3D'
+                              : 'text.secondary',
+                          fontWeight: game.source === 'local' ? 600 : 400,
+                        }}
+                      >
+                        {game.source === 'local'
+                          ? t('searchBar.localSource')
+                          : 'IGDB'}
+                      </Typography>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+              <Divider component="li" sx={{ opacity: 0.5 }} />
+            </React.Fragment>
+          );
+        })}
+      </List>
+    );
+  }
 
   useEffect(() => {
     setActiveIndex(-1);
@@ -392,108 +503,7 @@ const GameSearchBar: React.FC = () => {
             </Typography>
           </Box>
 
-          {loading ? (
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'center',
-                py: 3,
-                flexShrink: 0,
-              }}
-            >
-              <CircularProgress size={24} sx={{ color: '#FF3D3D' }} />
-            </Box>
-          ) : allResults.length === 0 ? (
-            <Box sx={{ px: 2, py: 1, flexShrink: 0 }}>
-              <Typography variant="body2" color="text.secondary">
-                {t('searchBar.noResults')}
-              </Typography>
-            </Box>
-          ) : (
-            <List
-              ref={listRef}
-              dense
-              sx={{ flex: 1, minHeight: 0, overflowY: 'auto', py: 0 }}
-            >
-              {allResults.map(({ item: game, nameIndices }, index) => {
-                const releaseYear = game.release_date
-                  ? new Date(game.release_date).getFullYear()
-                  : null;
-                const isActive = index === activeIndex;
-                return (
-                  <React.Fragment key={`${game.source}-${game.igdb_id}`}>
-                    <ListItem disablePadding data-index={index}>
-                      <ListItemButton
-                        onClick={() => handlePickGame(game)}
-                        selected={isActive}
-                        sx={{
-                          px: 2,
-                          py: 1,
-                          '&:hover': {
-                            backgroundColor: 'rgba(255, 61, 61, 0.06)',
-                          },
-                        }}
-                      >
-                        <ListItemAvatar>
-                          <Avatar
-                            variant="rounded"
-                            src={game.cover_url ?? undefined}
-                            alt={game.name}
-                            sx={{
-                              width: 40,
-                              height: 54,
-                              mr: 1.5,
-                              borderRadius: '6px',
-                              bgcolor: 'rgba(0,0,0,0.1)',
-                            }}
-                          >
-                            {game.name[0]}
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText
-                          primary={
-                            <Typography variant="body2" fontWeight={600}>
-                              <HighlightedText
-                                text={game.name}
-                                indices={nameIndices}
-                              />
-                              {releaseYear && (
-                                <Typography
-                                  component="span"
-                                  variant="caption"
-                                  color="text.secondary"
-                                  sx={{ ml: 1 }}
-                                >
-                                  {releaseYear}
-                                </Typography>
-                              )}
-                            </Typography>
-                          }
-                          secondary={
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color:
-                                  game.source === 'local'
-                                    ? '#FF3D3D'
-                                    : 'text.secondary',
-                                fontWeight: game.source === 'local' ? 600 : 400,
-                              }}
-                            >
-                              {game.source === 'local'
-                                ? t('searchBar.localSource')
-                                : 'IGDB'}
-                            </Typography>
-                          }
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                    <Divider component="li" sx={{ opacity: 0.5 }} />
-                  </React.Fragment>
-                );
-              })}
-            </List>
-          )}
+          {dropdownResultsContent}
 
           {!loading && query.trim() && (
             <>

@@ -125,10 +125,10 @@ class ReviewWriteSerializer(serializers.ModelSerializer):
             instance.rating.normalized_value = rating_value * 2
             instance.rating.save(update_fields=["value", "normalized_value"])
         elif rating_value is not None:
-            user = self.context["request"].user
+            owner = instance.user
             game = instance.game
             rating, _ = Rating.objects.update_or_create(
-                user=user,
+                user=owner,
                 game=game,
                 defaults={
                     "value": rating_value,

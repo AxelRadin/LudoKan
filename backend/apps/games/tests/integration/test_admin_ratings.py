@@ -65,7 +65,8 @@ class TestAdminRatingEndpoints:
         response = admin_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data) == 2
+        assert response.data["count"] == 2
+        assert len(response.data["results"]) == 2
 
     def test_admin_list_ratings_can_filter_by_game_and_user(self, admin_client, user, another_user, game, publisher):
         from apps.games.models import Game
@@ -84,14 +85,23 @@ class TestAdminRatingEndpoints:
         # Filtre par game_id
         resp_game = admin_client.get(url, {"game_id": game.id})
         assert resp_game.status_code == status.HTTP_200_OK
-        assert len(resp_game.data) == 1
-        assert resp_game.data[0]["id"] == r1.id
+        assert resp_game.data["count"] == 1
+        assert len(resp_game.data["results"]) == 1
+        assert resp_game.data["results"][0]["id"] == r1.id
 
         # Filtre par user_id
         resp_user = admin_client.get(url, {"user_id": another_user.id})
         assert resp_user.status_code == status.HTTP_200_OK
-        assert len(resp_user.data) == 1
-        assert resp_user.data[0]["id"] == r2.id
+        assert resp_user.data["count"] == 1
+        assert len(resp_user.data["results"]) == 1
+        assert resp_user.data["results"][0]["id"] == r2.id
+
+        # Filtre multi jeux (game_ids)
+        resp_multi = admin_client.get(url, {"game_ids": f"{game.id},{other_game.id}"})
+        assert resp_multi.status_code == status.HTTP_200_OK
+        assert resp_multi.data["count"] == 2
+        ids = {row["id"] for row in resp_multi.data["results"]}
+        assert ids == {r1.id, r2.id}
 
     def test_non_admin_cannot_list_ratings(self, authenticated_client, user, game):
         Rating.objects.create(user=user, game=game, rating_type=Rating.RATING_TYPE_SUR_10, value=7)
@@ -113,7 +123,8 @@ class TestAdminRatingEndpoints:
         list_url = "/api/admin/ratings/"
         list_response = moderator_client.get(list_url)
         assert list_response.status_code == status.HTTP_200_OK
-        assert len(list_response.data) == 1
+        assert list_response.data["count"] == 1
+        assert len(list_response.data["results"]) == 1
 
         # DELETE interdit
         detail_url = f"/api/admin/ratings/{rating.id}/"

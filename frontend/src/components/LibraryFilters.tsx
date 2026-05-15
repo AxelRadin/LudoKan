@@ -19,6 +19,7 @@ const STATUS_FILTERS: Exclude<LibraryStatusFilter, 'ALL'>[] = [
   'EN_COURS',
   'TERMINE',
   'ENVIE_DE_JOUER',
+  'ABANDONNE',
 ];
 
 const FONT_BODY = "'DM Sans', system-ui, sans-serif";
@@ -42,6 +43,8 @@ function countFor(id: LibraryStatusFilter, counts: LibraryCounts): number {
       return counts.termines;
     case 'ENVIE_DE_JOUER':
       return counts.envie;
+    case 'ABANDONNE':
+      return counts.abandonnes;
     default:
       return 0;
   }
@@ -71,12 +74,18 @@ export default function LibraryFilters({
   const { t } = useTranslation();
   const selectValue = collectionValue === 'ALL' ? '' : String(collectionValue);
 
+  const selectableCollections = useMemo(
+    () => collections.filter(c => c.system_key !== 'MA_LUDOTHEQUE'),
+    [collections]
+  );
+
   const filterLabels = useMemo(
     (): Record<LibraryStatusFilter, string> => ({
       ALL: t('libraryFilters.statusAll'),
       EN_COURS: t('profilePage.statusPlaying'),
       TERMINE: t('profilePage.statusDone'),
       ENVIE_DE_JOUER: t('profilePage.statusWishlist'),
+      ABANDONNE: t('profilePage.statusAbandoned'),
     }),
     [t]
   );
@@ -115,7 +124,7 @@ export default function LibraryFilters({
             <MenuItem value="">
               <em>{t('libraryFilters.allCollections')}</em>
             </MenuItem>
-            {collections.map(c => (
+            {selectableCollections.map(c => (
               <MenuItem key={c.id} value={String(c.id)}>
                 {c.name} ({c.games_count})
               </MenuItem>

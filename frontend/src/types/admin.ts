@@ -1,12 +1,33 @@
 export type AdminRole = 'moderator' | 'admin' | 'superadmin';
 
+export type AdminUser = {
+  id: number;
+  pseudo?: string;
+  username?: string;
+  email: string;
+  is_superuser: boolean;
+  is_active: boolean;
+  roles: string[];
+  created_at?: string;
+};
+
+export type AdminStatsCharts = {
+  users_daily: {
+    date: string;
+    new_users: number;
+    active_logins: number;
+  }[];
+  games_top: { id: number; name: string; reviews: number }[];
+  genres_share: { name: string; count: number }[];
+};
+
 export type AdminStats = {
   totals: {
     users: number;
     users_new_last_7_days: number;
     games: number;
-    tickets: number;
-    tickets_pending: number;
+    support_tickets: number;
+    support_tickets_open: number;
     reviews: number;
     reports_unresolved: number;
   };
@@ -20,8 +41,44 @@ export type AdminStats = {
   };
   recent_activity: {
     id: number;
-    action: string;
-    user: string;
-    created_at: string;
+    action: string | null;
+    actor: string | null;
+    target: string | null;
+    time: string;
   }[];
+  charts: AdminStatsCharts;
+};
+
+export type AdminStatsInsights = {
+  reviews_ratings_daily: {
+    date: string;
+    reviews: number;
+    ratings: number;
+  }[];
+  reports_messages_daily: {
+    date: string;
+    reports: number;
+    messages: number;
+  }[];
+  support_by_status: { status: string; label: string; count: number }[];
+  games_by_status: { status: string; label: string; count: number }[];
+};
+
+export type AdminActionRow = {
+  id: number;
+  timestamp: string;
+  admin_user: number | null;
+  admin_user_email: string | null;
+  admin_user_pseudo: string | null;
+  action_type: string;
+  target_type: string;
+  target_id: number | null;
+  description: string;
+};
+
+export type AdminActionListResponse = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: AdminActionRow[];
 };

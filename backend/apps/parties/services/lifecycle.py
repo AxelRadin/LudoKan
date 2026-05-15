@@ -4,11 +4,13 @@ from django.contrib.auth.models import AbstractBaseUser
 from django.db import transaction
 from django.utils import timezone
 
-from apps.parties.constants import CHAT_COUNTDOWN, MIN_PLAYERS_TO_CONTINUE, READY_FOR_CHAT_TIMEOUT
+from apps.parties.constants import CHAT_COUNTDOWN, MIN_PLAYERS_TO_CONTINUE, READY_FOR_CHAT_TIMEOUT, READY_TIMEOUT
 from apps.parties.models import GameParty, GamePartyMember
 from apps.parties.services.members import active_member_count, active_members_qs
 from apps.parties.services.party_state_helpers import cancel_party
 from apps.parties.services.recruitment import transition_open_to_waiting_ready
+
+ERROR_USER_NOT_ACTIVE = "User is not an active participant in this party."
 
 
 def _timeout_pending_ready_states(*, party_id: int) -> int:
@@ -164,7 +166,7 @@ def mark_ready(*, party_id: int, user: AbstractBaseUser, accepted: bool) -> Game
     if party.status != GameParty.Status.WAITING_READY:
         raise ValueError("Party is not in waiting_ready status.")
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
-        raise ValueError("User is not an active participant in this party.")
+        raise ValueError(ERROR_USER_NOT_ACTIVE)
 
     member.ready_state = GamePartyMember.ReadyState.ACCEPTED if accepted else GamePartyMember.ReadyState.DECLINED
     member.save(update_fields=["ready_state", "updated_at"])
@@ -180,7 +182,7 @@ def mark_ready_for_chat(*, party_id: int, user: AbstractBaseUser, accepted: bool
     if party.status != GameParty.Status.WAITING_READY_FOR_CHAT:
         raise ValueError("Party is not in waiting_ready_for_chat status.")
     if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
-        raise ValueError("User is not an active participant in this party.")
+        raise ValueError(ERROR_USER_NOT_ACTIVE)
 
     member.ready_for_chat_state = GamePartyMember.ReadyForChatState.ACCEPTED if accepted else GamePartyMember.ReadyForChatState.DECLINED
     member.save(update_fields=["ready_for_chat_state", "updated_at"])
@@ -255,3 +257,29 @@ def start_countdown(party_id: int) -> GameParty | None:
     _start_countdown_on_party(party)
     party.refresh_from_db()
     return party
+
+
+@transaction.atomic
+def mark_start_early(*, party_id: int, user: AbstractBaseUser, accepted: bool) -> GamePartyMember:
+    party = GameParty.objects.select_for_update().get(pk=party_id)
+    member = GamePartyMember.objects.select_for_update().get(party_id=party_id, user=user)
+
+    if party.status != GameParty.Status.OPEN:
+        raise ValueError("Party is not in open status.")
+
+    if not active_members_qs(party_id=party_id).filter(pk=member.pk).exists():
+        raise ValueError(ERROR_USER_NOT_ACTIVE)
+
+    member.wants_to_start_early = accepted
+    member.save(update_fields=["wants_to_start_early", "updated_at"])
+
+    n_flow = active_member_count(party_id=party.id)
+    if n_flow >= MIN_PLAYERS_TO_CONTINUE:
+        n_ready = active_members_qs(party_id=party.id).filter(wants_to_start_early=True).count()
+        if n_ready == n_flow:
+            party.status = GameParty.Status.WAITING_READY
+            party.ready_deadline_at = timezone.now() + READY_TIMEOUT
+            party.save(update_fields=["status", "ready_deadline_at", "updated_at"])
+
+    member.refresh_from_db()
+    return member

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import ludokanLogo from '../assets/logo.png';
+import ludokanLogo from '../assets/logo.webp';
 import { apiGet, apiPatch, apiPost } from '../services/api';
 
 type User = {
@@ -488,7 +488,9 @@ const PageProfile: React.FC = () => {
               <div style={styles.topStatLabel}>{t('profile.rating')}</div>
             </div>
             <div style={styles.topStatCell}>
-              <div style={styles.topStatValue}>{user?.friends_count ?? 20}</div>
+              <div style={styles.topStatValue}>
+                {user?.friends_count ?? '—'}
+              </div>
               <div style={styles.topStatLabel}>{t('profile.friends')}</div>
             </div>
           </div>

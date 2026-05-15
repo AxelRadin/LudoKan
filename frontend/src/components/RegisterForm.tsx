@@ -8,6 +8,8 @@ import PrimaryButton from './PrimaryButton';
 import SocialLoginSection from './SocialLoginSection';
 import { useSocialAuth } from '../hooks/useSocialAuth';
 import { apiPost } from '../services/api';
+import PasswordField from './PasswordField';
+import PasswordStrengthIndicator from './PasswordStrengthIndicator';
 
 type RegisterFormProps = {
   onSwitchToLogin: () => void;
@@ -35,6 +37,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
 
     if (!pseudo || !email || !password || !password2) {
       setError(t('registerForm.errorFillFields'));
+      return;
+    }
+    if (password.length < 8) {
+      setError(t('registerForm.errorMinLength'));
       return;
     }
     if (password !== password2) {
@@ -78,19 +84,24 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             value={email}
             onChange={e => setEmail(e.target.value)}
           />
-          <TextField
+          <PasswordField
             label={t('registerForm.password')}
-            type="password"
             variant="outlined"
             value={password}
             onChange={e => setPassword(e.target.value)}
           />
-          <TextField
+          <PasswordStrengthIndicator password={password} />
+          <PasswordField
             label={t('registerForm.confirmPassword')}
-            type="password"
             variant="outlined"
             value={password2}
             onChange={e => setPassword2(e.target.value)}
+            error={!!password2 && password !== password2}
+            helperText={
+              password2 && password !== password2
+                ? t('registerForm.errorPasswordMatch')
+                : undefined
+            }
           />
         </Stack>
 

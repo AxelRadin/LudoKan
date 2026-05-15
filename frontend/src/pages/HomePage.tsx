@@ -6,9 +6,20 @@ import { useRef, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import GenreGrid from '../components/GenreGrid';
+import RecommendedGamesSection from '../components/RecommendedGamesSection';
 import TrendingGames from '../components/TrendingGames';
 import { useHomeTrending } from '../hooks/useHomeTrending';
+import { useAuth } from '../contexts/useAuth';
+import { useOnboarding, TOUR_KEYS } from '../hooks/useOnboarding';
+import { useTour } from '../onboarding/useTour';
+import {
+  HOME_TOUR_STEPS,
+  SUGGESTIONS_TOUR_STEPS,
+} from '../onboarding/tourSteps';
 import { bleedUnderHeader } from '../layout/bleedUnderHeader';
+
+const HOME_OPTIONAL_STEPS = new Set([0, 1, 2]);
+const SUGGESTIONS_OPTIONAL_STEPS = new Set([0]);
 
 /* ─── Keyframes ─── */
 const styleEl = document.createElement('style');
@@ -256,12 +267,44 @@ export const HomePage = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const { shouldShow, markAsDone } = useOnboarding(TOUR_KEYS.home);
+  const { startTour } = useTour({
+    steps: HOME_TOUR_STEPS,
+    optionalSteps: HOME_OPTIONAL_STEPS,
+    onDone: markAsDone,
+  });
+
+  const { shouldShow: shouldShowSuggestions, markAsDone: markSuggestionsDone } =
+    useOnboarding(TOUR_KEYS.suggestions);
+  const { startTour: startSuggestionsTour } = useTour({
+    steps: SUGGESTIONS_TOUR_STEPS,
+    optionalSteps: SUGGESTIONS_OPTIONAL_STEPS,
+    onDone: markSuggestionsDone,
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShow) return;
+    const timer = setTimeout(() => startTour(), 800);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, shouldShow, startTour]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !shouldShowSuggestions || shouldShow) return;
+    const timer = setTimeout(() => startSuggestionsTour(), 800);
+    return () => clearTimeout(timer);
+  }, [
+    isAuthenticated,
+    shouldShowSuggestions,
+    shouldShow,
+    startSuggestionsTour,
+  ]);
 
   const { sections } = useHomeTrending({ selectedGenre: null });
 
   const handleGenreClick = (id: number, name: string) => {
     navigate(`/trending/genre/${id}`, { state: { genreName: name } });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    globalThis.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -297,8 +340,14 @@ export const HomePage = () => {
           pb: { xs: 4, md: 5 },
         }}
       >
+        {isAuthenticated && (
+          <Box className="lux-s1">
+            <RecommendedGamesSection />
+          </Box>
+        )}
+
         <Section
-          className="lux-s1"
+          className="lux-s2"
           coverUrl={sections.recent.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
@@ -313,7 +362,7 @@ export const HomePage = () => {
         </Section>
 
         <Section
-          className="lux-s2"
+          className="lux-s3"
           coverUrl={sections.rating.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
@@ -328,7 +377,7 @@ export const HomePage = () => {
         </Section>
 
         <Section
-          className="lux-s3"
+          className="lux-s4"
           coverUrl={sections.popularity.games[0]?.cover_url ?? undefined}
         >
           <SectionLabel
@@ -342,8 +391,8 @@ export const HomePage = () => {
           />
         </Section>
 
-        {/* SECTION EXPLORER PAR GENRE - VERSION AMÉLIORÉE */}
-        <Box className="lux-s4" sx={{ mt: 5 }}>
+        {/* SECTION EXPLORER PAR GENRE */}
+        <Box data-tour="genres" className="lux-s4" sx={{ mt: 5 }}>
           {/* Header stylé */}
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Typography

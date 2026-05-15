@@ -1,3 +1,28 @@
+@keyframes tourMustClick {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(6px);
+  }
+  60% {
+    transform: translateX(-4px);
+  }
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+.tour-must-click {
+  animation: tourMustClick 0.5s ease;
+  outline: 2px solid #c62828 !important;
+  outline-offset: 3px;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

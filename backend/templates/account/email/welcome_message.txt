@@ -1,0 +1,12 @@
+{% load account i18n %}{% user_display user as user_display %}{% blocktrans %}Hi {{ user_display }},
+
+Welcome to LudoKan!
+
+Your account has been successfully verified! We are thrilled to have you in the LudoKan community.
+
+You can now start exploring games, tracking your library, and connecting with other players.
+
+Go to LudoKan: {{ frontend_url }}
+
+See you soon,
+The LudoKan team{% endblocktrans %}

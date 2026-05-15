@@ -1,20 +1,33 @@
 {% extends "account/email/base_message.html" %}
 {% load account i18n %}
 
-{% block head_title %}Confirmez votre adresse e-mail{% endblock %}
+{% block head_title %}{% trans "Confirm your email address" %}{% endblock %}
 
 {% block content %}
-<div style="width:100%;box-sizing:border-box;">
-  <div style="text-align:center;padding-bottom:24px;">
-    <img src="https://placehold.co/200" alt="LudoKan" style="display:block;border:0;margin:0 auto;max-width:160px;width:160px;height:auto;" />
-  </div>
-  <div>
-    {% user_display user as user_display %}
-    {% blocktrans with user_display=user_display site_domain=current_site.domain %}
-    <p>Bonjour {{ user_display }},</p>
-    <p>Pour confirmer l’inscription sur {{ site_domain }}, suivez ce lien :</p>
-    <p><a href="{{ activate_url }}">{{ activate_url }}</a></p>
-    {% endblocktrans %}
-  </div>
+<p style="margin:0 0 8px;color:#c8c5d4;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;">
+  {% trans "Account Verification" %}
+</p>
+<p style="margin:0 0 20px;color:#e8e6f0;font-size:16px;">
+  {% user_display user as user_display %}
+  {% blocktrans %}Hi {{ user_display }},{% endblocktrans %}
+</p>
+<p style="margin:0 0 20px;color:#e8e6f0;font-size:15px;line-height:1.6;">
+  {% blocktrans with site_name=current_site.name %}Welcome to LudoKan! To finalize your registration on {{ site_name }}, please confirm your email address by clicking the button below:{% endblocktrans %}
+</p>
+
+{% trans "Confirm my email" as cta_confirm_label %}
+{% include "account/email/partials/cta_button.html" with cta_url=activate_url cta_label=cta_confirm_label %}
+
+<p style="margin:0 0 12px;color:#9e9ab0;font-size:13px;line-height:1.5;">
+  {% blocktrans %}If the button doesn't work, copy and paste this link into your browser:{% endblocktrans %}
+</p>
+<p style="margin:0 0 20px;word-break:break-all;">
+  <a href="{{ activate_url }}" style="color:#FF3D3D;font-size:13px;text-decoration:none;">{{ activate_url }}</a>
+</p>
+
+<div style="background:rgba(255,61,61,0.08);border-left:3px solid #FF3D3D;border-radius:0 8px 8px 0;padding:12px 16px;margin:0 0 8px;">
+  <p style="margin:0;color:#c8c5d4;font-size:13px;line-height:1.5;">
+    {% blocktrans %}If you did not create an account on LudoKan, you can safely ignore this email.{% endblocktrans %}
+  </p>
 </div>
 {% endblock %}

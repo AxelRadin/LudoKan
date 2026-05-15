@@ -13,7 +13,7 @@ describe('FloatingMatchmakingWidget', () => {
     vi.clearAllMocks();
   });
 
-  it("ne s'affiche pas (retourne null) si startedAt est absent", () => {
+  it("ne s'affiche pas (retourne null) si startedAt et party sont absents", () => {
     const { container } = render(
       <FloatingMatchmakingWidget
         startedAt={null}
@@ -25,7 +25,7 @@ describe('FloatingMatchmakingWidget', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('affiche "Recherche en cours..." quand hasNewMatch est false', () => {
+  it('affiche le chronomètre en phase de recherche (Radar)', () => {
     vi.mocked(useMatchmakingTimer).mockReturnValue('00:10');
 
     render(
@@ -36,12 +36,11 @@ describe('FloatingMatchmakingWidget', () => {
       />
     );
 
-    expect(screen.getByText('Recherche en cours...')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
     expect(screen.getByText('00:10')).toBeInTheDocument();
+    expect(screen.getByTestId('RadarIcon')).toBeInTheDocument();
   });
 
-  it('affiche "Joueur trouvé !" quand hasNewMatch est true', () => {
+  it('affiche le chronomètre quand hasNewMatch est true', () => {
     vi.mocked(useMatchmakingTimer).mockReturnValue('01:20');
 
     render(
@@ -52,9 +51,8 @@ describe('FloatingMatchmakingWidget', () => {
       />
     );
 
-    expect(screen.getByText('Joueur trouvé !')).toBeInTheDocument();
-    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     expect(screen.getByText('01:20')).toBeInTheDocument();
+    expect(screen.getByTestId('RadarIcon')).toBeInTheDocument();
   });
 
   it('appelle onClick quand on clique sur le widget', () => {
@@ -69,9 +67,41 @@ describe('FloatingMatchmakingWidget', () => {
       />
     );
 
-    const widgetText = screen.getByText('Recherche en cours...');
+    const widgetText = screen.getByText('00:30');
     fireEvent.click(widgetText);
 
     expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("affiche l'état Lobby correctement (formation du groupe)", () => {
+    const mockParty = {
+      status: 'open',
+      max_players: 4,
+      members: [{ left_at: null }, { left_at: null }],
+    } as any;
+
+    render(
+      <FloatingMatchmakingWidget
+        startedAt={null}
+        party={mockParty}
+        onClick={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Lobby (2/4)')).toBeInTheDocument();
+  });
+
+  it("affiche l'état Chat correctement", () => {
+    const mockParty = { status: 'chat_active' } as any;
+
+    render(
+      <FloatingMatchmakingWidget
+        startedAt={null}
+        party={mockParty}
+        onClick={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Chat actif')).toBeInTheDocument();
   });
 });

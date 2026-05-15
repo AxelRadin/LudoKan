@@ -15,6 +15,7 @@ from apps.parties.services.lifecycle import (
     leave_party,
     mark_ready,
     mark_ready_for_chat,
+    mark_start_early,
     reconcile_party_state,
     start_countdown,
 )
@@ -357,3 +358,41 @@ def test_start_countdown_branches(game, user, another_user):
     start_countdown(wrc2.id)
     wrc2.refresh_from_db()
     assert wrc2.status == GameParty.Status.COUNTDOWN
+
+
+@pytest.mark.django_db
+class TestMarkStartEarly:
+    def test_mark_start_early_raises_when_not_open(self, game, user):
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.WAITING_READY)
+        party_member_create(party=party, user=user)
+        with pytest.raises(ValueError, match="not in open status"):
+            mark_start_early(party_id=party.id, user=user, accepted=True)
+
+    def test_mark_start_early_raises_when_not_active(self, game, user):
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.OPEN)
+        party_member_create(party=party, user=user, left_at=timezone.now())
+        with pytest.raises(ValueError, match="not an active participant"):
+            mark_start_early(party_id=party.id, user=user, accepted=True)
+
+    def test_mark_start_early_updates_member_flag(self, game, user, another_user):
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.OPEN)
+        party_member_create(party=party, user=user)
+        party_member_create(party=party, user=another_user)
+
+        mark_start_early(party_id=party.id, user=user, accepted=True)
+        m = GamePartyMember.objects.get(party=party, user=user)
+        assert m.wants_to_start_early is True
+        party.refresh_from_db()
+        assert party.status == GameParty.Status.OPEN
+
+    def test_mark_start_early_transitions_when_all_ready(self, game, user, another_user):
+        party = open_party_factory(game=game, max_players=4, status=GameParty.Status.OPEN)
+        party_member_create(party=party, user=user)
+        party_member_create(party=party, user=another_user)
+
+        mark_start_early(party_id=party.id, user=user, accepted=True)
+        mark_start_early(party_id=party.id, user=another_user, accepted=True)
+
+        party.refresh_from_db()
+        assert party.status == GameParty.Status.WAITING_READY
+        assert party.ready_deadline_at is not None

@@ -1,7 +1,12 @@
-{% extends "account/email/base_message.txt" %}
-{% load account %}
-{% load i18n %}
+{% load account i18n %}{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_url=frontend_url activate_url=activate_url %}Hi {{ user_display }},
 
-{% block content %}{% autoescape off %}{% user_display user as user_display %}{% blocktrans with site_name=current_site.name site_domain=current_site.domain %}You're receiving this email because user {{ user_display }} has given your email address to register an account on {{ site_domain }}.
+Welcome to LudoKan!
 
-To confirm this is correct qjsnjnjsqjdsqjnjnsjnjjssjnsjsjsqjjjsnjnjqsjnjnjsjjqsjjsnjn, go to {{ activate_url }}{% endblocktrans %}{% endautoescape %}{% endblock content %}
+To finalize your registration on {{ site_name }} ({{ site_url }}), please confirm your email address by clicking the following link:
+
+{{ activate_url }}
+
+If you did not create an account on LudoKan, you can safely ignore this email.
+
+Thank you,
+The LudoKan team{% endblocktrans %}

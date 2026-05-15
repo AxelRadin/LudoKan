@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { FaSteam } from 'react-icons/fa';
 import ConfirmModal from './ConfirmModal';
+import { formatPlaytime } from '../utils/timeUtils';
 
 export type GameListItem = {
   id: number;
@@ -27,13 +28,13 @@ export type GameListItem = {
 };
 
 export type GameListProps = {
-  games: GameListItem[];
-  title?: string;
-  showStatus?: boolean;
-  onRemove?: (userGameId: number) => void;
+  readonly games: GameListItem[];
+  readonly title?: string;
+  readonly showStatus?: boolean;
+  readonly onRemove?: (userGameId: number) => void;
   /** Retirer le jeu de la collection affichée (sans supprimer le UserGame). */
-  onDetachFromCollection?: (userGameId: number) => void;
-  detachFromCollectionTitle?: string;
+  readonly onDetachFromCollection?: (userGameId: number) => void;
+  readonly detachFromCollectionTitle?: string;
 };
 
 function isAllDigits(s: string): boolean {
@@ -72,7 +73,7 @@ export default function GameList({
   onRemove,
   onDetachFromCollection,
   detachFromCollectionTitle,
-}: GameListProps) {
+}: Readonly<GameListProps>) {
   const { t } = useTranslation();
   const [pendingRemoveId, setPendingRemoveId] = useState<number | null>(null);
   const titleParts = title ? parseTrailingCountTitle(title) : null;
@@ -148,6 +149,7 @@ export default function GameList({
                     component="img"
                     image={getGameImage(game)}
                     alt={game.name}
+                    loading="lazy"
                     sx={{
                       width: '100%',
                       height: 180,
@@ -188,7 +190,7 @@ export default function GameList({
                               variant="caption"
                               sx={{ fontWeight: 600, fontSize: '0.7rem' }}
                             >
-                              {game.playtime_forever}h
+                              {formatPlaytime(game.playtime_forever)}
                             </Typography>
                           )}
                       </Box>

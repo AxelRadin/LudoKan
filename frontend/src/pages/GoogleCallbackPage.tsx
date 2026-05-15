@@ -1,12 +1,10 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
+import OAuthCallbackLayout from '../components/OAuthCallbackLayout';
+import { readOAuthReturnFromUrl } from '../utils/oauthCallbackUrl';
 
 const GoogleCallbackPage: React.FC = () => {
   const { t } = useTranslation();
@@ -20,12 +18,12 @@ const GoogleCallbackPage: React.FC = () => {
     exchangeStarted.current = true;
 
     const run = async () => {
-      const url = new URL(globalThis.location.href);
-      const code = url.searchParams.get('code');
-      const googleError = url.searchParams.get('error');
+      const { code, providerError } = readOAuthReturnFromUrl(
+        globalThis.location.href
+      );
 
-      if (googleError) {
-        setError(t('googleCallback.errorGoogle', { error: googleError }));
+      if (providerError) {
+        setError(t('googleCallback.errorGoogle', { error: providerError }));
         return;
       }
       if (!code) {
@@ -46,32 +44,15 @@ const GoogleCallbackPage: React.FC = () => {
       }
     };
 
-    void run();
+    run();
   }, [navigate, setAuthenticated, t]);
 
-  if (error) {
-    return (
-      <Box sx={{ p: 4, maxWidth: 480, mx: 'auto' }}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box
-      sx={{
-        p: 4,
-        maxWidth: 480,
-        mx: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 2,
-      }}
-    >
-      <CircularProgress />
-      <Typography variant="body1">{t('googleCallback.loading')}</Typography>
-    </Box>
+    <OAuthCallbackLayout
+      error={error}
+      loadingTitle={t('googleCallback.loading')}
+      loadingTitleVariant="body1"
+    />
   );
 };
 

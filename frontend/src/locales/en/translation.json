@@ -2,10 +2,13 @@
   "nav": {
     "home": "Home",
     "profile": "Profile",
+    "findFriends": "Find friends",
+    "friends": "Friends",
     "logout": "Log out",
     "login": "Log in",
     "register": "Register",
-    "settings": "Settings"
+    "settings": "Settings",
+    "games": "Games"
   },
   "auth": {
     "loginTitle": "Log in",
@@ -46,7 +49,36 @@
   "common": {
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "close": "Close",
+    "reset": "Reset",
+    "resetAll": "Reset all",
+    "search": "Search...",
+    "sort": "Sort by",
+    "menu": "Menu"
+  },
+  "games": {
+    "title": "Explore Games",
+    "subtitle": "Discover thousands of titles across the IGDB API.",
+    "empty": "No games found matching your criteria.",
+    "sort": {
+      "popularity": "Popularity",
+      "recent": "Recent",
+      "rating": "Top Rated",
+      "mostRated": "Most Rated",
+      "name": "Name (A-Z)"
+    },
+    "filters": {
+      "title": "Filters",
+      "genres": "Genres",
+      "platforms": "Platforms",
+      "themes": "Themes",
+      "gameModes": "Game Modes",
+      "minRating": "Minimum Rating",
+      "minAge": "Minimum Age",
+      "minPlayers": "Min. Players",
+      "playerPerspectives": "Perspectives"
+    }
   },
   "error404": {
     "title": "Error 404",
@@ -94,23 +126,89 @@
   },
   "genres": {
     "Action": "Action",
-    "Aventure": "Adventure",
+    "Adventure": "Adventure",
     "RPG": "RPG",
     "FPS": "FPS",
     "TPS": "TPS",
-    "Stratégie": "Strategy",
+    "Strategy": "Strategy",
     "Simulation": "Simulation",
     "Puzzle": "Puzzle",
-    "Course": "Racing",
+    "Racing": "Racing",
     "Sport": "Sport",
     "Hack'n Slash": "Hack'n Slash",
-    "Plateforme": "Platformer",
-    "Jeu de cartes": "Card Game"
+    "Platform": "Platform",
+    "Card & Board": "Card & Board"
+  },
+  "platforms": {
+    "PC": "PC",
+    "PS5": "PS5",
+    "PS4": "PS4",
+    "Xbox Series X|S": "Xbox Series X|S",
+    "Xbox One": "Xbox One",
+    "Nintendo Switch": "Nintendo Switch",
+    "iOS": "iOS",
+    "Android": "Android"
+  },
+  "themes": {
+    "Action": "Action",
+    "Horror": "Horror",
+    "Fantasy": "Fantasy",
+    "Sci-fi": "Sci-fi",
+    "Open World": "Open World",
+    "Survival": "Survival",
+    "Stealth": "Stealth",
+    "Comedy": "Comedy",
+    "Sandbox": "Sandbox",
+    "Historical": "Historical",
+    "Warfare": "Warfare",
+    "Non-fiction": "Non-fiction",
+    "Mystery": "Mystery"
+  },
+  "gameModes": {
+    "Single player": "Single player",
+    "Multiplayer": "Multiplayer",
+    "Co-operative": "Co-operative",
+    "Split screen": "Split screen",
+    "MMO": "MMO",
+    "Battle Royale": "Battle Royale"
+  },
+  "perspectives": {
+    "First person": "First person",
+    "Third person": "Third person",
+    "Bird's eye / Top-down": "Bird's eye / Top-down",
+    "Side view": "Side view",
+    "Virtual Reality": "Virtual Reality"
   },
   "header": {
     "openMenu": "Open menu",
     "langFr": "Français 🇫🇷",
-    "langEn": "English 🇬🇧"
+    "langEn": "English 🇬🇧",
+    "lightMode": "Switch to light mode",
+    "darkMode": "Switch to dark mode",
+    "changeLanguage": "Change language",
+    "exploreGames": "Explore games"
+  },
+  "notifications": {
+    "open": "Open notifications",
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markRead": "Mark as read",
+    "markAllRead": "Mark all as read",
+    "loadMore": "Load more",
+    "loadingMore": "Loading...",
+    "verb": {
+      "friend_request_received": "Friend request",
+      "friend_request_accepted": "Friend request accepted",
+      "message": "New message",
+      "match": "Match found",
+      "review": "New review",
+      "ticket_reviewing": "Ticket in review",
+      "ticket_approved": "Ticket approved",
+      "ticket_rejected": "Ticket rejected",
+      "ticket_published": "Ticket published",
+      "ticket_created": "New ticket"
+    },
+    "viewAll": "See all notifications"
   },
   "loginForm": {
     "title": "Log in",
@@ -131,7 +229,17 @@
     "errorRecaptchaNotConfigured": "reCAPTCHA not configured: set VITE_RECAPTCHA_SITE_KEY (see frontend/.env.example).",
     "errorRecaptcha": "Please validate the reCAPTCHA.",
     "errorGoogle": "Google login unavailable.",
-    "errorFallback": "An error occurred."
+    "errorFallback": "An error occurred.",
+    "forgotPasswordLink": "Forgot password?",
+    "forgotPasswordTitle": "Forgot password",
+    "forgotDescription": "Enter your email address and we'll send you a link to reset your password.",
+    "forgotEmailLabel": "Email address",
+    "forgotEnterEmail": "Please enter your email address.",
+    "forgotInvalidEmail": "Invalid email address.",
+    "forgotSendError": "Error sending the reset email.",
+    "forgotSuccessMessage": "A password reset email has been sent to {{email}}. The link expires in 10 minutes. Check your inbox.",
+    "forgotSending": "Sending...",
+    "forgotSend": "Send"
   },
   "matchmakingModal": {
     "searchTitle": "Player search",
@@ -196,6 +304,7 @@
     "submitting": "Signing up...",
     "errorFillFields": "Please fill in all fields.",
     "errorPasswordMatch": "Passwords do not match.",
+    "errorMinLength": "Password must be at least 8 characters.",
     "errorGoogle": "Google login unavailable.",
     "errorFallback": "An error occurred."
   },
@@ -286,6 +395,7 @@
     "statusDone": "Completed",
     "statusPlaying": "Playing",
     "statusWishlist": "Wishlist",
+    "statusAbandoned": "Dropped",
     "genresLabel": "Genres",
     "genresEmpty": "Not specified",
     "translating": "Translating…",
@@ -353,6 +463,61 @@
     "unknownPlatforms": "Unknown platforms",
     "noDescription": "No description."
   },
+  "friendsPage": {
+    "title": "Friends",
+    "tabFriends": "Friends",
+    "tabRequests": "Requests",
+    "tabBlocked": "Blocked",
+    "blockedEmpty": "You have not blocked anyone.",
+    "unblock": "Unblock",
+    "unblocked": "User unblocked.",
+    "unblockError": "Could not unblock this user.",
+    "addFriend": "Add a friend",
+    "addFriendModalTitle": "Find a player",
+    "invite": "Invite",
+    "inviteSent": "Friend request sent.",
+    "inviteError": "Could not send the request."
+  },
+  "findFriendsPage": {
+    "title": "Find friends",
+    "shortLink": "Find friends",
+    "hint": "Search by username or name. Open a profile to send a friend request.",
+    "placeholder": "At least 2 characters…",
+    "minChars": "Type at least 2 characters to search.",
+    "empty": "No players match your search.",
+    "openProfile": "View profile",
+    "loginRequired": "You must be logged in to search for other players."
+  },
+  "publicUserProfile": {
+    "loadError": "Could not load this profile.",
+    "selfHint": "This is you — manage your profile from the main profile page.",
+    "goToMyProfile": "My profile",
+    "loginToAdd": "Log in to add friends.",
+    "addFriend": "Add friend",
+    "requestSent": "Request sent",
+    "cancelRequest": "Cancel request",
+    "requestCancelled": "Friend request cancelled.",
+    "requestDeclined": "Friend request declined.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "removeFriend": "Remove friend",
+    "nowFriends": "You are now friends.",
+    "friendError": "Could not update friendship.",
+    "gamesInCommon": "Games in common",
+    "gamesInCommonEmpty": "No shared games in your libraries yet.",
+    "memberSince": "Member since",
+    "reviews": "Reviews",
+    "statsPlaytime": "Total playtime (visible)",
+    "statsGames": "Games (visible)",
+    "friendsLabel": "Friends",
+    "moreOptionsAria": "More options",
+    "blockUser": "Block user",
+    "blockConfirmTitle": "Block this user?",
+    "blockConfirmBody": "You will no longer see {{pseudo}} in search, they will not be able to view your profile or send friend requests, and any friendship or pending requests will be removed.",
+    "blockConfirm": "Block",
+    "blockSuccess": "User blocked.",
+    "blockError": "Could not block this user."
+  },
   "profilePage": {
     "editProfile": "Edit profile",
     "editTitle": "Edit my profile",
@@ -397,6 +562,16 @@
     "steamSyncTooltipDefault": "Re-sync your Steam library",
     "steamDisconnect": "Disconnect",
     "steamConnect": "Link Steam",
+    "xboxLabel": "Xbox",
+    "xboxDesc": "Synchronize your Xbox Live library",
+    "xboxConnected": "Connected",
+    "xboxSync": "Sync",
+    "xboxSyncing": "Xbox synchronization in progress, your games will update shortly...",
+    "xboxSyncTooltip": "Synchronizing...",
+    "xboxSyncTooltipDefault": "Re-sync your Xbox library",
+    "xboxDisconnect": "Disconnect",
+    "xboxConnect": "Link Xbox",
+    "xboxGamerscoreLabel": "Xbox Gamerscore",
     "selection": "Selection",
     "favorites": "Favorites",
     "favoritesCount": "{{count}} game",
@@ -412,14 +587,17 @@
     "libraryOptionsAria": "Library options",
     "createCollection": "Create collection",
     "manageCollections": "Manage collections",
+    "libraryPrivacyMenu": "Library privacy",
     "totalGames": "{{count}} game total",
     "totalGamesPlural": "{{count}} games total",
     "inProgress": "In progress",
     "completed": "Completed",
     "wishlist": "Wishlist",
+    "abandoned": "Dropped",
     "statusPlaying": "In progress",
     "statusDone": "Completed",
     "statusWishlist": "Wishlist",
+    "statusAbandoned": "Dropped",
     "gameRemoved": "Game removed from library.",
     "gameRemoveError": "Unable to remove game. Please try again.",
     "undo": "Undo",
@@ -443,10 +621,30 @@
     "saveError": "Error: ",
     "playtimeLabel": "Playtime",
     "reviewsLabel": "Reviews",
+    "friendsLabelStat": "Friends",
+    "friendRequestsTitle": "Friend requests",
+    "friendRequestsIncoming": "Received — your response",
+    "friendRequestsIncomingEmpty": "No pending requests.",
+    "friendRequestsOutgoing": "Sent — awaiting their response",
+    "friendRequestsOutgoingEmpty": "No outgoing requests.",
+    "friendRequestAccepted": "Friend request accepted.",
+    "friendRequestDeclined": "Friend request declined.",
+    "friendRequestCancelled": "Friend request cancelled.",
+    "friendRequestActionError": "Could not update this request.",
+    "friendsSectionTitle": "My friends",
+    "friendsListEmpty": "You don't have any friends yet. Find other players to connect.",
     "statsLabel": "Statistics",
     "finishedRatioLabel": "% games finished",
     "playedRatioLabel": "% games played",
     "totalGamesLabel": "Total games"
+  },
+  "libraryPrivacy": {
+    "title": "Library privacy",
+    "shareWithFriends": "Share my entire library with my friends",
+    "showOnPublicProfile": "Show my library on my public profile",
+    "saved": "Privacy settings saved.",
+    "loadError": "Could not load settings.",
+    "saveError": "Could not save. Please try again."
   },
   "userReviewsPage": {
     "filterRating": "Rating",
@@ -495,6 +693,13 @@
     "errorFallback": "Steam login failed",
     "backToProfile": "Back to profile"
   },
+  "microsoftCallback": {
+    "loadingTitle": "Linking with Microsoft",
+    "loadingDesc": "Please wait while we finalize Xbox linking...",
+    "errorMicrosoft": "Microsoft returned an error: {{error}}",
+    "errorNoCode": "No Microsoft code received.",
+    "errorFallback": "Microsoft linking failed"
+  },
   "testSentry": {
     "title": "Sentry test page",
     "desc": "Click to generate an error captured by Sentry.",
@@ -514,6 +719,7 @@
       "colorLabel": "Color",
       "colorPickerTooltip": "Pick a color",
       "visibleOnProfile": "Visible on my public profile",
+      "visibleToFriends": "Visible to my friends (not public)",
       "cancel": "Cancel",
       "create": "Create",
       "save": "Save"
@@ -567,6 +773,10 @@
     "default": "Trending games",
     "empty": "No games in this category."
   },
+  "recommendations": {
+    "personalised": "Personalised",
+    "suggestionsTitle": "Suggestions for you"
+  },
   "settings": {
     "title": "Settings",
     "appearanceSection": "Appearance",
@@ -576,7 +786,64 @@
     "policies": "Policies",
     "about": "About",
     "cookies": "Cookies",
-    "version": "Ludokan • v1.0.0"
+    "version": "Ludokan • v1.0.0",
+    "securitySection": "Security",
+    "changePassword": "Change password",
+    "changePasswordDesc": "Update your current password",
+    "changePasswordTitle": "Change password",
+    "pwOldPassword": "Current password",
+    "pwNewPassword": "New password",
+    "pwConfirmPassword": "Confirm new password",
+    "pwSave": "Update",
+    "pwSaving": "Updating...",
+    "pwSuccess": "Password updated successfully",
+    "pwErrorFillFields": "Please fill in all fields.",
+    "pwErrorMinLength": "Password must be at least 8 characters.",
+    "pwErrorMismatch": "Passwords do not match.",
+    "pwErrorWrongOld": "Current password is incorrect.",
+    "pwErrorGeneric": "Error updating password.",
+    "cookiesSection": "Cookies",
+    "analyticsDesc": "Anonymized audience measurement (Sentry)",
+    "personalisationLabel": "Personalisation",
+    "personalisationDesc": "Theme, preferences, recommendations",
+    "cookiesDetail": "Cookie details",
+    "helpSection": "Help",
+    "restartTour": "Restart the tutorial",
+    "restartTourDesc": "Relaunch the onboarding guide",
+    "supportContact": "Contact support",
+    "supportContactDesc": "Report a bug or get help"
+  },
+  "supportPage": {
+    "title": "Support",
+    "intro": "Describe your issue. We will get back to you as soon as possible.",
+    "category": "Category",
+    "categoryBug": "Bug / technical",
+    "categoryAccount": "Account",
+    "categoryOther": "Other",
+    "subject": "Subject",
+    "message": "Message",
+    "pageUrl": "Page URL (optional)",
+    "submit": "Send",
+    "history": "Your requests",
+    "loading": "Loading…",
+    "empty": "No requests yet.",
+    "sentOk": "Request sent.",
+    "sentError": "Could not send the request.",
+    "loadError": "Could not load your requests."
+  },
+  "resetPasswordPage": {
+    "title": "New password",
+    "subtitle": "Choose a new password for your LudoKan account.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "submit": "Reset password",
+    "success": "Your password has been reset successfully! You will be redirected to the login page...",
+    "errorFillFields": "Please fill in all fields.",
+    "errorMinLength": "Password must be at least 8 characters.",
+    "errorMismatch": "Passwords do not match.",
+    "errorAllNumeric": "Password cannot be entirely numeric.",
+    "errorInvalidLink": "This reset link is invalid or has expired. Please request a new one.",
+    "errorGeneric": "Error resetting password."
   },
   "politiques": {
     "title": "Policies",
@@ -586,5 +853,79 @@
     "cguTitle": "Terms of Use",
     "cguSubtitle": "Access rules, services, responsibilities, moderation",
     "back": "Back to policies"
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "fair": "Fair",
+    "good": "Good",
+    "strong": "Strong",
+    "ruleMinLength": "At least 8 characters",
+    "ruleHasDigit": "At least 1 number",
+    "ruleHasSpecial": "At least 1 special character",
+    "ruleHasUppercase": "At least 1 uppercase letter"
+  },
+  "verifyEmailPage": {
+    "title": "Account verification",
+    "intro": "To activate your account, confirm your email address.",
+    "confirmHint": "Some email clients prefetch links; use the button below only when you are ready to confirm.",
+    "confirm": "Confirm my email address",
+    "verifying": "Verifying your email address...",
+    "success": "Your account has been successfully activated! You can now log in.",
+    "error": "The verification link is invalid or has expired.",
+    "backToLogin": "Back to login"
+  },
+  "recommendations": {
+    "personalised": "Personalised",
+    "suggestionsTitle": "Games we think you'll love",
+    "recommendedTags": "Recommended because your games have the tags",
+    "noSuggestions": "No suggestions available at the moment.",
+    "exploreCatalogue": "Explore the catalogue"
+  },
+  "cookiesPage": {
+    "back": "Back",
+    "title": "Cookie management",
+    "version": "Version 1.0 – April 2025",
+    "intro": "Ludokan uses cookies and similar technologies to ensure the platform works correctly, analyze its usage and personalize your experience. On your first visit, a banner allows you to accept or decline non-essential categories. You can change your preferences at any time from the settings.",
+    "alwaysActive": "Always active",
+    "consentRequired": "Consent required",
+    "editTitle": "Edit my preferences",
+    "editDesc": "You can change your choices at any time.",
+    "settingsBtn": "Settings",
+    "contact": "For any questions:",
+    "necessary": {
+      "label": "Necessary",
+      "description": "These cookies are essential for the platform to function. They manage your login session and ensure the security of your account. They cannot be disabled.",
+      "example1": "User session",
+      "example2": "CSRF token (security)",
+      "example3": "Language preferences"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "description": "These cookies allow us to measure platform traffic anonymously (pages visited, session duration, errors encountered). They help us improve your experience.",
+      "example1": "Anonymous browsing statistics",
+      "example2": "Error reports (anonymized Sentry)",
+      "example3": "Most visited pages"
+    },
+    "personalisation": {
+      "label": "Personalisation",
+      "description": "These cookies remember your preferences to personalize your experience on Ludokan: theme (light/dark), display preferences, recommendations based on your habits.",
+      "example1": "Light / dark theme",
+      "example2": "Display preferences",
+      "example3": "Personalised recommendations"
+    }
+  },
+  "cookieBanner": {
+    "title": "Cookie management",
+    "intro": "We use cookies to ensure Ludokan works correctly and to improve your experience. You can accept, decline or customize your choices.",
+    "learnMore": "Learn more",
+    "necessary": "Necessary",
+    "necessaryDesc": "Essential for the platform to function",
+    "analyticsDesc": "Anonymized audience measurement",
+    "personalisationLabel": "Personalisation",
+    "personalisationDesc": "Theme, preferences, recommendations",
+    "acceptAll": "Accept all",
+    "refuseAll": "Decline all",
+    "saveChoice": "Save my choices",
+    "customise": "Customise"
   }
 }

@@ -1,5 +1,21 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import i18n from '../i18n';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+
+function djangoAcceptLanguage(): string {
+  const fromI18n =
+    (typeof i18n.language === 'string' && i18n.language) ||
+    (typeof i18n.resolvedLanguage === 'string' && i18n.resolvedLanguage) ||
+    '';
+  const fromStorage =
+    typeof localStorage === 'undefined'
+      ? ''
+      : localStorage.getItem('i18nextLng') || '';
+  const raw = fromI18n || fromStorage || 'en';
+  const base = raw.split(/[-_]/)[0]?.toLowerCase() || 'en';
+  if (base === 'fr') return 'fr';
+  return 'en';
+}
 
 function getCookie(name: string): string | null {
   if (typeof document === 'undefined') return null;
@@ -17,6 +33,11 @@ async function request(path: string, options: RequestInit = {}) {
   const method = (options.method || 'GET').toString().toUpperCase();
 
   const headers = new Headers(options.headers || {});
+
+  // Send Accept-Language for backend i18n (codes courts : fr, en)
+  if (!headers.has('Accept-Language')) {
+    headers.set('Accept-Language', djangoAcceptLanguage());
+  }
 
   // Ajoute le header CSRF pour les méthodes non-sûres
   if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
@@ -66,14 +87,16 @@ export async function apiPost(
   body: any,
   options: RequestInit = {}
 ) {
+  const { headers: optionHeaders, ...rest } = options;
+  const headers = new Headers(optionHeaders ?? undefined);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   return request(path, {
+    ...rest,
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
     body: JSON.stringify(body),
-    ...options,
   });
 }
 

@@ -4,15 +4,32 @@ import en from './locales/en/translation.json';
 import fr from './locales/fr/translation.json';
 
 try {
+  const urlParams = new URLSearchParams(globalThis.location.search);
+  const langParam = urlParams.get('lang');
+  const storedLang =
+    typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem('i18nextLng');
+  const lng = langParam || storedLang || 'fr';
+
   await i18n.use(initReactI18next).init({
     resources: {
       en: { translation: en },
       fr: { translation: fr },
     },
-    lng: 'fr',
+    lng,
     fallbackLng: 'fr',
     interpolation: { escapeValue: false },
   });
+  const persistLng = (lng: string) => {
+    try {
+      globalThis.localStorage.setItem('i18nextLng', lng);
+    } catch {
+      /* ignore */
+    }
+  };
+  i18n.on('languageChanged', persistLng);
+  persistLng(i18n.language);
 } catch (err: unknown) {
   console.error('i18n init failed', err);
 }

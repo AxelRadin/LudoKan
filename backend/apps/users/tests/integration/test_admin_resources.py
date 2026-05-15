@@ -122,6 +122,51 @@ class TestAdminUserListView:
         resp_role = admin_client.get("/api/admin/users/", {"role": UserRole.Role.MODERATOR})
         assert resp_role.status_code == status.HTTP_200_OK
 
+    def test_search_param_filters_by_pseudo_or_email(self, admin_client):
+        User.objects.create_user(
+            email="findme@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="findmepseudo",
+        )
+        User.objects.create_user(
+            email="other@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="otherpseudo",
+        )
+
+        # Recherche par pseudo
+        resp_pseudo = admin_client.get("/api/admin/users/", {"search": "findme"})
+        assert resp_pseudo.status_code == status.HTTP_200_OK
+        pseudos = [u["pseudo"] for u in resp_pseudo.data["results"]]
+        assert "findmepseudo" in pseudos
+        assert "otherpseudo" not in pseudos
+
+        # Recherche par email
+        resp_email = admin_client.get("/api/admin/users/", {"search": "findme@example"})
+        assert resp_email.status_code == status.HTTP_200_OK
+        emails = [u["email"] for u in resp_email.data["results"]]
+        assert "findme@example.com" in emails
+        assert "other@example.com" not in emails
+
+    def test_panel_staff_only_limits_to_moderator_admin_superadmin(self, admin_client):
+        User.objects.create_user(
+            email="plain@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="plainuser",
+        )
+        mod = User.objects.create_user(
+            email="panelmod@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="panelmoduser",
+        )
+        UserRole.objects.create(user=mod, role=UserRole.Role.MODERATOR)
+
+        resp = admin_client.get("/api/admin/users/", {"search": "user", "panel_staff_only": "1"})
+        assert resp.status_code == status.HTTP_200_OK
+        pseudos = [u["pseudo"] for u in resp.data["results"]]
+        assert "panelmoduser" in pseudos
+        assert "plainuser" not in pseudos
+
     def test_admin_user_list_date_and_boolean_true_false_filters(self, admin_client):
         """
         Couvre les branches is_active=true, is_staff=false, created_before/after.
@@ -244,6 +289,93 @@ class TestAdminActionListView:
             {"before": before, "after": after},
         )
         assert response.status_code == status.HTTP_200_OK
+
+    def test_admin_action_list_page_size_query_param(self, admin_client):
+        admin_user = admin_client.handler._force_user  # type: ignore[attr-defined]
+        for i in range(15):
+            AdminAction.objects.create(
+                admin_user=admin_user,
+                action_type="review.delete",
+                target_type="review",
+                target_id=i,
+                description=f"del {i}",
+            )
+        r10 = admin_client.get("/api/admin/actions/", {"page_size": 10})
+        assert r10.status_code == status.HTTP_200_OK
+        assert len(r10.data["results"]) == min(10, r10.data["count"])
+        r20 = admin_client.get("/api/admin/actions/", {"page_size": 20})
+        assert r20.status_code == status.HTTP_200_OK
+        assert r20.data["count"] >= 15
+        assert len(r20.data["results"]) == min(20, r20.data["count"])
+
+
+@pytest.mark.django_db
+class TestAdminReactivateUserView:
+    def test_admin_can_reactivate_suspended_user(self, admin_client):
+        target = User.objects.create_user(
+            email="suspended@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="suspendeduser",
+        )
+        from apps.users.models import UserSuspension
+
+        UserSuspension.objects.create(
+            user=target,
+            reason="Test suspension",
+            is_active=True,
+        )
+
+        url = f"/api/admin/users/{target.id}/reactivate/"
+        response = admin_client.post(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert not UserSuspension.objects.filter(user=target, is_active=True).exists()
+
+    def test_reactivate_logs_admin_action(self, admin_client):
+        target = User.objects.create_user(
+            email="suspended2@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="suspendeduser2",
+        )
+        from apps.users.models import UserSuspension
+
+        UserSuspension.objects.create(
+            user=target,
+            reason="Test suspension",
+            is_active=True,
+        )
+
+        admin_client.post(f"/api/admin/users/{target.id}/reactivate/")
+
+        assert AdminAction.objects.filter(
+            action_type="user.reactivate",
+            target_type="user",
+            target_id=target.id,
+        ).exists()
+
+    def test_reactivate_returns_400_if_user_not_suspended(self, admin_client):
+        target = User.objects.create_user(
+            email="active@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="activeuser",
+        )
+
+        url = f"/api/admin/users/{target.id}/reactivate/"
+        response = admin_client.post(url)
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_non_admin_cannot_reactivate_user(self, authenticated_client):
+        target = User.objects.create_user(
+            email="target-reactivate@example.com",
+            password=TEST_USER_CREDENTIAL,
+            pseudo="targetreactivate",
+        )
+
+        url = f"/api/admin/users/{target.id}/reactivate/"
+        response = authenticated_client.post(url)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 @pytest.mark.django_db

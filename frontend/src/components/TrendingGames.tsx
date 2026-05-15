@@ -1,11 +1,11 @@
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { Card, IconButton, Skeleton } from '@mui/material';
+import { Card, Skeleton } from '@mui/material';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '@mui/material/styles';
 import GameCard from './GameCard';
+import { CarouselArrowButton } from './CarouselArrowButton';
 import type { NormalizedGame } from '../types/game';
 
 export interface TrendingGamesProps {
@@ -13,11 +13,38 @@ export interface TrendingGamesProps {
   loading?: boolean;
 }
 
+// Hook pour obtenir les couleurs dynamiques basées sur le thème
+function useThemeColors() {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+
+  return useMemo(
+    () => ({
+      arrowBg: isDark ? 'rgba(42,32,32,0.95)' : 'common.white',
+      arrowBgHover: isDark ? 'rgba(50,30,30,1)' : 'common.white',
+      arrowColor: isDark ? '#f5e6e6' : 'text.primary',
+      arrowColorHover: isDark ? '#FF3D3D' : 'text.secondary',
+      arrowBorder: isDark ? 'rgba(74,48,48,0.6)' : 'grey.200',
+      arrowShadow: isDark
+        ? '0 4px 14px rgba(0,0,0,0.4)'
+        : '0 4px 14px rgba(0,0,0,0.12)',
+      arrowShadowHover: isDark
+        ? '0 6px 18px rgba(255,61,61,0.3)'
+        : '0 6px 18px rgba(0,0,0,0.18)',
+      cardBg: isDark ? 'rgba(42,32,32,0.78)' : '#fff',
+      cardText: isDark ? '#9e7070' : 'text.secondary',
+      isDark,
+    }),
+    [isDark]
+  );
+}
+
 export const TrendingGames: React.FC<TrendingGamesProps> = ({
   games,
   loading = false,
 }) => {
   const { t } = useTranslation();
+  const C = useThemeColors();
   const scrollRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | null>(null);
   const isPausedRef = useRef(false);
@@ -90,40 +117,57 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
     }
   };
 
-  const arrowButtonSx = (side: 'left' | 'right') => ({
-    position: 'absolute',
-    [side]: 8,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    zIndex: 3,
-    width: 42,
-    height: 42,
-    bgcolor: 'common.white',
-    color: 'text.primary',
-    border: '1px solid',
-    borderColor: 'grey.200',
-    boxShadow: '0 4px 14px rgba(0,0,0,0.12)',
-    transition: 'all 0.2s ease',
-    '&:hover': {
-      bgcolor: 'common.white',
-      boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
-      transform: 'translateY(-50%) scale(1.05)',
-      color: 'text.secondary',
-    },
-    '&:active': { transform: 'translateY(-50%) scale(0.98)' },
-  });
+  let carouselContent: React.ReactNode;
+  if (loading) {
+    carouselContent = Array.from({ length: 6 }, (_, idx) => (
+      <Box key={`skeleton-${idx}`} width={160}>
+        <Skeleton
+          variant="rectangular"
+          width={160}
+          height={220}
+          sx={{
+            bgcolor: C.isDark ? 'rgba(42,32,32,0.6)' : 'rgba(0,0,0,0.11)',
+          }}
+        />
+        <Skeleton
+          width="80%"
+          sx={{
+            bgcolor: C.isDark ? 'rgba(42,32,32,0.6)' : 'rgba(0,0,0,0.11)',
+          }}
+        />
+      </Box>
+    ));
+  } else if (games.length === 0) {
+    carouselContent = (
+      <Card
+        sx={{
+          p: 2,
+          bgcolor: C.cardBg,
+          backdropFilter: 'blur(10px)',
+          border: `1px solid ${C.arrowBorder}`,
+        }}
+      >
+        <Typography variant="body2" sx={{ color: C.cardText }}>
+          {t('trendingGames.empty')}
+        </Typography>
+      </Card>
+    );
+  } else {
+    carouselContent = games.map(game => (
+      <GameCard key={game.igdb_id} game={game} />
+    ));
+  }
 
   return (
     <Box position="relative">
       <Box display="flex" alignItems="center" position="relative">
         {canScrollLeft && (
-          <IconButton
-            aria-label={t('trendingGames.prevAriaLabel')}
+          <CarouselArrowButton
+            direction="left"
+            ariaLabel={t('trendingGames.prevAriaLabel')}
             onClick={handleScrollLeft}
-            sx={arrowButtonSx('left')}
-          >
-            <ChevronLeftIcon sx={{ fontSize: 24 }} />
-          </IconButton>
+            sx={{ left: 8, zIndex: 3 }}
+          />
         )}
 
         <Box
@@ -142,32 +186,16 @@ export const TrendingGames: React.FC<TrendingGamesProps> = ({
             px: 1,
           }}
         >
-          {loading ? (
-            Array.from({ length: 6 }, (_, idx) => (
-              <Box key={`skeleton-${idx}`} width={160}>
-                <Skeleton variant="rectangular" width={160} height={220} />
-                <Skeleton width="80%" />
-              </Box>
-            ))
-          ) : games.length === 0 ? (
-            <Card sx={{ p: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                {t('trendingGames.empty')}
-              </Typography>
-            </Card>
-          ) : (
-            games.map(game => <GameCard key={game.igdb_id} game={game} />)
-          )}
+          {carouselContent}
         </Box>
 
         {canScrollRight && (
-          <IconButton
-            aria-label={t('trendingGames.nextAriaLabel')}
+          <CarouselArrowButton
+            direction="right"
+            ariaLabel={t('trendingGames.nextAriaLabel')}
             onClick={handleScrollRight}
-            sx={arrowButtonSx('right')}
-          >
-            <ChevronRightIcon sx={{ fontSize: 24 }} />
-          </IconButton>
+            sx={{ right: 8, zIndex: 3 }}
+          />
         )}
       </Box>
     </Box>

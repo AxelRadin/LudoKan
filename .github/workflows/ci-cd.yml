@@ -80,6 +80,15 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
+      - name: Check requirements.lock is up-to-date 🔒
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pip-tools==7.5.3
+          cd backend
+          python -m piptools compile --output-file requirements.lock requirements.txt
+          cd ..
+          git diff --exit-code -- backend/requirements.lock
+
       - name: Run migrations 🗄️
         working-directory: ./backend
         run: python manage.py migrate --noinput

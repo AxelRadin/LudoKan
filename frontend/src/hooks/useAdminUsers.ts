@@ -1,45 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiGet } from '../services/api';
-
-export type AdminUser = {
-  id: number;
-  pseudo?: string;
-  username?: string;
-  email: string;
-  is_superuser: boolean;
-  roles: string[];
-  created_at?: string;
-};
+import type { AdminUser } from '../types/admin';
 
 type UseAdminUsersReturn = {
   users: AdminUser[];
+  count: number;
   loading: boolean;
   error: string | null;
+  refetch: () => void;
 };
 
-export function useAdminUsers(): UseAdminUsersReturn {
+export function useAdminUsers(
+  search = '',
+  page = 1,
+  pageSize = 20
+): UseAdminUsersReturn {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    (async () => {
-      try {
-        const data = await apiGet('/api/admin/users/', {
-          signal: controller.signal,
-        });
-        const list = Array.isArray(data) ? data : (data.results ?? []);
-        setUsers(list);
-      } catch (err: unknown) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-        setError('Erreur lors du chargement des utilisateurs');
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => controller.abort();
-  }, []);
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams();
+      if (search.trim()) params.set('search', search.trim());
+      params.set('page', String(page));
+      params.set('page_size', String(pageSize));
+      const data = await apiGet(`/api/admin/users/?${params.toString()}`);
+      const list = Array.isArray(data) ? data : (data.results ?? []);
+      setUsers(list);
+      setCount(data.count ?? list.length);
+    } catch {
+      setError('Erreur lors du chargement des utilisateurs');
+    } finally {
+      setLoading(false);
+    }
+  }, [search, page, pageSize]);
 
-  return { users, loading, error };
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  return { users, count, loading, error, refetch: fetchUsers };
 }

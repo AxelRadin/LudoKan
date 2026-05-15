@@ -1,10 +1,11 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
+from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.socialaccount.models import SocialAccount, SocialLogin
 from allauth.socialaccount.signals import social_account_added
 
-from apps.users.adapters import SocialAccountAdapter
+from apps.users.adapters import LudokanAccountAdapter, SocialAccountAdapter
 from apps.users.models import CustomUser, XboxProfile
 
 
@@ -88,3 +89,261 @@ class TestSocialAccountAdapter:
 
         adapter.populate_user(MagicMock(), sociallogin, {})
         assert user.pseudo == "user"
+
+
+@pytest.mark.django_db
+class TestSaveUser:
+    """Tests for SocialAccountAdapter.save_user (allauth 65+ compat shim)."""
+
+    def test_no_token_skips_upsert_and_calls_super(self):
+        """If sociallogin.token is None, no DB work is done."""
+        sociallogin = MagicMock()
+        sociallogin.token = None
+
+        with patch.object(DefaultSocialAccountAdapter, "save_user") as mock_super:
+            SocialAccountAdapter().save_user(MagicMock(), sociallogin)
+
+        mock_super.assert_called_once()
+
+    def test_token_with_no_app_skips_upsert(self):
+        """If token.app is None, no DB work is done."""
+        sociallogin = MagicMock()
+        sociallogin.token.app = None
+
+        with patch.object(DefaultSocialAccountAdapter, "save_user") as mock_super:
+            SocialAccountAdapter().save_user(MagicMock(), sociallogin)
+
+        mock_super.assert_called_once()
+
+    def test_app_with_pk_skips_upsert(self):
+        """If token.app already has a PK it is in DB — no upsert needed."""
+        from allauth.socialaccount.models import SocialApp
+
+        sociallogin = MagicMock()
+        sociallogin.token.app.pk = 99
+        initial_count = SocialApp.objects.count()
+
+        with patch.object(DefaultSocialAccountAdapter, "save_user") as mock_super:
+            SocialAccountAdapter().save_user(MagicMock(), sociallogin)
+
+        assert SocialApp.objects.count() == initial_count
+        mock_super.assert_called_once()
+
+    def test_creates_app_and_site_when_app_has_no_pk(self):
+        """In-memory app (no PK) is persisted to DB and linked to the current site."""
+        from allauth.socialaccount.models import SocialApp
+        from django.contrib.sites.models import Site
+
+        in_memory_app = MagicMock()
+        in_memory_app.pk = None
+        in_memory_app.provider = "google"
+        in_memory_app.client_id = "test-client-id"
+        in_memory_app.secret = "test-secret"
+        in_memory_app.name = "Google"
+        in_memory_app.key = ""
+
+        sociallogin = MagicMock()
+        sociallogin.token.app = in_memory_app
+
+        with patch.object(DefaultSocialAccountAdapter, "save_user"):
+            SocialAccountAdapter().save_user(MagicMock(), sociallogin)
+
+        db_app = SocialApp.objects.get(provider="google", client_id="test-client-id")
+        assert db_app.name == "Google"
+        assert db_app.secret == "test-secret"
+        assert Site.objects.get(pk=1) in db_app.sites.all()
+        assert sociallogin.token.app == db_app
+
+    def test_gets_existing_app_without_adding_site(self):
+        """If the app already exists in DB, retrieve it without modifying its sites."""
+        from allauth.socialaccount.models import SocialApp
+
+        existing = SocialApp.objects.create(
+            provider="google",
+            client_id="existing-client-id",
+            name="Google",
+            secret="existing-secret",
+        )
+
+        in_memory_app = MagicMock()
+        in_memory_app.pk = None
+        in_memory_app.provider = "google"
+        in_memory_app.client_id = "existing-client-id"
+        in_memory_app.secret = "existing-secret"
+        in_memory_app.name = "Google"
+        in_memory_app.key = ""
+
+        sociallogin = MagicMock()
+        sociallogin.token.app = in_memory_app
+
+        with patch.object(DefaultSocialAccountAdapter, "save_user"):
+            SocialAccountAdapter().save_user(MagicMock(), sociallogin)
+
+        assert SocialApp.objects.filter(provider="google", client_id="existing-client-id").count() == 1
+        assert sociallogin.token.app == existing
+        assert existing.sites.count() == 0
+
+    def test_fallback_name_from_provider_title_when_name_is_none(self):
+        """When app_cfg.name is None, falls back to provider.title() as app name."""
+        from allauth.socialaccount.models import SocialApp
+
+        in_memory_app = MagicMock()
+        in_memory_app.pk = None
+        in_memory_app.provider = "google"
+        in_memory_app.client_id = "no-name-client"
+        in_memory_app.secret = "secret"
+        in_memory_app.name = None
+        in_memory_app.key = None
+
+        sociallogin = MagicMock()
+        sociallogin.token.app = in_memory_app
+
+        with patch.object(DefaultSocialAccountAdapter, "save_user"):
+            SocialAccountAdapter().save_user(MagicMock(), sociallogin)
+
+        db_app = SocialApp.objects.get(provider="google", client_id="no-name-client")
+        assert db_app.name == "Google"
+
+
+@pytest.mark.django_db
+class TestSocialAccountAdapterListApps:
+    """list_apps merges DB + settings apps (allauth 65); we dedupe same client_id."""
+
+    def test_dedupes_db_and_settings_app_same_client_id(self):
+        from allauth.socialaccount.models import SocialApp
+
+        db_app = SocialApp.objects.create(
+            provider="google",
+            client_id="dup-client",
+            name="Google",
+            secret="sec",
+        )
+        memory_app = SocialApp(provider="google")
+        memory_app.client_id = "dup-client"
+        memory_app.secret = "sec"
+
+        request = MagicMock()
+        adapter = SocialAccountAdapter(request)
+
+        for pair in ([memory_app, db_app], [db_app, memory_app]):
+            with patch.object(DefaultSocialAccountAdapter, "list_apps", return_value=pair):
+                out = adapter.list_apps(request, provider="google", client_id="dup-client")
+            assert len(out) == 1
+            assert out[0] == db_app
+
+    def test_passthrough_when_super_returns_single_app(self):
+        from allauth.socialaccount.models import SocialApp
+
+        only = SocialApp.objects.create(
+            provider="google",
+            client_id="solo",
+            name="Google",
+            secret="s",
+        )
+        request = MagicMock()
+        adapter = SocialAccountAdapter(request)
+        with patch.object(DefaultSocialAccountAdapter, "list_apps", return_value=[only]):
+            out = adapter.list_apps(request, provider="google")
+        assert out == [only]
+
+    def test_dedupes_settings_apps_no_pk(self):
+        from allauth.socialaccount.models import SocialApp
+
+        memory_app1 = SocialApp(provider="google")
+        memory_app1.client_id = "dup-client"
+        memory_app1.secret = "sec1"
+
+        memory_app2 = SocialApp(provider="google")
+        memory_app2.client_id = "dup-client"
+        memory_app2.secret = "sec2"
+
+        request = MagicMock()
+        adapter = SocialAccountAdapter(request)
+
+        with patch.object(DefaultSocialAccountAdapter, "list_apps", return_value=[memory_app1, memory_app2]):
+            out = adapter.list_apps(request, provider="google", client_id="dup-client")
+
+        assert len(out) == 1
+        assert out[0] == memory_app1
+
+
+class TestLudokanAccountAdapter:
+    """Unit tests for LudokanAccountAdapter.send_mail."""
+
+    def test_send_mail_with_request_applies_language(self):
+        """When request is present and get_language_from_request succeeds, send_mail uses its language."""
+        adapter = LudokanAccountAdapter()
+        mock_request = MagicMock()
+
+        with (
+            patch("apps.users.adapters.translation.get_language_from_request", return_value="fr") as mock_get_lang,
+            patch("apps.users.adapters.translation.override") as mock_override,
+            patch.object(adapter.__class__.__bases__[0], "send_mail"),
+        ):
+            mock_override.return_value.__enter__ = MagicMock(return_value=None)
+            mock_override.return_value.__exit__ = MagicMock(return_value=False)
+            adapter.send_mail("prefix", "test@example.com", {"request": mock_request})
+
+        mock_get_lang.assert_called_once_with(mock_request)
+        mock_override.assert_called_once_with("fr")
+
+    def test_send_mail_falls_back_to_language_code_on_exception(self):
+        """When get_language_from_request raises, send_mail falls back to LANGUAGE_CODE."""
+        adapter = LudokanAccountAdapter()
+        mock_request = MagicMock()
+
+        with (
+            patch("apps.users.adapters.translation.get_language_from_request", side_effect=Exception("lang error")),
+            patch("apps.users.adapters.translation.get_language", return_value=None),
+            patch("apps.users.adapters.translation.override") as mock_override,
+            patch("apps.users.adapters.django_settings") as mock_settings,
+            patch.object(adapter.__class__.__bases__[0], "send_mail"),
+        ):
+            mock_settings.LANGUAGE_CODE = "en"
+            mock_settings.FRONTEND_BASE_URL = "http://localhost:5173"
+            mock_override.return_value.__enter__ = MagicMock(return_value=None)
+            mock_override.return_value.__exit__ = MagicMock(return_value=False)
+            adapter.send_mail("prefix", "test@example.com", {"request": mock_request})
+
+        # Fallback language (LANGUAGE_CODE = "en") should be used
+        mock_override.assert_called_once_with("en")
+
+    def test_send_mail_without_request_calls_super_directly(self):
+        """When no request is in context, send_mail calls super directly."""
+        adapter = LudokanAccountAdapter()
+
+        with patch.object(adapter.__class__.__bases__[0], "send_mail") as mock_super:
+            adapter.send_mail("prefix", "test@example.com", {})
+
+        mock_super.assert_called_once()
+
+    def test_get_email_confirmation_url_uses_frontend_base(self, settings):
+        settings.FRONTEND_BASE_URL = "https://spa.example.com/"
+        adapter = LudokanAccountAdapter()
+        emailconfirmation = MagicMock()
+        emailconfirmation.key = "signed-key-abc"
+        url = adapter.get_email_confirmation_url(None, emailconfirmation)
+        assert url.startswith("https://spa.example.com/verify-email/signed-key-abc")
+        assert "lang=" in url
+
+    def test_get_reset_password_from_key_url_splits_opaque_key(self, settings):
+        settings.FRONTEND_BASE_URL = "https://spa.example.com"
+        adapter = LudokanAccountAdapter()
+        url = adapter.get_reset_password_from_key_url("uidb64part-token-with-dashes")
+        assert url.startswith("https://spa.example.com/reset-password/uidb64part/token-with-dashes")
+        assert "lang=" in url
+
+    def test_get_reset_password_from_key_url_without_dash_calls_super(self):
+        """When key has no dash, fallback to super().get_reset_password_from_key_url."""
+        adapter = LudokanAccountAdapter()
+        with patch("apps.users.adapters.DefaultAccountAdapter.get_reset_password_from_key_url", return_value="/default-reset/key") as mock_super:
+            url = adapter.get_reset_password_from_key_url("nodashkey")
+            assert "/default-reset/key" in url
+            mock_super.assert_called_once_with("nodashkey")
+
+    def test_get_reset_password_from_key_url_with_existing_query_params(self):
+        """When the base URL already has query params, use '&' as separator for lang."""
+        adapter = LudokanAccountAdapter()
+        with patch("apps.users.adapters.DefaultAccountAdapter.get_reset_password_from_key_url", return_value="/reset?token=123"):
+            url = adapter.get_reset_password_from_key_url("nodashkey")
+            assert "/reset?token=123&lang=" in url

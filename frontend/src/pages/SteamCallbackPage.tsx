@@ -1,12 +1,10 @@
-import Alert from '@mui/material/Alert';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/useAuth';
 import { apiPost } from '../services/api';
+import OAuthCallbackLayout from '../components/OAuthCallbackLayout';
 
 const SteamCallbackPage: React.FC = () => {
   const { t } = useTranslation();
@@ -34,10 +32,8 @@ const SteamCallbackPage: React.FC = () => {
 
       try {
         const res = await apiPost('/api/auth/steam/callback/', params);
-        // Authentifie l'utilisateur dans le store React
         setUser(res.user);
         setAuthenticated(true);
-        // Redirection vers le profil après succès
         if (res.is_new_user) {
           navigate('/profile?syncing=true&new_user=true', { replace: true });
         } else {
@@ -50,16 +46,14 @@ const SteamCallbackPage: React.FC = () => {
       }
     };
 
-    void run();
+    run();
   }, [navigate, location.search, t, setAuthenticated, setUser]);
 
-  if (error) {
-    return (
-      <Box sx={{ p: 4, maxWidth: 480, mx: 'auto', mt: 8 }}>
-        <Alert severity="error" variant="filled">
-          {error}
-        </Alert>
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
+  return (
+    <OAuthCallbackLayout
+      error={error}
+      errorFooter={
+        error ? (
           <Typography
             component="a"
             href="/profile"
@@ -71,34 +65,13 @@ const SteamCallbackPage: React.FC = () => {
           >
             {t('steamCallback.backToProfile')}
           </Typography>
-        </Box>
-      </Box>
-    );
-  }
-
-  return (
-    <Box
-      sx={{
-        p: 4,
-        maxWidth: 480,
-        mx: 'auto',
-        mt: 8,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 3,
-      }}
-    >
-      <CircularProgress size={60} thickness={4} />
-      <Box sx={{ textAlign: 'center' }}>
-        <Typography variant="h6" gutterBottom>
-          {t('steamCallback.loadingTitle')}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t('steamCallback.loadingDesc')}
-        </Typography>
-      </Box>
-    </Box>
+        ) : undefined
+      }
+      loadingTitle={t('steamCallback.loadingTitle')}
+      loadingSubtitle={t('steamCallback.loadingDesc')}
+      progressSize={60}
+      progressThickness={4}
+    />
   );
 };
 

@@ -18,7 +18,7 @@ export default function EngagementSection({ data, loading }: Props) {
           fontSize: 14,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          color: '#888',
+          color: 'text.secondary',
         }}
       >
         Engagement
@@ -29,8 +29,9 @@ export default function EngagementSection({ data, loading }: Props) {
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Box
             sx={{
-              bgcolor: '#fff',
-              border: '0.5px solid rgba(0,0,0,0.1)',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
               borderRadius: 3,
               p: 3,
               flex: 1,
@@ -44,7 +45,7 @@ export default function EngagementSection({ data, loading }: Props) {
                 fontWeight: 700,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: '#aaa',
+                color: 'text.secondary',
               }}
             >
               Avis ce mois
@@ -59,8 +60,9 @@ export default function EngagementSection({ data, loading }: Props) {
 
           <Box
             sx={{
-              bgcolor: '#fff',
-              border: '0.5px solid rgba(0,0,0,0.1)',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
               borderRadius: 3,
               p: 3,
               flex: 1,
@@ -74,7 +76,7 @@ export default function EngagementSection({ data, loading }: Props) {
                 fontWeight: 700,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: '#aaa',
+                color: 'text.secondary',
               }}
             >
               Notes ce mois
@@ -89,8 +91,9 @@ export default function EngagementSection({ data, loading }: Props) {
 
           <Box
             sx={{
-              bgcolor: '#fff',
-              border: '0.5px solid rgba(0,0,0,0.1)',
+              bgcolor: 'background.paper',
+              border: 1,
+              borderColor: 'divider',
               borderRadius: 3,
               p: 3,
               flex: 1,
@@ -104,7 +107,7 @@ export default function EngagementSection({ data, loading }: Props) {
                 fontWeight: 700,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: '#aaa',
+                color: 'text.secondary',
               }}
             >
               Utilisateurs actifs (mois)

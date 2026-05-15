@@ -178,6 +178,89 @@ class GameWriteSerializer(serializers.ModelSerializer):
         ]
 
 
+class AdminGameDetailSerializer(serializers.ModelSerializer):
+    """Lecture détaillée d'un jeu pour le panel admin (sans champs utilisateur)."""
+
+    publisher = PublisherSerializer(read_only=True)
+    genres = GenreSerializer(many=True, read_only=True)
+    platforms = PlatformSerializer(many=True, read_only=True)
+    screenshots = GameScreenshotSerializer(many=True, read_only=True)
+    videos = GameVideoSerializer(many=True, read_only=True, source="game_videos")
+
+    class Meta:
+        model = Game
+        fields = [
+            "id",
+            "igdb_id",
+            "name",
+            "name_fr",
+            "description",
+            "cover_url",
+            "release_date",
+            "status",
+            "min_players",
+            "max_players",
+            "min_age",
+            "publisher",
+            "genres",
+            "platforms",
+            "average_rating",
+            "rating_count",
+            "rating_avg",
+            "popularity_score",
+            "screenshots",
+            "videos",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class AdminGameUpdateSerializer(serializers.ModelSerializer):
+    genres = serializers.PrimaryKeyRelatedField(
+        queryset=Genre.objects.all(),
+        many=True,
+        required=False,
+    )
+    platforms = serializers.PrimaryKeyRelatedField(
+        queryset=Platform.objects.all(),
+        many=True,
+        required=False,
+    )
+    publisher = serializers.PrimaryKeyRelatedField(
+        queryset=Publisher.objects.all(),
+        required=False,
+    )
+
+    class Meta:
+        model = Game
+        fields = [
+            "name",
+            "name_fr",
+            "description",
+            "status",
+            "cover_url",
+            "release_date",
+            "min_players",
+            "max_players",
+            "min_age",
+            "publisher",
+            "genres",
+            "platforms",
+        ]
+
+    def update(self, instance, validated_data):
+        genres = validated_data.pop("genres", None)
+        platforms = validated_data.pop("platforms", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if genres is not None:
+            instance.genres.set(genres)
+        if platforms is not None:
+            instance.platforms.set(platforms)
+        return instance
+
+
 class PublisherCRUDSerializer(serializers.ModelSerializer):
     class Meta:
         model = Publisher
@@ -246,6 +329,34 @@ class RatingSerializer(serializers.ModelSerializer):
         tmp.clean()
 
         return attrs
+
+
+class AdminRatingListSerializer(serializers.ModelSerializer):
+    """Liste admin des notes : identifiants + libellés lisibles."""
+
+    user_pseudo = serializers.CharField(source="user.pseudo", read_only=True)
+    game_name = serializers.CharField(source="game.name", read_only=True)
+
+    class Meta:
+        model = Rating
+        fields = [
+            "id",
+            "game",
+            "game_name",
+            "user",
+            "user_pseudo",
+            "rating_type",
+            "value",
+        ]
+        read_only_fields = (
+            "id",
+            "game",
+            "game_name",
+            "user",
+            "user_pseudo",
+            "rating_type",
+            "value",
+        )
 
 
 class IgdbResolveSerializer(serializers.Serializer):
