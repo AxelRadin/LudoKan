@@ -124,8 +124,8 @@ export default function ProfilePageLibrarySection({
               games={games}
               title=""
               showStatus={false}
-              onRemove={removeGame}
-              {...gameListCollectionProps}
+              onRemove={readOnly ? undefined : removeGame}
+              {...(readOnly ? {} : gameListCollectionProps)}
             />
           </Box>
         ))}
@@ -148,8 +148,8 @@ export default function ProfilePageLibrarySection({
           games={gamesForLibraryFilter}
           title=""
           showStatus={false}
-          onRemove={removeGame}
-          {...gameListCollectionProps}
+          onRemove={readOnly ? undefined : removeGame}
+          {...(readOnly ? {} : gameListCollectionProps)}
         />
       </Box>
     );
