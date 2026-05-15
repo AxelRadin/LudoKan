@@ -71,6 +71,7 @@ class TestAdminStatsView:
         assert "totals" in response.data
         assert "engagement" in response.data
         assert "recent_activity" in response.data
+        assert "charts" in response.data
 
         totals = response.data["totals"]
 
@@ -111,6 +112,13 @@ class TestAdminStatsView:
         )
         assert found_review_action
 
+        charts = response.data["charts"]
+        assert len(charts["users_daily"]) == 14
+        for row in charts["users_daily"]:
+            assert "date" in row and "new_users" in row and "active_logins" in row
+        assert isinstance(charts["games_top"], list)
+        assert isinstance(charts["genres_share"], list)
+
     def test_recent_activity_is_limited_to_20_items(self, auth_admin_client_with_tokens, admin_user):
         # Créer plus de 20 AdminAction pour vérifier la limite
         for i in range(30):
@@ -129,6 +137,8 @@ class TestAdminStatsView:
         assert "recent_activity" in response.data
 
         recent_activity = response.data["recent_activity"]
+        charts = response.data["charts"]
+        assert len(charts["users_daily"]) == 14
         assert len(recent_activity) == 20
 
         # Vérifier que les IDs les plus récents (créés en dernier) sont présents

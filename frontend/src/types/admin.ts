@@ -11,6 +11,16 @@ export type AdminUser = {
   created_at?: string;
 };
 
+export type AdminStatsCharts = {
+  users_daily: {
+    date: string;
+    new_users: number;
+    active_logins: number;
+  }[];
+  games_top: { id: number; name: string; reviews: number }[];
+  genres_share: { name: string; count: number }[];
+};
+
 export type AdminStats = {
   totals: {
     users: number;
@@ -36,6 +46,7 @@ export type AdminStats = {
     target: string | null;
     time: string;
   }[];
+  charts: AdminStatsCharts;
 };
 
 export type AdminActionRow = {

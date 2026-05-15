@@ -1,4 +1,5 @@
 import { Typography } from '@mui/material';
+import AdminDashboardCharts from '../../components/admin/AdminDashboardCharts';
 import AdminLayout from '../../components/admin/AdminLayout';
 import EngagementSection from '../../components/admin/EngagementSection';
 import KpiSection from '../../components/admin/KpiSection';
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
 
       <QuickActions />
       <KpiSection data={data} loading={loading} />
+      <AdminDashboardCharts data={data} loading={loading} />
       <EngagementSection data={data} loading={loading} />
       <RecentActivity data={data} loading={loading} />
 
