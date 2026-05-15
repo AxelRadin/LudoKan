@@ -93,6 +93,7 @@ export default function ProfilePageLibrarySection({
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const collectionProps = readOnly ? {} : gameListCollectionProps;
 
   const libraryLists =
     libraryFilter === 'ALL' ? (
@@ -125,7 +126,7 @@ export default function ProfilePageLibrarySection({
               title=""
               showStatus={false}
               onRemove={readOnly ? undefined : removeGame}
-              {...(readOnly ? {} : gameListCollectionProps)}
+              {...collectionProps}
             />
           </Box>
         ))}
@@ -149,7 +150,7 @@ export default function ProfilePageLibrarySection({
           title=""
           showStatus={false}
           onRemove={readOnly ? undefined : removeGame}
-          {...(readOnly ? {} : gameListCollectionProps)}
+          {...collectionProps}
         />
       </Box>
     );

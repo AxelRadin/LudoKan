@@ -30,25 +30,23 @@ type Props = Readonly<{
 }>;
 
 function iconForAction(action: string | null): ReactElement<SvgIconProps> {
-  const a = action ?? '';
-
-  if (a.startsWith('game')) {
+  if (action?.startsWith('game')) {
     return <SportsEsportsOutlinedIcon fontSize="small" />;
   }
 
-  if (a.startsWith('review') || a.startsWith('rating')) {
+  if (action?.startsWith('review') || action?.startsWith('rating')) {
     return <RateReviewOutlinedIcon fontSize="small" />;
   }
 
-  if (a.startsWith('user')) {
+  if (action?.startsWith('user')) {
     return <PersonOutlineIcon fontSize="small" />;
   }
 
-  if (a.startsWith('support')) {
+  if (action?.startsWith('support')) {
     return <SupportAgentOutlinedIcon fontSize="small" />;
   }
 
-  if (a.startsWith('system')) {
+  if (action?.startsWith('system')) {
     return <AdminPanelSettingsOutlinedIcon fontSize="small" />;
   }
 
@@ -56,14 +54,12 @@ function iconForAction(action: string | null): ReactElement<SvgIconProps> {
 }
 
 function targetLabelForAction(action: string | null): string {
-  const a = action ?? '';
-
-  if (a.startsWith('game')) return 'Jeu';
-  if (a.startsWith('review')) return 'Avis';
-  if (a.startsWith('rating')) return 'Note';
-  if (a.startsWith('user')) return 'Utilisateur';
-  if (a.startsWith('support')) return 'Support';
-  if (a.startsWith('system')) return 'Système';
+  if (action?.startsWith('game')) return 'Jeu';
+  if (action?.startsWith('review')) return 'Avis';
+  if (action?.startsWith('rating')) return 'Note';
+  if (action?.startsWith('user')) return 'Utilisateur';
+  if (action?.startsWith('support')) return 'Support';
+  if (action?.startsWith('system')) return 'Système';
 
   return 'Cible';
 }
