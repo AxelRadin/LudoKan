@@ -117,3 +117,72 @@ class TestAdminGameListView:
             {"created_before": before, "created_after": after},
         )
         assert resp_dates.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestAdminGameDetailView:
+    def test_admin_can_get_game_detail(self, admin_client, game):
+        url = f"/api/admin/games/{game.id}/"
+        response = admin_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["id"] == game.id
+        assert "description" in response.data
+        assert "genres" in response.data
+
+    def test_moderator_can_get_game_detail(self, moderator_client, game):
+        url = f"/api/admin/games/{game.id}/"
+        response = moderator_client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_non_admin_cannot_get_game_detail(self, authenticated_client, game):
+        url = f"/api/admin/games/{game.id}/"
+        response = authenticated_client.get(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_can_patch_game(self, admin_client, game, publisher, genre, platform):
+        url = f"/api/admin/games/{game.id}/"
+        response = admin_client.patch(
+            url,
+            {
+                "name": "Updated By Admin",
+                "description": "New desc",
+                "genres": [genre.id],
+                "platforms": [platform.id],
+            },
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        game.refresh_from_db()
+        assert game.name == "Updated By Admin"
+        assert game.description == "New desc"
+        assert game.platforms.filter(id=platform.id).exists()
+
+    def test_moderator_cannot_patch_game(self, moderator_client, game):
+        url = f"/api/admin/games/{game.id}/"
+        response = moderator_client.patch(url, {"name": "Nope"}, format="json")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_can_delete_game(self, admin_client, publisher):
+        g = Game.objects.create(
+            igdb_id=900001,
+            name="To Delete",
+            description="x",
+            publisher=publisher,
+        )
+        url = f"/api/admin/games/{g.id}/"
+        response = admin_client.delete(url)
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Game.objects.filter(id=g.id).exists()
+
+    def test_moderator_cannot_delete_game(self, moderator_client, game):
+        url = f"/api/admin/games/{game.id}/"
+        response = moderator_client.delete(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_admin_game_detail_permissions_default(self, admin_client, game):
+        """Covers the default return in get_permissions (line 494)."""
+        url = f"/api/admin/games/{game.id}/"
+        # OPTIONS will trigger the default case in get_permissions
+        response = admin_client.options(url)
+        # OPTIONS usually returns 200 OK with Allow header
+        assert response.status_code == status.HTTP_200_OK

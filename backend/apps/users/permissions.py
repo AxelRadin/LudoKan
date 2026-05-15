@@ -51,6 +51,8 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "import_export.review",
         "import_export.rating",
         "game_read",
+        "game_edit",
+        "game_delete",
         "support.view",
         "support.manage",
         "admin_action_read",

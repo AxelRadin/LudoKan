@@ -23,12 +23,22 @@ export default function AdminLayout({ children }: Props) {
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
       />
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}
+      >
         <AdminHeader
           showMenuButton={!isDesktop}
           onOpenMenu={() => setMobileOpen(true)}
         />
-        <Box sx={{ flex: 1, px: { xs: 2, md: 4 }, py: { xs: 2, md: 3 } }}>
+        <Box
+          sx={{
+            flex: 1,
+            px: { xs: 2, md: 4 },
+            py: { xs: 2, md: 3 },
+            minWidth: 0,
+            maxWidth: '100%',
+          }}
+        >
           {children}
         </Box>
       </Box>

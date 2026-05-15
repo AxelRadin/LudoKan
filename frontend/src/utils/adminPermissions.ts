@@ -32,6 +32,8 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     'import_export.review',
     'import_export.rating',
     'game_read',
+    'game_edit',
+    'game_delete',
     'support.view',
     'support.manage',
     'admin_action_read',
