@@ -1,6 +1,6 @@
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
-import { IconButton, Tooltip, SxProps, Theme } from '@mui/material';
+import { IconButton, Tooltip, type SxProps, type Theme } from '@mui/material';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useThemeMode } from '../contexts/useThemeMode';
