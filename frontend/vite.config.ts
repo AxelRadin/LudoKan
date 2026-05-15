@@ -3,6 +3,25 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          mui: [
+            '@mui/material',
+            '@mui/icons-material',
+            '@emotion/react',
+            '@emotion/styled',
+          ],
+          sentry: ['@sentry/react'],
+          vendor: ['@tanstack/react-query', 'i18next', 'react-i18next'],
+        },
+      },
+    },
+  },
+
   server: {
     proxy: {
       '/api': {
@@ -31,7 +50,7 @@ export default defineConfig({
         target: 'http://localhost:8000',
         ws: true,
       },
-    }
+    },
   },
   test: {
     environment: 'happy-dom',
